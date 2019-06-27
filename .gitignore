@@ -1,0 +1,71 @@
+
+cmake_uninstall.cmake
+
+lib/
+bin/
+
+*.pc
+*.conf
+*.backup
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Makefile
+cmake_install.cmake
+install_manifest.txt
+src/vsgXchange/vsgXchangeConfigVersion.cmake
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Visual Studio files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+.vs/
+x64/
+src/vsg/vsg.dir/
+*.pdb
+*.tlog
+*.log
+
+# Xcode
+DerivedData/
+*.build
+*.xcodeproj
+
+# Gradle
+.gradle/
+.idea/
+.externalNativeBuild/
+*.iml
+build/
+local.properties
+
