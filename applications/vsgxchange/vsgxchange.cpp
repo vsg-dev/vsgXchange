@@ -73,17 +73,18 @@ vsg::ref_ptr<vsg::Object> glslReaderWriter::readFile(const vsg::Path& filename) 
 
         auto sm = vsg::ShaderModule::create(source);
 
+
+        std::cout<<"source : "<<source<<std::endl;
+        std::cout<<"sm : "<<sm<<std::endl;
+
         if (stage_itr->second == VK_SHADER_STAGE_ALL)
         {
             return sm;
         }
         else
         {
-            auto ss = vsg::ShaderStage::create();
+            return vsg::ShaderStage::create(stage_itr->second, "main", sm);
         }
-
-        std::cout<<"source : "<<source<<std::endl;
-        std::cout<<"sm : "<<sm<<std::endl;
 
         return sm;
     }
@@ -292,6 +293,30 @@ int main(int argc, char** argv)
     {
         // all shaders
         std::cout<<"All shaders"<<std::endl;
+
+        vsg::ShaderStages stagesToCompile;
+        for(auto& object : vsgObjects)
+        {
+            vsg::ShaderStage* ss = dynamic_cast<vsg::ShaderStage*>(object.get());
+            vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<vsg::ShaderModule*>(object.get());
+            if (sm && !sm->source().empty() && sm->spirv().empty())
+            {
+                if (ss) stagesToCompile.emplace_back(ss);
+                else stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
+            }
+        }
+
+        if (!stagesToCompile.empty())
+        {
+            vsg::ref_ptr<vsgXchange::ShaderCompiler> shaderCompiler(new vsgXchange::ShaderCompiler());
+            shaderCompiler->compile(stagesToCompile);
+
+            for(auto& stage : stagesToCompile)
+            {
+                std::cout<<"Stage : "<<stage->getShaderStageFlagBits()<<" compiled to spirv "<<stage->getShaderModule()->spirv().size()<<std::endl;
+            }
+        }
+
         vsg::Path outputFileExtension = vsg::fileExtension(outputFilename);
     }
     else if (numNodes==vsgObjects.size())

@@ -24,5 +24,6 @@ target_link_libraries(vsgxchange_viewer
     vsgXchange
     vsg::vsg
     ${GLSLANG}
+    ${CMAKE_THREAD_LIBS_INIT}
     Vulkan::Vulkan
 )
