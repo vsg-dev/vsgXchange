@@ -7,6 +7,7 @@ set(HEADERS
     ${HEADER_PATH}/ReaderWriter_all.h
     ${HEADER_PATH}/ReaderWriter_glsl.h
     ${HEADER_PATH}/ReaderWriter_spirv.h
+    ${HEADER_PATH}/ReaderWriter_cpp.h
 )
 
 set(SOURCES
@@ -17,6 +18,8 @@ set(SOURCES
     glsl/ReaderWriter_glsl.cpp
 
     spirv/ReaderWriter_spirv.cpp
+
+    cpp/ReaderWriter_cpp.cpp
 )
 
 
