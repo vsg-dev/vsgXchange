@@ -5,168 +5,10 @@
 #include <chrono>
 #include <thread>
 
+#include <vsgXchange/ReaderWriter_all.h>
 #include <vsgXchange/ShaderCompiler.h>
 
 #include "AnimationPath.h"
-
-
-namespace vsgXchange
-{
-    class VSGXCHANGE_DECLSPEC glslReaderWriter : public vsg::Inherit<vsg::ReaderWriter, glslReaderWriter>
-    {
-    public:
-        glslReaderWriter();
-
-        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename) const override;
-
-        bool writeFile(const vsg::Object* object, const vsg::Path& filename) const override;
-
-        void add(const std::string ext, VkShaderStageFlagBits stage)
-        {
-            extensionToStage[ext] = stage;
-            stageToExtension[stage] = ext;
-        }
-
-    protected:
-        std::map<std::string, VkShaderStageFlagBits> extensionToStage;
-        std::map<VkShaderStageFlagBits, std::string> stageToExtension;
-    };
-    //VSG_type_name(vsgXchange::glslReaderWriter);
-
-    glslReaderWriter::glslReaderWriter()
-    {
-        add("vert", VK_SHADER_STAGE_VERTEX_BIT);
-        add("tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-        add("tese", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-        add("geom", VK_SHADER_STAGE_GEOMETRY_BIT);
-        add("frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-        add("comp", VK_SHADER_STAGE_COMPUTE_BIT);
-        add("mesh", VK_SHADER_STAGE_MESH_BIT_NV);
-        add("task", VK_SHADER_STAGE_TASK_BIT_NV);
-        add("rgen", VK_SHADER_STAGE_RAYGEN_BIT_NV);
-        add("rint", VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-        add("rahit", VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-        add("rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-        add("rmiss", VK_SHADER_STAGE_MISS_BIT_NV);
-        add("rcall", VK_SHADER_STAGE_CALLABLE_BIT_NV);
-        add("glsl", VK_SHADER_STAGE_ALL);
-        add("hlsl", VK_SHADER_STAGE_ALL);
-    }
-
-    vsg::ref_ptr<vsg::Object> glslReaderWriter::readFile(const vsg::Path& filename) const
-    {
-        auto ext = vsg::fileExtension(filename);
-        auto stage_itr = extensionToStage.find(ext);
-        if (stage_itr != extensionToStage.end() && vsg::fileExists(filename))
-        {
-            std::cout<<"glslReaderWriter::readFile("<<filename<<") stage = "<<stage_itr->second<<std::endl;
-            std::string source;
-
-            std::ifstream fin(filename, std::ios::ate);
-            size_t fileSize = fin.tellg();
-
-            source.resize(fileSize);
-
-            fin.seekg(0);
-            fin.read(reinterpret_cast<char*>(source.data()), fileSize);
-            fin.close();
-
-            auto sm = vsg::ShaderModule::create(source);
-
-            std::cout<<"source : "<<source<<std::endl;
-            std::cout<<"sm : "<<sm<<std::endl;
-
-            if (stage_itr->second == VK_SHADER_STAGE_ALL)
-            {
-                return sm;
-            }
-            else
-            {
-                return vsg::ShaderStage::create(stage_itr->second, "main", sm);
-            }
-
-            return sm;
-        }
-        return vsg::ref_ptr<vsg::Object>();
-    }
-
-    bool glslReaderWriter::writeFile(const vsg::Object* object, const vsg::Path& filename) const
-    {
-        auto ext = vsg::fileExtension(filename);
-        auto stage_itr = extensionToStage.find(ext);
-        if (stage_itr != extensionToStage.end())
-        {
-            const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-            const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
-            if (sm)
-            {
-                if (!sm->source().empty())
-                {
-                    std::ofstream fout(filename);
-                    fout.write(sm->source().data(), sm->source().size());
-                    fout.close();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    class VSGXCHANGE_DECLSPEC spirvReaderWriter : public vsg::Inherit<vsg::ReaderWriter, spirvReaderWriter>
-    {
-    public:
-        spirvReaderWriter();
-
-        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename) const override;
-
-        bool writeFile(const vsg::Object* object, const vsg::Path& filename) const override;
-
-    protected:
-    };
-    //VSG_type_name(vsgXchange::glslReaderWriter);
-    spirvReaderWriter::spirvReaderWriter()
-    {
-    }
-
-    vsg::ref_ptr<vsg::Object> spirvReaderWriter::readFile(const vsg::Path& filename) const
-    {
-        std::cout<<"spirvReaderWriter::readFile("<<filename<<")"<<std::endl;
-
-        auto ext = vsg::fileExtension(filename);
-        if (ext=="spv" && vsg::fileExists(filename))
-        {
-            vsg::ShaderModule::SPIRV spirv;
-            vsg::readFile(spirv, filename);
-
-            auto sm = vsg::ShaderModule::create(spirv);
-            return sm;
-        }
-        return vsg::ref_ptr<vsg::Object>();
-    }
-
-    bool spirvReaderWriter::writeFile(const vsg::Object* object, const vsg::Path& filename) const
-    {
-        std::cout<<"spirvReaderWriter::writeFile("<<object->className()<<", "<<filename<<")"<<std::endl;
-
-        auto ext = vsg::fileExtension(filename);
-        if (ext=="spv")
-        {
-            const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-            const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
-            if (sm)
-            {
-                if (!sm->spirv().empty())
-                {
-                    std::ofstream fout(filename);
-                    fout.write(reinterpret_cast<const char*>(sm->spirv().data()), sm->spirv().size() * sizeof(vsg::ShaderModule::SPIRV::value_type));
-                    fout.close();
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-};
 
 
 int main(int argc, char** argv)
@@ -279,13 +121,8 @@ int main(int argc, char** argv)
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
     VsgObjects vsgObjects;
 
-    // read any vsg files
-
-    vsg::CompositeReaderWriter io;
-
-    io.add(vsg::vsgReaderWriter::create());
-    io.add(vsgXchange::glslReaderWriter::create());
-    io.add(vsgXchange::spirvReaderWriter::create());
+    // read any input files
+    vsgXchange::ReaderWriter_all io;
 
     for (int i=1; i<argc; ++i)
     {
@@ -299,7 +136,7 @@ int main(int argc, char** argv)
 
         if (loaded_object)
         {
-            std::cout<<"VSG loadTime = "<<vsg_loadTime<<"ms"<<std::endl;
+            std::cout<<"LoadTime = "<<vsg_loadTime<<"ms"<<std::endl;
 
             vsgObjects.push_back(loaded_object);
             arguments.remove(i, 1);
@@ -307,7 +144,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::cout<<"VSG failed to load "<<filename<<std::endl;
+            std::cout<<"Failed to load "<<filename<<std::endl;
         }
     }
 

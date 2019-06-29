@@ -91,13 +91,7 @@ add_custom_target(uninstall
 )
 
 # source directory for main vsgXchange library
-add_subdirectory(src/vsgXchange)
+add_subdirectory(src)
 add_subdirectory(applications/vsgxchange)
 
-# src directory for building OpenSceneGraph integration.
-if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
-
-    # add_subdirectory(src/osg)
-
-endif()
 

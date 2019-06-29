@@ -3,7 +3,7 @@
 #include <glslang/Public/ShaderLang.h>
 #include <SPIRV/GlslangToSpv.h>
 
-#include "glsllang/ResourceLimits.h"
+#include "../glsl/ResourceLimits.h"
 
 #include <algorithm>
 #include <iomanip>

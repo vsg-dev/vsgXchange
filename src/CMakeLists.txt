@@ -4,14 +4,28 @@ SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 set(HEADERS
     ${HEADER_PATH}/Export.h
     ${HEADER_PATH}/ShaderCompiler.h
+    ${HEADER_PATH}/ReaderWriter_all.h
+    ${HEADER_PATH}/ReaderWriter_glsl.h
+    ${HEADER_PATH}/ReaderWriter_spirv.h
 )
 
 set(SOURCES
-    ShaderCompiler.cpp
-    glsllang/ResourceLimits.cpp
+    vsgXchange/ShaderCompiler.cpp
+    vsgXchange/ReaderWriter_all.cpp
+
+    glsl/ResourceLimits.cpp
+    glsl/ReaderWriter_glsl.cpp
+
+    spirv/ReaderWriter_spirv.cpp
 )
 
+
 add_library(vsgXchange ${HEADERS} ${SOURCES})
+
+# enable OpenSceneGraph integration
+if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
+    target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
+endif()
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
 set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
