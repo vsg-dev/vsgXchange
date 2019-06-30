@@ -1,0 +1,31 @@
+#include "ReaderWriter_osg.h"
+
+#include <osgDB/ReadFile>
+
+#include <iostream>
+
+using namespace vsgXchange;
+
+ReaderWriter_osg::ReaderWriter_osg()
+{
+}
+
+vsg::ref_ptr<vsg::Object> ReaderWriter_osg::readFile(const vsg::Path& filename) const
+{
+    osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename);
+
+    std::cout<<"ReaderWriter_osg::readFile("<<filename<<") built with OSG "<<std::endl;
+    if (object.valid())
+    {
+        std::cout<<"    loaded OSG model : "<<object->className()<<std::endl;
+    }
+
+    return vsg::ref_ptr<vsg::Object>();
+}
+
+bool ReaderWriter_osg::writeFile(const vsg::Object* object, const vsg::Path& filename) const
+{
+    std::cout<<"ReaderWriter_osg::writeFile("<<object->className()<<", "<<filename<<") built with OSG"<<std::endl;
+
+    return false;
+}
