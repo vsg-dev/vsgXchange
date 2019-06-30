@@ -27,3 +27,7 @@ target_link_libraries(vsgconv
     ${CMAKE_THREAD_LIBS_INIT}
     Vulkan::Vulkan
 )
+
+install(TARGETS vsgconv
+        RUNTIME DESTINATION bin
+)

@@ -1,4 +1,4 @@
-#include <vsgXchange/ReaderWriter_cpp.h>
+#include "ReaderWriter_cpp.h"
 
 #include <vsg/io/AsciiOutput.h>
 #include <vsg/vk/ShaderStage.h>

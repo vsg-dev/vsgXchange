@@ -1,4 +1,4 @@
-#include <vsgXchange/ReaderWriter_spirv.h>
+#include "ReaderWriter_spirv.h"
 
 #include <vsg/vk/ShaderStage.h>
 

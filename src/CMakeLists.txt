@@ -5,10 +5,7 @@ set(HEADERS
     ${HEADER_PATH}/Export.h
     ${HEADER_PATH}/ShaderCompiler.h
     ${HEADER_PATH}/ReaderWriter_all.h
-    ${HEADER_PATH}/ReaderWriter_glsl.h
-    ${HEADER_PATH}/ReaderWriter_spirv.h
-    ${HEADER_PATH}/ReaderWriter_cpp.h
-)
+ )
 
 set(SOURCES
     vsgXchange/ShaderCompiler.cpp
@@ -22,12 +19,19 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
+if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
+    set(SOURCES ${SOURCES}
+        osg/ReaderWriter_osg.cpp
+    )
+endif()
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
 # enable OpenSceneGraph integration
 if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
     target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
+    set(OSG_LINK_LIBRARIES ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
+    set(OSG_INCLUDE_DIRECTORIES ${OSG_INCLUDE_DIR})
 endif()
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
@@ -38,11 +42,13 @@ set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${OSG_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(vsgXchange PUBLIC
     vsg::vsg
     ${GLSLANG}
+    ${OSG_LINK_LIBRARIES}
 )
 
 

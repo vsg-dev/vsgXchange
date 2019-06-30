@@ -1,4 +1,4 @@
-#include <vsgXchange/ReaderWriter_glsl.h>
+#include "ReaderWriter_glsl.h"
 
 #include <vsg/vk/ShaderStage.h>
 
