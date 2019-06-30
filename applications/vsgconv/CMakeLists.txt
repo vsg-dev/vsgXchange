@@ -26,6 +26,7 @@ target_link_libraries(vsgconv
     ${GLSLANG}
     ${CMAKE_THREAD_LIBS_INIT}
     Vulkan::Vulkan
+    ${OSG_LINK_LIBRARIES}
 )
 
 install(TARGETS vsgconv

@@ -81,6 +81,13 @@ find_package(osgDB QUIET)
 find_package(osgUtil QUIET)
 find_package(OpenGL QUIET)
 
+# enable OpenSceneGraph integration
+if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
+    set(OSG_LINK_LIBRARIES ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
+    set(OSG_INCLUDE_DIRECTORIES ${OSG_INCLUDE_DIR})
+endif()
+
+
 add_custom_target(clobber
     COMMAND git clean -d -f -x
 )
