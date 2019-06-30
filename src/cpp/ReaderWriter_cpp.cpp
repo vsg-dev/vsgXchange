@@ -1,5 +1,6 @@
 #include <vsgXchange/ReaderWriter_cpp.h>
 
+#include <vsg/io/AsciiOutput.h>
 #include <vsg/vk/ShaderStage.h>
 
 #include <iostream>
@@ -18,52 +19,22 @@ bool ReaderWriter_cpp::writeFile(const vsg::Object* object, const vsg::Path& fil
     if (ext=="cpp")
     {
         std::string funcname = vsg::simpleFilename(filename);
-        const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-        const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
-        if (ss)
-        {
-            vsg::ShaderModule::Source source;
-            vsg::ShaderModule::SPIRV spirv;
-            if (sm)
-            {
-                source = sm->source();
-                spirv = sm->spirv();
-            }
 
-            std::ofstream fout(filename);
-            fout<<"auto "<<funcname<<" = []() {\n";
-            fout<<"return vsg::ShaderStage::create(\n";
-            fout<<"VkShaderStageFlagBits("<< ss->getShaderStageFlagBits()<<"),\n";
-                write(fout, ss->getEntryPointName());
-            fout<<",\n";
-                write(fout, source);
-            fout<<",\n";
-            fout<<"vsg::ShaderModule::SPIRV{";
-                if (spirv.size()>1) fout<<spirv.front();
-                for(unsigned int i=1; i<spirv.size(); ++i) fout<<", "<<spirv[i];
-            fout<<"});\n";
-            fout<<"};\n";
-            fout.close();
-            return true;
-        }
-        else if (sm)
-        {
-            const vsg::ShaderModule::Source& source = sm->source();
-            const vsg::ShaderModule::SPIRV& spirv = sm->spirv();
+        std::ostringstream str;
+        vsg::AsciiOutput output(str);
+        output.writeObject("Root", object);
 
-            std::ofstream fout(filename);
-            fout<<"auto "<<funcname<<" = []() {\n";
-            fout<<"return vsg::ShadeModule::create(\n";
-                write(fout, source);
-            fout<<",\n";
-            fout<<"vsg::ShaderModule::SPIRV{";
-                if (spirv.size()>1) fout<<spirv.front();
-                for(unsigned int i=1; i<spirv.size(); ++i) fout<<", "<<spirv[i];
-            fout<<"});\n";
-            fout<<"};\n";
-            fout.close();
-            return true;
-        }
+        std::ofstream fout(filename);
+        fout<<"auto "<<funcname<<" = []() {\n";
+        fout<<"std::istringstream str(";
+            write(fout, str.str());
+        fout<<");\n";
+        fout<<"vsg::AsciiInput input(str);\n";
+        fout<<"return input.readObject<"<<object->className()<<">(\"Root\");\n";
+        fout<<"};\n";
+        fout.close();
+
+        return true;
     }
     return false;
 }
@@ -74,6 +45,7 @@ void ReaderWriter_cpp::write(std::ostream& out, const std::string& str) const
     for(auto& c : str)
     {
         if (c=='\n') out<<"\\n\\\n";
+        else if (c=='"') out<<"\\\"";
         else out<<c;
     }
     out<<"\"";
