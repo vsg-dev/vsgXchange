@@ -7,20 +7,20 @@ if (UNIX)
 endif()
 
 set(SOURCES
-    vsgxchange.cpp
+    vsgconv.cpp
     AnimationPath.cpp
 )
 
-add_executable(vsgxchange_viewer ${SOURCES})
+add_executable(vsgconv ${SOURCES})
 
-target_include_directories(vsgxchange_viewer PRIVATE
+target_include_directories(vsgconv PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     ${OSG_INCLUDE_DIR}
 )
 
-set_target_properties(vsgxchange_viewer PROPERTIES OUTPUT_NAME vsgxchange)
+set_target_properties(vsgconv PROPERTIES OUTPUT_NAME vsgconv)
 
-target_link_libraries(vsgxchange_viewer
+target_link_libraries(vsgconv
     vsgXchange
     vsg::vsg
     ${GLSLANG}
