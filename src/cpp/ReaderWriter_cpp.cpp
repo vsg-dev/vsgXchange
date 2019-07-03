@@ -11,7 +11,7 @@ ReaderWriter_cpp::ReaderWriter_cpp()
 {
 }
 
-bool ReaderWriter_cpp::writeFile(const vsg::Object* object, const vsg::Path& filename) const
+bool ReaderWriter_cpp::writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::Options* /*options*/) const
 {
     std::cout<<"ReaderWriter_cpp::writeFile("<<object->className()<<", "<<filename<<")"<<std::endl;
 

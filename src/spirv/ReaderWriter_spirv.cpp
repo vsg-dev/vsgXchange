@@ -10,7 +10,7 @@ ReaderWriter_spirv::ReaderWriter_spirv()
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::readFile(const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::readFile(const vsg::Path& filename, vsg::Options* /*options*/) const
 {
     std::cout<<"ReaderWriter_spirv::readFile("<<filename<<")"<<std::endl;
 
@@ -26,7 +26,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::readFile(const vsg::Path& filename
     return vsg::ref_ptr<vsg::Object>();
 }
 
-bool ReaderWriter_spirv::writeFile(const vsg::Object* object, const vsg::Path& filename) const
+bool ReaderWriter_spirv::writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::Options* /*options*/) const
 {
     std::cout<<"ReaderWriter_spirv::writeFile("<<object->className()<<", "<<filename<<")"<<std::endl;
 

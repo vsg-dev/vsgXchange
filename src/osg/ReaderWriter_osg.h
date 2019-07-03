@@ -13,9 +13,9 @@ namespace vsgXchange
     public:
         ReaderWriter_osg();
 
-        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename) const override;
+        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename, vsg::Options* options) const override;
 
-        bool writeFile(const vsg::Object* object, const vsg::Path& filename) const override;
+        bool writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::Options* options) const override;
 
     protected:
     };
