@@ -124,13 +124,15 @@ int main(int argc, char** argv)
     // read any input files
     vsgXchange::ReaderWriter_all io;
 
+    auto options = vsg::Options::create();
+
     for (int i=1; i<argc; ++i)
     {
         std::string filename = arguments[i];
 
         auto before_vsg_load = std::chrono::steady_clock::now();
 
-        auto loaded_object = io.readFile(filename);
+        auto loaded_object = io.readFile(filename, options);
 
         auto vsg_loadTime = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::steady_clock::now() - before_vsg_load).count();
 

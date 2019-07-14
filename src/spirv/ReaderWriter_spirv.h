@@ -13,9 +13,9 @@ namespace vsgXchange
     public:
         ReaderWriter_spirv();
 
-        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename, vsg::Options* options) const override;
+        vsg::ref_ptr<vsg::Object> readFile(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
-        bool writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::Options* options) const override;
+        bool writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
     protected:
     };

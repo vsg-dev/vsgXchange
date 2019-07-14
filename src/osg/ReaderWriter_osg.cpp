@@ -10,7 +10,7 @@ ReaderWriter_osg::ReaderWriter_osg()
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_osg::readFile(const vsg::Path& filename, vsg::Options* /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_osg::readFile(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
 {
     osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename);
 
@@ -23,7 +23,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::readFile(const vsg::Path& filename, 
     return vsg::ref_ptr<vsg::Object>();
 }
 
-bool ReaderWriter_osg::writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::Options* /*options*/) const
+bool ReaderWriter_osg::writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
 {
     std::cout<<"ReaderWriter_osg::writeFile("<<object->className()<<", "<<filename<<") built with OSG"<<std::endl;
 
