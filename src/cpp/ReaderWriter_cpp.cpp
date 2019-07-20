@@ -1,6 +1,7 @@
 #include "ReaderWriter_cpp.h"
 
 #include <vsg/io/AsciiOutput.h>
+#include <vsg/io/ReaderWriter_vsg.h>
 #include <vsg/vk/ShaderStage.h>
 
 #include <iostream>
@@ -21,18 +22,29 @@ bool ReaderWriter_cpp::writeFile(const vsg::Object* object, const vsg::Path& fil
         std::string funcname = vsg::simpleFilename(filename);
 
         std::ostringstream str;
+#if 1
+        vsg::ReaderWriter_vsg io;
+        io.writeFile(object, str);
+#else
         vsg::AsciiOutput output(str);
         output.writeObject("Root", object);
-
+#endif
         std::ofstream fout(filename);
-        fout<<"auto "<<funcname<<" = []() {\n";
-        fout<<"std::istringstream str(";
+        fout<<"auto "<<funcname<<" = []() {";
+        fout<<"std::istringstream str(\n";
             write(fout, str.str());
         fout<<");\n";
+#if 1
+        fout<<"vsg::ReaderWriter_vsg io;\n";
+        fout<<"return io.readFile<"<<object->className()<<">(str);\n";
+        fout<<"};\n";
+        fout.close();
+#else
         fout<<"vsg::AsciiInput input(str);\n";
         fout<<"return input.readObject<"<<object->className()<<">(\"Root\");\n";
         fout<<"};\n";
         fout.close();
+#endif
 
         return true;
     }
