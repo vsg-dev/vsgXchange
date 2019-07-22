@@ -132,7 +132,7 @@ int main(int argc, char** argv)
 
         auto before_vsg_load = std::chrono::steady_clock::now();
 
-        auto loaded_object = io.readFile(filename, options);
+        auto loaded_object = io.read(filename, options);
 
         auto vsg_loadTime = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::steady_clock::now() - before_vsg_load).count();
 
@@ -207,7 +207,7 @@ int main(int argc, char** argv)
         if (!outputFilename.empty() && !stagesToCompile.empty())
         {
             // TODO work out how to handle multiple input shaders when we only have one output filename.
-            io.writeFile(stagesToCompile.front(), outputFilename);
+            io.write(stagesToCompile.front(), outputFilename);
         }
     }
     else if (numNodes==vsgObjects.size())
@@ -233,7 +233,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            io.writeFile(vsg_scene, outputFilename);
+            io.write(vsg_scene, outputFilename);
         }
 
     }
