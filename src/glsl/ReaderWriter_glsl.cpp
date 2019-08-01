@@ -26,7 +26,7 @@ ReaderWriter_glsl::ReaderWriter_glsl()
     add("hlsl", VK_SHADER_STAGE_ALL);
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::readFile(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
 {
     auto ext = vsg::fileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);
@@ -63,7 +63,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::readFile(const vsg::Path& filename,
     return vsg::ref_ptr<vsg::Object>();
 }
 
-bool ReaderWriter_glsl::writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
+bool ReaderWriter_glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
 {
     auto ext = vsg::fileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);

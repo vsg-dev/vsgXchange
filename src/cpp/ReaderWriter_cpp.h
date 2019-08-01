@@ -13,7 +13,7 @@ namespace vsgXchange
     public:
         ReaderWriter_cpp();
 
-        bool writeFile(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+        bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
     protected:
 
