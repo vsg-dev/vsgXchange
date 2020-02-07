@@ -69,7 +69,8 @@ int main(int argc, char** argv)
 
 
         // add a GraphicsStage tp the Window to do dispatch of the command graph to the commnad buffer(s)
-        window->addStage(vsg::GraphicsStage::create(vsg_scene, camera));
+        auto commandGraph = vsg::createCommandGraphForView(window, camera, vsg_scene);
+        viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});
 
         auto before_compile = std::chrono::steady_clock::now();
 
@@ -106,9 +107,11 @@ int main(int argc, char** argv)
             // pass any events into EventHandlers assigned to the Viewer
             viewer->handleEvents();
 
-            viewer->populateNextFrame();
+            viewer->update();
 
-            viewer->submitNextFrame();
+            viewer->recordAndSubmit();
+
+            viewer->present();
         }
 
         // clean up done automatically thanks to ref_ptr<>
