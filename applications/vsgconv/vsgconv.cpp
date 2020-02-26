@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     }
     std::cout<<std::endl;
 
-    auto windowTraits = vsg::Window::Traits::create();
+    auto windowTraits = vsg::WindowTraits::create();
     windowTraits->windowTitle = "xchange";
 
     // set up defaults and read command line arguments to override them
