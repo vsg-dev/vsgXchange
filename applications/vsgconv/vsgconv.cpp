@@ -124,18 +124,19 @@ int main(int argc, char** argv)
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
     VsgObjects vsgObjects;
 
-    // read any input files
-    vsgXchange::ReaderWriter_all io;
 
+    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
     auto options = vsg::Options::create();
+    options->readerWriter = vsgXchange::ReaderWriter_all::create();
 
+    // read any input files
     for (int i=1; i<argc; ++i)
     {
         std::string filename = arguments[i];
 
         auto before_vsg_load = std::chrono::steady_clock::now();
 
-        auto loaded_object = io.read(filename, options);
+        auto loaded_object = vsg::read(filename, options);
 
         auto vsg_loadTime = std::chrono::duration<double, std::chrono::milliseconds::period>(std::chrono::steady_clock::now() - before_vsg_load).count();
 
@@ -210,7 +211,7 @@ int main(int argc, char** argv)
         if (!outputFilename.empty() && !stagesToCompile.empty())
         {
             // TODO work out how to handle multiple input shaders when we only have one output filename.
-            io.write(stagesToCompile.front(), outputFilename);
+            vsg::write(stagesToCompile.front(), outputFilename, options);
         }
     }
     else if (numNodes==vsgObjects.size())
@@ -236,7 +237,7 @@ int main(int argc, char** argv)
         }
         else
         {
-            io.write(vsg_scene, outputFilename);
+            vsg::write(vsg_scene, outputFilename, options);
         }
 
     }
