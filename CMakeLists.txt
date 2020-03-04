@@ -73,19 +73,8 @@ find_package(vsg REQUIRED)
 # Find GLSLang
 find_package(glslang REQUIRED)
 
-
-# Find OpenSceneGraph packages for reference
-find_package(OpenThreads QUIET)
-find_package(osg QUIET)
-find_package(osgDB QUIET)
-find_package(osgUtil QUIET)
-find_package(OpenGL QUIET)
-
-# enable OpenSceneGraph integration
-if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
-    set(OSG_LINK_LIBRARIES ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
-    set(OSG_INCLUDE_DIRECTORIES ${OSG_INCLUDE_DIR})
-endif()
+# Find osg2vsg package used to read image and model files using OpenSceneGraph
+find_package(osg2vsg QUIET)
 
 
 add_custom_target(clobber

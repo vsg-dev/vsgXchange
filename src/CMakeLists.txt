@@ -19,7 +19,7 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
+if (osg2vsg_FOUND)
     set(SOURCES ${SOURCES}
         osg/ReaderWriter_osg.cpp
     )
@@ -28,8 +28,9 @@ endif()
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
 # enable OpenSceneGraph integration
-if (OSG_FOUND AND OSGUTIL_FOUND AND OSGDB_FOUND AND OPENTHREADS_FOUND)
+if (osg2vsg_FOUND)
     target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
+    target_link_libraries(vsgXchange PRIVATE osg2vsg::osg2vsg)
 endif()
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
@@ -40,13 +41,11 @@ set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-    ${OSG_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(vsgXchange PUBLIC
     vsg::vsg
     ${GLSLANG}
-    ${OSG_LINK_LIBRARIES}
 )
 
 

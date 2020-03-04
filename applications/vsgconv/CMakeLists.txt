@@ -23,10 +23,6 @@ set_target_properties(vsgconv PROPERTIES OUTPUT_NAME vsgconv)
 target_link_libraries(vsgconv
     vsgXchange
     vsg::vsg
-    ${GLSLANG}
-    ${CMAKE_THREAD_LIBS_INIT}
-    Vulkan::Vulkan
-    ${OSG_LINK_LIBRARIES}
 )
 
 install(TARGETS vsgconv
