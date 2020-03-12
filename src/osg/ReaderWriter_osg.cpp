@@ -1,5 +1,7 @@
 #include "ReaderWriter_osg.h"
 
+#include <osg/TransferFunction>
+#include <osg/io_utils>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 #include <osgUtil/Optimizer>
@@ -70,6 +72,15 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
     else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
     {
         return osg2vsg::convertToVsg(osg_image);
+    }
+    else if (osg::TransferFunction1D* tf = dynamic_cast<osg::TransferFunction1D*>(object.get()); tf != nullptr)
+    {
+        auto tf_image = tf->getImage();
+        auto vsg_image = osg2vsg::convertToVsg(tf_image);
+        vsg_image->setValue("Minimum", tf->getMinimum());
+        vsg_image->setValue("Maximum", tf->getMaximum());
+
+        return vsg_image;
     }
     else
     {
