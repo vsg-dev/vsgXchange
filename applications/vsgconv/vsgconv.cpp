@@ -184,6 +184,36 @@ int main(int argc, char** argv)
     {
         // all images
         std::cout<<"All images"<<std::endl;
+        vsg::ref_ptr<vsg::Node> vsg_scene;
+
+
+        if (numImages == 1)
+        {
+            auto group = vsg::Group::create();
+            for(auto& object : vsgObjects)
+            {
+                vsg::ref_ptr<vsg::Node> node( dynamic_cast<vsg::Node*>(object.get()) );
+                if (node) group->addChild(node);
+            }
+        }
+
+        if (!outputFilename.empty())
+        {
+            if (numImages == 1)
+            {
+                auto image = vsgObjects[0].cast<vsg::Data>();
+                vsg::write(image, outputFilename, options);
+            }
+            else
+            {
+                auto objects = vsg::Objects::create();
+                for(auto& object : vsgObjects)
+                {
+                    objects->addChild(object);
+                }
+                vsg::write(objects, outputFilename, options);
+            }
+        }
     }
     else if (numShaders==vsgObjects.size())
     {
@@ -244,6 +274,22 @@ int main(int argc, char** argv)
     else
     {
         std::cout<<"Mixed objects"<<std::endl;
+        if (!outputFilename.empty())
+        {
+            if (vsgObjects.size()==1)
+            {
+                vsg::write(vsgObjects[0], outputFilename, options);
+            }
+            else
+            {
+                auto objects = vsg::Objects::create();
+                for(auto& object : vsgObjects)
+                {
+                    objects->addChild(object);
+                }
+                vsg::write(objects, outputFilename, options);
+            }
+        }
     }
 
     return 1;
