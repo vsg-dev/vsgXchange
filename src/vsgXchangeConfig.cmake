@@ -4,5 +4,7 @@ find_dependency(Vulkan)
 find_dependency(vsg)
 find_dependency(glslang)
 
+find_dependency(osg2vsg)
+
 
 include("${CMAKE_CURRENT_LIST_DIR}/vsgXchangeTargets.cmake")
