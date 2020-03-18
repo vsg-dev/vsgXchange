@@ -2,8 +2,6 @@
 
 #include <vsg/vk/ShaderStage.h>
 
-#include <iostream>
-
 using namespace vsgXchange;
 
 ReaderWriter_glsl::ReaderWriter_glsl()
@@ -32,7 +30,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::read(const vsg::Path& filename, vsg
     auto stage_itr = extensionToStage.find(ext);
     if (stage_itr != extensionToStage.end() && vsg::fileExists(filename))
     {
-        std::cout<<"ReaderWriter_glsl::readFile("<<filename<<") stage = "<<stage_itr->second<<std::endl;
         std::string source;
 
         std::ifstream fin(filename, std::ios::ate);
@@ -45,9 +42,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::read(const vsg::Path& filename, vsg
         fin.close();
 
         auto sm = vsg::ShaderModule::create(source);
-
-        std::cout<<"source : "<<source<<std::endl;
-        std::cout<<"sm : "<<sm<<std::endl;
 
         if (stage_itr->second == VK_SHADER_STAGE_ALL)
         {
