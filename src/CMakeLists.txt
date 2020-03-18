@@ -27,11 +27,16 @@ endif()
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
+
+
 # enable OpenSceneGraph integration
 if (osg2vsg_FOUND)
     target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
     target_link_libraries(vsgXchange PRIVATE osg2vsg::osg2vsg)
+    set(FIND_DEPEDENCY_OSG2VSG "find_dependency(osg2vsg)")
 endif()
+
+
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
 set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
@@ -75,6 +80,8 @@ write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersio
     VERSION ${VSGXCHANGE_MAJOR_VERSION}.${VSGXCHANGE_MINOR_VERSION}.${VSGXCHANGE_PATCH_VERSION}
     COMPATIBILITY SameMajorVersion
 )
+
+configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
 
 install(FILES "vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
     DESTINATION lib/cmake/vsgXchange
