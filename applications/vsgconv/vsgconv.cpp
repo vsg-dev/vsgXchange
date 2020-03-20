@@ -13,6 +13,10 @@
 
 int main(int argc, char** argv)
 {
+    // TODO:
+    //   Add option for caching scene graph leaf objects together at top of scene graph to optimize cache coherency
+    //   Add option for passing on controls to ReaderWriter's such as osg2vsg's controls for toggling lighting etc.
+
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
