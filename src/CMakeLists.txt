@@ -83,7 +83,7 @@ write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersio
 
 configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
 
-install(FILES "vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
+install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
     DESTINATION lib/cmake/vsgXchange
 )
 
