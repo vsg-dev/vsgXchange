@@ -48,9 +48,11 @@ target_include_directories(vsgXchange PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(vsgXchange PUBLIC
-    vsg::vsg
-    ${GLSLANG}
+target_link_libraries(vsgXchange
+    PUBLIC
+        vsg::vsg
+    PRIVATE
+        ${GLSLANG}
 )
 
 
