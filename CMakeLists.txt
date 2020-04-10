@@ -67,6 +67,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 
 # Find Vulkan and the VSG
+if (VULKAN_SDK)
+    set(ENV{VULKAN_SDK} ${VULKAN_SDK})
+endif()
+
 find_package(Vulkan REQUIRED)
 find_package(vsg REQUIRED)
 
