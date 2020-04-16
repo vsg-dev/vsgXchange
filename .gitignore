@@ -13,7 +13,8 @@ CMakeScripts
 Makefile
 cmake_install.cmake
 install_manifest.txt
-src/vsgXchange/vsgXchangeConfigVersion.cmake
+src/vsgXchangeConfig.cmake
+src/vsgXchangeConfigVersion.cmake
 
 # Compiled Object files
 *.slo
