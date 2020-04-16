@@ -8,17 +8,91 @@
 #include <vsgXchange/ReaderWriter_all.h>
 #include <vsgXchange/ShaderCompiler.h>
 
-#include "AnimationPath.h"
+namespace vsgconv
+{
+    class LeafDataCollection : public vsg::Visitor
+    {
+    public:
+
+        vsg::ref_ptr<vsg::Objects> objects;
+
+        LeafDataCollection()
+        {
+            objects = new vsg::Objects;
+        }
+
+        void apply(vsg::Object& object) override
+        {
+            object.traverse(*this);
+        }
+
+        void apply(vsg::DescriptorSet& descriptorSet) override
+        {
+            objects->addChild(vsg::ref_ptr<Object>(&descriptorSet));
+        }
+
+        void apply(vsg::Geometry& geometry) override
+        {
+            for(auto& data : geometry.arrays)
+            {
+                objects->addChild(data);
+            }
+            if (geometry.indices)
+            {
+                objects->addChild(geometry.indices);
+            }
+        }
+
+        void apply(vsg::VertexIndexDraw& vid) override
+        {
+            for(auto& data : vid.arrays)
+            {
+                objects->addChild(data);
+            }
+            if (vid.indices)
+            {
+                objects->addChild(vid.indices);
+            }
+        }
+
+        void apply(vsg::BindVertexBuffers& bvb) override
+        {
+            for(auto& data : bvb.getArrays())
+            {
+                objects->addChild(data);
+            }
+        }
+
+        void apply(vsg::BindIndexBuffer& bib) override
+        {
+            if (bib.getIndices())
+            {
+                objects->addChild(vsg::ref_ptr<vsg::Data>(bib.getIndices()));
+            }
+        }
+
+        void apply(vsg::StateGroup& stategroup) override
+        {
+            for(auto& command : stategroup.getStateCommands())
+            {
+                command->accept(*this);
+            }
+
+            stategroup.traverse(*this);
+        }
+    };
+}
 
 
 int main(int argc, char** argv)
 {
     // TODO:
-    //   Add option for caching scene graph leaf objects together at top of scene graph to optimize cache coherency
     //   Add option for passing on controls to ReaderWriter's such as osg2vsg's controls for toggling lighting etc.
 
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
+
+    auto batchLeafData = arguments.read("--batch");
 
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
@@ -158,7 +232,16 @@ int main(int argc, char** argv)
                 vsg::ref_ptr<vsg::Node> node( dynamic_cast<vsg::Node*>(object.get()) );
                 if (node) group->addChild(node);
             }
+            vsg_scene = group;
         }
+
+        if (batchLeafData)
+        {
+            vsgconv::LeafDataCollection leafDataCollection;
+            vsg_scene->accept(leafDataCollection);
+            vsg_scene->setObject("batch", leafDataCollection.objects);
+        }
+
 
         if (!outputFilename.empty())
         {
