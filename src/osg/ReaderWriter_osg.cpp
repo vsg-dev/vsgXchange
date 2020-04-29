@@ -19,10 +19,19 @@ ReaderWriter_osg::ReaderWriter_osg()
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
+    osg::ref_ptr<osgDB::Options> osg_options;
 
-    osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename);
+    if (options)
+    {
+        if (osgDB::Registry::instance()->getOptions()) osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
+        else osg_options = new osgDB::Options();
+
+        osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), options->paths.begin(), options->paths.end());
+    }
+
+    osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename, osg_options.get());
     if (!object)
     {
         return {};
