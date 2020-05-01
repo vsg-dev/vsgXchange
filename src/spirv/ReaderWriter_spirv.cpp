@@ -1,8 +1,6 @@
 #include "ReaderWriter_spirv.h"
 
-#include <vsg/vk/ShaderStage.h>
-
-#include <iostream>
+#include <vsg/state/ShaderStage.h>
 
 using namespace vsgXchange;
 

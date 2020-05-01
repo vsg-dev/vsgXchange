@@ -1,6 +1,6 @@
 #include "ReaderWriter_glsl.h"
 
-#include <vsg/vk/ShaderStage.h>
+#include <vsg/state/ShaderStage.h>
 
 using namespace vsgXchange;
 

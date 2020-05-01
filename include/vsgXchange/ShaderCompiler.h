@@ -3,7 +3,7 @@
 #include <vsgXchange/Export.h>
 
 #include <vsg/io/FileSystem.h>
-#include <vsg/vk/ShaderStage.h>
+#include <vsg/state/ShaderStage.h>
 
 namespace vsgXchange
 {

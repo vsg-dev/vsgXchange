@@ -2,7 +2,6 @@
 
 #include <vsg/io/AsciiOutput.h>
 #include <vsg/io/ReaderWriter_vsg.h>
-#include <vsg/vk/ShaderStage.h>
 
 #include <iostream>
 
