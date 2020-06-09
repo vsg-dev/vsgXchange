@@ -38,6 +38,7 @@
 #include <cctype>
 
 #include "ResourceLimits.h"
+#include <glslang/Include/revision.h>
 
 namespace glslang {
 
@@ -134,6 +135,10 @@ const TBuiltInResource DefaultTBuiltInResource = {
     /* .maxTaskWorkGroupSizeY_NV = */ 1,
     /* .maxTaskWorkGroupSizeZ_NV = */ 1,
     /* .maxMeshViewCountNV = */ 4,
+
+#if GLSLANG_PATCH_LEVEL > 3727
+    /* .maxDualSourceDrawBuffersEXT = */ 0,
+#endif
 
     /* .limits = */ {
         /* .nonInductiveForLoops = */ 1,
