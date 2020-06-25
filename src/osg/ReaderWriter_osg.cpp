@@ -37,44 +37,13 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
         return {};
     }
 
-
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
-        bool optimize = true;
-        if (optimize)
-        {
-            osgUtil::IndexMeshVisitor imv;
-            #if OSG_MIN_VERSION_REQUIRED(3,6,4)
-            imv.setGenerateNewIndicesOnAllGeometries(true);
-            #endif
-            osg_scene->accept(imv);
-            imv.makeMesh();
-
-            osgUtil::VertexCacheVisitor vcv;
-            osg_scene->accept(vcv);
-            vcv.optimizeVertices();
-
-            osgUtil::VertexAccessOrderVisitor vaov;
-            osg_scene->accept(vaov);
-            vaov.optimizeOrder();
-
-            osgUtil::Optimizer optimizer;
-            optimizer.optimize(osg_scene, osgUtil::Optimizer::DEFAULT_OPTIMIZATIONS);
-
-            osg2vsg::OptimizeOsgBillboards optimizeBillboards;
-            osg_scene->accept(optimizeBillboards);
-            optimizeBillboards.optimize();
-        }
-
+        vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
         auto buildOptions = osg2vsg::BuildOptions::create(); // TODO, use the vsg::Options to set buildOptions?
 
         osg2vsg::SceneBuilder sceneBuilder(buildOptions);
-        osg_scene->accept(sceneBuilder);
-
-        vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
-
-        // build VSG scene
-        auto converted_vsg_scene = sceneBuilder.createVSG(searchPaths);
+        auto converted_vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
 
         return converted_vsg_scene;
     }
