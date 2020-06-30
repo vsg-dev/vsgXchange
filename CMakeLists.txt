@@ -14,7 +14,7 @@ set(OUTPUT_LIBDIR ${PROJECT_BINARY_DIR}/lib)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_LIBDIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BINDIR})
-set(CMAKE_MODULE_PATH "${VSGXCHANGE_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
+#set(CMAKE_MODULE_PATH "${VSGXCHANGE_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
 
 SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "add a postfix, usually d on windows")
 SET(CMAKE_RELEASE_POSTFIX "" CACHE STRING "add a postfix, usually empty on windows")
@@ -75,7 +75,7 @@ find_package(Vulkan REQUIRED)
 find_package(vsg REQUIRED)
 
 # Find GLSLang
-find_package(glslang REQUIRED)
+find_package(glslang REQUIRED CONFIG PATHS ${VSGXCHANGE_SOURCE_DIR}/src)
 
 # Find osg2vsg package used to read image and model files using OpenSceneGraph
 find_package(osg2vsg QUIET)
