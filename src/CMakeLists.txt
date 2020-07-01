@@ -21,20 +21,8 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
-    set(SOURCES ${SOURCES}
-        osg/GeometryUtils.cpp
-        osg/ImageUtils.cpp
-        osg/Optimize.cpp
-        osg/ReaderWriter_osg.cpp
-        osg/SceneAnalysis.cpp
-        osg/SceneBuilder.cpp
-        osg/ShaderUtils.cpp
-        osg/ReaderWriter_osg.cpp
-    )
-    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${OSG_INCLUDE_DIR})
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
-endif()
+include(osg/build_vars.txt)
+
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
@@ -43,6 +31,8 @@ set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VS
 set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
 set_property(TARGET vsgXchange PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
+
+target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
@@ -56,11 +46,6 @@ target_link_libraries(vsgXchange
     PRIVATE
         ${EXTRA_LIBRARIES}
 )
-
-if (OPENSCENEGRAPH_FOUND)
-    target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
-    target_link_libraries(vsgXchange PRIVATE )
-endif()
 
 install(TARGETS vsgXchange EXPORT vsgXchangeTargets
         LIBRARY DESTINATION lib

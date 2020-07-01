@@ -78,13 +78,6 @@ find_package(vsg REQUIRED)
 find_package(glslang REQUIRED CONFIG PATHS ${VSGXCHANGE_SOURCE_DIR}/src)
 
 
-# Find OpenScenegraph
-find_package(OpenThreads)
-find_package(osg)
-find_package(osgDB)
-find_package(osgTerrain)
-find_package(osgUtil)
-find_package(OpenGL)
 
 
 add_custom_target(clobber
