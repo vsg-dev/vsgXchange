@@ -2,7 +2,7 @@
 # vars used to enable subdirectories to extend the build of the vsgXchange library in a loose coupled way
 set(EXTRA_DEFINES)
 set(EXTRA_INCLUDES)
-set(EXTRA_LIBRARIES  ${GLSLANG})
+set(EXTRA_LIBRARIES ${GLSLANG})
 
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
@@ -24,7 +24,7 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-include(osg/build_vars.txt)
+include(osg/build_vars.cmake)
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
