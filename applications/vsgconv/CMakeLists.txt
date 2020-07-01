@@ -22,7 +22,6 @@ target_link_libraries(vsgconv
     vsgXchange
     vsg::vsg
 )
-#    ${OPENSCENEGRAPH_LIBRARIES}
 
 install(TARGETS vsgconv
         RUNTIME DESTINATION bin

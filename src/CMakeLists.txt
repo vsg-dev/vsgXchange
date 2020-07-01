@@ -1,3 +1,5 @@
+set(EXTRA_INCLUDES)
+set(EXTRA_LIBRARIES  ${GLSLANG})
 
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
@@ -19,7 +21,7 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-if (OPENSCENEGRAPH_FOUND)
+if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
     set(SOURCES ${SOURCES}
         osg/GeometryUtils.cpp
         osg/ImageUtils.cpp
@@ -30,6 +32,8 @@ if (OPENSCENEGRAPH_FOUND)
         osg/ShaderUtils.cpp
         osg/ReaderWriter_osg.cpp
     )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${OSG_INCLUDE_DIR})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
 endif()
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
@@ -43,14 +47,14 @@ set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${EXTRA_INCLUDES}
 )
 
 target_link_libraries(vsgXchange
     PUBLIC
         vsg::vsg
     PRIVATE
-        ${GLSLANG}
-        ${OPENSCENEGRAPH_LIBRARIES}
+        ${EXTRA_LIBRARIES}
 )
 
 if (OPENSCENEGRAPH_FOUND)

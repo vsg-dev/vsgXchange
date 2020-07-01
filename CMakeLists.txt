@@ -86,11 +86,6 @@ find_package(osgTerrain)
 find_package(osgUtil)
 find_package(OpenGL)
 
-if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
-    set(OPENSCENEGRAPH_FOUND ON)
-    set(OPENSCENEGRAPH_LIBRARIES ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
-endif()
-
 
 add_custom_target(clobber
     COMMAND git clean -d -f -x
