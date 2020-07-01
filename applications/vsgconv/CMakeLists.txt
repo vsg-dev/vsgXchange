@@ -8,7 +8,6 @@ endif()
 
 set(SOURCES
     vsgconv.cpp
-    AnimationPath.cpp
 )
 
 add_executable(vsgconv ${SOURCES})
