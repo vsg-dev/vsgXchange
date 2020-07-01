@@ -15,7 +15,6 @@ add_executable(vsgconv ${SOURCES})
 
 target_include_directories(vsgconv PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    ${OSG_INCLUDE_DIR}
 )
 
 set_target_properties(vsgconv PROPERTIES OUTPUT_NAME vsgconv)
@@ -24,6 +23,7 @@ target_link_libraries(vsgconv
     vsgXchange
     vsg::vsg
 )
+#    ${OPENSCENEGRAPH_LIBRARIES}
 
 install(TARGETS vsgconv
         RUNTIME DESTINATION bin

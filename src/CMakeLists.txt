@@ -19,23 +19,20 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-if (osg2vsg_FOUND)
+if (OPENSCENEGRAPH_FOUND)
     set(SOURCES ${SOURCES}
+        osg/GeometryUtils.cpp
+        osg/ImageUtils.cpp
+        osg/Optimize.cpp
+        osg/ReaderWriter_osg.cpp
+        osg/SceneAnalysis.cpp
+        osg/SceneBuilder.cpp
+        osg/ShaderUtils.cpp
         osg/ReaderWriter_osg.cpp
     )
 endif()
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
-
-
-
-# enable OpenSceneGraph integration
-if (osg2vsg_FOUND)
-    target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
-    target_link_libraries(vsgXchange PRIVATE osg2vsg::osg2vsg)
-    set(FIND_DEPEDENCY_OSG2VSG "find_dependency(osg2vsg)")
-endif()
-
 
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
@@ -53,8 +50,13 @@ target_link_libraries(vsgXchange
         vsg::vsg
     PRIVATE
         ${GLSLANG}
+        ${OPENSCENEGRAPH_LIBRARIES}
 )
 
+if (OPENSCENEGRAPH_FOUND)
+    target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
+    target_link_libraries(vsgXchange PRIVATE )
+endif()
 
 install(TARGETS vsgXchange EXPORT vsgXchangeTargets
         LIBRARY DESTINATION lib

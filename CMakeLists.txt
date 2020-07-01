@@ -77,8 +77,19 @@ find_package(vsg REQUIRED)
 # Find GLSLang
 find_package(glslang REQUIRED CONFIG PATHS ${VSGXCHANGE_SOURCE_DIR}/src)
 
-# Find osg2vsg package used to read image and model files using OpenSceneGraph
-find_package(osg2vsg QUIET)
+
+# Find OpenScenegraph
+find_package(OpenThreads)
+find_package(osg)
+find_package(osgDB)
+find_package(osgTerrain)
+find_package(osgUtil)
+find_package(OpenGL)
+
+if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
+    set(OPENSCENEGRAPH_FOUND ON)
+    set(OPENSCENEGRAPH_LIBRARIES ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES})
+endif()
 
 
 add_custom_target(clobber

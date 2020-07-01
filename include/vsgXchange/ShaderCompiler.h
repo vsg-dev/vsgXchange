@@ -7,7 +7,7 @@
 
 namespace vsgXchange
 {
-    class VSGXCHANGE_DECLSPEC ShaderCompiler : public vsg::Object
+    class VSGXCHANGE_DECLSPEC ShaderCompiler : public vsg::Inherit<vsg::Object, ShaderCompiler>
     {
     public:
         ShaderCompiler(vsg::Allocator* allocator=nullptr);
