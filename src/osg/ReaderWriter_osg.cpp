@@ -39,8 +39,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
 
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
-        std::cout<<"osg_scene = "<<osg_scene->className()<<std::endl;
-
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
         auto buildOptions = osg2vsg::BuildOptions::create(); // TODO, use the vsg::Options to set buildOptions?
 
