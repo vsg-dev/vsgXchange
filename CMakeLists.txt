@@ -10,11 +10,10 @@ set(VSGXCHANGE_SOVERSION 0)
 set(OUTPUT_BINDIR ${PROJECT_BINARY_DIR}/bin)
 set(OUTPUT_LIBDIR ${PROJECT_BINARY_DIR}/lib)
 
-#set(OSG_PLUGINS_DIRECTORY osgPlugins-$OSG_MAJOR_VERSION}.$OSG_MINOR_VERSION}.${OSG_PATCH_VERSION})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_LIBDIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BINDIR})
-#set(CMAKE_MODULE_PATH "${VSGXCHANGE_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
+
 
 SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "add a postfix, usually d on windows")
 SET(CMAKE_RELEASE_POSTFIX "" CACHE STRING "add a postfix, usually empty on windows")
@@ -74,10 +73,8 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(vsg REQUIRED)
 
-# Find GLSLang
+# Find GLSLang, use local find script as one isn't generally available yet.
 find_package(glslang REQUIRED CONFIG PATHS ${VSGXCHANGE_SOURCE_DIR}/src)
-
-
 
 
 add_custom_target(clobber
