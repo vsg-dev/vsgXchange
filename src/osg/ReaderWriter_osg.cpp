@@ -48,12 +48,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
         auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
 #else
 
-        int level = 0;
-        int maxLevel = 0;
-        uint32_t numTilesBelow = 0;
         vsg::ref_ptr<vsg::StateGroup> inheritedStateGroup;
 
-        osg2vsg::ConvertToVsg sceneBuilder(buildOptions, level, maxLevel, numTilesBelow, inheritedStateGroup);
+        osg2vsg::ConvertToVsg sceneBuilder(buildOptions, inheritedStateGroup);
         sceneBuilder.optimize(osg_scene);
         auto vsg_scene = sceneBuilder.convert(osg_scene);
 #endif
