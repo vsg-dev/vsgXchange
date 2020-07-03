@@ -192,7 +192,6 @@ vsg::ref_ptr<vsg::Data> createWhiteTexture()
 vsg::ref_ptr<vsg::Data> convertCompressedImageToVsg(const osg::Image* image)
 {
     uint32_t blockSize = 0;
-    VkFormat format = VK_FORMAT_UNDEFINED;
     vsg::Data::Layout layout;
     switch(image->getPixelFormat())
     {
@@ -207,25 +206,25 @@ vsg::ref_ptr<vsg::Data> convertCompressedImageToVsg(const osg::Image* image)
             blockSize = 64;
             layout.blockWidth = 4;
             layout.blockHeight = 4;
-            format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+            layout.format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
             break;
         case(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT):
             blockSize = 64;
             layout.blockWidth = 4;
             layout.blockHeight = 4;
-            format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+            layout.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
             break;
         case(GL_COMPRESSED_RGBA_S3TC_DXT3_EXT):
             blockSize = 128;
             layout.blockWidth = 4;
             layout.blockHeight = 4;
-            format = VK_FORMAT_BC2_UNORM_BLOCK;
+            layout.format = VK_FORMAT_BC2_UNORM_BLOCK;
             break;
         case(GL_COMPRESSED_RGBA_S3TC_DXT5_EXT):
             blockSize = 128;
             layout.blockWidth = 4;
             layout.blockHeight = 4;
-            format = VK_FORMAT_BC3_UNORM_BLOCK;
+            layout.format = VK_FORMAT_BC3_UNORM_BLOCK;
             break;
         case(GL_COMPRESSED_SIGNED_RED_RGTC1_EXT):
         case(GL_COMPRESSED_RED_RGTC1_EXT):
@@ -322,7 +321,6 @@ vsg::ref_ptr<vsg::Data> convertCompressedImageToVsg(const osg::Image* image)
 
     layout.origin = (image->getOrigin()==osg::Image::BOTTOM_LEFT) ? vsg::BOTTOM_LEFT : vsg::TOP_LEFT;
 
-    vsg_data->setFormat(format);
     vsg_data->setLayout(layout);
 
     return vsg_data;
@@ -334,14 +332,12 @@ vsg::ref_ptr<vsg::Data> create(osg::ref_ptr<osg::Image> image, VkFormat format)
     vsg::ref_ptr<vsg::Data> vsg_data;
     if (image->r()==1)
     {
-        vsg_data = vsg::Array2D<T>::create(image->s(), image->t(), reinterpret_cast<T*>(image->data()));
+        vsg_data = vsg::Array2D<T>::create(image->s(), image->t(), reinterpret_cast<T*>(image->data()), vsg::Data::Layout{format});
     }
     else
     {
-        vsg_data = vsg::Array3D<T>::create(image->s(), image->t(), image->r(), reinterpret_cast<T*>(image->data()));
+        vsg_data = vsg::Array3D<T>::create(image->s(), image->t(), image->r(), reinterpret_cast<T*>(image->data()), vsg::Data::Layout{format});
     }
-
-    vsg_data->setFormat(format);
 
     return vsg_data;
 }
@@ -413,10 +409,6 @@ vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image)
 
     vsg::ref_ptr<vsg::Data> vsg_data;
 
-    vsg::Data::Layout layout;
-    layout.maxNumMipmaps = image->getNumMipmapLevels();
-
-
     switch(numComponents)
     {
         case(1):
@@ -449,9 +441,9 @@ vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image)
             break;
     }
 
+    vsg::Data::Layout& layout = vsg_data->getLayout();
+    layout.maxNumMipmaps = image->getNumMipmapLevels();
     layout.origin = (image->getOrigin()==osg::Image::BOTTOM_LEFT) ? vsg::BOTTOM_LEFT : vsg::TOP_LEFT;
-
-    vsg_data->setLayout(layout);
 
     return vsg_data;
 }
