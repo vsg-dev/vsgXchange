@@ -10,6 +10,7 @@
 #include "SceneBuilder.h"
 #include "ImageUtils.h"
 #include "Optimize.h"
+#include "ConvertToVsg.h"
 
 #include <iostream>
 
@@ -42,10 +43,22 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
         auto buildOptions = osg2vsg::BuildOptions::create(); // TODO, use the vsg::Options to set buildOptions?
 
+#if 0
         osg2vsg::SceneBuilder sceneBuilder(buildOptions);
-        auto converted_vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
+        auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
+#else
 
-        return converted_vsg_scene;
+        int level = 0;
+        int maxLevel = 0;
+        uint32_t numTilesBelow = 0;
+        vsg::ref_ptr<vsg::StateGroup> inheritedStateGroup;
+
+        osg2vsg::ConvertToVsg sceneBuilder(buildOptions, level, maxLevel, numTilesBelow, inheritedStateGroup);
+        sceneBuilder.optimize(osg_scene);
+        auto vsg_scene = sceneBuilder.convert(osg_scene);
+#endif
+
+        return vsg_scene;
     }
     else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
     {

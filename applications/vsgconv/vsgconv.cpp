@@ -242,6 +242,18 @@ int main(int argc, char** argv)
             vsg_scene->setObject("batch", leafDataCollection.objects);
         }
 
+        struct FindPagedLOD : public vsg::ConstVisitor
+        {
+            bool found = false;
+            bool operator () (const vsg::Node& node) { node.accept(*this); return found; }
+            void apply(const vsg::Node& node) override { if (!found) node.traverse(*this); }
+            void apply(const vsg::PagedLOD&) override { found = true; }
+        } containsPagedLOD;
+
+        if (containsPagedLOD(*vsg_scene))
+        {
+            std::cout<<"Scene graph contains PagedLOD, need implement copying of children across"<<std::endl;
+        }
 
         if (!outputFilename.empty())
         {
