@@ -56,9 +56,8 @@ public:
     using NodeMap = std::map<osg::Node*, vsg::ref_ptr<vsg::Node>>;
     NodeMap nodeMap;
 
+    size_t numOfPagedLOD = 0;
     FileNameMap filenameMap;
-
-
 
     vsg::ref_ptr<vsg::BindGraphicsPipeline> getOrCreateBindGraphicsPipeline(uint32_t shaderModeMask, uint32_t geometryMask);
 

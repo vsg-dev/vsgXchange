@@ -33,6 +33,8 @@ namespace osg2vsg
 
     struct BuildOptions : public vsg::Inherit<vsg::Object, BuildOptions>
     {
+        vsg::ref_ptr<const vsg::Options> options;
+
         bool insertCullGroups = true;
         bool insertCullNodes = true;
         bool useBindDescriptorSet = true;
@@ -50,7 +52,7 @@ namespace osg2vsg
 
         vsg::Path extension = "vsgb";
 
-        vsg::ref_ptr<PipelineCache> pipelineCache = PipelineCache::create();
+        vsg::ref_ptr<PipelineCache> pipelineCache;
     };
 
     class SceneBuilderBase

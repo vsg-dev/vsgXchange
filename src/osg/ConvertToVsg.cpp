@@ -456,7 +456,20 @@ void ConvertToVsg::apply(osg::LOD& lod)
 
 void ConvertToVsg::apply(osg::PagedLOD& plod)
 {
+    ++numOfPagedLOD;
+
     auto vsg_lod = vsg::PagedLOD::create();
+
+    if(!plod.getDatabasePath().empty())
+    {
+        auto options = (buildOptions && buildOptions->options) ?
+            vsg::Options::create(*(buildOptions->options)) :
+            vsg::Options::create();
+
+        options->paths.push_back(plod.getDatabasePath());
+
+        vsg_lod->options = options;
+    }
 
     const osg::BoundingSphere& bs = plod.getBound();
     osg::Vec3d center = (plod.getCenterMode()==osg::LOD::USER_DEFINED_CENTER) ? plod.getCenter() : bs.center();
@@ -484,7 +497,6 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
         }
     };
 
-
     using Children = std::vector<Child>;
     Children children;
 
@@ -498,7 +510,7 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
             (plod.getMinRange(i) * pixel_ratio);
 
         auto osg_filename = plod.getFileName(i);
-        auto vsg_filename = osg_filename.empty() ? vsg::Path() : mapFileName(osg_filename);
+        auto vsg_filename = osg_filename;//osg_filename.empty() ? vsg::Path() : mapFileName(osg_filename);
 
         children.emplace_back(Child{minimumScreenHeightRatio, vsg_filename, vsg_child});
     }
