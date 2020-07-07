@@ -52,7 +52,7 @@ osg::ref_ptr<osg::Image> formatImage(const osg::Image* image, GLenum targetPixel
         return const_cast<osg::Image*>(image);
     }
 
-    osg::ref_ptr<osg::Image> new_image( new osg::Image);
+    osg::ref_ptr<osg::Image> new_image(new osg::Image);
 
     new_image->allocateImage(image->s(), image->t(), image->r(), targetPixelFormat, image->getDataType());
 
@@ -180,8 +180,7 @@ osg::ref_ptr<osg::Image> formatImage(const osg::Image* image, GLenum targetPixel
 
 vsg::ref_ptr<vsg::Data> createWhiteTexture()
 {
-    vsg::ref_ptr<vsg::vec4Array2D> vsg_data(new vsg::vec4Array2D(1,1));
-    vsg_data->setFormat(VK_FORMAT_R32G32B32A32_SFLOAT);
+    auto vsg_data = vsg::vec4Array2D::create(1,1, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
     for(auto& color : *vsg_data)
     {
         color = vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -295,35 +294,32 @@ vsg::ref_ptr<vsg::Data> convertCompressedImageToVsg(const osg::Image* image)
     uint32_t height = image->t() / layout.blockHeight;
     uint32_t depth = image->r() / layout.blockDepth;
 
-    vsg::ref_ptr<vsg::Data> vsg_data;
+    layout.origin = (image->getOrigin()==osg::Image::BOTTOM_LEFT) ? vsg::BOTTOM_LEFT : vsg::TOP_LEFT;
+
     if (blockSize==64)
     {
         if (image->r()==1)
         {
-            vsg_data = new vsg::block64Array2D(width, height, reinterpret_cast<vsg::block64*>(data));
+            return vsg::block64Array2D::create(width, height, reinterpret_cast<vsg::block64*>(data), layout);
         }
         else
         {
-            vsg_data = new vsg::block64Array3D(width, height, depth, reinterpret_cast<vsg::block64*>(data));
+            return vsg::block64Array3D::create(width, height, depth, reinterpret_cast<vsg::block64*>(data), layout);
         }
     }
     else
     {
         if (image->r()==1)
         {
-            vsg_data = new vsg::block128Array2D(width, height, reinterpret_cast<vsg::block128*>(data));
+            return vsg::block128Array2D::create(width, height, reinterpret_cast<vsg::block128*>(data), layout);
         }
         else
         {
-            vsg_data = new vsg::block128Array3D(width, height, depth, reinterpret_cast<vsg::block128*>(data));
+            return vsg::block128Array3D::create(width, height, depth, reinterpret_cast<vsg::block128*>(data), layout);
         }
     }
 
-    layout.origin = (image->getOrigin()==osg::Image::BOTTOM_LEFT) ? vsg::BOTTOM_LEFT : vsg::TOP_LEFT;
-
-    vsg_data->setLayout(layout);
-
-    return vsg_data;
+    return {};
 }
 
 template<typename T>
