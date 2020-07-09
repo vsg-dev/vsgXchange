@@ -10,6 +10,20 @@
 
 namespace vsgconv
 {
+    void writeAndMakeDirectoryIfRequired(vsg::ref_ptr<vsg::Object> object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options)
+    {
+        vsg::Path path = vsg::filePath(filename);
+        if (!path.empty() && !vsg::fileExists(path))
+        {
+            if (!vsg::makeDirectory(path))
+            {
+                std::cout<<"Warning: could not create directory for "<<path<<std::endl;
+                return;
+            }
+        }
+        vsg::write(object, filename, options);
+    }
+
     class LeafDataCollection : public vsg::Visitor
     {
     public:
@@ -130,6 +144,8 @@ namespace vsgconv
                     std::cout<<"   dest_base_filename "<<dest_base_filename<<std::endl;
 #endif
 
+                    vsg::makeDirectory(vsg::filePath(dest_filename));
+
                     readRequests[plod.filename] = { plod.options, src_filename, dest_filename};
                     plod.filename = dest_base_filename;
                 }
@@ -240,7 +256,7 @@ int main(int argc, char** argv)
             if (numImages == 1)
             {
                 auto image = vsgObjects[0].cast<vsg::Data>();
-                vsg::write(image, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(image, outputFilename, options);
             }
             else
             {
@@ -249,7 +265,7 @@ int main(int argc, char** argv)
                 {
                     objects->addChild(object);
                 }
-                vsg::write(objects, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(objects, outputFilename, options);
             }
         }
     }
@@ -277,7 +293,7 @@ int main(int argc, char** argv)
         if (!outputFilename.empty() && !stagesToCompile.empty())
         {
             // TODO work out how to handle multiple input shaders when we only have one output filename.
-            vsg::write(stagesToCompile.front(), outputFilename, options);
+            vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
         }
     }
     else if (numNodes==vsgObjects.size())
@@ -316,7 +332,7 @@ int main(int argc, char** argv)
 
         if (!outputFilename.empty())
         {
-            vsg::write(vsg_scene, outputFilename, options);
+            vsgconv::writeAndMakeDirectoryIfRequired(vsg_scene, outputFilename, options);
         }
     }
     else
@@ -325,7 +341,7 @@ int main(int argc, char** argv)
         {
             if (vsgObjects.size()==1)
             {
-                vsg::write(vsgObjects[0], outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(vsgObjects[0], outputFilename, options);
             }
             else
             {
@@ -334,7 +350,7 @@ int main(int argc, char** argv)
                 {
                     objects->addChild(object);
                 }
-                vsg::write(objects, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(objects, outputFilename, options);
             }
         }
     }
