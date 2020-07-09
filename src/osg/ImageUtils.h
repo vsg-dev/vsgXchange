@@ -1,5 +1,4 @@
-#ifndef VSGXCHANGE_EXPORT_H
-#define VSGXCHANGE_EXPORT_H
+#pragma once
 
 /* <editor-fold desc="MIT License">
 
@@ -13,16 +12,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#if (defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__))
-    #if defined(vsgXchange_EXPORTS)
-        #define VSGXCHANGE_DECLSPEC __declspec(dllexport)
-    #elif defined(VSGXCHANGE_SHARED_LIBRARY)
-        #define VSGXCHANGE_DECLSPEC __declspec(dllimport)
-    #else
-        #define VSGXCHANGE_DECLSPEC
-    #endif
-#else
-    #define VSGXCHANGE_DECLSPEC
-#endif
+#include <osg/ImageUtils>
+#include <osgDB/ReadFile>
+#include <osgDB/WriteFile>
 
-#endif
+#include <vsg/vk/PhysicalDevice.h>
+#include <vsg/vk/Device.h>
+#include <vsg/vk/CommandPool.h>
+
+namespace osg2vsg
+{
+    VkFormat convertGLImageFormatToVulkan(GLenum dataType, GLenum pixelFormat);
+
+    osg::ref_ptr<osg::Image> formatImageToRGBA(const osg::Image* image);
+
+    vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image);
+}
+

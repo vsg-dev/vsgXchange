@@ -10,6 +10,29 @@
 
 namespace vsgconv
 {
+    static std::mutex s_log_mutex;
+
+    template<typename... Args>
+    void log(Args ...args)
+    {
+        std::scoped_lock lock(s_log_mutex);
+        (std::cout<< ... << args)<<std::endl;
+    }
+
+    void writeAndMakeDirectoryIfRequired(vsg::ref_ptr<vsg::Object> object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options)
+    {
+        vsg::Path path = vsg::filePath(filename);
+        if (!path.empty() && !vsg::fileExists(path))
+        {
+            if (!vsg::makeDirectory(path))
+            {
+                log("Warning: could not create directory for ",path);
+                return;
+            }
+        }
+        vsg::write(object, filename, options);
+    }
+
     class LeafDataCollection : public vsg::Visitor
     {
     public:
@@ -81,6 +104,102 @@ namespace vsgconv
             stategroup.traverse(*this);
         }
     };
+
+
+    struct ReadRequest
+    {
+        vsg::ref_ptr<const vsg::Options> options;
+        vsg::Path src_filename;
+        vsg::Path dest_filename;
+    };
+
+    struct CollectReadRequests : public vsg::Visitor
+    {
+        vsg::Path dest_path;
+        vsg::Path dest_extension = "vsgb";
+        std::map<vsg::Path, ReadRequest> readRequests;
+
+        bool operator () (vsg::Object& object, const vsg::Path& dest_filename)
+        {
+            dest_path = vsg::filePath(dest_filename);
+            dest_extension = vsg::fileExtension(dest_filename);
+
+            object.accept(*this);
+            return !readRequests.empty();
+        }
+
+        void apply(vsg::Node& node) override
+        {
+            node.traverse(*this);
+        }
+
+        void apply(vsg::PagedLOD& plod) override
+        {
+            if (!plod.filename.empty())
+            {
+                if (readRequests.count(plod.filename)==0)
+                {
+                    auto src_filename = plod.filename;
+                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + "." + dest_extension;
+                    auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
+
+                    readRequests[plod.filename] = { plod.options, src_filename, dest_filename};
+                    plod.filename = dest_base_filename;
+                }
+            }
+
+            plod.traverse(*this);
+        }
+    };
+
+    struct ReadOperation : public vsg::Inherit<vsg::Operation, ReadOperation>
+    {
+        ReadOperation(vsg::observer_ptr<vsg::OperationQueue> in_queue, vsg::ref_ptr<vsg::Latch> in_latch, ReadRequest in_readRequest, size_t in_level, size_t in_max_level) :
+            level(in_level),
+            max_level(in_max_level),
+            queue(in_queue),
+            latch(in_latch),
+            readRequest(in_readRequest)
+        {
+        }
+
+        void run() override
+        {
+            auto vsg_scene = vsg::read(readRequest.src_filename, readRequest.options);
+            if (vsg_scene)
+            {
+                log("   loaded ", readRequest.src_filename, ", writing to ", readRequest.dest_filename,", level ", level);
+
+                vsgconv::CollectReadRequests collectReadRequests;
+                if (level < max_level && collectReadRequests(*vsg_scene, readRequest.dest_filename))
+                {
+                    vsg::ref_ptr<vsg::OperationQueue> ref_queue = queue;
+
+                    for(auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
+                    {
+                        latch->count_up();
+
+                        ref_queue->add(vsgconv::ReadOperation::create(queue, latch, itr->second, level+1, max_level));
+                    }
+                }
+
+                vsgconv::writeAndMakeDirectoryIfRequired(vsg_scene, readRequest.dest_filename, readRequest.options);
+            }
+            else
+            {
+                log("   failed to read ", readRequest.src_filename);
+            }
+
+            // we have finsihed this read operation so decrement the latch, which will release and threads waiting on it.
+            latch->count_down();
+        }
+
+        size_t level;
+        size_t max_level;
+        vsg::observer_ptr<vsg::OperationQueue> queue;
+        vsg::ref_ptr<vsg::Latch> latch;
+        ReadRequest readRequest;
+    };
 }
 
 
@@ -93,6 +212,8 @@ int main(int argc, char** argv)
     vsg::CommandLine arguments(&argc, argv);
 
     auto batchLeafData = arguments.read("--batch");
+    auto levels = arguments.value(30, "-l");
+    auto numThreads = arguments.value(16, "-t");
 
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
@@ -179,7 +300,7 @@ int main(int argc, char** argv)
             if (numImages == 1)
             {
                 auto image = vsgObjects[0].cast<vsg::Data>();
-                vsg::write(image, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(image, outputFilename, options);
             }
             else
             {
@@ -188,7 +309,7 @@ int main(int argc, char** argv)
                 {
                     objects->addChild(object);
                 }
-                vsg::write(objects, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(objects, outputFilename, options);
             }
         }
     }
@@ -216,7 +337,7 @@ int main(int argc, char** argv)
         if (!outputFilename.empty() && !stagesToCompile.empty())
         {
             // TODO work out how to handle multiple input shaders when we only have one output filename.
-            vsg::write(stagesToCompile.front(), outputFilename, options);
+            vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
         }
     }
     else if (numNodes==vsgObjects.size())
@@ -242,10 +363,33 @@ int main(int argc, char** argv)
             vsg_scene->setObject("batch", leafDataCollection.objects);
         }
 
+        vsgconv::CollectReadRequests collectReadRequests;
 
-        if (!outputFilename.empty())
+        if (levels > 0 && collectReadRequests(*vsg_scene, outputFilename))
         {
-            vsg::write(vsg_scene, outputFilename, options);
+            vsgconv::writeAndMakeDirectoryIfRequired(vsg_scene, outputFilename, options);
+
+            auto status = vsg::ActivityStatus::create();
+            auto operationThreads = vsg::OperationThreads::create(numThreads, status);
+            auto operationQueue = operationThreads->queue;
+            auto latch = vsg::Latch::create(collectReadRequests.readRequests.size());
+
+            vsg::observer_ptr<vsg::OperationQueue> obs_queue(operationQueue);
+
+            for(auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
+            {
+                operationQueue->add(vsgconv::ReadOperation::create(obs_queue, latch, itr->second, 1, levels));
+            }
+
+            // wait until the latch goes zero i.e. all read operations have completed
+            latch->wait();
+
+            // signal that we are finished and the thread should close
+            status->set(false);
+        }
+        else
+        {
+            vsgconv::writeAndMakeDirectoryIfRequired(vsg_scene, outputFilename, options);
         }
     }
     else
@@ -254,7 +398,7 @@ int main(int argc, char** argv)
         {
             if (vsgObjects.size()==1)
             {
-                vsg::write(vsgObjects[0], outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(vsgObjects[0], outputFilename, options);
             }
             else
             {
@@ -263,7 +407,7 @@ int main(int argc, char** argv)
                 {
                     objects->addChild(object);
                 }
-                vsg::write(objects, outputFilename, options);
+                vsgconv::writeAndMakeDirectoryIfRequired(objects, outputFilename, options);
             }
         }
     }

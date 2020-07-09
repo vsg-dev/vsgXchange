@@ -7,9 +7,10 @@
 #include <osgUtil/Optimizer>
 #include <osgUtil/MeshOptimizers>
 
-#include <osg2vsg/SceneBuilder.h>
-#include <osg2vsg/ImageUtils.h>
-#include <osg2vsg/Optimize.h>
+#include "SceneBuilder.h"
+#include "ImageUtils.h"
+#include "Optimize.h"
+#include "ConvertToVsg.h"
 
 #include <iostream>
 
@@ -17,6 +18,7 @@ using namespace vsgXchange;
 
 ReaderWriter_osg::ReaderWriter_osg()
 {
+    pipelineCache = osg2vsg::PipelineCache::create();
 }
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -27,7 +29,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
     {
         if (osgDB::Registry::instance()->getOptions()) osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
         else osg_options = new osgDB::Options();
-
         osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), options->paths.begin(), options->paths.end());
     }
 
@@ -41,11 +42,55 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
     {
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
         auto buildOptions = osg2vsg::BuildOptions::create(); // TODO, use the vsg::Options to set buildOptions?
+        buildOptions->options = options;
+        buildOptions->pipelineCache = pipelineCache;
 
+#if 0
         osg2vsg::SceneBuilder sceneBuilder(buildOptions);
-        auto converted_vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
+        auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
+#else
 
-        return converted_vsg_scene;
+        vsg::ref_ptr<vsg::StateGroup> inheritedStateGroup;
+
+
+        osg2vsg::ConvertToVsg sceneBuilder(buildOptions, inheritedStateGroup);
+
+        sceneBuilder.optimize(osg_scene);
+        auto vsg_scene = sceneBuilder.convert(osg_scene);
+
+        if (sceneBuilder.numOfPagedLOD > 0)
+        {
+            uint32_t maxLevel = 20;
+            uint32_t estimatedNumOfTilesBelow = 0;
+            uint32_t maxNumTilesBelow = 40000;
+
+            uint32_t level = 0;
+            for(uint32_t i=level; i<maxLevel; ++i)
+            {
+                estimatedNumOfTilesBelow += std::pow(4, i-level);
+            }
+
+            uint32_t tileMultiplier = std::min(estimatedNumOfTilesBelow, maxNumTilesBelow) + 1;
+
+            vsg::CollectDescriptorStats collectStats;
+            vsg_scene->accept(collectStats);
+
+            auto resourceHints = vsg::ResourceHints::create();
+
+            resourceHints->setMaxSlot(collectStats.maxSlot);
+            resourceHints->setNumDescriptorSets(collectStats.computeNumDescriptorSets() * tileMultiplier);
+            resourceHints->setDescriptorPoolSizes(collectStats.computeDescriptorPoolSizes());
+
+            for(auto& poolSize : resourceHints->getDescriptorPoolSizes())
+            {
+                poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
+            }
+
+            vsg_scene->setObject("ResourceHints", resourceHints);
+        }
+#endif
+
+        return vsg_scene;
     }
     else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
     {

@@ -1,4 +1,9 @@
 
+# vars used to enable subdirectories to extend the build of the vsgXchange library in a loose coupled way
+set(EXTRA_DEFINES)
+set(EXTRA_INCLUDES)
+set(EXTRA_LIBRARIES ${GLSLANG})
+
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
@@ -19,23 +24,10 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-if (osg2vsg_FOUND)
-    set(SOURCES ${SOURCES}
-        osg/ReaderWriter_osg.cpp
-    )
-endif()
+include(osg/build_vars.cmake)
+
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
-
-
-
-# enable OpenSceneGraph integration
-if (osg2vsg_FOUND)
-    target_compile_definitions(vsgXchange PRIVATE USE_OPENSCENEGRAPH)
-    target_link_libraries(vsgXchange PRIVATE osg2vsg::osg2vsg)
-    set(FIND_DEPEDENCY_OSG2VSG "find_dependency(osg2vsg)")
-endif()
-
 
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
@@ -43,18 +35,20 @@ set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
 set_property(TARGET vsgXchange PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
 
+target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
+
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${EXTRA_INCLUDES}
 )
 
 target_link_libraries(vsgXchange
     PUBLIC
         vsg::vsg
     PRIVATE
-        ${GLSLANG}
+        ${EXTRA_LIBRARIES}
 )
-
 
 install(TARGETS vsgXchange EXPORT vsgXchangeTargets
         LIBRARY DESTINATION lib
@@ -75,6 +69,11 @@ install(EXPORT vsgXchangeTargets
     FILE vsgXchangeTargets.cmake
     NAMESPACE vsgXchange::
     DESTINATION lib/cmake/vsgXchange
+)
+
+install(
+    FILES glslangConfig.cmake
+    DESTINATION lib/cmake/glslang
 )
 
 include(CMakePackageConfigHelpers)

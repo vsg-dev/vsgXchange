@@ -36,7 +36,7 @@ std::string debugFormatShaderSource(const std::string& source)
 
 
 ShaderCompiler::ShaderCompiler(vsg::Allocator* allocator):
-    vsg::Object(allocator)
+    Inherit(allocator)
 {
     glslang::InitializeProcess();
 }
