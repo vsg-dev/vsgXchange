@@ -81,6 +81,64 @@ namespace vsgconv
             stategroup.traverse(*this);
         }
     };
+
+
+    struct ReadRequest
+    {
+        vsg::ref_ptr<const vsg::Options> options;
+        vsg::Path src_filename;
+        vsg::Path dest_filename;
+    };
+
+    struct CollectReadRequests : public vsg::Visitor
+    {
+        vsg::Path dest_path;
+        vsg::Path dest_extension = "vsgb";
+        std::map<vsg::Path, ReadRequest> readRequests;
+
+        bool operator () (vsg::Node& node, const vsg::Path& dest_filename)
+        {
+            dest_path = vsg::filePath(dest_filename);
+            dest_extension = vsg::fileExtension(dest_filename);
+
+            node.accept(*this);
+            return !readRequests.empty();
+        }
+
+        void apply(vsg::Node& node) override
+        {
+            node.traverse(*this);
+        }
+
+        void apply(vsg::PagedLOD& plod) override
+        {
+            if (!plod.filename.empty())
+            {
+                if (readRequests.count(plod.filename)==0)
+                {
+                    auto src_filename = plod.filename;
+                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + "." + dest_extension;
+                    auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
+                    if (plod.options && plod.options->paths.size()==1)
+                    {
+                        src_filename = vsg::concatPaths(plod.options->paths.front(), src_filename);
+                    }
+#if 0
+                    std::cout<<"   plod.filename "<<plod.filename<<std::endl;
+                    std::cout<<"   src_filename "<<src_filename<<std::endl;
+                    std::cout<<"   dest_filename "<<dest_filename<<std::endl;
+                    std::cout<<"   dest_base_filename "<<dest_base_filename<<std::endl;
+#endif
+
+                    readRequests[plod.filename] = { plod.options, src_filename, dest_filename};
+                    plod.filename = dest_base_filename;
+                }
+            }
+
+            plod.traverse(*this);
+        }
+    };
+
 }
 
 
@@ -93,6 +151,9 @@ int main(int argc, char** argv)
     vsg::CommandLine arguments(&argc, argv);
 
     auto batchLeafData = arguments.read("--batch");
+    auto levels = arguments.value(30, "-l");
+    //auto numThreads = arguments.value(16, "-t");
+    //auto numTilesBelow = arguments.value(0, "-n");
 
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
@@ -242,17 +303,15 @@ int main(int argc, char** argv)
             vsg_scene->setObject("batch", leafDataCollection.objects);
         }
 
-        struct FindPagedLOD : public vsg::ConstVisitor
-        {
-            bool found = false;
-            bool operator () (const vsg::Node& node) { node.accept(*this); return found; }
-            void apply(const vsg::Node& node) override { if (!found) node.traverse(*this); }
-            void apply(const vsg::PagedLOD&) override { found = true; }
-        } containsPagedLOD;
+        vsgconv::CollectReadRequests collectReadRequests;
 
-        if (containsPagedLOD(*vsg_scene))
+        if (levels > 0 && collectReadRequests(*vsg_scene, outputFilename))
         {
             std::cout<<"Scene graph contains PagedLOD, need implement copying of children across"<<std::endl;
+            for(auto& [filename, readRequest] : collectReadRequests.readRequests)
+            {
+                std::cout<<"    ["<<filename<<"]"<<readRequest.options<<", \n\t"<<readRequest.src_filename<<", \n\t"<<readRequest.dest_filename<<std::endl;
+            }
         }
 
         if (!outputFilename.empty())
