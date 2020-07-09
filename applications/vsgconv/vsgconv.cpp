@@ -212,7 +212,7 @@ int main(int argc, char** argv)
     vsg::CommandLine arguments(&argc, argv);
 
     auto batchLeafData = arguments.read("--batch");
-    auto levels = arguments.value(30, "-l");
+    auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
 
     // read shaders
