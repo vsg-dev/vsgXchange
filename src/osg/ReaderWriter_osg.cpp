@@ -21,6 +21,12 @@ ReaderWriter_osg::ReaderWriter_osg()
     pipelineCache = osg2vsg::PipelineCache::create();
 }
 
+bool ReaderWriter_osg::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+{
+    if (arguments.read("--original")) options.setValue("original", true);
+    return false;
+}
+
 vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     osg::ref_ptr<osgDB::Options> osg_options;
@@ -45,52 +51,53 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
 
-#if 0
-        osg2vsg::SceneBuilder sceneBuilder(buildOptions);
-        auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
-#else
-
-        vsg::ref_ptr<vsg::StateGroup> inheritedStateGroup;
-
-
-        osg2vsg::ConvertToVsg sceneBuilder(buildOptions, inheritedStateGroup);
-
-        sceneBuilder.optimize(osg_scene);
-        auto vsg_scene = sceneBuilder.convert(osg_scene);
-
-        if (sceneBuilder.numOfPagedLOD > 0)
+        if (bool original_conversion = false; options->getValue("original", original_conversion) && original_conversion)
         {
-            uint32_t maxLevel = 20;
-            uint32_t estimatedNumOfTilesBelow = 0;
-            uint32_t maxNumTilesBelow = 40000;
-
-            uint32_t level = 0;
-            for(uint32_t i=level; i<maxLevel; ++i)
-            {
-                estimatedNumOfTilesBelow += std::pow(4, i-level);
-            }
-
-            uint32_t tileMultiplier = std::min(estimatedNumOfTilesBelow, maxNumTilesBelow) + 1;
-
-            vsg::CollectDescriptorStats collectStats;
-            vsg_scene->accept(collectStats);
-
-            auto resourceHints = vsg::ResourceHints::create();
-
-            resourceHints->setMaxSlot(collectStats.maxSlot);
-            resourceHints->setNumDescriptorSets(collectStats.computeNumDescriptorSets() * tileMultiplier);
-            resourceHints->setDescriptorPoolSizes(collectStats.computeDescriptorPoolSizes());
-
-            for(auto& poolSize : resourceHints->getDescriptorPoolSizes())
-            {
-                poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
-            }
-
-            vsg_scene->setObject("ResourceHints", resourceHints);
+            std::cout<<"Using original osg2vsg::SceneBuilder"<<std::endl;
+            osg2vsg::SceneBuilder sceneBuilder(buildOptions);
+            auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
         }
-#endif
+        else
+        {
+            vsg::ref_ptr<vsg::StateGroup> inheritedStateGroup;
 
-        return vsg_scene;
+            osg2vsg::ConvertToVsg sceneBuilder(buildOptions, inheritedStateGroup);
+
+            sceneBuilder.optimize(osg_scene);
+            auto vsg_scene = sceneBuilder.convert(osg_scene);
+
+            if (sceneBuilder.numOfPagedLOD > 0)
+            {
+                uint32_t maxLevel = 20;
+                uint32_t estimatedNumOfTilesBelow = 0;
+                uint32_t maxNumTilesBelow = 40000;
+
+                uint32_t level = 0;
+                for(uint32_t i=level; i<maxLevel; ++i)
+                {
+                    estimatedNumOfTilesBelow += std::pow(4, i-level);
+                }
+
+                uint32_t tileMultiplier = std::min(estimatedNumOfTilesBelow, maxNumTilesBelow) + 1;
+
+                vsg::CollectDescriptorStats collectStats;
+                vsg_scene->accept(collectStats);
+
+                auto resourceHints = vsg::ResourceHints::create();
+
+                resourceHints->setMaxSlot(collectStats.maxSlot);
+                resourceHints->setNumDescriptorSets(collectStats.computeNumDescriptorSets() * tileMultiplier);
+                resourceHints->setDescriptorPoolSizes(collectStats.computeDescriptorPoolSizes());
+
+                for(auto& poolSize : resourceHints->getDescriptorPoolSizes())
+                {
+                    poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
+                }
+
+                vsg_scene->setObject("ResourceHints", resourceHints);
+            }
+            return vsg_scene;
+        }
     }
     else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
     {

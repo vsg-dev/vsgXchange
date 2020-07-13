@@ -194,6 +194,10 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
     }
 
     auto vsg_geometry = osg2vsg::convertToVsg(&geometry, geometryMask, buildOptions->geometryTarget);
+    if (!vsg_geometry)
+    {
+        return;
+    }
 
     if (!statestack.empty())
     {

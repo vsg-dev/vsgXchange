@@ -116,14 +116,26 @@ void OptimizeOsgBillboards::optimize()
 
             for(auto& transform : transforms)
             {
-                osg::Matrix matrix;
-                transform->computeLocalToWorldMatrix(matrix, nullptr);
-
-                unsigned int numPositions = std::min(static_cast<unsigned int>(billboard->getPositionList().size()), billboard->getNumDrawables());
-                for(unsigned int i=0; i<numPositions; ++i)
+                if (transform)
                 {
-                    auto position = billboard->getPosition(i);
-                    new_billboard->addDrawable(billboard->getDrawable(i), position * matrix);
+                    osg::Matrix matrix;
+                    transform->computeLocalToWorldMatrix(matrix, nullptr);
+
+                    unsigned int numPositions = std::min(static_cast<unsigned int>(billboard->getPositionList().size()), billboard->getNumDrawables());
+                    for(unsigned int i=0; i<numPositions; ++i)
+                    {
+                        auto position = billboard->getPosition(i);
+                        new_billboard->addDrawable(billboard->getDrawable(i), position * matrix);
+                    }
+                }
+                else
+                {
+                    unsigned int numPositions = std::min(static_cast<unsigned int>(billboard->getPositionList().size()), billboard->getNumDrawables());
+                    for(unsigned int i=0; i<numPositions; ++i)
+                    {
+                        auto position = billboard->getPosition(i);
+                        new_billboard->addDrawable(billboard->getDrawable(i), position);
+                    }
                 }
 
                 replacementMap[transform] = nullptr;
