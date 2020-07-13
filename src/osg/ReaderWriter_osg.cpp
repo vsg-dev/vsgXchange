@@ -56,6 +56,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
             std::cout<<"Using original osg2vsg::SceneBuilder"<<std::endl;
             osg2vsg::SceneBuilder sceneBuilder(buildOptions);
             auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
+            return vsg_scene;
         }
         else
         {
