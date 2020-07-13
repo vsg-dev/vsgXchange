@@ -205,22 +205,20 @@ namespace vsgconv
 
 int main(int argc, char** argv)
 {
-    // TODO:
-    //   Add option for passing on controls to ReaderWriter's such as osg2vsg's controls for toggling lighting etc.
+    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
+    auto options = vsg::Options::create();
+    options->readerWriter = vsgXchange::ReaderWriter_all::create();
 
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
+    arguments.read(options);
     auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
 
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
-
-    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
-    auto options = vsg::Options::create();
-    options->readerWriter = vsgXchange::ReaderWriter_all::create();
 
     if (argc <= 1)
     {
