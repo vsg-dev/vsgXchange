@@ -116,7 +116,7 @@ bool ShaderCompiler::compile(vsg::ShaderStages& shaders, const std::vector<std::
         shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
 
-        std::string shaderSourceWithIncludesInserted = insertIncludes(vsg_shader->getShaderModule()->source(), paths);
+        std::string shaderSourceWithIncludesInserted = insertIncludes(vsg_shader->getShaderModule()->source, paths);
         std::string finalShaderSource = combineSourceAndDefines(shaderSourceWithIncludesInserted, defines);
 
         const char* str = finalShaderSource.c_str();
@@ -137,7 +137,7 @@ bool ShaderCompiler::compile(vsg::ShaderStages& shaders, const std::vector<std::
         {
             // print error infomation
             INFO_OUTPUT << std::endl << "----  " << getFriendlyNameForShader(vsg_shader) << "  ----" << std::endl << std::endl;
-            INFO_OUTPUT << debugFormatShaderSource(vsg_shader->getShaderModule()->source()) << std::endl;
+            INFO_OUTPUT << debugFormatShaderSource(vsg_shader->getShaderModule()->source) << std::endl;
             INFO_OUTPUT << "Warning: GLSL source failed to parse." << std::endl;
             INFO_OUTPUT << "glslang info log: " << std::endl << shader->getInfoLog();
             DEBUG_OUTPUT << "glslang debug info log: " << std::endl << shader->getInfoDebugLog();
@@ -159,7 +159,7 @@ bool ShaderCompiler::compile(vsg::ShaderStages& shaders, const std::vector<std::
         for (auto& vsg_shader : shaders)
         {
             INFO_OUTPUT << std::endl << getFriendlyNameForShader(vsg_shader) << ":" << std::endl << std::endl;
-            INFO_OUTPUT << debugFormatShaderSource(vsg_shader->getShaderModule()->source()) << std::endl;
+            INFO_OUTPUT << debugFormatShaderSource(vsg_shader->getShaderModule()->source) << std::endl;
         }
         
         INFO_OUTPUT << "Warning: Program failed to link." << std::endl;
@@ -179,7 +179,7 @@ bool ShaderCompiler::compile(vsg::ShaderStages& shaders, const std::vector<std::
             std::string warningsErrors;
             spv::SpvBuildLogger logger;
             glslang::SpvOptions spvOptions;
-            glslang::GlslangToSpv(*(program->getIntermediate((EShLanguage)eshl_stage)), vsg_shader->getShaderModule()->spirv(), &logger, &spvOptions);
+            glslang::GlslangToSpv(*(program->getIntermediate((EShLanguage)eshl_stage)), vsg_shader->getShaderModule()->code, &logger, &spvOptions);
         }
     }
 
