@@ -876,7 +876,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         graphicsPipelineGroup->add(bindGraphicsPipeline);
 
         auto graphicsPipeline = bindGraphicsPipeline->getPipeline();
-        auto& descriptorSetLayouts = graphicsPipeline->getPipelineLayout()->getDescriptorSetLayouts();
+        auto& descriptorSetLayouts = graphicsPipeline->getPipelineLayout()->setLayouts;
 
         // attach based on use of transparency
         if(shaderModeMask & BLEND)
