@@ -246,8 +246,7 @@ vsg::ref_ptr<vsg::DescriptorImage> SceneBuilderBase::convertToVsgTexture(const o
         return vsg::ref_ptr<vsg::DescriptorImage>();
     }
 
-    vsg::ref_ptr<vsg::Sampler> sampler = vsg::Sampler::create();
-    sampler->info() = convertToSamplerCreateInfo(osgtexture);
+    vsg::ref_ptr<vsg::Sampler> sampler = convertToSampler(osgtexture);
 
     auto texture = vsg::DescriptorImage::create(vsg::SamplerImage{sampler, textureData}, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     texturesMap[osgtexture] = texture;
