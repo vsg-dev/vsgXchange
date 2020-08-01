@@ -28,7 +28,7 @@ bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filen
     if (ext=="spv")
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-        const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
+        const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
         if (sm)
         {
             if (!sm->code.empty())
