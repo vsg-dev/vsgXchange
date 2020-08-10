@@ -270,7 +270,7 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
             if (vsgtex)
             {
                 // shaders are looking for textures in original units
-                vsgtex->_dstBinding = i;
+                vsgtex->dstBinding = i;
                 descriptors.push_back(vsgtex);
             }
             else
