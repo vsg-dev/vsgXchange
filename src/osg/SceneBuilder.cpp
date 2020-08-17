@@ -875,7 +875,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 
         graphicsPipelineGroup->add(bindGraphicsPipeline);
 
-        auto graphicsPipeline = bindGraphicsPipeline->getPipeline();
+        auto graphicsPipeline = bindGraphicsPipeline->pipeline;
         auto& descriptorSetLayouts = graphicsPipeline->layout->setLayouts;
 
         // attach based on use of transparency
