@@ -30,7 +30,7 @@ vsg::ref_ptr<vsg::BindDescriptorSet> ConvertToVsg::getOrCreateBindDescriptorSet(
     auto pipeline = bindGraphicsPipeline->getPipeline();
     if (!pipeline) return {};
 
-    auto pipelineLayout = pipeline->getPipelineLayout();
+    auto pipelineLayout = pipeline->layout;
     if (!pipelineLayout) return {};
 
     auto descriptorSet = createVsgStateSet(pipelineLayout->setLayouts.front(), stateset, shaderModeMask);

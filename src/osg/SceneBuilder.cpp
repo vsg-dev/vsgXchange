@@ -876,7 +876,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         graphicsPipelineGroup->add(bindGraphicsPipeline);
 
         auto graphicsPipeline = bindGraphicsPipeline->getPipeline();
-        auto& descriptorSetLayouts = graphicsPipeline->getPipelineLayout()->setLayouts;
+        auto& descriptorSetLayouts = graphicsPipeline->layout->setLayouts;
 
         // attach based on use of transparency
         if(shaderModeMask & BLEND)
@@ -902,12 +902,12 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 
                 if (buildOptions->useBindDescriptorSet)
                 {
-                    auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getPipelineLayout(), 0, descriptorSet);
+                    auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->layout, 0, descriptorSet);
                     stategroup->add(bindDescriptorSet);
                 }
                 else
                 {
-                    auto bindDescriptorSets = vsg::BindDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getPipelineLayout(), 0, vsg::DescriptorSets{descriptorSet});
+                    auto bindDescriptorSets = vsg::BindDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->layout, 0, vsg::DescriptorSets{descriptorSet});
                     stategroup->add(bindDescriptorSets);
                 }
             }
