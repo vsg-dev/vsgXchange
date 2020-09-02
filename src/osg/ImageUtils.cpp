@@ -74,7 +74,7 @@ osg::ref_ptr<osg::Image> formatImage(const osg::Image* image, GLenum targetPixel
             break;
         case(GL_UNSIGNED_SHORT) :
             numBytesPerComponent = 2;
-            *reinterpret_cast<short*>(component_default) = 65535;
+            *reinterpret_cast<unsigned short*>(component_default) = 65535;
             break;
         case(GL_INT) :
             numBytesPerComponent = 4;
