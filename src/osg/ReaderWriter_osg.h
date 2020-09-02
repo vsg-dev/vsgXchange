@@ -7,7 +7,7 @@
 
 namespace osg2vsg
 {
-    class PipelineCache;
+    struct PipelineCache;
 }
 
 namespace vsgXchange
