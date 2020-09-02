@@ -18,8 +18,9 @@
 
 namespace osg2vsg
 {
-    struct PipelineCache : public vsg::Inherit<vsg::Object, PipelineCache>
+    class PipelineCache : public vsg::Inherit<vsg::Object, PipelineCache>
     {
+        public:
         vsg::ref_ptr<vsgXchange::ShaderCompiler> shaderCompiler = vsgXchange::ShaderCompiler::create();
 
         using Key = std::tuple<uint32_t, uint32_t, std::string, std::string>;
