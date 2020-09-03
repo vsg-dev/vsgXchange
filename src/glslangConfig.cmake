@@ -51,10 +51,9 @@ find_path(glslang_INCLUDE_DIR
 )
 
 find_path(spirv_INCLUDE_DIR
-    NAMES SPIRV/GlslangToSpv.h
+    NAMES glslang/SPIRV/GlslangToSpv.h
     PATHS ${ADDITIONAL_PATHS_INCLUDE}
 )
-
 
 find_library(glslang_LIBRARY
     NAMES glslang
