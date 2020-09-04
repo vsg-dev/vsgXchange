@@ -24,11 +24,17 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
+# add optional OpenScneeGraph components
 include(osg/build_vars.cmake)
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
+
+# check whehther glslang/build_info.h exists
+if (EXISTS ${glslang_INCLUDE_DIR}/glslang/build_info.h)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} GLSLANG_HAS_BUILD_INFO_H)
+endif()
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
 set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
