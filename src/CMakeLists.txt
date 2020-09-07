@@ -2,7 +2,7 @@
 # vars used to enable subdirectories to extend the build of the vsgXchange library in a loose coupled way
 set(EXTRA_DEFINES)
 set(EXTRA_INCLUDES)
-set(EXTRA_LIBRARIES ${GLSLANG})
+set(EXTRA_LIBRARIES ${glslang_LIBRARIES})
 
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
@@ -78,8 +78,8 @@ install(EXPORT vsgXchangeTargets
 )
 
 install(
-    FILES glslangConfig.cmake
-    DESTINATION lib/cmake/glslang
+    FILES vsgXchange_glslangConfig.cmake
+    DESTINATION lib/cmake/vsgXchange_glslang
 )
 
 include(CMakePackageConfigHelpers)
