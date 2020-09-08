@@ -51,10 +51,9 @@ find_path(glslang_INCLUDE_DIR
 )
 
 find_path(spirv_INCLUDE_DIR
-    NAMES SPIRV/GlslangToSpv.h
+    NAMES glslang/SPIRV/GlslangToSpv.h
     PATHS ${ADDITIONAL_PATHS_INCLUDE}
 )
-
 
 find_library(glslang_LIBRARY
     NAMES glslang
@@ -71,16 +70,6 @@ find_library(SPIRV_LIBRARY
     PATHS ${ADDITIONAL_PATHS_LIBS}
 )
 
-find_library(SPIRV-Tools_LIBRARY
-    NAMES SPIRV-Tools
-    PATHS ${ADDITIONAL_PATHS_LIBS}
-)
-
-find_library(SPIRV-Tools-opt_LIBRARY
-    NAMES SPIRV-Tools-opt
-    PATHS ${ADDITIONAL_PATHS_LIBS}
-)
-
 find_library(OGLCompiler_LIBRARY
     NAMES OGLCompiler
     PATHS ${ADDITIONAL_PATHS_LIBS}
@@ -88,6 +77,26 @@ find_library(OGLCompiler_LIBRARY
 
 find_library(HLSL_LIBRARY
     NAMES HLSL
+    PATHS ${ADDITIONAL_PATHS_LIBS}
+)
+
+find_library(MachineIndependent_LIBRARY
+    NAMES MachineIndependent
+    PATHS ${ADDITIONAL_PATHS_LIBS}
+)
+
+find_library(GenericCodeGen_LIBRARY
+    NAMES GenericCodeGen
+    PATHS ${ADDITIONAL_PATHS_LIBS}
+)
+
+find_library(SPIRV-Tools_LIBRARY
+    NAMES SPIRV-Tools
+    PATHS ${ADDITIONAL_PATHS_LIBS}
+)
+
+find_library(SPIRV-Tools-opt_LIBRARY
+    NAMES SPIRV-Tools-opt
     PATHS ${ADDITIONAL_PATHS_LIBS}
 )
 
@@ -108,6 +117,26 @@ if(WIN32)
         PATHS ${ADDITIONAL_PATHS_LIBS}
     )
 
+    find_library(OGLCompiler_LIBRARY_debug
+        NAMES OGLCompilerd
+        PATHS ${ADDITIONAL_PATHS_LIBS}
+    )
+
+    find_library(HLSL_LIBRARY_debug
+        NAMES HLSLd
+        PATHS ${ADDITIONAL_PATHS_LIBS}
+    )
+
+    find_library(MachineIndependent_LIBRARY_debug
+        NAMES MachineIndependentd
+        PATHS ${ADDITIONAL_PATHS_LIBS}
+    )
+
+    find_library(GenericCodeGen_LIBRARY_debug
+        NAMES GenericCodeGend
+        PATHS ${ADDITIONAL_PATHS_LIBS}
+    )
+
     find_library(SPIRV-Tools_LIBRARY_debug
         NAMES SPIRV-Toolsd
         PATHS ${ADDITIONAL_PATHS_LIBS}
@@ -118,20 +147,8 @@ if(WIN32)
         PATHS ${ADDITIONAL_PATHS_LIBS}
     )
 
-    find_library(OGLCompiler_LIBRARY_debug
-        NAMES OGLCompilerd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
-    )
-
-    find_library(HLSL_LIBRARY_debug
-        NAMES HLSLd
-        PATHS ${ADDITIONAL_PATHS_LIBS}
-    )
 endif()
 
-
-set(glslang_LIBRARIES ${glslang_LIBRARY})
-set(glslang_INCLUDE_DIRS ${glslang_INCLUDE_DIR})
 
 mark_as_advanced(glslang_INCLUDE_DIR glslang_LIBRARY)
 
@@ -144,6 +161,8 @@ else()
 endif()
 
 if(glslang_FOUND AND NOT TARGET glslang::glslang)
+    set(glslang_INCLUDE_DIRS ${glslang_INCLUDE_DIR})
+
     add_library(glslang::glslang UNKNOWN IMPORTED)
     set_target_properties(glslang::glslang PROPERTIES IMPORTED_LOCATION "${glslang_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${glslang_INCLUDE_DIRS}")
 
@@ -152,6 +171,12 @@ if(glslang_FOUND AND NOT TARGET glslang::glslang)
 
     add_library(glslang::SPIRV UNKNOWN IMPORTED)
     set_target_properties(glslang::SPIRV PROPERTIES IMPORTED_LOCATION "${SPIRV_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${spirv_INCLUDE_DIR}")
+
+    add_library(glslang::OGLCompiler UNKNOWN IMPORTED)
+    set_target_properties(glslang::OGLCompiler PROPERTIES IMPORTED_LOCATION "${OGLCompiler_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${glslang_INCLUDE_DIRS}")
+
+    add_library(glslang::HLSL UNKNOWN IMPORTED)
+    set_target_properties(glslang::HLSL PROPERTIES IMPORTED_LOCATION "${HLSL_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${glslang_INCLUDE_DIRS}")
 
     if (SPIRV-Tools_LIBRARY)
         add_library(glslang::SPIRV-Tools UNKNOWN IMPORTED)
@@ -163,40 +188,62 @@ if(glslang_FOUND AND NOT TARGET glslang::glslang)
         set_target_properties(glslang::SPIRV-Tools-opt PROPERTIES IMPORTED_LOCATION "${SPIRV-Tools-opt_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${SPIRV-Tools-opt_INCLUDE_DIR}")
     endif()
 
-    add_library(glslang::OGLCompiler UNKNOWN IMPORTED)
-    set_target_properties(glslang::OGLCompiler PROPERTIES IMPORTED_LOCATION "${OGLCompiler_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${glslang_INCLUDE_DIRS}")
+    if (MachineIndependent_LIBRARY)
+        add_library(glslang::MachineIndependent UNKNOWN IMPORTED)
+        set_target_properties(glslang::MachineIndependent PROPERTIES IMPORTED_LOCATION "${MachineIndependent_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${MachineIndependent_INCLUDE_DIRS}")
+    endif()
 
-    add_library(glslang::HLSL UNKNOWN IMPORTED)
-    set_target_properties(glslang::HLSL PROPERTIES IMPORTED_LOCATION "${HLSL_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${glslang_INCLUDE_DIRS}")
+    if (GenericCodeGen_LIBRARY)
+        add_library(glslang::GenericCodeGen UNKNOWN IMPORTED)
+        set_target_properties(glslang::GenericCodeGen PROPERTIES IMPORTED_LOCATION "${GenericCodeGen_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${GenericCodeGen_INCLUDE_DIRS}")
+    endif()
 
     if(WIN32)
         set_target_properties(glslang::glslang PROPERTIES IMPORTED_LOCATION_DEBUG "${glslang_LIBRARY_debug}")
         set_target_properties(glslang::OSDependent PROPERTIES IMPORTED_LOCATION_DEBUG "${OSDependent_LIBRARY_debug}")
         set_target_properties(glslang::SPIRV PROPERTIES IMPORTED_LOCATION_DEBUG "${SPIRV_LIBRARY_debug}")
+        set_target_properties(glslang::OGLCompiler PROPERTIES IMPORTED_LOCATION_DEBUG "${OGLCompiler_LIBRARY_debug}")
+        set_target_properties(glslang::HLSL PROPERTIES IMPORTED_LOCATION_DEBUG "${HLSL_LIBRARY_debug}")
+        if (MachineIndependent_LIBRARY_debug)
+            set_target_properties(glslang::MachineIndependent PROPERTIES IMPORTED_LOCATION_DEBUG "${MachineIndependent_LIBRARY_debug}")
+        endif()
+        if (GenericCodeGen_LIBRARY_debug)
+            set_target_properties(glslang::GenericCodeGen PROPERTIES IMPORTED_LOCATION_DEBUG "${GenericCodeGen_LIBRARY_debug}")
+        endif()
         if (SPIRV-Tools_LIBRARY_debug)
             set_target_properties(glslang::SPIRV-Tools PROPERTIES IMPORTED_LOCATION_DEBUG "${SPIRV-Tools_LIBRARY_debug}")
         endif()
         if (SPIRV-Tools-opt_LIBRARY_debug)
             set_target_properties(glslang::SPIRV-Tools-opt PROPERTIES IMPORTED_LOCATION_DEBUG "${SPIRV-Tools-opt_LIBRARY_debug}")
         endif()
-        set_target_properties(glslang::OGLCompiler PROPERTIES IMPORTED_LOCATION_DEBUG "${OGLCompiler_LIBRARY_debug}")
-        set_target_properties(glslang::HLSL PROPERTIES IMPORTED_LOCATION_DEBUG "${HLSL_LIBRARY_debug}")
     endif()
 
-    set(GLSLANG
-        glslang::glslang
-        glslang::OSDependent
-        glslang::SPIRV
-        glslang::OGLCompiler
-        glslang::HLSL
-    )
+
+    if (MachineIndependent_LIBRARY AND GenericCodeGen_LIBRARY)
+        # VULKAN_SDK and associated glslang 1.2.147.1 onwards
+        set(glslang_LIBRARIES
+            glslang::MachineIndependent
+            glslang::OSDependent
+            glslang::OGLCompiler
+            glslang::SPIRV
+            glslang::GenericCodeGen
+        )
+    else()
+        # VULKAN_SDK and associated glslang before 1.2.147.1
+        set(glslang_LIBRARIES
+            glslang::glslang
+            glslang::OSDependent
+            glslang::OGLCompiler
+            glslang::SPIRV
+            glslang::HLSL
+        )
+    endif()
 
     if (SPIRV-Tools-opt_LIBRARY)
-        list(APPEND GLSLANG glslang::SPIRV-Tools-opt)
+        list(APPEND glslang_LIBRARIES glslang::SPIRV-Tools-opt)
     endif()
     if (SPIRV-Tools_LIBRARY)
-        list(APPEND GLSLANG glslang::SPIRV-Tools)
+        list(APPEND glslang_LIBRARIES glslang::SPIRV-Tools)
     endif()
 
 endif()
-

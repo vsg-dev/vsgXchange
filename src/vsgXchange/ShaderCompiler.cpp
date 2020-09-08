@@ -1,7 +1,7 @@
 #include <vsgXchange/ShaderCompiler.h>
 
 #include <glslang/Public/ShaderLang.h>
-#include <SPIRV/GlslangToSpv.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 
 #include "../glsl/ResourceLimits.h"
 

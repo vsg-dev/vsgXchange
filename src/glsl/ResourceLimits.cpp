@@ -38,7 +38,16 @@
 #include <cctype>
 
 #include "ResourceLimits.h"
-#include <glslang/Include/revision.h>
+
+#ifdef GLSLANG_HAS_BUILD_INFO_H
+    // new glslang system for versioning
+    #include <glslang/build_info.h>
+    #define HAS_maxDualSourceDrawBuffersEXT 1
+#else
+    // old glslang system for versioning
+    #include <glslang/Include/revision.h>
+    #define HAS_maxDualSourceDrawBuffersEXT (GLSLANG_PATCH_LEVEL > 3727)
+#endif
 
 namespace glslang {
 
@@ -136,7 +145,7 @@ const TBuiltInResource DefaultTBuiltInResource = {
     /* .maxTaskWorkGroupSizeZ_NV = */ 1,
     /* .maxMeshViewCountNV = */ 4,
 
-#if GLSLANG_PATCH_LEVEL > 3727
+#if HAS_maxDualSourceDrawBuffersEXT
     /* .maxDualSourceDrawBuffersEXT =*/  1,
 #endif
 
