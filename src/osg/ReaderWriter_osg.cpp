@@ -86,11 +86,11 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
 
                 auto resourceHints = vsg::ResourceHints::create();
 
-                resourceHints->setMaxSlot(collectStats.maxSlot);
-                resourceHints->setNumDescriptorSets(collectStats.computeNumDescriptorSets() * tileMultiplier);
-                resourceHints->setDescriptorPoolSizes(collectStats.computeDescriptorPoolSizes());
+                resourceHints->maxSlot = collectStats.maxSlot;
+                resourceHints->numDescriptorSets = static_cast<uint32_t >(collectStats.computeNumDescriptorSets() * tileMultiplier);
+                resourceHints->descriptorPoolSizes = collectStats.computeDescriptorPoolSizes();
 
-                for(auto& poolSize : resourceHints->getDescriptorPoolSizes())
+                for(auto& poolSize : resourceHints->descriptorPoolSizes)
                 {
                     poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
                 }

@@ -192,7 +192,7 @@ namespace osg2vsg
         }
     }
 
-    VkSamplerCreateInfo convertToSamplerCreateInfo(const osg::Texture* texture)
+    vsg::ref_ptr<vsg::Sampler> convertToSampler(const osg::Texture* texture)
     {
         auto minFilter = texture->getFilter(osg::Texture::MIN_FILTER);
         auto magFilter = texture->getFilter(osg::Texture::MAG_FILTER);
@@ -200,18 +200,18 @@ namespace osg2vsg
         auto magFilterMipmapMode = convertToFilterAndMipmapMode(magFilter);
         bool mipmappingRequired = (minFilter!=osg::Texture::NEAREST) && (minFilter!=osg::Texture::LINEAR);
 
-        VkSamplerCreateInfo samplerInfo = {};
-        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.minFilter = minFilterMipmapMode.first;
-        samplerInfo.magFilter = magFilterMipmapMode.first;
-        samplerInfo.mipmapMode = minFilterMipmapMode.second;
-        samplerInfo.addressModeU = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_S));
-        samplerInfo.addressModeV = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_T));
-        samplerInfo.addressModeW = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_R));
+        auto sampler = vsg::Sampler::create();
+
+        sampler->minFilter = minFilterMipmapMode.first;
+        sampler->magFilter = magFilterMipmapMode.first;
+        sampler->mipmapMode = minFilterMipmapMode.second;
+        sampler->addressModeU = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_S));
+        sampler->addressModeV = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_T));
+        sampler->addressModeW = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_R));
 
         // requres Logical device to have deviceFeatures.samplerAnisotropy = VK_TRUE; set when creating the vsg::Deivce
-        samplerInfo.anisotropyEnable = texture->getMaxAnisotropy()>1.0f ? VK_TRUE : VK_FALSE;
-        samplerInfo.maxAnisotropy = texture->getMaxAnisotropy();
+        sampler->anisotropyEnable = texture->getMaxAnisotropy()>1.0f ? VK_TRUE : VK_FALSE;
+        sampler->maxAnisotropy = texture->getMaxAnisotropy();
 
         if (mipmappingRequired)
         {
@@ -220,33 +220,33 @@ namespace osg2vsg
             auto maxDimension = std::max({image->s(), image->t(), image->r()});
             auto numMipMapLevels = static_cast<uint32_t>(std::floor(std::log2(maxDimension)))+1;
 
-            samplerInfo.minLod = 0;
-            samplerInfo.maxLod = static_cast<float>(numMipMapLevels);
-            samplerInfo.mipLodBias = 0;
+            sampler->minLod = 0;
+            sampler->maxLod = static_cast<float>(numMipMapLevels);
+            sampler->mipLodBias = 0;
         }
         else
         {
-            samplerInfo.minLod = 0;
-            samplerInfo.maxLod = 0;
-            samplerInfo.mipLodBias = 0;
+            sampler->minLod = 0;
+            sampler->maxLod = 0;
+            sampler->mipLodBias = 0;
         }
 
         // Vulkan doesn't supoort a vec4 border colour so have to map across to the enum's based on a best fit.
         osg::Vec4 borderColor = texture->getBorderColor();
         if (borderColor.a() < 0.5f)
         {
-            samplerInfo.borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+            sampler->borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
         }
         else
         {
             bool nearerWhite = (borderColor.r() + borderColor.g() + borderColor.b()) >= 1.5f;
-            samplerInfo.borderColor = nearerWhite ? VK_BORDER_COLOR_INT_OPAQUE_WHITE : VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            sampler->borderColor = nearerWhite ? VK_BORDER_COLOR_INT_OPAQUE_WHITE : VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         }
 
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable = VK_FALSE;
+        sampler->unnormalizedCoordinates = VK_FALSE;
+        sampler->compareEnable = VK_FALSE;
 
-        return samplerInfo;
+        return sampler;
     }
 
     vsg::ref_ptr<vsg::materialValue> convertToMaterialValue(const osg::Material* material)

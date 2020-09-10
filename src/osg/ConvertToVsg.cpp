@@ -27,13 +27,13 @@ vsg::ref_ptr<vsg::BindDescriptorSet> ConvertToVsg::getOrCreateBindDescriptorSet(
     auto bindGraphicsPipeline = getOrCreateBindGraphicsPipeline(shaderModeMask, geometryMask);
     if (!bindGraphicsPipeline) return {};
 
-    auto pipeline = bindGraphicsPipeline->getPipeline();
+    auto pipeline = bindGraphicsPipeline->pipeline;
     if (!pipeline) return {};
 
-    auto pipelineLayout = pipeline->getPipelineLayout();
+    auto pipelineLayout = pipeline->layout;
     if (!pipelineLayout) return {};
 
-    auto descriptorSet = createVsgStateSet(pipelineLayout->getDescriptorSetLayouts().front(), stateset, shaderModeMask);
+    auto descriptorSet = createVsgStateSet(pipelineLayout->setLayouts.front(), stateset, shaderModeMask);
     if (!descriptorSet) return {};
 
     // std::cout<<"   We have descriptorSet "<<descriptorSet<<std::endl;

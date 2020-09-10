@@ -28,13 +28,13 @@ bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filen
     if (ext=="spv")
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-        const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
+        const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
         if (sm)
         {
-            if (!sm->spirv().empty())
+            if (!sm->code.empty())
             {
                 std::ofstream fout(filename);
-                fout.write(reinterpret_cast<const char*>(sm->spirv().data()), sm->spirv().size() * sizeof(vsg::ShaderModule::SPIRV::value_type));
+                fout.write(reinterpret_cast<const char*>(sm->code.data()), sm->code.size() * sizeof(vsg::ShaderModule::SPIRV::value_type));
                 fout.close();
                 return true;
             }

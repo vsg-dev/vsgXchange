@@ -67,13 +67,13 @@ bool ReaderWriter_glsl::write(const vsg::Object* object, const vsg::Path& filena
     if (stage_itr != extensionToStage.end())
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
-        const vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<const vsg::ShaderModule*>(object);
+        const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
         if (sm)
         {
-            if (!sm->source().empty())
+            if (!sm->source.empty())
             {
                 std::ofstream fout(filename);
-                fout.write(sm->source().data(), sm->source().size());
+                fout.write(sm->source.data(), sm->source.size());
                 fout.close();
                 return true;
             }

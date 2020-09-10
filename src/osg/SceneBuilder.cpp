@@ -246,8 +246,7 @@ vsg::ref_ptr<vsg::DescriptorImage> SceneBuilderBase::convertToVsgTexture(const o
         return vsg::ref_ptr<vsg::DescriptorImage>();
     }
 
-    vsg::ref_ptr<vsg::Sampler> sampler = vsg::Sampler::create();
-    sampler->info() = convertToSamplerCreateInfo(osgtexture);
+    vsg::ref_ptr<vsg::Sampler> sampler = convertToSampler(osgtexture);
 
     auto texture = vsg::DescriptorImage::create(sampler, textureData, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     texturesMap[osgtexture] = texture;
@@ -271,7 +270,7 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
             if (vsgtex)
             {
                 // shaders are looking for textures in original units
-                vsgtex->_dstBinding = i;
+                vsgtex->dstBinding = i;
                 descriptors.push_back(vsgtex);
             }
             else
@@ -876,8 +875,8 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 
         graphicsPipelineGroup->add(bindGraphicsPipeline);
 
-        auto graphicsPipeline = bindGraphicsPipeline->getPipeline();
-        auto& descriptorSetLayouts = graphicsPipeline->getPipelineLayout()->getDescriptorSetLayouts();
+        auto graphicsPipeline = bindGraphicsPipeline->pipeline;
+        auto& descriptorSetLayouts = graphicsPipeline->layout->setLayouts;
 
         // attach based on use of transparency
         if(shaderModeMask & BLEND)
@@ -903,12 +902,12 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 
                 if (buildOptions->useBindDescriptorSet)
                 {
-                    auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getPipelineLayout(), 0, descriptorSet);
+                    auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->layout, 0, descriptorSet);
                     stategroup->add(bindDescriptorSet);
                 }
                 else
                 {
-                    auto bindDescriptorSets = vsg::BindDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->getPipelineLayout(), 0, vsg::DescriptorSets{descriptorSet});
+                    auto bindDescriptorSets = vsg::BindDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline->layout, 0, vsg::DescriptorSets{descriptorSet});
                     stategroup->add(bindDescriptorSets);
                 }
             }

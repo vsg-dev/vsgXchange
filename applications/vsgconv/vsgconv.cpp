@@ -318,8 +318,8 @@ int main(int argc, char** argv)
         for(auto& object : vsgObjects)
         {
             vsg::ShaderStage* ss = dynamic_cast<vsg::ShaderStage*>(object.get());
-            vsg::ShaderModule* sm = ss ? ss->getShaderModule() : dynamic_cast<vsg::ShaderModule*>(object.get());
-            if (sm && !sm->source().empty() && sm->spirv().empty())
+            vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<vsg::ShaderModule*>(object.get());
+            if (sm && !sm->source.empty() && sm->code.empty())
             {
                 if (ss) stagesToCompile.emplace_back(ss);
                 else stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
