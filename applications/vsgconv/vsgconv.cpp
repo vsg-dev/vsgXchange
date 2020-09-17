@@ -6,7 +6,7 @@
 #include <thread>
 
 #include <vsgXchange/ReaderWriter_all.h>
-#include <vsgXchange/ShaderCompiler.h>
+#include <vsg/vk/ShaderCompiler.h>
 
 namespace vsgconv
 {
@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 
         if (!stagesToCompile.empty())
         {
-            vsg::ref_ptr<vsgXchange::ShaderCompiler> shaderCompiler(new vsgXchange::ShaderCompiler());
+            vsg::ref_ptr<vsg::ShaderCompiler> shaderCompiler(new vsg::ShaderCompiler());
             shaderCompiler->compile(stagesToCompile);
         }
 

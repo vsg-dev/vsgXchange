@@ -73,9 +73,6 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(vsg REQUIRED)
 
-# Find GLSLang, use local find script as one isn't generally available yet.
-find_package(vsgXchange_glslang REQUIRED CONFIG PATHS ${VSGXCHANGE_SOURCE_DIR}/src)
-
 
 add_custom_target(clobber
     COMMAND git clean -d -f -x
