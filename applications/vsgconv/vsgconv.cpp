@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 
         if (!stagesToCompile.empty())
         {
-            vsg::ref_ptr<vsg::ShaderCompiler> shaderCompiler(new vsg::ShaderCompiler());
+            auto shaderCompiler = vsg::ShaderCompiler::create();
             shaderCompiler->compile(stagesToCompile);
         }
 
@@ -353,6 +353,9 @@ int main(int argc, char** argv)
             }
             vsg_scene = group;
         }
+
+        auto shaderCompiler = vsg::ShaderCompiler::create();
+        vsg_scene->accept(*shaderCompiler);
 
         if (batchLeafData)
         {
