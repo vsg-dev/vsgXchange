@@ -11,8 +11,6 @@
 #include <osg/Billboard>
 #include <osg/MatrixTransform>
 
-#include <vsg/vk/ShaderCompiler.h>
-
 #include "ShaderUtils.h"
 #include "GeometryUtils.h"
 
