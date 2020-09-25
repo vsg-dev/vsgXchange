@@ -20,8 +20,20 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-# add optional OpenScneeGraph components
+# add freetype if vailable
+find_package(Freetype)
+if(FREETYPE_FOUND)
+    set(SOURCES ${SOURCES}
+        freetype/FreeTypeFont.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
+endif()
+
+# add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
+
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
