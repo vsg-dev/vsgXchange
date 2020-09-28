@@ -100,20 +100,21 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     std::multiset<GlyphQuad> sortedGlyphQuads;
 
+    bool hasSpace = false;
+
     // collect all the sizes of the glyphs
     {
         FT_ULong  charcode;
         FT_UInt   glyph_index;
 
-        charcode = FT_Get_First_Char( face, &glyph_index );
+        charcode = FT_Get_First_Char(face, &glyph_index);
         while ( glyph_index != 0 )
         {
-            charcode = FT_Get_Next_Char( face, charcode, &glyph_index );
+            charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
 
-            error = FT_Load_Glyph(
-                face,          /* handle to face object */
-                glyph_index,   /* glyph index           */
-                load_flags );
+            error = FT_Load_Glyph(face, glyph_index, load_flags);
+
+            if (error) continue;
 
             GlyphQuad quad{
                 charcode,
@@ -122,55 +123,108 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
                 static_cast<unsigned int >(ceil(double(face->glyph->metrics.height)/64.0))
             };
 
+            if (charcode==32) hasSpace = true;
+
             sortedGlyphQuads.insert(quad);
         }
     }
 
-    unsigned int provisional_cells_width = static_cast<unsigned int>(ceil(sqrt(double(face->num_glyphs))));
-    unsigned int provisional_width = provisional_cells_width * pixel_size;
+    if (!hasSpace)
+    {
+        FT_ULong charcode = 32;
+        FT_UInt glyph_index = FT_Get_Char_Index( face, charcode);
 
-    unsigned int xpos = 0;
-    unsigned int ypos = 0;
-    unsigned int xtop = 0;
-    unsigned int ytop = 0;
-    unsigned int margin = 8;
+        if (glyph_index != 0)
+        {
+            error = FT_Load_Glyph(face, glyph_index, load_flags);
+
+            if (!error)
+            {
+                GlyphQuad quad{
+                    charcode,
+                    glyph_index,
+                    static_cast<unsigned int >(ceil(double(face->glyph->metrics.width)/64.0)),
+                    static_cast<unsigned int >(ceil(double(face->glyph->metrics.height)/64.0))
+                };
+
+                sortedGlyphQuads.insert(quad);
+
+                hasSpace = true;
+            }
+        }
+    }
+
+
+    double total_width = 0.0;
+    double total_height = 0.0;
+    for(auto& glyph : sortedGlyphQuads)
+    {
+        total_width += double(glyph.width);
+        total_height += double(glyph.height);
+    }
+
+    double average_width = total_width / double(sortedGlyphQuads.size());
+    double average_height = total_height / double(sortedGlyphQuads.size());
+
+    std::cout<<"average_width = "<<average_width<<", average_height ="<<average_height<<" hasSpace = "<<hasSpace<<std::endl;
+
+    unsigned int texel_margin = pixel_size/4;
+
+    unsigned int provisional_cells_across = static_cast<unsigned int>(ceil(sqrt(double(face->num_glyphs))));
+    unsigned int provisional_width = provisional_cells_across * (average_width+texel_margin);
+
+    //provisional_width = 1024;
+
+    unsigned int xpos = texel_margin;
+    unsigned int ypos = texel_margin;
+    unsigned int xtop = 2*texel_margin;
+    unsigned int ytop = 2*texel_margin;
     for(auto& glyphQuad : sortedGlyphQuads)
     {
         unsigned int width = glyphQuad.width;
         unsigned int height = glyphQuad.height;
 
-        if ((xpos + width + margin) > provisional_width)
+        if ((xpos + width + texel_margin) > provisional_width)
         {
             // glyph doesn't fit in present row so shift to next row.
-            xpos = 0;
+            xpos = texel_margin;
             ypos = ytop;
         }
 
-        unsigned int local_ytop = ypos + height + margin;
+        unsigned int local_ytop = ypos + height + texel_margin;
         if (local_ytop > ytop) ytop = local_ytop;
 
-        xpos += (width + margin);
+        xpos += (width + texel_margin);
         if (xpos > xtop) xtop = xpos;
     }
 
+    std::cout<<"provisional_width = "<<provisional_width<<", xtop = "<<xtop<<", ytop = "<<ytop<<std::endl;
+
+    //xtop = provisional_width;
+
     auto atlas = vsg::ubyteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_UNORM});
+
+    // initialize to zeros
+    for(auto& c : *atlas) c = 0;//127;
 
     auto font = vsg::Font::create();
     font->atlas = atlas;
 
-    xpos = 0;
-    ypos = 0;
+    int quad_margin = texel_margin/2;
+
+    xpos = texel_margin;
+    ypos = texel_margin;
     ytop = 0;
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {
         error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
-        if (error!=0) continue;
+        if (error) continue;
 
         if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
         {
             error = FT_Render_Glyph( face->glyph, render_mode );
-            if (error!=0) continue;
+            if (error) continue;
         }
 
         if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) continue;
@@ -179,27 +233,51 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         unsigned int width = bitmap.width;
         unsigned int height = bitmap.rows;
 
-        if ((xpos + width + margin) > atlas->width())
+        if ((xpos + width + texel_margin) > atlas->width())
         {
             // glyph doesn't fit in present row so shift to next row.
-            xpos = 0;
+            xpos = texel_margin;
             ypos = ytop;
         }
 
+        // copy pixels
+
+#if 0
+
+        for(unsigned int r = 0; r<bitmap.rows; ++r)
+        {
+            std::size_t index = atlas->index(xpos, ypos+r);
+            atlas->at(index++) = 255;
+            unsigned char interior = 0;
+            if (r==0) interior = 255;
+            else if (r==bitmap.rows-1) interior = 255;
+            for(unsigned int c = 1; c<bitmap.width-1; ++c)
+            {
+                atlas->at(index++) = interior;
+            }
+            atlas->at(index++) = 255;
+        }
+#else
         const unsigned char* ptr = bitmap.buffer;
         for(unsigned int r = 0; r<bitmap.rows; ++r)
         {
             std::size_t index = atlas->index(xpos, ypos+r);
             for(unsigned int c = 0; c<bitmap.width; ++c)
             {
-                //atlas->at(index++) = c + r*glyphQuad.width;
+#if 1
                 atlas->at(index++) = *ptr++;
+#else
+                unsigned char texel = *ptr++;
+                if (texel==255) texel = 0;
+                atlas->at(index++) = texel;
+#endif
             }
         }
+#endif
 
         vsg::vec4 uvrect(
-            float(xpos)/float(atlas->width()-1), float(ypos + height)/float(atlas->height()-1),
-            float(xpos + width)/float(atlas->width()-1), float(ypos)/float(atlas->height()-1)
+            (float(xpos-quad_margin)-1.0f)/float(atlas->width()-1), float(ypos + height+quad_margin)/float(atlas->height()-1),
+            float(xpos + width + quad_margin)/float(atlas->width()-1), float((ypos-quad_margin)-1.0f)/float(atlas->height()-1)
         );
 
         auto metrics = face->glyph->metrics;
@@ -207,21 +285,21 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         vsg::Font::GlyphMetrics vsg_metrics;
         vsg_metrics.charcode = glyphQuad.charcode;
         vsg_metrics.uvrect = uvrect;
-        vsg_metrics.width = width/float(pixel_size);
-        vsg_metrics.height = height/float(pixel_size);
-        vsg_metrics.horiBearingX = (float(metrics.horiBearingX)/64.0f)/float(pixel_size);
-        vsg_metrics.horiBearingY = (float(metrics.horiBearingY)/64.0f)/float(pixel_size);
+        vsg_metrics.width = float(width+2*quad_margin)/float(pixel_size);
+        vsg_metrics.height = float(height+2*quad_margin)/float(pixel_size);
+        vsg_metrics.horiBearingX = (float(metrics.horiBearingX-quad_margin)/64.0f)/float(pixel_size);
+        vsg_metrics.horiBearingY = (float(metrics.horiBearingY-quad_margin)/64.0f)/float(pixel_size);
         vsg_metrics.horiAdvance = (float(metrics.horiAdvance)/64.0f)/float(pixel_size);
-        vsg_metrics.vertBearingX = (float(metrics.vertBearingX)/64.0f)/float(pixel_size);
-        vsg_metrics.vertBearingY = (float(metrics.vertBearingY)/64.0f)/float(pixel_size);
+        vsg_metrics.vertBearingX = (float(metrics.vertBearingX-quad_margin)/64.0f)/float(pixel_size);
+        vsg_metrics.vertBearingY = (float(metrics.vertBearingY-quad_margin)/64.0f)/float(pixel_size);
         vsg_metrics.vertAdvance = (float(metrics.vertAdvance)/64.0f)/float(pixel_size);
 
         font->glyphs[glyphQuad.charcode] = vsg_metrics;
 
-        unsigned int local_ytop = ypos + height + margin;
+        unsigned int local_ytop = ypos + height + texel_margin;
         if (local_ytop > ytop) ytop = local_ytop;
 
-        xpos += (width + margin);
+        xpos += (width + texel_margin);
         if (xpos > xtop) xtop = xpos;
     }
 
