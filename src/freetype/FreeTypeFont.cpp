@@ -205,7 +205,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     auto atlas = vsg::ubyteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_UNORM});
 
     // initialize to zeros
-    for(auto& c : *atlas) c = 0;//127;
+    for(auto& c : *atlas) c = 0;
 
     auto font = vsg::Font::create();
     font->atlas = atlas;
@@ -241,7 +241,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         }
 
         // copy pixels
-
 #if 0
 
         for(unsigned int r = 0; r<bitmap.rows; ++r)
@@ -264,13 +263,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             std::size_t index = atlas->index(xpos, ypos+r);
             for(unsigned int c = 0; c<bitmap.width; ++c)
             {
-#if 1
                 atlas->at(index++) = *ptr++;
-#else
-                unsigned char texel = *ptr++;
-                if (texel==255) texel = 0;
-                atlas->at(index++) = texel;
-#endif
             }
         }
 #endif
@@ -307,7 +300,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     font->normalisedLineHeight = 1.25;
     font->options = const_cast<vsg::Options*>(options.get());
 
-    std::cout<<"FreeTypeFont::read(filename = "<<filename<<") num_glyphs = "<<face->num_glyphs<<", sortedGlyphQuads.size() = "<<sortedGlyphQuads.size()<<", atlas->width() = "<<atlas->width()<< ", atlas->height() = "<<atlas->height()<<std::endl;
+    std::cout<<"FreeTypeFont::read(filename = "<<filename<<") num_glyphs = "<<face->num_glyphs<<", sortedGlyphQuads.size() = "<<sortedGlyphQuads.size()<<", atlas->width() = "<<atlas->width()<< ", atlas->height() = "<<atlas->height()<<" font->glyphs.size() = "<<font->glyphs.size()<<std::endl;
 
     return font;
 }
