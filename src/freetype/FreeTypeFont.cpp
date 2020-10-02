@@ -10,7 +10,6 @@ using namespace vsgXchange;
 #include <iostream>
 #include <set>
 
-
 ReaderWriter_freetype::ReaderWriter_freetype()
 {
     _supportedFormats[ "ttf"] = "true type font format";
@@ -169,6 +168,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     std::cout<<"average_width = "<<average_width<<", average_height ="<<average_height<<" hasSpace = "<<hasSpace<<std::endl;
 
     unsigned int texel_margin = pixel_size/4;
+    int quad_margin = texel_margin/2;
 
     unsigned int provisional_cells_across = static_cast<unsigned int>(ceil(sqrt(double(face->num_glyphs))));
     unsigned int provisional_width = provisional_cells_across * (average_width+texel_margin);
@@ -210,11 +210,83 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     auto font = vsg::Font::create();
     font->atlas = atlas;
 
-    int quad_margin = texel_margin/2;
 
     xpos = texel_margin;
     ypos = texel_margin;
     ytop = 0;
+
+    bool computeSDF = true;
+
+    auto nearerst_edge = [](const FT_Bitmap& glyph_bitmap, int c, int r, int delta) -> unsigned char
+    {
+        unsigned char value = 0;
+        if (c>=0 && c<static_cast<int>(glyph_bitmap.width) && r>=0 && r<static_cast<int>(glyph_bitmap.rows))
+        {
+            value = glyph_bitmap.buffer[c + r * glyph_bitmap.width];
+        }
+
+        float distance = 0.0f;
+        if (value==0)
+        {
+            distance = float(delta);
+
+            int begin_c = (c>delta) ? (c-delta) : 0;
+            int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
+            int begin_r = (r>delta) ? (r-delta) : 0;
+            int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
+            for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
+            {
+                for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
+                {
+                    unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
+                    if (local_value>0)
+                    {
+                        float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
+                        if (local_distance<distance) distance = local_distance;
+                    }
+                }
+            }
+            // flip the sign to signify distance outside glyph outline
+            distance = -distance;
+        }
+        else if (value==255)
+        {
+            distance = float(delta);
+
+            int begin_c = (c>delta) ? (c-delta) : 0;
+            int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
+            int begin_r = (r>delta) ? (r-delta) : 0;
+            int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
+            for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
+            {
+                for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
+                {
+                    unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
+                    if (local_value<255)
+                    {
+                        float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
+                        if (local_distance<distance) distance = local_distance;
+                    }
+                }
+            }
+            // flip the sign to signify distance outside glyph outline
+            distance = distance;
+        }
+        else
+        {
+            distance = (float(value)/255.0f - 0.5f);
+        }
+
+        if (distance <= -float(delta)) return 0;
+        else if (distance >= float(delta)) return 255;
+        else
+        {
+            float scaled_distance = distance*(128.0f/float(delta)) + 128.0f;
+            if (scaled_distance <= 0.0f) return 0;
+            if (scaled_distance >= 255.0f) return 255;
+            return static_cast<unsigned char>(scaled_distance);
+        }
+    };
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {
@@ -241,32 +313,30 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         }
 
         // copy pixels
-#if 0
-
-        for(unsigned int r = 0; r<bitmap.rows; ++r)
+        if (computeSDF)
         {
-            std::size_t index = atlas->index(xpos, ypos+r);
-            atlas->at(index++) = 255;
-            unsigned char interior = 0;
-            if (r==0) interior = 255;
-            else if (r==bitmap.rows-1) interior = 255;
-            for(unsigned int c = 1; c<bitmap.width-1; ++c)
+            int delta = quad_margin-2;
+            for(int r = -delta; r<static_cast<int>(bitmap.rows+delta); ++r)
             {
-                atlas->at(index++) = interior;
-            }
-            atlas->at(index++) = 255;
-        }
-#else
-        const unsigned char* ptr = bitmap.buffer;
-        for(unsigned int r = 0; r<bitmap.rows; ++r)
-        {
-            std::size_t index = atlas->index(xpos, ypos+r);
-            for(unsigned int c = 0; c<bitmap.width; ++c)
-            {
-                atlas->at(index++) = *ptr++;
+                std::size_t index = atlas->index(xpos-delta, ypos+r);
+                for(int c = -delta; c<static_cast<int>(bitmap.width + delta); ++c)
+                {
+                    atlas->at(index++) = nearerst_edge(bitmap, c, r, quad_margin);
+                }
             }
         }
-#endif
+        else
+        {
+            const unsigned char* ptr = bitmap.buffer;
+            for(unsigned int r = 0; r<bitmap.rows; ++r)
+            {
+                std::size_t index = atlas->index(xpos, ypos+r);
+                for(unsigned int c = 0; c<bitmap.width; ++c)
+                {
+                    atlas->at(index++) = *ptr++;
+                }
+            }
+        }
 
         vsg::vec4 uvrect(
             (float(xpos-quad_margin)-1.0f)/float(atlas->width()-1), float(ypos + height+quad_margin)/float(atlas->height()-1),
