@@ -49,6 +49,77 @@ void ReaderWriter_freetype::init() const
     // std::cout<<"ReaderWriter_freetype() FT_Init_FreeType library = "<<_library<<std::endl;
 }
 
+unsigned char ReaderWriter_freetype::nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const
+{
+    unsigned char value = 0;
+    if (c>=0 && c<static_cast<int>(glyph_bitmap.width) && r>=0 && r<static_cast<int>(glyph_bitmap.rows))
+    {
+        value = glyph_bitmap.buffer[c + r * glyph_bitmap.width];
+    }
+
+    float distance = 0.0f;
+    if (value==0)
+    {
+        distance = float(delta);
+
+        int begin_c = (c>delta) ? (c-delta) : 0;
+        int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
+        int begin_r = (r>delta) ? (r-delta) : 0;
+        int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
+        for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
+        {
+            for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
+            {
+                unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
+                if (local_value>0)
+                {
+                    float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
+                    if (local_distance<distance) distance = local_distance;
+                }
+            }
+        }
+        // flip the sign to signify distance outside glyph outline
+        distance = -distance;
+    }
+    else if (value==255)
+    {
+        distance = float(delta);
+
+        int begin_c = (c>delta) ? (c-delta) : 0;
+        int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
+        int begin_r = (r>delta) ? (r-delta) : 0;
+        int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
+        for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
+        {
+            for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
+            {
+                unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
+                if (local_value<255)
+                {
+                    float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
+                    if (local_distance<distance) distance = local_distance;
+                }
+            }
+        }
+        // flip the sign to signify distance outside glyph outline
+        distance = distance;
+    }
+    else
+    {
+        distance = (float(value)/255.0f - 0.5f);
+    }
+
+    if (distance <= -float(delta)) return 0;
+    else if (distance >= float(delta)) return 255;
+    else
+    {
+        float scaled_distance = distance*(128.0f/float(delta)) + 128.0f;
+        if (scaled_distance <= 0.0f) return 0;
+        if (scaled_distance >= 255.0f) return 255;
+        return static_cast<unsigned char>(scaled_distance);
+    }
+}
+
 vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::fileExtension(filename);
@@ -217,76 +288,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     bool computeSDF = true;
 
-    auto nearerst_edge = [](const FT_Bitmap& glyph_bitmap, int c, int r, int delta) -> unsigned char
-    {
-        unsigned char value = 0;
-        if (c>=0 && c<static_cast<int>(glyph_bitmap.width) && r>=0 && r<static_cast<int>(glyph_bitmap.rows))
-        {
-            value = glyph_bitmap.buffer[c + r * glyph_bitmap.width];
-        }
-
-        float distance = 0.0f;
-        if (value==0)
-        {
-            distance = float(delta);
-
-            int begin_c = (c>delta) ? (c-delta) : 0;
-            int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
-            int begin_r = (r>delta) ? (r-delta) : 0;
-            int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
-            for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
-            {
-                for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
-                {
-                    unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
-                    if (local_value>0)
-                    {
-                        float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
-                        if (local_distance<distance) distance = local_distance;
-                    }
-                }
-            }
-            // flip the sign to signify distance outside glyph outline
-            distance = -distance;
-        }
-        else if (value==255)
-        {
-            distance = float(delta);
-
-            int begin_c = (c>delta) ? (c-delta) : 0;
-            int end_c = (c+delta+1)<static_cast<int>(glyph_bitmap.width) ? (c+delta+1) : glyph_bitmap.width;
-            int begin_r = (r>delta) ? (r-delta) : 0;
-            int end_r = (r+delta+1)<static_cast<int>(glyph_bitmap.rows) ? (r+delta+1) : glyph_bitmap.rows;
-            for(int compare_r = begin_r; compare_r<end_r; ++compare_r)
-            {
-                for(int compare_c = begin_c; compare_c<end_c; ++compare_c)
-                {
-                    unsigned char local_value = glyph_bitmap.buffer[compare_c + compare_r * glyph_bitmap.width];
-                    if (local_value<255)
-                    {
-                        float local_distance = sqrt(float((compare_c-c)*(compare_c-c) + (compare_r-r)*(compare_r-r))) - float(local_value)/255.0f + 0.5f;
-                        if (local_distance<distance) distance = local_distance;
-                    }
-                }
-            }
-            // flip the sign to signify distance outside glyph outline
-            distance = distance;
-        }
-        else
-        {
-            distance = (float(value)/255.0f - 0.5f);
-        }
-
-        if (distance <= -float(delta)) return 0;
-        else if (distance >= float(delta)) return 255;
-        else
-        {
-            float scaled_distance = distance*(128.0f/float(delta)) + 128.0f;
-            if (scaled_distance <= 0.0f) return 0;
-            if (scaled_distance >= 255.0f) return 255;
-            return static_cast<unsigned char>(scaled_distance);
-        }
-    };
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {

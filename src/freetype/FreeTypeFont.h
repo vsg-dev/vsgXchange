@@ -25,6 +25,8 @@ namespace vsgXchange
 
         virtual ~ReaderWriter_freetype();
 
+        unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
+
         std::map<std::string, std::string> _supportedFormats;
         mutable std::mutex _mutex;
         mutable FT_Library _library = nullptr;
