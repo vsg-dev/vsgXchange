@@ -149,7 +149,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         return {};
     }
 
-    FT_UInt pixel_size = 32;
+    FT_UInt pixel_size = 64;
 
     {
         error = FT_Set_Pixel_Sizes(face, pixel_size, pixel_size );
@@ -273,7 +273,16 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     //xtop = provisional_width;
 
+#if 0
     auto atlas = vsg::ubyteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_UNORM});
+    float max_value = std::numeric_limits<vsg::ubyteArray2D::value_type>::max() ;
+    float mid_value = ceil(max_value/2.0f);
+#else
+    auto atlas = vsg::ushortArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R16_UNORM});
+    float max_value = std::numeric_limits<vsg::ushortArray2D::value_type>::max() ;
+    float mid_value = ceil(max_value/2.0f);
+#endif
+    std::cout<<"max_value = "<<max_value<<" mid_value ="<<mid_value<<std::endl;
 
     // initialize to zeros
     for(auto& c : *atlas) c = 0;
@@ -286,25 +295,18 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     ypos = texel_margin;
     ytop = 0;
 
-    bool computeSDF = true;
 
+    bool useOutline = true;
+    bool computeSDF = true;
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {
         error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
         if (error) continue;
 
-        if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
-        {
-            error = FT_Render_Glyph( face->glyph, render_mode );
-            if (error) continue;
-        }
-
-        if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) continue;
-
-        const FT_Bitmap& bitmap = face->glyph->bitmap;
-        unsigned int width = bitmap.width;
-        unsigned int height = bitmap.rows;
+        unsigned int width = glyphQuad.width;
+        unsigned int height = glyphQuad.height;
+        auto metrics = face->glyph->metrics;
 
         if ((xpos + width + texel_margin) > atlas->width())
         {
@@ -313,28 +315,271 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             ypos = ytop;
         }
 
-        // copy pixels
-        if (computeSDF)
+        if (useOutline)
         {
-            int delta = quad_margin-2;
-            for(int r = -delta; r<static_cast<int>(bitmap.rows+delta); ++r)
+
+            using Contour = std::vector<vsg::vec2>;
+            using Contours = std::list<Contour>;
+
+            //std::cout<<"charcode = "<<glyphQuad.charcode<<", width = "<<width<<", height = "<<height<<std::endl;
+            //std::cout<<"   face->glyph->outline.n_contours = "<<face->glyph->outline.n_contours<<std::endl;
+            //std::cout<<"   face->glyph->outline.n_points = "<<face->glyph->outline.n_points<<std::endl;
+            auto moveTo = [] ( const FT_Vector* to, void* user ) -> int
             {
-                std::size_t index = atlas->index(xpos-delta, ypos+r);
-                for(int c = -delta; c<static_cast<int>(bitmap.width + delta); ++c)
+                Contours* contours = reinterpret_cast<Contours*>(user);
+                contours->push_back(Contour());
+                Contour& contour = contours->back();
+                contour.emplace_back(float(to->x)/64.0f, float(to->y)/64.0f);
+                return 0;
+            };
+
+            auto lineTo = [] ( const FT_Vector* to, void* user ) -> int
+            {
+                Contours* contours = reinterpret_cast<Contours*>(user);
+                Contour& contour = contours->back();
+                contour.emplace_back(float(to->x)/64.0f, float(to->y)/64.0f);
+                return 0;
+            };
+
+            auto conicTo = [] ( const FT_Vector* control, const FT_Vector* to, void* user ) -> int
+            {
+                Contours* contours = reinterpret_cast<Contours*>(user);
+                Contour& contour = contours->back();
+
+                vsg::vec2 p0(contour.back());
+                vsg::vec2 p1(float(control->x)/64.0f, float(control->y)/64.0f);
+                vsg::vec2 p2(float(to->x)/64.0f, float(to->y)/64.0f);
+
+                //contour.push_back(p2);
+                //return 0;
+
+                int numSteps = 10;
+
+                float dt = 1.0/float(numSteps);
+                float u=0;
+                for (int i=0; i<=numSteps; ++i)
                 {
-                    atlas->at(index++) = nearerst_edge(bitmap, c, r, quad_margin);
+                    float w = 1.0f;
+                    float bs = 1.0f/( (1.0f-u)*(1.0f-u)+2.0f*(1.0f-u)*u*w +u*u );
+                    vsg::vec2 p = (p0*((1.0f-u)*(1.0f-u)) + p1*(2.0f*(1.0f-u)*u*w) + p2*(u*u))*bs;
+                    contour.push_back( p );
+                    u += dt;
                 }
+                return 0;
+            };
+
+            auto cubicTo = [] ( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user ) -> int
+            {
+                Contours* contours = reinterpret_cast<Contours*>(user);
+                Contour& contour = contours->back();
+
+                vsg::vec2 p0(contour.back());
+                vsg::vec2 p1(float(control1->x)/64.0f, float(control1->y)/64.0f);
+                vsg::vec2 p2(float(control2->x)/64.0f, float(control2->y)/64.0f);
+                vsg::vec2 p3(float(to->x)/64.0f, float(to->y)/64.0f);
+
+                //contour.push_back(p3);
+                //return 0;
+
+                int numSteps = 10;
+
+                float cx = 3.0f*(p1.x - p0.x);
+                float bx = 3.0f*(p2.x - p1.x) - cx;
+                float ax = p3.x - p0.x - cx - bx;
+                float cy = 3.0f*(p1.y - p0.y);
+                float by = 3.0f*(p2.y - p1.y) - cy;
+                float ay = p3.y - p0.y - cy - by;
+
+                float dt = 1.0f/float(numSteps);
+                float u=0.0f;
+                for (int i=0; i<=numSteps; ++i)
+                {
+                    vsg::vec2 p(ax*u*u*u + bx*u*u  + cx*u + p0.x,
+                                ay*u*u*u + by*u*u  + cy*u + p0.y);
+                    contour.push_back( p );
+                    u += dt;
+                }
+                return 0;
+            };
+
+            auto& outline = face->glyph->outline;
+
+            FT_Outline_Funcs funcs;
+            funcs.move_to = moveTo;
+            funcs.line_to = lineTo;
+            funcs.conic_to = conicTo;
+            funcs.cubic_to = cubicTo;
+            funcs.shift = 0;
+            funcs.delta = 0;
+
+            Contours contours;
+
+            // ** record description
+            error = FT_Outline_Decompose(&outline, &funcs, &contours);
+
+            if (error != 0)
+            {
+                std::cout<<"Warning: could not decomposs outline"<<error<<" for "<<glyphQuad.charcode<<std::endl;
+                continue;
+            }
+
+            vsg::vec2 offset(float(metrics.horiBearingX)/64.0f, float(metrics.horiBearingY)/64.0f);
+            for(auto& contour : contours)
+            {
+                for(auto& v : contour)
+                {
+                    v.set(v.x - offset.x, offset.y - v.y);
+                }
+            }
+#if 0
+            std::cout<<"error = "<<error<<std::endl;
+            std::cout<<"contours.size() = "<<contours.size()<<std::endl;
+            std::cout<<"offset = "<<offset<<std::endl;
+#endif
+            auto nearest_contour_edge = [](const Contours& local_contours, int r, int c) -> float
+            {
+                vsg::vec2 v;
+                v.set(float(r), float(c));
+                float min_distance = std::numeric_limits<float>::max();
+                for(auto& contour : local_contours)
+                {
+
+                    for(size_t i=0; i<contour.size()-1; ++i)
+                    {
+                        auto& p0 = contour[i];
+                        auto& p1 = contour[i+1];
+                        vsg::vec2 p1_p0 = p1-p0;
+                        vsg::vec2 v_p0 = v-p0;
+                        vsg::vec2 v_p1 = v-p1;
+                        float dot_v_p0 = vsg::dot(v_p0, p1_p0);
+                        float dot_v_p1 = vsg::dot(v_p1, p1_p0);
+
+                        float distance;
+                        if (dot_v_p0<=0.0f)
+                        {
+                            distance = vsg::length(v - p0);
+                            // std::cout<<"    distance from p0 = "<<distance<<"\n";
+                        }
+                        else if (dot_v_p1>=0.0f)
+                        {
+                            distance = vsg::length(v - p1);
+                            // std::cout<<"    distance from p1 = "<<distance<<"\n";
+                        }
+                        else
+                        {
+                            distance = vsg::cross(v_p0, p1_p0) / vsg::length(p1_p0);
+                            if (distance<0.0f)
+                            {
+                                // std::cout<<"    Flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
+                                distance = -distance;
+                            }
+                            else
+                            {
+                                // std::cout<<"    Not flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
+                            }
+                        }
+
+                        if (distance<min_distance) min_distance = distance;
+                    }
+                }
+                return min_distance;
+            };
+
+
+            auto outside_contours = [](const Contours& local_contours, int row, int col) -> bool
+            {
+                vsg::vec2 v;
+                v.set(float(row+0.001f), float(col+0.001f));
+                uint32_t numLeft = 0;
+                for(auto& contour : local_contours)
+                {
+                    for(size_t i=0; i<contour.size()-1; ++i)
+                    {
+                        auto& p0 = contour[i];
+                        auto& p1 = contour[i+1];
+                        if (p0.y == p1.y) // horizontal
+                        {
+                            if ((v.y == p0.y) && between(p0.x, v.x, p1.x)) return false;
+                        }
+                        else if (between(p0.y, v.y, p1.y))
+                        {
+                            if (between(p0.x, v.x, p1.x))
+                            {
+                                // need to intersection test
+                                float r = (v.y - p0.y) / (p1.y - p0.y);
+                                float x_itersection = p0.x + (p1.x - p0.x)*r;
+                                if (x_itersection < v.x) ++numLeft;
+                            }
+                            else if (p0.x < v.x && p1.x < v.x)
+                            {
+                                ++numLeft;
+                            }
+                        }
+                    }
+                }
+                return (numLeft % 2)==0;
+            };
+
+            if (!contours.empty())
+            {
+                float scale = 1.0f/float(quad_margin);
+                int delta = quad_margin-2;
+                for(int r = -delta; r<static_cast<int>(height+delta); ++r)
+                {
+                    std::size_t index = atlas->index(xpos-delta, ypos+r);
+                    for(int c = -delta; c<static_cast<int>(width + delta); ++c)
+                    {
+                        auto min_distance = nearest_contour_edge(contours, c, r);
+                        if (outside_contours(contours, c, r)) min_distance = -min_distance;
+
+                        //std::cout<<"nearest_contour_edge("<<r<<", "<<c<<") min_distance = "<<min_distance<<std::endl;
+                        float distance_ratio = (min_distance)*scale;
+                        float v = mid_value + distance_ratio*mid_value;
+
+                        if (v<=0.0f) atlas->at(index++) = 0;
+                        else if (v>=max_value) atlas->at(index++) = max_value;
+                        else atlas->at(index++) = v;
+                    }
+                }
+
             }
         }
         else
         {
-            const unsigned char* ptr = bitmap.buffer;
-            for(unsigned int r = 0; r<bitmap.rows; ++r)
+            if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
             {
-                std::size_t index = atlas->index(xpos, ypos+r);
-                for(unsigned int c = 0; c<bitmap.width; ++c)
+                error = FT_Render_Glyph( face->glyph, render_mode );
+                if (error) continue;
+            }
+
+            if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) continue;
+
+            const FT_Bitmap& bitmap = face->glyph->bitmap;
+
+
+            // copy pixels
+            if (computeSDF)
+            {
+                int delta = quad_margin-2;
+                for(int r = -delta; r<static_cast<int>(bitmap.rows+delta); ++r)
                 {
-                    atlas->at(index++) = *ptr++;
+                    std::size_t index = atlas->index(xpos-delta, ypos+r);
+                    for(int c = -delta; c<static_cast<int>(bitmap.width + delta); ++c)
+                    {
+                        atlas->at(index++) = nearerst_edge(bitmap, c, r, quad_margin);
+                    }
+                }
+            }
+            else
+            {
+                const unsigned char* ptr = bitmap.buffer;
+                for(unsigned int r = 0; r<bitmap.rows; ++r)
+                {
+                    std::size_t index = atlas->index(xpos, ypos+r);
+                    for(unsigned int c = 0; c<bitmap.width; ++c)
+                    {
+                        atlas->at(index++) = *ptr++;
+                    }
                 }
             }
         }
@@ -343,8 +588,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             (float(xpos-quad_margin)-1.0f)/float(atlas->width()-1), float(ypos + height+quad_margin)/float(atlas->height()-1),
             float(xpos + width + quad_margin)/float(atlas->width()-1), float((ypos-quad_margin)-1.0f)/float(atlas->height()-1)
         );
-
-        auto metrics = face->glyph->metrics;
 
         vsg::Font::GlyphMetrics vsg_metrics;
         vsg_metrics.charcode = glyphQuad.charcode;

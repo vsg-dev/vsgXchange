@@ -8,9 +8,16 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include FT_OUTLINE_H
 
 namespace vsgXchange
 {
+
+    inline bool between(float a, float b, float c)
+    {
+        if (a < c) return (a <= b) && (b <= c);
+        else return (c <= b) && (b <= a);
+    }
 
     class VSGXCHANGE_DECLSPEC ReaderWriter_freetype : public vsg::Inherit<vsg::ReaderWriter, ReaderWriter_freetype>
     {
@@ -24,6 +31,7 @@ namespace vsgXchange
     protected:
 
         virtual ~ReaderWriter_freetype();
+
 
         unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
 
