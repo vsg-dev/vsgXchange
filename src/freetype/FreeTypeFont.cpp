@@ -1,6 +1,8 @@
 #include "FreeTypeFont.h"
 
 #include <vsg/core/Exception.h>
+#include <vsg/nodes/Group.h>
+#include <vsg/nodes/Geometry.h>
 #include <vsg/state/ShaderStage.h>
 #include <vsg/text/Font.h>
 
@@ -120,6 +122,344 @@ unsigned char ReaderWriter_freetype::nearerst_edge(const FT_Bitmap& glyph_bitmap
     }
 }
 
+vsg::ref_ptr<vsg::Group> ReaderWriter_freetype::createOutlineGeometry(const Contours& contours) const
+{
+    auto group = vsg::Group::create();
+
+    for(auto& contour : contours)
+    {
+        auto geometry = vsg::Geometry::create();
+
+        auto vertices = vsg::vec3Array::create(contour.size());
+        geometry->arrays.push_back(vertices);
+
+        for(size_t i=0; i<contour.size(); ++i)
+        {
+            vertices->set(i, vsg::vec3(contour[i].x, contour[i].y, 0.0f));
+        }
+
+        geometry->commands.push_back(vsg::Draw::create(contour.size(), 0, 0, 0));
+
+        group->addChild(geometry);
+    }
+    return group;
+}
+
+bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_contours) const
+{
+    //std::cout<<"charcode = "<<glyphQuad.charcode<<", width = "<<width<<", height = "<<height<<std::endl;
+    //std::cout<<"   face->glyph->outline.n_contours = "<<face->glyph->outline.n_contours<<std::endl;
+    //std::cout<<"   face->glyph->outline.n_points = "<<face->glyph->outline.n_points<<std::endl;
+    auto moveTo = [] ( const FT_Vector* to, void* user ) -> int
+    {
+        Contours* contours = reinterpret_cast<Contours*>(user);
+        contours->push_back(Contour());
+        Contour& contour = contours->back();
+        contour.emplace_back(float(to->x), float(to->y));
+        return 0;
+    };
+
+    auto lineTo = [] ( const FT_Vector* to, void* user ) -> int
+    {
+        Contours* contours = reinterpret_cast<Contours*>(user);
+        Contour& contour = contours->back();
+        vsg::vec2 p(float(to->x), float(to->y));
+        // ignore degenate segment
+        if (p != contour.back()) contour.push_back(p);
+        //else std::cout<<"lineTo error\n";
+        return 0;
+    };
+
+    auto conicTo = [] ( const FT_Vector* control, const FT_Vector* to, void* user ) -> int
+    {
+        Contours* contours = reinterpret_cast<Contours*>(user);
+        Contour& contour = contours->back();
+
+        vsg::vec2 p0(contour.back());
+        vsg::vec2 p1(float(control->x), float(control->y));
+        vsg::vec2 p2(float(to->x), float(to->y));
+
+        if (p0==p1 && p1==p2)
+        {
+            // ignore degenate segment
+            //std::cout<<"conicTo error\n";
+            return 0;
+        }
+
+        int numSteps = 10;
+
+        float dt = 1.0/float(numSteps);
+        float u = dt;
+        for (int i=1; i<numSteps; ++i)
+        {
+            float w = 1.0f;
+            float bs = 1.0f/( (1.0f-u)*(1.0f-u)+2.0f*(1.0f-u)*u*w +u*u );
+            vsg::vec2 p = (p0*((1.0f-u)*(1.0f-u)) + p1*(2.0f*(1.0f-u)*u*w) + p2*(u*u))*bs;
+            if (p != contour.back()) contour.push_back( p );
+            u += dt;
+        }
+        if (p2 != contour.back()) contour.push_back( p2 );
+
+        return 0;
+    };
+
+    auto cubicTo = [] ( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user ) -> int
+    {
+        Contours* contours = reinterpret_cast<Contours*>(user);
+        Contour& contour = contours->back();
+
+        vsg::vec2 p0(contour.back());
+        vsg::vec2 p1(float(control1->x), float(control1->y));
+        vsg::vec2 p2(float(control2->x), float(control2->y));
+        vsg::vec2 p3(float(to->x), float(to->y));
+
+        if (p0==p1 && p1==p2 && p2==p3)
+        {
+            // ignore degenate segment
+            // std::cout<<"cubic Error\n";
+            return 0;
+        }
+
+        int numSteps = 10;
+
+        float cx = 3.0f*(p1.x - p0.x);
+        float bx = 3.0f*(p2.x - p1.x) - cx;
+        float ax = p3.x - p0.x - cx - bx;
+        float cy = 3.0f*(p1.y - p0.y);
+        float by = 3.0f*(p2.y - p1.y) - cy;
+        float ay = p3.y - p0.y - cy - by;
+
+        float dt = 1.0f/float(numSteps);
+        float u = dt;
+        for (int i=1; i<numSteps; ++i)
+        {
+            vsg::vec2 p(ax*u*u*u + bx*u*u  + cx*u + p0.x,
+                        ay*u*u*u + by*u*u  + cy*u + p0.y);
+
+            if (p != contour.back()) contour.push_back( p );
+            u += dt;
+        }
+
+        if (p3 != contour.back()) contour.push_back( p3 );
+        return 0;
+    };
+
+    FT_Outline_Funcs funcs;
+    funcs.move_to = moveTo;
+    funcs.line_to = lineTo;
+    funcs.conic_to = conicTo;
+    funcs.cubic_to = cubicTo;
+    funcs.shift = 0;
+    funcs.delta = 0;
+
+    // ** record description
+    int error = FT_Outline_Decompose(&outline, &funcs, &in_contours);
+    if (error != 0)
+    {
+        std::cout<<"Warning: could not decomposs outline."<<error<<std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
+{
+    auto contains_degenerates = [] (Contour& contour) -> bool
+    {
+        for(size_t i=0; i<contour.size()-1; ++i)
+        {
+            auto& p0 = contour[i];
+            auto& p1 = contour[i+1];
+            if (p0==p1)
+            {
+                return true;
+            }
+        }
+
+        // check if contour is closed.
+        if (contour.front() != contour.back()) return true;
+
+        return false;
+    };
+
+    auto fix_degenerates = [] (Contour& contour) -> void
+    {
+        if (contour.size()<2) return;
+
+        Contour clean_contour;
+        clean_contour.push_back(contour[0]);
+
+        for(size_t i=0; i<contour.size()-1; ++i)
+        {
+            auto& p0 = contour[i];
+            auto& p1 = contour[i+1];
+            if (p0!=p1)
+            {
+                clean_contour.push_back(p1);
+            }
+        }
+
+        if (clean_contour.front() != clean_contour.back())
+        {
+            // make sure the the contour is closed (last point equals first point.)
+            clean_contour.back() = clean_contour.front();
+        }
+
+        contour.swap(clean_contour);
+    };
+
+    // fix all contours
+    for(auto& contour : contours)
+    {
+        if (contains_degenerates(contour))
+        {
+            fix_degenerates(contour);
+        }
+    }
+}
+
+float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours, int r, int c) const
+{
+    vsg::vec2 v;
+    v.set(float(r), float(c));
+    float min_distance = std::numeric_limits<float>::max();
+    for(auto& contour : local_contours)
+    {
+
+        for(size_t i=0; i<contour.size()-1; ++i)
+        {
+            auto& p0 = contour[i];
+            auto& p1 = contour[i+1];
+            vsg::vec2 p1_p0 = p1-p0;
+            vsg::vec2 v_p0 = v-p0;
+            vsg::vec2 v_p1 = v-p1;
+            float dot_v_p0 = vsg::dot(v_p0, p1_p0);
+            float dot_v_p1 = vsg::dot(v_p1, p1_p0);
+
+            float distance;
+            if (dot_v_p0<=0.0f)
+            {
+                distance = vsg::length(v - p0);
+                // std::cout<<"    distance from p0 = "<<distance<<"\n";
+            }
+            else if (dot_v_p1>=0.0f)
+            {
+                distance = vsg::length(v - p1);
+                // std::cout<<"    distance from p1 = "<<distance<<"\n";
+            }
+            else
+            {
+                distance = vsg::cross(v_p0, p1_p0) / vsg::length(p1_p0);
+                if (distance<0.0f)
+                {
+                    // std::cout<<"    Flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
+                    distance = -distance;
+                }
+                else
+                {
+                    // std::cout<<"    Not flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
+                }
+            }
+
+            if (distance<min_distance) min_distance = distance;
+        }
+    }
+    return min_distance;
+};
+
+
+bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, int row, int col) const
+{
+    vsg::vec2 v;
+    v.set(float(row), float(col));
+
+    uint32_t numLeft = 0;
+    for(auto& contour : local_contours)
+    {
+        for(size_t i=0; i<contour.size()-1; ++i)
+        {
+            auto& p0 = contour[i];
+            auto& p1 = contour[i+1];
+
+            if (p0 == p1)
+            {
+                // std::cout<<"Degenerate edge p0="<<p0<<", p1="<<p1<<std::endl;
+                continue;
+            }
+
+            if (p0 == v || p1 == v)
+            {
+                // std::cout<<"v = "<<v<<" on end point p0="<<p0<<", p1"<<p1<<std::endl;
+                return false;
+            }
+
+            if (p0.y == p1.y) // horizontal
+            {
+                if (p0.y == v.y)
+                {
+                    // v same height as segment
+                    if (between(p0.x, v.x, p1.x))
+                    {
+                        // std::cout<<"Right on horizontal line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
+                        return false;
+                    }
+                    else if (v.x > p0.x && v.x > p1.x)
+                    {
+                        // ???
+                        // std::cout<<"Problem area??"<<std::endl;
+                        //++numLeft;
+                    }
+                }
+                else
+                {
+                    // v not one segment
+                }
+            }
+            else if (p0.x == p1.x) // vertical
+            {
+                if (between2(p0.y, v.y, p1.y))
+                {
+                    if (v.x == p0.x)
+                    {
+                        // std::cout<<"Right on vertical line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
+                        return false;
+                    }
+                    else if (p0.x < v.x)
+                    {
+                        ++numLeft;
+                    }
+                }
+            }
+            else // diagonal
+            {
+                if (between2(p0.y, v.y, p1.y))
+                {
+                    if (v.x > p0.x && v.x > p1.x)
+                    {
+                        // segment wholly left of v
+                        ++numLeft;
+                    }
+                    else if (between(p0.x, v.x, p1.x))
+                    {
+                        // segment wholly right of v
+                        // need to intersection test
+                        float r = (v.y - p0.y) / (p1.y - p0.y);
+                        float x_itersection = p0.x + (p1.x - p0.x)*r;
+                        if (x_itersection < v.x) ++numLeft;
+                    }
+                    else
+                    {
+                        // vertex wholly to left
+                    }
+                }
+            }
+
+        }
+    }
+    return (numLeft % 2)==0;
+}
+
 vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::fileExtension(filename);
@@ -149,12 +489,14 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         return {};
     }
 
-    FT_UInt pixel_size = 64;
+
+    FT_UInt pixel_size = 48;
+    FT_UInt freetype_pixel_size = pixel_size;
+    float freetype_pixel_size_scale = float(pixel_size) / (64.0f * float(freetype_pixel_size));
 
     {
-        error = FT_Set_Pixel_Sizes(face, pixel_size, pixel_size );
+        error = FT_Set_Pixel_Sizes(face, freetype_pixel_size, freetype_pixel_size );
     }
-
 
     FT_Int32 load_flags = FT_LOAD_NO_BITMAP;
     FT_Render_Mode render_mode = FT_RENDER_MODE_NORMAL;
@@ -173,6 +515,29 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     bool hasSpace = false;
 
     // collect all the sizes of the glyphs
+#if 0
+    {
+        auto add_gyph = [&](FT_ULong charcode)
+        {
+            FT_UInt glyph_index = FT_Get_Char_Index( face, charcode);
+            int load_error = FT_Load_Glyph(face, glyph_index, load_flags);
+
+            if (load_error) return;
+
+            GlyphQuad quad{
+                charcode,
+                glyph_index,
+                static_cast<unsigned int >(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
+                static_cast<unsigned int >(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))
+            };
+            sortedGlyphQuads.insert(quad);
+        };
+
+        std::string test("M");
+        for(auto& c : test) add_gyph(c);
+
+    }
+#else
     {
         FT_ULong  charcode;
         FT_UInt   glyph_index;
@@ -189,8 +554,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             GlyphQuad quad{
                 charcode,
                 glyph_index,
-                static_cast<unsigned int >(ceil(double(face->glyph->metrics.width)/64.0)),
-                static_cast<unsigned int >(ceil(double(face->glyph->metrics.height)/64.0))
+                static_cast<unsigned int >(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
+                static_cast<unsigned int >(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))
             };
 
             if (charcode==32) hasSpace = true;
@@ -198,6 +563,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             sortedGlyphQuads.insert(quad);
         }
     }
+#endif
 
     if (!hasSpace)
     {
@@ -213,8 +579,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
                 GlyphQuad quad{
                     charcode,
                     glyph_index,
-                    static_cast<unsigned int >(ceil(double(face->glyph->metrics.width)/64.0)),
-                    static_cast<unsigned int >(ceil(double(face->glyph->metrics.height)/64.0))
+                    static_cast<unsigned int >(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
+                    static_cast<unsigned int >(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))
                 };
 
                 sortedGlyphQuads.insert(quad);
@@ -299,6 +665,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     bool useOutline = true;
     bool computeSDF = true;
 
+
     for(auto& glyphQuad : sortedGlyphQuads)
     {
         error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
@@ -317,208 +684,25 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
         if (useOutline)
         {
-
-            using Contour = std::vector<vsg::vec2>;
-            using Contours = std::list<Contour>;
-
-            //std::cout<<"charcode = "<<glyphQuad.charcode<<", width = "<<width<<", height = "<<height<<std::endl;
-            //std::cout<<"   face->glyph->outline.n_contours = "<<face->glyph->outline.n_contours<<std::endl;
-            //std::cout<<"   face->glyph->outline.n_points = "<<face->glyph->outline.n_points<<std::endl;
-            auto moveTo = [] ( const FT_Vector* to, void* user ) -> int
-            {
-                Contours* contours = reinterpret_cast<Contours*>(user);
-                contours->push_back(Contour());
-                Contour& contour = contours->back();
-                contour.emplace_back(float(to->x)/64.0f, float(to->y)/64.0f);
-                return 0;
-            };
-
-            auto lineTo = [] ( const FT_Vector* to, void* user ) -> int
-            {
-                Contours* contours = reinterpret_cast<Contours*>(user);
-                Contour& contour = contours->back();
-                contour.emplace_back(float(to->x)/64.0f, float(to->y)/64.0f);
-                return 0;
-            };
-
-            auto conicTo = [] ( const FT_Vector* control, const FT_Vector* to, void* user ) -> int
-            {
-                Contours* contours = reinterpret_cast<Contours*>(user);
-                Contour& contour = contours->back();
-
-                vsg::vec2 p0(contour.back());
-                vsg::vec2 p1(float(control->x)/64.0f, float(control->y)/64.0f);
-                vsg::vec2 p2(float(to->x)/64.0f, float(to->y)/64.0f);
-
-                //contour.push_back(p2);
-                //return 0;
-
-                int numSteps = 10;
-
-                float dt = 1.0/float(numSteps);
-                float u=0;
-                for (int i=0; i<=numSteps; ++i)
-                {
-                    float w = 1.0f;
-                    float bs = 1.0f/( (1.0f-u)*(1.0f-u)+2.0f*(1.0f-u)*u*w +u*u );
-                    vsg::vec2 p = (p0*((1.0f-u)*(1.0f-u)) + p1*(2.0f*(1.0f-u)*u*w) + p2*(u*u))*bs;
-                    contour.push_back( p );
-                    u += dt;
-                }
-                return 0;
-            };
-
-            auto cubicTo = [] ( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user ) -> int
-            {
-                Contours* contours = reinterpret_cast<Contours*>(user);
-                Contour& contour = contours->back();
-
-                vsg::vec2 p0(contour.back());
-                vsg::vec2 p1(float(control1->x)/64.0f, float(control1->y)/64.0f);
-                vsg::vec2 p2(float(control2->x)/64.0f, float(control2->y)/64.0f);
-                vsg::vec2 p3(float(to->x)/64.0f, float(to->y)/64.0f);
-
-                //contour.push_back(p3);
-                //return 0;
-
-                int numSteps = 10;
-
-                float cx = 3.0f*(p1.x - p0.x);
-                float bx = 3.0f*(p2.x - p1.x) - cx;
-                float ax = p3.x - p0.x - cx - bx;
-                float cy = 3.0f*(p1.y - p0.y);
-                float by = 3.0f*(p2.y - p1.y) - cy;
-                float ay = p3.y - p0.y - cy - by;
-
-                float dt = 1.0f/float(numSteps);
-                float u=0.0f;
-                for (int i=0; i<=numSteps; ++i)
-                {
-                    vsg::vec2 p(ax*u*u*u + bx*u*u  + cx*u + p0.x,
-                                ay*u*u*u + by*u*u  + cy*u + p0.y);
-                    contour.push_back( p );
-                    u += dt;
-                }
-                return 0;
-            };
-
-            auto& outline = face->glyph->outline;
-
-            FT_Outline_Funcs funcs;
-            funcs.move_to = moveTo;
-            funcs.line_to = lineTo;
-            funcs.conic_to = conicTo;
-            funcs.cubic_to = cubicTo;
-            funcs.shift = 0;
-            funcs.delta = 0;
-
             Contours contours;
+            generateOutlines(face->glyph->outline, contours);
 
-            // ** record description
-            error = FT_Outline_Decompose(&outline, &funcs, &contours);
-
-            if (error != 0)
-            {
-                std::cout<<"Warning: could not decomposs outline"<<error<<" for "<<glyphQuad.charcode<<std::endl;
-                continue;
-            }
-
-            vsg::vec2 offset(float(metrics.horiBearingX)/64.0f, float(metrics.horiBearingY)/64.0f);
+            // scale and offset the outline geometry
+            vsg::vec2 offset(float(metrics.horiBearingX) * freetype_pixel_size_scale, float(metrics.horiBearingY) * freetype_pixel_size_scale);
             for(auto& contour : contours)
             {
                 for(auto& v : contour)
                 {
-                    v.set(v.x - offset.x, offset.y - v.y);
+                    // scale and translate to local origin
+                    v.x = v.x * freetype_pixel_size_scale - offset.x;
+                    v.y = offset.y - v.y * freetype_pixel_size_scale;
                 }
             }
-#if 0
-            std::cout<<"error = "<<error<<std::endl;
-            std::cout<<"contours.size() = "<<contours.size()<<std::endl;
-            std::cout<<"offset = "<<offset<<std::endl;
-#endif
-            auto nearest_contour_edge = [](const Contours& local_contours, int r, int c) -> float
-            {
-                vsg::vec2 v;
-                v.set(float(r), float(c));
-                float min_distance = std::numeric_limits<float>::max();
-                for(auto& contour : local_contours)
-                {
 
-                    for(size_t i=0; i<contour.size()-1; ++i)
-                    {
-                        auto& p0 = contour[i];
-                        auto& p1 = contour[i+1];
-                        vsg::vec2 p1_p0 = p1-p0;
-                        vsg::vec2 v_p0 = v-p0;
-                        vsg::vec2 v_p1 = v-p1;
-                        float dot_v_p0 = vsg::dot(v_p0, p1_p0);
-                        float dot_v_p1 = vsg::dot(v_p1, p1_p0);
+            // fix any degernate segments
+            checkForAndFixDegenerates(contours);
 
-                        float distance;
-                        if (dot_v_p0<=0.0f)
-                        {
-                            distance = vsg::length(v - p0);
-                            // std::cout<<"    distance from p0 = "<<distance<<"\n";
-                        }
-                        else if (dot_v_p1>=0.0f)
-                        {
-                            distance = vsg::length(v - p1);
-                            // std::cout<<"    distance from p1 = "<<distance<<"\n";
-                        }
-                        else
-                        {
-                            distance = vsg::cross(v_p0, p1_p0) / vsg::length(p1_p0);
-                            if (distance<0.0f)
-                            {
-                                // std::cout<<"    Flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
-                                distance = -distance;
-                            }
-                            else
-                            {
-                                // std::cout<<"    Not flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
-                            }
-                        }
-
-                        if (distance<min_distance) min_distance = distance;
-                    }
-                }
-                return min_distance;
-            };
-
-
-            auto outside_contours = [](const Contours& local_contours, int row, int col) -> bool
-            {
-                vsg::vec2 v;
-                v.set(float(row+0.001f), float(col+0.001f));
-                uint32_t numLeft = 0;
-                for(auto& contour : local_contours)
-                {
-                    for(size_t i=0; i<contour.size()-1; ++i)
-                    {
-                        auto& p0 = contour[i];
-                        auto& p1 = contour[i+1];
-                        if (p0.y == p1.y) // horizontal
-                        {
-                            if ((v.y == p0.y) && between(p0.x, v.x, p1.x)) return false;
-                        }
-                        else if (between(p0.y, v.y, p1.y))
-                        {
-                            if (between(p0.x, v.x, p1.x))
-                            {
-                                // need to intersection test
-                                float r = (v.y - p0.y) / (p1.y - p0.y);
-                                float x_itersection = p0.x + (p1.x - p0.x)*r;
-                                if (x_itersection < v.x) ++numLeft;
-                            }
-                            else if (p0.x < v.x && p1.x < v.x)
-                            {
-                                ++numLeft;
-                            }
-                        }
-                    }
-                }
-                return (numLeft % 2)==0;
-            };
+            // font->setObject(vsg::make_string(glyphQuad.glyph_index), createOutlineGeometry(contours));
 
             if (!contours.empty())
             {
@@ -541,7 +725,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
                         else atlas->at(index++) = v;
                     }
                 }
-
             }
         }
         else
@@ -594,12 +777,12 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         vsg_metrics.uvrect = uvrect;
         vsg_metrics.width = float(width+2*quad_margin)/float(pixel_size);
         vsg_metrics.height = float(height+2*quad_margin)/float(pixel_size);
-        vsg_metrics.horiBearingX = (float(metrics.horiBearingX-quad_margin)/64.0f)/float(pixel_size);
-        vsg_metrics.horiBearingY = (float(metrics.horiBearingY-quad_margin)/64.0f)/float(pixel_size);
-        vsg_metrics.horiAdvance = (float(metrics.horiAdvance)/64.0f)/float(pixel_size);
-        vsg_metrics.vertBearingX = (float(metrics.vertBearingX-quad_margin)/64.0f)/float(pixel_size);
-        vsg_metrics.vertBearingY = (float(metrics.vertBearingY-quad_margin)/64.0f)/float(pixel_size);
-        vsg_metrics.vertAdvance = (float(metrics.vertAdvance)/64.0f)/float(pixel_size);
+        vsg_metrics.horiBearingX = (float(metrics.horiBearingX) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.horiBearingY = (float(metrics.horiBearingY) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.horiAdvance = (float(metrics.horiAdvance) * freetype_pixel_size_scale)/float(pixel_size);
+        vsg_metrics.vertBearingX = (float(metrics.vertBearingX) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.vertBearingY = (float(metrics.vertBearingY) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.vertAdvance = (float(metrics.vertAdvance) * freetype_pixel_size_scale)/float(pixel_size);
 
         font->glyphs[glyphQuad.charcode] = vsg_metrics;
 
