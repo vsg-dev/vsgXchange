@@ -43,7 +43,12 @@ namespace vsgXchange
 
         virtual ~ReaderWriter_freetype();
 
-        using Contour = std::vector<vsg::vec2>;
+        struct Contour
+        {
+            std::vector<vsg::vec2> points;
+            std::vector<vsg::vec3> edges;
+        };
+
         using Contours = std::list<Contour>;
 
         unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;

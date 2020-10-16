@@ -129,17 +129,18 @@ vsg::ref_ptr<vsg::Group> ReaderWriter_freetype::createOutlineGeometry(const Cont
 
     for(auto& contour : contours)
     {
-        auto geometry = vsg::Geometry::create();
+        auto& points = contour.points;
 
-        auto vertices = vsg::vec3Array::create(contour.size());
+        auto geometry = vsg::Geometry::create();
+        auto vertices = vsg::vec3Array::create(points.size());
         geometry->arrays.push_back(vertices);
 
-        for(size_t i=0; i<contour.size(); ++i)
+        for(size_t i=0; i<points.size(); ++i)
         {
-            vertices->set(i, vsg::vec3(contour[i].x, contour[i].y, 0.0f));
+            vertices->set(i, vsg::vec3(points[i].x, points[i].y, 0.0f));
         }
 
-        geometry->commands.push_back(vsg::Draw::create(contour.size(), 0, 0, 0));
+        geometry->commands.push_back(vsg::Draw::create(points.size(), 0, 0, 0));
 
         group->addChild(geometry);
     }
@@ -153,30 +154,32 @@ bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_c
     //std::cout<<"   face->glyph->outline.n_points = "<<face->glyph->outline.n_points<<std::endl;
     auto moveTo = [] ( const FT_Vector* to, void* user ) -> int
     {
-        Contours* contours = reinterpret_cast<Contours*>(user);
+        auto contours = reinterpret_cast<Contours*>(user);
         contours->push_back(Contour());
-        Contour& contour = contours->back();
-        contour.emplace_back(float(to->x), float(to->y));
+        auto& contour = contours->back();
+        auto& points = contour.points;
+        points.emplace_back(float(to->x), float(to->y));
         return 0;
     };
 
     auto lineTo = [] ( const FT_Vector* to, void* user ) -> int
     {
-        Contours* contours = reinterpret_cast<Contours*>(user);
-        Contour& contour = contours->back();
+        auto contours = reinterpret_cast<Contours*>(user);
+        auto& contour = contours->back();
+        auto& points = contour.points;
+
         vsg::vec2 p(float(to->x), float(to->y));
-        // ignore degenate segment
-        if (p != contour.back()) contour.push_back(p);
-        //else std::cout<<"lineTo error\n";
+        points.push_back(p);
         return 0;
     };
 
     auto conicTo = [] ( const FT_Vector* control, const FT_Vector* to, void* user ) -> int
     {
-        Contours* contours = reinterpret_cast<Contours*>(user);
-        Contour& contour = contours->back();
+        auto contours = reinterpret_cast<Contours*>(user);
+        auto& contour = contours->back();
+        auto& points = contour.points;
 
-        vsg::vec2 p0(contour.back());
+        vsg::vec2 p0(points.back());
         vsg::vec2 p1(float(control->x), float(control->y));
         vsg::vec2 p2(float(to->x), float(to->y));
 
@@ -196,20 +199,21 @@ bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_c
             float w = 1.0f;
             float bs = 1.0f/( (1.0f-u)*(1.0f-u)+2.0f*(1.0f-u)*u*w +u*u );
             vsg::vec2 p = (p0*((1.0f-u)*(1.0f-u)) + p1*(2.0f*(1.0f-u)*u*w) + p2*(u*u))*bs;
-            if (p != contour.back()) contour.push_back( p );
+            points.push_back( p );
             u += dt;
         }
-        if (p2 != contour.back()) contour.push_back( p2 );
+        points.push_back( p2 );
 
         return 0;
     };
 
     auto cubicTo = [] ( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user ) -> int
     {
-        Contours* contours = reinterpret_cast<Contours*>(user);
-        Contour& contour = contours->back();
+        auto contours = reinterpret_cast<Contours*>(user);
+        auto& contour = contours->back();
+        auto& points = contour.points;
 
-        vsg::vec2 p0(contour.back());
+        vsg::vec2 p0(points.back());
         vsg::vec2 p1(float(control1->x), float(control1->y));
         vsg::vec2 p2(float(control2->x), float(control2->y));
         vsg::vec2 p3(float(to->x), float(to->y));
@@ -237,11 +241,11 @@ bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_c
             vsg::vec2 p(ax*u*u*u + bx*u*u  + cx*u + p0.x,
                         ay*u*u*u + by*u*u  + cy*u + p0.y);
 
-            if (p != contour.back()) contour.push_back( p );
+            points.push_back( p );
             u += dt;
         }
 
-        if (p3 != contour.back()) contour.push_back( p3 );
+        points.push_back( p3 );
         return 0;
     };
 
@@ -268,10 +272,11 @@ void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
 {
     auto contains_degenerates = [] (Contour& contour) -> bool
     {
-        for(size_t i=0; i<contour.size()-1; ++i)
+        auto& points = contour.points;
+        for(size_t i=0; i<points.size()-1; ++i)
         {
-            auto& p0 = contour[i];
-            auto& p1 = contour[i+1];
+            auto& p0 = points[i];
+            auto& p1 = points[i+1];
             if (p0==p1)
             {
                 return true;
@@ -279,35 +284,38 @@ void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
         }
 
         // check if contour is closed.
-        if (contour.front() != contour.back()) return true;
+        if (points.front() != points.back()) return true;
 
         return false;
     };
 
     auto fix_degenerates = [] (Contour& contour) -> void
     {
-        if (contour.size()<2) return;
+        if (contour.points.size()<2) return;
 
-        Contour clean_contour;
-        clean_contour.push_back(contour[0]);
+        auto& points = contour.points;
 
-        for(size_t i=0; i<contour.size()-1; ++i)
+        decltype(Contour::points) clean_points;
+
+        clean_points.push_back(points[0]);
+
+        for(size_t i=0; i<points.size()-1; ++i)
         {
-            auto& p0 = contour[i];
-            auto& p1 = contour[i+1];
+            auto& p0 = points[i];
+            auto& p1 = points[i+1];
             if (p0!=p1)
             {
-                clean_contour.push_back(p1);
+                clean_points.push_back(p1);
             }
         }
 
-        if (clean_contour.front() != clean_contour.back())
+        if (clean_points.front() != clean_points.back())
         {
             // make sure the the contour is closed (last point equals first point.)
-            clean_contour.back() = clean_contour.front();
+            clean_points.back() = clean_points.front();
         }
 
-        contour.swap(clean_contour);
+        points.swap(clean_points);
     };
 
     // fix all contours
@@ -325,46 +333,30 @@ float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours
     float min_distance = std::numeric_limits<float>::max();
     for(auto& contour : local_contours)
     {
-
-        for(size_t i=0; i<contour.size()-1; ++i)
+        auto& points = contour.points;
+        auto& edges = contour.edges;
+        for(size_t i=0; i<edges.size(); ++i)
         {
-            auto& p0 = contour[i];
-            auto& p1 = contour[i+1];
-            vsg::vec2 p1_p0 = p1-p0;
+            auto& p0 = points[i];
+            auto& edge = edges[i];
+
             vsg::vec2 v_p0 = v-p0;
-            vsg::vec2 v_p1 = v-p1;
-            float dot_v_p0 = vsg::dot(v_p0, p1_p0);
-            float dot_v_p1 = vsg::dot(v_p1, p1_p0);
+            float dot_v_p0 = v_p0.x * edge.x + v_p0.y * edge.y;
 
-            float distance;
-            if (dot_v_p0<=0.0f)
+            if (dot_v_p0<0.0f)
             {
-                distance = vsg::length(v - p0);
-                // std::cout<<"    distance from p0 = "<<distance<<"\n";
+                float distance = vsg::length2(v - p0);
+                if (distance<min_distance) min_distance = distance;
             }
-            else if (dot_v_p1>=0.0f)
+            else if (dot_v_p0 <= edge.z)
             {
-                distance = vsg::length(v - p1);
-                // std::cout<<"    distance from p1 = "<<distance<<"\n";
+                float d = v_p0.y * edge.x - v_p0.x * edge.y;
+                float distance = d*d;
+                if (distance<min_distance) min_distance = distance;
             }
-            else
-            {
-                distance = vsg::cross(v_p0, p1_p0) / vsg::length(p1_p0);
-                if (distance<0.0f)
-                {
-                    // std::cout<<"    Flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
-                    distance = -distance;
-                }
-                else
-                {
-                    // std::cout<<"    Not flipping v_p0 = "<<v_p0<<", p1_p0 = "<<p1_p0<<"\n";
-                }
-            }
-
-            if (distance<min_distance) min_distance = distance;
         }
     }
-    return min_distance;
+    return sqrt(min_distance);
 };
 
 bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, const vsg::vec2& v) const
@@ -372,10 +364,11 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, con
     uint32_t numLeft = 0;
     for(auto& contour : local_contours)
     {
-        for(size_t i=0; i<contour.size()-1; ++i)
+        auto& points = contour.points;
+        for(size_t i=0; i<points.size()-1; ++i)
         {
-            auto& p0 = contour[i];
-            auto& p1 = contour[i+1];
+            auto& p0 = points[i];
+            auto& p1 = points[i+1];
 
             if (p0 == v || p1 == v)
             {
@@ -668,7 +661,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             vsg::vec2 offset(float(metrics.horiBearingX) * freetype_pixel_size_scale, float(metrics.horiBearingY) * freetype_pixel_size_scale);
             for(auto& contour : contours)
             {
-                for(auto& v : contour)
+                for(auto& v : contour.points)
                 {
                     // scale and translate to local origin
                     v.x = v.x * freetype_pixel_size_scale - offset.x;
@@ -704,11 +697,23 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             } extents;
 
 
+            // compute edges and bounding volume
             for(auto& contour : contours)
             {
-                for(auto& v : contour)
+                auto& points = contour.points;
+                for(auto& v : points)
                 {
                     extents.add(v);
+                }
+
+                auto& edges = contour.edges;
+                edges.resize(points.size()-1);
+                for(size_t i=0; i<edges.size(); ++i)
+                {
+                    vsg::vec2 dv = points[i+1] - points[i];
+                    float len = vsg::length(dv);
+                    dv /= len;
+                    edges[i].set(dv.x, dv.y, len);
                 }
             }
 
