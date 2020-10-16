@@ -11,6 +11,7 @@ using namespace vsgXchange;
 
 #include <iostream>
 #include <set>
+#include <chrono>
 
 ReaderWriter_freetype::ReaderWriter_freetype()
 {
@@ -319,10 +320,8 @@ void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
     }
 }
 
-float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours, int r, int c) const
+float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const
 {
-    vsg::vec2 v;
-    v.set(float(r), float(c));
     float min_distance = std::numeric_limits<float>::max();
     for(auto& contour : local_contours)
     {
@@ -368,12 +367,8 @@ float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours
     return min_distance;
 };
 
-
-bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, int row, int col) const
+bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, const vsg::vec2& v) const
 {
-    vsg::vec2 v;
-    v.set(float(row), float(col));
-
     uint32_t numLeft = 0;
     for(auto& contour : local_contours)
     {
@@ -381,12 +376,6 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, int
         {
             auto& p0 = contour[i];
             auto& p1 = contour[i+1];
-
-            if (p0 == p1)
-            {
-                // std::cout<<"Degenerate edge p0="<<p0<<", p1="<<p1<<std::endl;
-                continue;
-            }
 
             if (p0 == v || p1 == v)
             {
@@ -404,16 +393,6 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, int
                         // std::cout<<"Right on horizontal line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
                         return false;
                     }
-                    else if (v.x > p0.x && v.x > p1.x)
-                    {
-                        // ???
-                        // std::cout<<"Problem area??"<<std::endl;
-                        //++numLeft;
-                    }
-                }
-                else
-                {
-                    // v not one segment
                 }
             }
             else if (p0.x == p1.x) // vertical
@@ -447,10 +426,6 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, int
                         float r = (v.y - p0.y) / (p1.y - p0.y);
                         float x_itersection = p0.x + (p1.x - p0.x)*r;
                         if (x_itersection < v.x) ++numLeft;
-                    }
-                    else
-                    {
-                        // vertex wholly to left
                     }
                 }
             }
@@ -665,6 +640,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     bool useOutline = true;
     bool computeSDF = true;
 
+    double total_nearest_edge = 0.0;
+    double total_outside_edge = 0.0;
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {
@@ -704,6 +681,37 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
             // font->setObject(vsg::make_string(glyphQuad.glyph_index), createOutlineGeometry(contours));
 
+            struct Extents
+            {
+                float min_x = std::numeric_limits<float>::max();
+                float max_x = std::numeric_limits<float>::lowest();
+                float min_y = std::numeric_limits<float>::max();
+                float max_y = std::numeric_limits<float>::lowest();
+
+                void add(const vsg::vec2& v)
+                {
+                    if (v.x < min_x) min_x = v.x;
+                    if (v.y < min_y) min_y = v.y;
+                    if (v.x > max_x) max_x = v.x;
+                    if (v.y > max_y) max_y = v.y;
+                }
+
+                bool contains(const vsg::vec2& v) const
+                {
+                    return v.x >= min_x && v.x <= max_x &&
+                           v.y >= min_y && v.y <= max_y;
+                }
+            } extents;
+
+
+            for(auto& contour : contours)
+            {
+                for(auto& v : contour)
+                {
+                    extents.add(v);
+                }
+            }
+
             if (!contours.empty())
             {
                 float scale = 1.0f/float(quad_margin);
@@ -713,16 +721,29 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
                     std::size_t index = atlas->index(xpos-delta, ypos+r);
                     for(int c = -delta; c<static_cast<int>(width + delta); ++c)
                     {
-                        auto min_distance = nearest_contour_edge(contours, c, r);
-                        if (outside_contours(contours, c, r)) min_distance = -min_distance;
+                        vsg::vec2 v;
+                        v.set(float(c), float(r));
+
+                        auto before_nearest_edge =std::chrono::steady_clock::now();
+
+                        auto min_distance = nearest_contour_edge(contours, v);
+
+                        auto after_nearest_edge =std::chrono::steady_clock::now();
+
+                        if (!extents.contains(v) || outside_contours(contours, v)) min_distance = -min_distance;
+
+                        auto after_outside_edge =std::chrono::steady_clock::now();
+
+                        total_nearest_edge += std::chrono::duration<double, std::chrono::seconds::period>(after_nearest_edge - before_nearest_edge).count();
+                        total_outside_edge += std::chrono::duration<double, std::chrono::seconds::period>(after_outside_edge - after_nearest_edge).count();
 
                         //std::cout<<"nearest_contour_edge("<<r<<", "<<c<<") min_distance = "<<min_distance<<std::endl;
                         float distance_ratio = (min_distance)*scale;
-                        float v = mid_value + distance_ratio*mid_value;
+                        float value = mid_value + distance_ratio*mid_value;
 
-                        if (v<=0.0f) atlas->at(index++) = 0;
-                        else if (v>=max_value) atlas->at(index++) = max_value;
-                        else atlas->at(index++) = v;
+                        if (value<=0.0f) atlas->at(index++) = 0;
+                        else if (value>=max_value) atlas->at(index++) = max_value;
+                        else atlas->at(index++) = value;
                     }
                 }
             }
@@ -792,6 +813,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         xpos += (width + texel_margin);
         if (xpos > xtop) xtop = xpos;
     }
+
+    std::cout<<"total_nearest_edge = "<<total_nearest_edge<<", \ttotal_outside_edge ="<<total_outside_edge<<std::endl;
 
     font->fontHeight = float(pixel_size);
     font->normalisedLineHeight = 1.25;

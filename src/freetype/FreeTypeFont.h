@@ -50,8 +50,8 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Group> createOutlineGeometry(const Contours& contours) const;
         bool generateOutlines(FT_Outline& outline, Contours& contours) const;
         void checkForAndFixDegenerates(Contours& contours) const;
-        float nearest_contour_edge(const Contours& local_contours, int r, int c) const;
-        bool outside_contours(const Contours& local_contours, int row, int col) const;
+        float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
+        bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
 
         std::map<std::string, std::string> _supportedFormats;
         mutable std::mutex _mutex;
