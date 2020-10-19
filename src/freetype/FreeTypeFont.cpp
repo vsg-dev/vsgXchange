@@ -804,10 +804,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         vsg_metrics.width = float(width+2*quad_margin)/float(pixel_size);
         vsg_metrics.height = float(height+2*quad_margin)/float(pixel_size);
         vsg_metrics.horiBearingX = (float(metrics.horiBearingX) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
-        vsg_metrics.horiBearingY = (float(metrics.horiBearingY) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.horiBearingY = (float(metrics.horiBearingY) * freetype_pixel_size_scale + float(quad_margin))/float(pixel_size);
         vsg_metrics.horiAdvance = (float(metrics.horiAdvance) * freetype_pixel_size_scale)/float(pixel_size);
         vsg_metrics.vertBearingX = (float(metrics.vertBearingX) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
-        vsg_metrics.vertBearingY = (float(metrics.vertBearingY) * freetype_pixel_size_scale - float(quad_margin))/float(pixel_size);
+        vsg_metrics.vertBearingY = (float(metrics.vertBearingY) * freetype_pixel_size_scale + float(quad_margin))/float(pixel_size);
         vsg_metrics.vertAdvance = (float(metrics.vertAdvance) * freetype_pixel_size_scale)/float(pixel_size);
 
         font->glyphs[glyphQuad.charcode] = vsg_metrics;
