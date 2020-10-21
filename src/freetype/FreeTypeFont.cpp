@@ -603,11 +603,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         if (xpos > xtop) xtop = xpos;
     }
 
-    std::cout<<"provisional_width = "<<provisional_width<<", xtop = "<<xtop<<", ytop = "<<ytop<<std::endl;
-
+    //std::cout<<"provisional_width = "<<provisional_width<<", xtop = "<<xtop<<", ytop = "<<ytop<<std::endl;
     //xtop = provisional_width;
 
-#if 0
+#if 1
     auto atlas = vsg::ubyteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_UNORM});
     float max_value = std::numeric_limits<vsg::ubyteArray2D::value_type>::max() ;
     float mid_value = ceil(max_value/2.0f);
@@ -616,7 +615,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     float max_value = std::numeric_limits<vsg::ushortArray2D::value_type>::max() ;
     float mid_value = ceil(max_value/2.0f);
 #endif
-    std::cout<<"max_value = "<<max_value<<" mid_value ="<<mid_value<<std::endl;
 
     // initialize to zeros
     for(auto& c : *atlas) c = 0;
@@ -819,15 +817,11 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         if (xpos > xtop) xtop = xpos;
     }
 
-    std::cout<<"total_nearest_edge = "<<total_nearest_edge<<", \ttotal_outside_edge ="<<total_outside_edge<<std::endl;
-
     font->ascender = float(face->ascender) * freetype_pixel_size_scale / float(pixel_size);
     font->descender = float(face->descender) * freetype_pixel_size_scale / float(pixel_size);
     font->height = float(face->height) * freetype_pixel_size_scale / float(pixel_size);
 
     font->options = const_cast<vsg::Options*>(options.get());
-
-    std::cout<<"FreeTypeFont::read(filename = "<<filename<<") num_glyphs = "<<face->num_glyphs<<", sortedGlyphQuads.size() = "<<sortedGlyphQuads.size()<<", atlas->width() = "<<atlas->width()<< ", atlas->height() = "<<atlas->height()<<" font->glyphs.size() = "<<font->glyphs.size()<<std::endl;
 
     return font;
 }
