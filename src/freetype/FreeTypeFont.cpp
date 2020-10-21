@@ -568,9 +568,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     }
 
     double average_width = total_width / double(sortedGlyphQuads.size());
-    double average_height = total_height / double(sortedGlyphQuads.size());
-
-    std::cout<<"average_width = "<<average_width<<", average_height ="<<average_height<<" hasSpace = "<<hasSpace<<std::endl;
 
     unsigned int texel_margin = pixel_size/4;
     int quad_margin = texel_margin/2;
@@ -606,18 +603,22 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     //std::cout<<"provisional_width = "<<provisional_width<<", xtop = "<<xtop<<", ytop = "<<ytop<<std::endl;
     //xtop = provisional_width;
 
-#if 1
-    auto atlas = vsg::ubyteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_UNORM});
-    float max_value = std::numeric_limits<vsg::ubyteArray2D::value_type>::max() ;
-    float mid_value = ceil(max_value/2.0f);
+#if 0
+    auto atlas = vsg::byteArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R8_SNORM});
+    using sdf_type = vsg::byteArray2D::value_type;
+    float min_value = std::numeric_limits<sdf_type>::lowest();
+    float max_value = std::numeric_limits<sdf_type>::max();
+    float mid_value = 0.0f;
 #else
-    auto atlas = vsg::ushortArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R16_UNORM});
-    float max_value = std::numeric_limits<vsg::ushortArray2D::value_type>::max() ;
-    float mid_value = ceil(max_value/2.0f);
+    auto atlas = vsg::shortArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R16_SNORM});
+    using sdf_type = vsg::shortArray2D::value_type;
+    float min_value = std::numeric_limits<sdf_type>::lowest();
+    float max_value = std::numeric_limits<sdf_type>::max();
+    float mid_value = 0.0f;
 #endif
 
     // initialize to zeros
-    for(auto& c : *atlas) c = 0;
+    for(auto& c : *atlas) c = static_cast<sdf_type>(min_value);
 
     auto font = vsg::Font::create();
     font->atlas = atlas;
@@ -717,7 +718,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
             if (!contours.empty())
             {
-                float scale = 1.0f/float(quad_margin);
+                float scale = 2.0f/float(pixel_size);
                 int delta = quad_margin-2;
                 for(int r = -delta; r<static_cast<int>(height+delta); ++r)
                 {
@@ -742,11 +743,11 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
                         //std::cout<<"nearest_contour_edge("<<r<<", "<<c<<") min_distance = "<<min_distance<<std::endl;
                         float distance_ratio = (min_distance)*scale;
-                        float value = mid_value + distance_ratio*mid_value;
+                        float value = mid_value + distance_ratio*(max_value-min_value);
 
-                        if (value<=0.0f) atlas->at(index++) = 0;
-                        else if (value>=max_value) atlas->at(index++) = max_value;
-                        else atlas->at(index++) = value;
+                        if (value<=min_value) atlas->at(index++) = static_cast<sdf_type>(min_value);
+                        else if (value>=max_value) atlas->at(index++) = static_cast<sdf_type>(max_value);
+                        else atlas->at(index++) = static_cast<sdf_type>(value);
                     }
                 }
             }
