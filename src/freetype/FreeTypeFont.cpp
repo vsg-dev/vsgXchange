@@ -433,8 +433,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     auto ext = vsg::fileExtension(filename);
     if (_supportedFormats.find(ext)== _supportedFormats.end() || !vsg::fileExists(filename))
     {
-        std::cout<<"ReaderWriter_freetype::read("<<filename<<") not found or extension not support"<<std::endl;
-        std::cout<<"   supported "<< (_supportedFormats.find(ext)!= _supportedFormats.end())<<", exists = "<<vsg::fileExists(filename)<<std::endl;
         return {};
     }
 
