@@ -2,21 +2,17 @@
 # vars used to enable subdirectories to extend the build of the vsgXchange library in a loose coupled way
 set(EXTRA_DEFINES)
 set(EXTRA_INCLUDES)
-set(EXTRA_LIBRARIES ${glslang_LIBRARIES})
 
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
     ${HEADER_PATH}/Export.h
-    ${HEADER_PATH}/ShaderCompiler.h
     ${HEADER_PATH}/ReaderWriter_all.h
  )
 
 set(SOURCES
-    vsgXchange/ShaderCompiler.cpp
     vsgXchange/ReaderWriter_all.cpp
 
-    glsl/ResourceLimits.cpp
     glsl/ReaderWriter_glsl.cpp
 
     spirv/ReaderWriter_spirv.cpp
@@ -24,17 +20,24 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 )
 
-# add optional OpenScneeGraph components
+# add freetype if vailable
+find_package(Freetype)
+if(FREETYPE_FOUND)
+    set(SOURCES ${SOURCES}
+        freetype/FreeTypeFont.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
+endif()
+
+# add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
+
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
-
-# check whehther glslang/build_info.h exists
-if (EXISTS ${glslang_INCLUDE_DIR}/glslang/build_info.h)
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} GLSLANG_HAS_BUILD_INFO_H)
-endif()
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
 set_property(TARGET vsgXchange PROPERTY SOVERSION ${VSGXCHANGE_SOVERSION})
@@ -75,11 +78,6 @@ install(EXPORT vsgXchangeTargets
     FILE vsgXchangeTargets.cmake
     NAMESPACE vsgXchange::
     DESTINATION lib/cmake/vsgXchange
-)
-
-install(
-    FILES vsgXchange_glslangConfig.cmake
-    DESTINATION lib/cmake/vsgXchange_glslang
 )
 
 include(CMakePackageConfigHelpers)

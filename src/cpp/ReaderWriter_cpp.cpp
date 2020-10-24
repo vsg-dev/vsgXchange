@@ -26,7 +26,8 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
         io.write(object, str);
 
         std::ofstream fout(filename);
-        fout<<"auto "<<funcname<<" = []() {";
+        fout<<"#include <vsg/io/ReaderWriter_vsg.h>\n";
+        fout<<"static auto "<<funcname<<" = []() {";
         fout<<"std::istringstream str(\n";
             write(fout, str.str());
         fout<<");\n";
