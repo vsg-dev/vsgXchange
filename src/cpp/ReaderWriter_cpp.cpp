@@ -44,12 +44,5 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
 
 void ReaderWriter_cpp::write(std::ostream& out, const std::string& str) const
 {
-    out<<"\"";
-    for(auto& c : str)
-    {
-        if (c=='\n') out<<"\\n\\\n";
-        else if (c=='"') out<<"\\\"";
-        else out<<c;
-    }
-    out<<"\"";
+    out<<"R\"("<<str<<")\"";
 }
