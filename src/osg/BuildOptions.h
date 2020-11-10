@@ -22,6 +22,9 @@ namespace osg2vsg
     {
         vsg::ref_ptr<const vsg::Options> options;
 
+        virtual void read(vsg::Input& input);
+        virtual void write(vsg::Output& output) const;
+
         bool insertCullGroups = true;
         bool insertCullNodes = true;
         bool useBindDescriptorSet = true;
@@ -42,3 +45,5 @@ namespace osg2vsg
         vsg::ref_ptr<PipelineCache> pipelineCache;
     };
 }
+
+EVSG_type_name(osg2vsg::BuildOptions);

@@ -2,6 +2,40 @@
 
 using namespace osg2vsg;
 
+vsg::RegisterWithObjectFactoryProxy<osg2vsg::BuildOptions> s_Register_BuildOptions;
+
+void BuildOptions::read(vsg::Input& input)
+{
+    input.read("insertCullGroups", insertCullGroups);
+    input.read("insertCullNodes",insertCullNodes );
+    input.read("useBindDescriptorSet", useBindDescriptorSet);
+    input.read("billboardTransform",billboardTransform );
+    input.readValue<int32_t>("geometryTarget", geometryTarget);
+    input.read("supportedGeometryAttributes", supportedGeometryAttributes);
+    input.read("supportedShaderModeMask",supportedShaderModeMask );
+    input.read("overrideGeomAttributes", overrideGeomAttributes);
+    input.read("overrideShaderModeMask", overrideShaderModeMask);
+    input.read("vertexShaderPath", vertexShaderPath);
+    input.read("fragmentShaderPath", fragmentShaderPath);
+    input.read("extension",extension );
+}
+
+void BuildOptions::write(vsg::Output& output) const
+{
+    output.write("insertCullGroups", insertCullGroups);
+    output.write("insertCullNodes",insertCullNodes );
+    output.write("useBindDescriptorSet", useBindDescriptorSet);
+    output.write("billboardTransform",billboardTransform );
+    output.writeValue<int32_t>("geometryTarget", geometryTarget);
+    output.write("supportedGeometryAttributes", supportedGeometryAttributes);
+    output.write("supportedShaderModeMask",supportedShaderModeMask );
+    output.write("overrideGeomAttributes", overrideGeomAttributes);
+    output.write("overrideShaderModeMask", overrideShaderModeMask);
+    output.write("vertexShaderPath", vertexShaderPath);
+    output.write("fragmentShaderPath", fragmentShaderPath);
+    output.write("extension",extension );
+}
+
 vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPipeline(uint32_t shaderModeMask, uint32_t geometryAttributesMask, const std::string& vertShaderPath, const std::string& fragShaderPath)
 {
     Key key(shaderModeMask, geometryAttributesMask, vertShaderPath, fragShaderPath);
