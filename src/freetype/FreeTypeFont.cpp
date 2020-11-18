@@ -481,32 +481,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     bool hasSpace = false;
 
     // collect all the sizes of the glyphs
-#if 0
+    FT_ULong max_charcode = 0;
     {
-        auto add_gyph = [&](FT_ULong charcode)
-        {
-            FT_UInt glyph_index = FT_Get_Char_Index( face, charcode);
-            int load_error = FT_Load_Glyph(face, glyph_index, load_flags);
-
-            if (load_error) return;
-
-            GlyphQuad quad{
-                charcode,
-                glyph_index,
-                static_cast<unsigned int >(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
-                static_cast<unsigned int >(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))
-            };
-            sortedGlyphQuads.insert(quad);
-        };
-
-        std::string test("M");
-        for(auto& c : test) add_gyph(c);
-
-    }
-#else
-    {
-        FT_ULong  charcode;
-        FT_UInt   glyph_index;
+        FT_ULong charcode;
+        FT_UInt glyph_index;
 
         charcode = FT_Get_First_Char(face, &glyph_index);
         while ( glyph_index != 0 )
@@ -514,8 +492,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
 
             error = FT_Load_Glyph(face, glyph_index, load_flags);
-
             if (error) continue;
+
+            if (charcode > max_charcode) max_charcode = charcode;
 
             GlyphQuad quad{
                 charcode,
@@ -529,7 +508,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             sortedGlyphQuads.insert(quad);
         }
     }
-#endif
 
     if (!hasSpace)
     {
@@ -632,6 +610,27 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     double total_nearest_edge = 0.0;
     double total_outside_edge = 0.0;
+
+    auto glyphMetrics = vsg::GlyphMetricsArray::create(sortedGlyphQuads.size()+1);
+    auto charmap = vsg::uintArray::create(max_charcode+1);
+    uint32_t destation_glyphindex = 0;
+
+    // first entry of glyphMetrics should be a null entry
+    vsg::GlyphMetrics null_metrics;
+    null_metrics.charcode = 0;
+    null_metrics.uvrect.set(0.0f, 0.0f, 0.0f, 0.0f);
+    null_metrics.width = 0.0f;
+    null_metrics.height = 0.0f;
+    null_metrics.horiBearingX = 0.0f;
+    null_metrics.horiBearingY = 0.0f;
+    null_metrics.horiAdvance = 0.0f;
+    null_metrics.vertBearingX = 0.0f;
+    null_metrics.vertBearingY =0.0f;
+    null_metrics.vertAdvance = 0.0f;
+    glyphMetrics->set(destation_glyphindex++, null_metrics);
+
+    // initialize charmap to zeros.
+    for(auto& c : *charmap) c = 0;
 
     for(auto& glyphQuad : sortedGlyphQuads)
     {
@@ -795,7 +794,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
             float(xpos + width + quad_margin)/float(atlas->width()-1), float((ypos-quad_margin)-1.0f)/float(atlas->height()-1)
         );
 
-        vsg::Font::GlyphMetrics vsg_metrics;
+        vsg::GlyphMetrics vsg_metrics;
         vsg_metrics.charcode = glyphQuad.charcode;
         vsg_metrics.uvrect = uvrect;
         vsg_metrics.width = float(width+2*quad_margin)/float(pixel_size);
@@ -807,7 +806,11 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         vsg_metrics.vertBearingY = (float(metrics.vertBearingY) * freetype_pixel_size_scale + float(quad_margin))/float(pixel_size);
         vsg_metrics.vertAdvance = (float(metrics.vertAdvance) * freetype_pixel_size_scale)/float(pixel_size);
 
-        font->glyphs[glyphQuad.charcode] = vsg_metrics;
+        // assign the glyph metrics and charcode/glyph_index to the VSG glyphMetrics and charmap containers.
+        glyphMetrics->set(destation_glyphindex, vsg_metrics);
+        charmap->set(vsg_metrics.charcode, destation_glyphindex);
+
+        ++destation_glyphindex;
 
         unsigned int local_ytop = ypos + height + texel_margin;
         if (local_ytop > ytop) ytop = local_ytop;
@@ -819,6 +822,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
     font->ascender = float(face->ascender) * freetype_pixel_size_scale / float(pixel_size);
     font->descender = float(face->descender) * freetype_pixel_size_scale / float(pixel_size);
     font->height = float(face->height) * freetype_pixel_size_scale / float(pixel_size);
+    font->glyphMetrics = glyphMetrics;
+    font->charmap = charmap;
 
     font->options = const_cast<vsg::Options*>(options.get());
 
