@@ -617,7 +617,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     // first entry of glyphMetrics should be a null entry
     vsg::GlyphMetrics null_metrics;
-    null_metrics.charcode = 0;
     null_metrics.uvrect.set(0.0f, 0.0f, 0.0f, 0.0f);
     null_metrics.width = 0.0f;
     null_metrics.height = 0.0f;
@@ -795,7 +794,6 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
         );
 
         vsg::GlyphMetrics vsg_metrics;
-        vsg_metrics.charcode = glyphQuad.charcode;
         vsg_metrics.uvrect = uvrect;
         vsg_metrics.width = float(width+2*quad_margin)/float(pixel_size);
         vsg_metrics.height = float(height+2*quad_margin)/float(pixel_size);
@@ -808,7 +806,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
         // assign the glyph metrics and charcode/glyph_index to the VSG glyphMetrics and charmap containers.
         glyphMetrics->set(destation_glyphindex, vsg_metrics);
-        charmap->set(vsg_metrics.charcode, destation_glyphindex);
+        charmap->set(glyphQuad.charcode, destation_glyphindex);
 
         ++destation_glyphindex;
 
