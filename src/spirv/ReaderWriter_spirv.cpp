@@ -1,6 +1,9 @@
 #include "ReaderWriter_spirv.h"
 
 #include <vsg/state/ShaderStage.h>
+#include <vsg/vk/ShaderCompiler.h>
+
+#include <iostream>
 
 using namespace vsgXchange;
 
@@ -31,6 +34,16 @@ bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filen
         const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
         if (sm)
         {
+            if (sm->code.empty())
+            {
+                vsg::ShaderCompiler sc;
+                if (!sc.compile(vsg::ref_ptr<vsg::ShaderStage>(const_cast<vsg::ShaderStage*>(ss))))
+                {
+                    std::cout<<"ReaderWriter_spirv::write() Failed compile tp spv."<<std::endl;
+                    return false;
+                }
+            }
+
             if (!sm->code.empty())
             {
                 std::ofstream fout(filename);
