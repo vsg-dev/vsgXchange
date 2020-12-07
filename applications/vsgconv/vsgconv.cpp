@@ -212,14 +212,6 @@ int main(int argc, char** argv)
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
-    arguments.read(options);
-    auto batchLeafData = arguments.read("--batch");
-    auto levels = arguments.value(0, "-l");
-    auto numThreads = arguments.value(16, "-t");
-
-    // read shaders
-    vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
-
     if (argc <= 1)
     {
         std::cout<<"Usage:\n";
@@ -227,6 +219,17 @@ int main(int argc, char** argv)
         std::cout<<"    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
         return 1;
     }
+
+    // read any commmand line options that the ReaderWrite support
+    arguments.read(options);
+    if (argc <= 1) return 0;
+
+    auto batchLeafData = arguments.read("--batch");
+    auto levels = arguments.value(0, "-l");
+    auto numThreads = arguments.value(16, "-t");
+
+    // read shaders
+    vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
 
     vsg::Path outputFilename = arguments[argc-1];
 

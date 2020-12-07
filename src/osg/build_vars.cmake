@@ -8,6 +8,7 @@ find_package(OpenGL)
 
 if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
     set(SOURCES ${SOURCES}
+        osg/BuildOptions.cpp
         osg/GeometryUtils.cpp
         osg/ImageUtils.cpp
         osg/Optimize.cpp
