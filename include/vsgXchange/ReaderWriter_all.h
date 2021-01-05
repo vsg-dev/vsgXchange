@@ -9,3 +9,5 @@ namespace vsgXchange
         ReaderWriter_all();
     };
 }
+
+EVSG_type_name(vsgXchange::ReaderWriter_all);
