@@ -6,7 +6,6 @@
 
 #include <typeindex>
 
-
 namespace osg2vsg
 {
     struct SceneStats : public vsg::Object
@@ -25,15 +24,12 @@ namespace osg2vsg
             }
         }
 
-
         void print(std::ostream& out);
     };
-
 
     class OsgSceneAnalysis : public osg::NodeVisitor
     {
     public:
-
         vsg::ref_ptr<SceneStats> _sceneStats;
 
         OsgSceneAnalysis();
@@ -47,7 +43,6 @@ namespace osg2vsg
     class VsgSceneAnalysis : public vsg::ConstVisitor
     {
     public:
-
         vsg::ref_ptr<SceneStats> _sceneStats;
 
         VsgSceneAnalysis();
@@ -59,4 +54,4 @@ namespace osg2vsg
         //void apply(const vsg::Commands& commands) override;
     };
 
-}
+} // namespace osg2vsg

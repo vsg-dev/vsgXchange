@@ -29,4 +29,4 @@ namespace vsgXchange
     };
     //VSG_type_name(vsgXchange::ReaderWriter_glsl);
 
-}
+} // namespace vsgXchange

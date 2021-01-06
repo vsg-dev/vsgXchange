@@ -5,7 +5,6 @@
 #include <osg/Array>
 #include <osg/StateSet>
 
-
 namespace osg2vsg
 {
     enum ShaderModeMask : uint32_t
@@ -50,4 +49,4 @@ namespace osg2vsg
     // create default shader source
     std::string createDefaultVertexSource(const uint32_t& shaderModeMask, const uint32_t& geometryAttrbutes);
     std::string createDefaultFragmentSource(const uint32_t& shaderModeMask, const uint32_t& geometryAttrbutes);
-}
+} // namespace osg2vsg

@@ -16,17 +16,17 @@ namespace osg2vsg
         uint32_t targetSize = std::max(count, bindOverallPaddingCount);
 
         vsg::ref_ptr<vsg::vec2Array> outarray(new vsg::vec2Array(targetSize));
-        uint32_t i=0;
-        for(; i<count; ++i)
+        uint32_t i = 0;
+        for (; i < count; ++i)
         {
             const osg::Vec2& in_value = inarray->at(i);
             outarray->at(i) = vsg::vec2(in_value.x(), in_value.y());
         }
 
-        if (i<bindOverallPaddingCount)
+        if (i < bindOverallPaddingCount)
         {
-            auto last = outarray->at(count-1);
-            for(; i<bindOverallPaddingCount; ++i)
+            auto last = outarray->at(count - 1);
+            for (; i < bindOverallPaddingCount; ++i)
             {
                 outarray->at(i) = last;
             }
@@ -37,23 +37,23 @@ namespace osg2vsg
 
     vsg::ref_ptr<vsg::vec3Array> convertToVsg(const osg::Vec3Array* inarray, uint32_t bindOverallPaddingCount)
     {
-        if (!inarray || inarray->size()==0) return vsg::ref_ptr<vsg::vec3Array>();
+        if (!inarray || inarray->size() == 0) return vsg::ref_ptr<vsg::vec3Array>();
 
         uint32_t count = inarray->size();
         uint32_t targetSize = std::max(count, bindOverallPaddingCount);
 
         vsg::ref_ptr<vsg::vec3Array> outarray(new vsg::vec3Array(targetSize));
-        uint32_t i=0;
-        for(; i<count; ++i)
+        uint32_t i = 0;
+        for (; i < count; ++i)
         {
             const osg::Vec3& in_value = inarray->at(i);
             outarray->at(i) = vsg::vec3(in_value.x(), in_value.y(), in_value.z());
         }
 
-        if (i<bindOverallPaddingCount)
+        if (i < bindOverallPaddingCount)
         {
-            auto last = outarray->at(count-1);
-            for(; i<bindOverallPaddingCount; ++i)
+            auto last = outarray->at(count - 1);
+            for (; i < bindOverallPaddingCount; ++i)
             {
                 outarray->at(i) = last;
             }
@@ -70,17 +70,17 @@ namespace osg2vsg
         uint32_t targetSize = std::max(count, bindOverallPaddingCount);
 
         vsg::ref_ptr<vsg::vec4Array> outarray(new vsg::vec4Array(targetSize));
-        uint32_t i=0;
-        for(; i<count; ++i)
+        uint32_t i = 0;
+        for (; i < count; ++i)
         {
             const osg::Vec4& in_value = inarray->at(i);
             outarray->at(i) = vsg::vec4(in_value.x(), in_value.y(), in_value.z(), in_value.w());
         }
 
-        if (i<bindOverallPaddingCount)
+        if (i < bindOverallPaddingCount)
         {
-            auto last = outarray->at(count-1);
-            for(; i<bindOverallPaddingCount; ++i)
+            auto last = outarray->at(count - 1);
+            for (; i < bindOverallPaddingCount; ++i)
             {
                 outarray->at(i) = last;
             }
@@ -95,24 +95,24 @@ namespace osg2vsg
 
         switch (inarray->getType())
         {
-            case osg::Array::Type::Vec2ArrayType: return convertToVsg(dynamic_cast<const osg::Vec2Array*>(inarray), bindOverallPaddingCount);
-            case osg::Array::Type::Vec3ArrayType: return convertToVsg(dynamic_cast<const osg::Vec3Array*>(inarray), bindOverallPaddingCount);
-            case osg::Array::Type::Vec4ArrayType: return convertToVsg(dynamic_cast<const osg::Vec4Array*>(inarray), bindOverallPaddingCount);
-            default: return vsg::ref_ptr<vsg::Data>();
+        case osg::Array::Type::Vec2ArrayType: return convertToVsg(dynamic_cast<const osg::Vec2Array*>(inarray), bindOverallPaddingCount);
+        case osg::Array::Type::Vec3ArrayType: return convertToVsg(dynamic_cast<const osg::Vec3Array*>(inarray), bindOverallPaddingCount);
+        case osg::Array::Type::Vec4ArrayType: return convertToVsg(dynamic_cast<const osg::Vec4Array*>(inarray), bindOverallPaddingCount);
+        default: return vsg::ref_ptr<vsg::Data>();
         }
     }
 
     uint32_t calculateAttributesMask(const osg::Geometry* geometry)
     {
         uint32_t mask = 0;
-        if(!geometry) return mask;
+        if (!geometry) return mask;
 
         if (geometry->getVertexArray() != nullptr) mask |= VERTEX;
 
         if (geometry->getNormalArray() != nullptr)
         {
             mask |= NORMAL;
-            if(geometry->getNormalBinding() == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= NORMAL_OVERALL;
+            if (geometry->getNormalBinding() == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= NORMAL_OVERALL;
         }
 
         if (geometry->getColorArray() != nullptr)
@@ -124,13 +124,13 @@ namespace osg2vsg
         if (geometry->getVertexAttribArray(6) != nullptr)
         {
             mask |= TANGENT;
-            if ( geometry->getVertexAttribBinding(6) == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= TANGENT_OVERALL;
+            if (geometry->getVertexAttribBinding(6) == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= TANGENT_OVERALL;
         }
 
         if (geometry->getVertexAttribArray(7) != nullptr)
         {
             mask |= TRANSLATE;
-            if ( geometry->getVertexAttribBinding(7) == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= TRANSLATE_OVERALL;
+            if (geometry->getVertexAttribBinding(7) == osg::Geometry::AttributeBinding::BIND_OVERALL) mask |= TRANSLATE_OVERALL;
         }
 
         if (geometry->getTexCoordArray(0) != nullptr) mask |= TEXCOORD0;
@@ -143,24 +143,24 @@ namespace osg2vsg
     {
         switch (primitiveMode)
         {
-            case osg::PrimitiveSet::Mode::POINTS: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-            case osg::PrimitiveSet::Mode::LINES: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            case osg::PrimitiveSet::Mode::LINE_STRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-            case osg::PrimitiveSet::Mode::TRIANGLES: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-            case osg::PrimitiveSet::Mode::TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-            case osg::PrimitiveSet::Mode::TRIANGLE_FAN: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-            case osg::PrimitiveSet::Mode::LINES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-            case osg::PrimitiveSet::Mode::LINE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-            case osg::PrimitiveSet::Mode::TRIANGLES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-            case osg::PrimitiveSet::Mode::TRIANGLE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-            case osg::PrimitiveSet::Mode::PATCHES: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        case osg::PrimitiveSet::Mode::POINTS: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        case osg::PrimitiveSet::Mode::LINES: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        case osg::PrimitiveSet::Mode::LINE_STRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+        case osg::PrimitiveSet::Mode::TRIANGLES: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        case osg::PrimitiveSet::Mode::TRIANGLE_FAN: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+        case osg::PrimitiveSet::Mode::LINES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+        case osg::PrimitiveSet::Mode::LINE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+        case osg::PrimitiveSet::Mode::TRIANGLES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+        case osg::PrimitiveSet::Mode::PATCHES: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 
-            //not supported
-            case osg::PrimitiveSet::Mode::LINE_LOOP:
-            case osg::PrimitiveSet::Mode::QUADS:
-            case osg::PrimitiveSet::Mode::QUAD_STRIP:
-            case osg::PrimitiveSet::Mode::POLYGON:
-            default: return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM; // use as unsupported flag`
+        //not supported
+        case osg::PrimitiveSet::Mode::LINE_LOOP:
+        case osg::PrimitiveSet::Mode::QUADS:
+        case osg::PrimitiveSet::Mode::QUAD_STRIP:
+        case osg::PrimitiveSet::Mode::POLYGON:
+        default: return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM; // use as unsupported flag`
         }
     }
 
@@ -168,13 +168,14 @@ namespace osg2vsg
     {
         switch (wrapmode)
         {
-            case osg::Texture::WrapMode::CLAMP: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            case osg::Texture::WrapMode::CLAMP_TO_EDGE: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            case osg::Texture::WrapMode::CLAMP_TO_BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-            case osg::Texture::WrapMode::REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            case osg::Texture::WrapMode::MIRROR: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-                //VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE no osg equivelent for this
-            default: return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM; // unknown
+        case osg::Texture::WrapMode::CLAMP: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case osg::Texture::WrapMode::CLAMP_TO_EDGE: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case osg::Texture::WrapMode::CLAMP_TO_BORDER: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        case osg::Texture::WrapMode::REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case osg::Texture::WrapMode::MIRROR:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            //VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE no osg equivelent for this
+        default: return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM; // unknown
         }
     }
 
@@ -182,13 +183,13 @@ namespace osg2vsg
     {
         switch (filtermode)
         {
-            case osg::Texture::FilterMode::LINEAR: return { VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST };
-            case osg::Texture::FilterMode::LINEAR_MIPMAP_LINEAR: return { VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR };
-            case osg::Texture::FilterMode::LINEAR_MIPMAP_NEAREST: return { VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST };
-            case osg::Texture::FilterMode::NEAREST: return { VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST };
-            case osg::Texture::FilterMode::NEAREST_MIPMAP_LINEAR: return { VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR };
-            case osg::Texture::FilterMode::NEAREST_MIPMAP_NEAREST: return { VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST };
-            default: return { VK_FILTER_MAX_ENUM, VK_SAMPLER_MIPMAP_MODE_MAX_ENUM }; // unknown
+        case osg::Texture::FilterMode::LINEAR: return {VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST};
+        case osg::Texture::FilterMode::LINEAR_MIPMAP_LINEAR: return {VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR};
+        case osg::Texture::FilterMode::LINEAR_MIPMAP_NEAREST: return {VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST};
+        case osg::Texture::FilterMode::NEAREST: return {VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST};
+        case osg::Texture::FilterMode::NEAREST_MIPMAP_LINEAR: return {VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR};
+        case osg::Texture::FilterMode::NEAREST_MIPMAP_NEAREST: return {VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST};
+        default: return {VK_FILTER_MAX_ENUM, VK_SAMPLER_MIPMAP_MODE_MAX_ENUM}; // unknown
         }
     }
 
@@ -198,7 +199,7 @@ namespace osg2vsg
         auto magFilter = texture->getFilter(osg::Texture::MAG_FILTER);
         auto minFilterMipmapMode = convertToFilterAndMipmapMode(minFilter);
         auto magFilterMipmapMode = convertToFilterAndMipmapMode(magFilter);
-        bool mipmappingRequired = (minFilter!=osg::Texture::NEAREST) && (minFilter!=osg::Texture::LINEAR);
+        bool mipmappingRequired = (minFilter != osg::Texture::NEAREST) && (minFilter != osg::Texture::LINEAR);
 
         auto sampler = vsg::Sampler::create();
 
@@ -210,15 +211,15 @@ namespace osg2vsg
         sampler->addressModeW = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_R));
 
         // requres Logical device to have deviceFeatures.samplerAnisotropy = VK_TRUE; set when creating the vsg::Deivce
-        sampler->anisotropyEnable = texture->getMaxAnisotropy()>1.0f ? VK_TRUE : VK_FALSE;
+        sampler->anisotropyEnable = texture->getMaxAnisotropy() > 1.0f ? VK_TRUE : VK_FALSE;
         sampler->maxAnisotropy = texture->getMaxAnisotropy();
 
         if (mipmappingRequired)
         {
-            const osg::Image* image = (texture->getNumImages()>0) ? texture->getImage(0) : nullptr;
+            const osg::Image* image = (texture->getNumImages() > 0) ? texture->getImage(0) : nullptr;
 
             auto maxDimension = std::max({image->s(), image->t(), image->r()});
-            auto numMipMapLevels = static_cast<uint32_t>(std::floor(std::log2(maxDimension)))+1;
+            auto numMipMapLevels = static_cast<uint32_t>(std::floor(std::log2(maxDimension))) + 1;
 
             sampler->minLod = 0;
             sampler->maxLod = static_cast<float>(numMipMapLevels);
@@ -258,7 +259,7 @@ namespace osg2vsg
         matvalue->value().ambientColor = vsg::vec4(ambient.x(), ambient.y(), ambient.z(), ambient.w());
 
         osg::Vec4 diffuse = material->getDiffuse(osg::Material::Face::FRONT);
-        if(diffuse.x() == 0.0f && diffuse.y() == 0.0f && diffuse.z() == 0.0f) diffuse.set(1.0f,1.0f,1.0f,1.0f); // diffuse sanity check (shouldn't be needed but models seem to have bad material values)
+        if (diffuse.x() == 0.0f && diffuse.y() == 0.0f && diffuse.z() == 0.0f) diffuse.set(1.0f, 1.0f, 1.0f, 1.0f); // diffuse sanity check (shouldn't be needed but models seem to have bad material values)
         matvalue->value().diffuseColor = vsg::vec4(diffuse.x(), diffuse.y(), diffuse.z(), diffuse.w());
 
         osg::Vec4 specular = material->getSpecular(osg::Material::Face::FRONT);
@@ -280,19 +281,17 @@ namespace osg2vsg
             osg::Geometry::ArrayList arrays;
             if (ingeometry->getArrayList(arrays))
             {
-                for(auto& array : arrays)
+                for (auto& array : arrays)
                 {
-                    if (array->getBinding()==osg::Array::BIND_OVERALL)
+                    if (array->getBinding() == osg::Array::BIND_OVERALL)
                     {
                         if (instanceCount < array->getNumElements()) instanceCount = array->getNumElements();
                     }
                 }
             }
-
         }
 
         uint32_t bindOverallPaddingCount = instanceCount;
-
 
         // convert attribute arrays, create defaults for any requested that don't exist for now to ensure pipline gets required data
         vsg::ref_ptr<vsg::Data> vertices(osg2vsg::convertToVsg(ingeometry->getVertexArray(), bindOverallPaddingCount));
@@ -329,7 +328,7 @@ namespace osg2vsg
         vsg::ref_ptr<vsg::Data> translations(osg2vsg::convertToVsg(ingeometry->getVertexAttribArray(7), bindOverallPaddingCount));
 
         // fill arrays data list THE ORDER HERE IS IMPORTANT
-        auto attributeArrays = vsg::DataList{ vertices }; // always have verticies
+        auto attributeArrays = vsg::DataList{vertices}; // always have verticies
         if (normals.valid() && normals->valueCount() > 0) attributeArrays.push_back(normals);
         if (tangents.valid() && tangents->valueCount() > 0) attributeArrays.push_back(tangents);
         if (colors.valid() && colors->valueCount() > 0) attributeArrays.push_back(colors);
@@ -346,8 +345,8 @@ namespace osg2vsg
         std::vector<uint16_t> indcies; // use to combine indicies from all drawelements
         osg::Geometry::PrimitiveSetList& primitiveSets = ingeometry->getPrimitiveSetList();
         for (osg::Geometry::PrimitiveSetList::const_iterator itr = primitiveSets.begin();
-            itr != primitiveSets.end();
-            ++itr)
+             itr != primitiveSets.end();
+             ++itr)
         {
             osg::DrawElements* de = (*itr)->getDrawElements();
             if (de)
@@ -372,7 +371,7 @@ namespace osg2vsg
         }
 
         vsg::ref_ptr<vsg::ushortArray> vsgindices;
-        if(indcies.size() > 0)
+        if (indcies.size() > 0)
         {
             vsgindices = new vsg::ushortArray(indcies.size());
             std::copy(indcies.begin(), indcies.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
@@ -382,17 +381,17 @@ namespace osg2vsg
         {
             vsg::ref_ptr<vsg::Commands> commands(new vsg::Commands);
 
-            commands->addChild( vsg::BindVertexBuffers::create(0, attributeArrays) );
+            commands->addChild(vsg::BindVertexBuffers::create(0, attributeArrays));
 
-            for(auto& draw : drawCommands)
+            for (auto& draw : drawCommands)
             {
                 commands->addChild(draw);
             }
 
-            if(vsgindices)
+            if (vsgindices)
             {
-                commands->addChild( vsg::BindIndexBuffer::create(vsgindices) );
-                commands->addChild( vsg::DrawIndexed::create(vsgindices->valueCount(), instanceCount, 0, 0, 0) );
+                commands->addChild(vsg::BindIndexBuffer::create(vsgindices));
+                commands->addChild(vsg::DrawIndexed::create(vsgindices->valueCount(), instanceCount, 0, 0, 0));
             }
 
             return commands;
@@ -412,14 +411,13 @@ namespace osg2vsg
             return vid;
         }
 
-
         // fallback to create the vsg geometry
         auto geometry = vsg::Geometry::create();
 
         geometry->arrays = attributeArrays;
 
         // copy into ushortArray
-        if(indcies.size() > 0)
+        if (indcies.size() > 0)
         {
             geometry->indices = vsgindices;
 
@@ -431,5 +429,4 @@ namespace osg2vsg
         return geometry;
     }
 
-}
-
+} // namespace osg2vsg

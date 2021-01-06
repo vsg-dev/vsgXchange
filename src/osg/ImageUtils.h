@@ -16,9 +16,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 
-#include <vsg/vk/PhysicalDevice.h>
-#include <vsg/vk/Device.h>
 #include <vsg/vk/CommandPool.h>
+#include <vsg/vk/Device.h>
+#include <vsg/vk/PhysicalDevice.h>
 
 namespace osg2vsg
 {
@@ -27,5 +27,4 @@ namespace osg2vsg
     osg::ref_ptr<osg::Image> formatImageToRGBA(const osg::Image* image);
 
     vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image);
-}
-
+} // namespace osg2vsg

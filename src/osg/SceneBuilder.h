@@ -1,13 +1,13 @@
 #pragma once
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
+#include <osg/Billboard>
+#include <osg/MatrixTransform>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 #include <osgUtil/Optimizer>
-#include <osg/Billboard>
-#include <osg/MatrixTransform>
 
 #include "BuildOptions.h"
 
@@ -18,7 +18,7 @@ namespace osg2vsg
     public:
         SceneBuilderBase() {}
 
-        SceneBuilderBase(vsg::ref_ptr<const BuildOptions> options):
+        SceneBuilderBase(vsg::ref_ptr<const BuildOptions> options) :
             buildOptions(options) {}
 
         using StateStack = std::vector<osg::ref_ptr<osg::StateSet>>;
@@ -27,16 +27,15 @@ namespace osg2vsg
         using StateMap = std::map<StateStack, StatePair>;
         using GeometriesMap = std::map<const osg::Geometry*, vsg::ref_ptr<vsg::Command>>;
 
-
         using TexturesMap = std::map<const osg::Texture*, vsg::ref_ptr<vsg::DescriptorImage>>;
 
         struct UniqueStateSet
         {
-            bool operator() ( const osg::ref_ptr<osg::StateSet>& lhs, const osg::ref_ptr<osg::StateSet>& rhs) const
+            bool operator()(const osg::ref_ptr<osg::StateSet>& lhs, const osg::ref_ptr<osg::StateSet>& rhs) const
             {
                 if (!lhs) return true;
                 if (!rhs) return false;
-                return lhs->compare(*rhs)<0;
+                return lhs->compare(*rhs) < 0;
             }
         };
 
@@ -66,10 +65,10 @@ namespace osg2vsg
     class SceneBuilder : public osg::NodeVisitor, public SceneBuilderBase
     {
     public:
-        SceneBuilder():
+        SceneBuilder() :
             osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ACTIVE_CHILDREN) {}
 
-        SceneBuilder(vsg::ref_ptr<const BuildOptions> options):
+        SceneBuilder(vsg::ref_ptr<const BuildOptions> options) :
             osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ACTIVE_CHILDREN),
             SceneBuilderBase(options) {}
 
@@ -117,6 +116,5 @@ namespace osg2vsg
         void print();
 
         vsg::ref_ptr<vsg::Node> optimizeAndConvertToVsg(osg::ref_ptr<osg::Node> scene, vsg::Paths& searchPaths);
-
     };
-}
+} // namespace osg2vsg

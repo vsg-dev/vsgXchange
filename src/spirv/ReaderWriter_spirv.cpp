@@ -14,7 +14,7 @@ ReaderWriter_spirv::ReaderWriter_spirv()
 vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::fileExtension(filename);
-    if (ext=="spv" && vsg::fileExists(filename))
+    if (ext == "spv" && vsg::fileExists(filename))
     {
         vsg::ShaderModule::SPIRV spirv;
         vsg::readFile(spirv, filename);
@@ -28,7 +28,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::read(const vsg::Path& filename, vs
 bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::fileExtension(filename);
-    if (ext=="spv")
+    if (ext == "spv")
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
         const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
@@ -39,7 +39,7 @@ bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filen
                 vsg::ShaderCompiler sc;
                 if (!sc.compile(vsg::ref_ptr<vsg::ShaderStage>(const_cast<vsg::ShaderStage*>(ss))))
                 {
-                    std::cout<<"ReaderWriter_spirv::write() Failed compile tp spv."<<std::endl;
+                    std::cout << "ReaderWriter_spirv::write() Failed compile tp spv." << std::endl;
                     return false;
                 }
             }

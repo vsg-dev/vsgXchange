@@ -4,13 +4,13 @@
 #include <osg/io_utils>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
-#include <osgUtil/Optimizer>
 #include <osgUtil/MeshOptimizers>
+#include <osgUtil/Optimizer>
 
-#include "SceneBuilder.h"
+#include "ConvertToVsg.h"
 #include "ImageUtils.h"
 #include "Optimize.h"
-#include "ConvertToVsg.h"
+#include "SceneBuilder.h"
 
 #include <iostream>
 
@@ -29,7 +29,7 @@ bool ReaderWriter_osg::readOptions(vsg::Options& options, vsg::CommandLine& argu
     if (arguments.read("--read-osg", filename))
     {
         auto defaults = vsg::read(filename);
-        std::cout<<"vsg::read("<<filename<<") defaults "<<defaults<<std::endl;
+        std::cout << "vsg::read(" << filename << ") defaults " << defaults << std::endl;
         if (defaults)
         {
             options.setObject("osg", defaults);
@@ -41,7 +41,7 @@ bool ReaderWriter_osg::readOptions(vsg::Options& options, vsg::CommandLine& argu
         auto defaults = osg2vsg::BuildOptions::create();
         if (vsg::write(defaults, filename))
         {
-            std::cout<<"Written osg2vsg defaults to: "<<filename<<std::endl;
+            std::cout << "Written osg2vsg defaults to: " << filename << std::endl;
         }
     }
     return false;
@@ -53,8 +53,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
 
     if (options)
     {
-        if (osgDB::Registry::instance()->getOptions()) osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
-        else osg_options = new osgDB::Options();
+        if (osgDB::Registry::instance()->getOptions())
+            osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
+        else
+            osg_options = new osgDB::Options();
         osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), options->paths.begin(), options->paths.end());
     }
 
@@ -66,15 +68,17 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
 
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
-        vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");  // TODO, use the vsg::Options ?
+        vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH"); // TODO, use the vsg::Options ?
 
         // check to see if osg_options have been assigned to vsg::Options
         auto default_options = options->getObject<osg2vsg::BuildOptions>("osg");
 
         // clone the osg specific buildOptions if they have been assign to vsg::Options
         vsg::ref_ptr<osg2vsg::BuildOptions> buildOptions;
-        if (default_options) buildOptions = osg2vsg::BuildOptions::create(*default_options);
-        else buildOptions = osg2vsg::BuildOptions::create();
+        if (default_options)
+            buildOptions = osg2vsg::BuildOptions::create(*default_options);
+        else
+            buildOptions = osg2vsg::BuildOptions::create();
 
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
@@ -101,9 +105,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
                 uint32_t maxNumTilesBelow = 40000;
 
                 uint32_t level = 0;
-                for(uint32_t i=level; i<maxLevel; ++i)
+                for (uint32_t i = level; i < maxLevel; ++i)
                 {
-                    estimatedNumOfTilesBelow += std::pow(4, i-level);
+                    estimatedNumOfTilesBelow += std::pow(4, i - level);
                 }
 
                 uint32_t tileMultiplier = std::min(estimatedNumOfTilesBelow, maxNumTilesBelow) + 1;
@@ -114,10 +118,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
                 auto resourceHints = vsg::ResourceHints::create();
 
                 resourceHints->maxSlot = collectStats.maxSlot;
-                resourceHints->numDescriptorSets = static_cast<uint32_t >(collectStats.computeNumDescriptorSets() * tileMultiplier);
+                resourceHints->numDescriptorSets = static_cast<uint32_t>(collectStats.computeNumDescriptorSets() * tileMultiplier);
                 resourceHints->descriptorPoolSizes = collectStats.computeDescriptorPoolSizes();
 
-                for(auto& poolSize : resourceHints->descriptorPoolSizes)
+                for (auto& poolSize : resourceHints->descriptorPoolSizes)
                 {
                     poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
                 }
@@ -142,15 +146,15 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
     }
     else
     {
-        std::cout<<"ReaderWriter_osg::readFile("<<filename<<") cannot convert object type "<<object->className()<<"."<<std::endl;
+        std::cout << "ReaderWriter_osg::readFile(" << filename << ") cannot convert object type " << object->className() << "." << std::endl;
     }
 
     return {};
 }
 
-bool ReaderWriter_osg::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
+bool ReaderWriter_osg::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    std::cout<<"ReaderWriter_osg::writeFile("<<object->className()<<", "<<filename<<") using OSG not supported yet."<<std::endl;
+    std::cout << "ReaderWriter_osg::writeFile(" << object->className() << ", " << filename << ") using OSG not supported yet." << std::endl;
 
     return false;
 }

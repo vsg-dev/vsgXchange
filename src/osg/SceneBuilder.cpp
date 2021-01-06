@@ -1,13 +1,13 @@
 #include "SceneBuilder.h"
 
-#include "ImageUtils.h"
 #include "GeometryUtils.h"
-#include "ShaderUtils.h"
+#include "ImageUtils.h"
 #include "Optimize.h"
+#include "ShaderUtils.h"
 
-#include <vsg/nodes/MatrixTransform.h>
 #include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/MatrixTransform.h>
 
 #include <osgUtil/MeshOptimizers>
 
@@ -16,26 +16,28 @@
 using namespace osg2vsg;
 
 #if 0
-#define DEBUG_OUTPUT std::cout
+#    define DEBUG_OUTPUT std::cout
 #else
-#define DEBUG_OUTPUT if (false) std::cout
+#    define DEBUG_OUTPUT \
+        if (false) std::cout
 #endif
 
 osg::ref_ptr<osg::StateSet> SceneBuilderBase::uniqueState(osg::ref_ptr<osg::StateSet> stateset, bool programStateSet)
 {
     if (auto itr = uniqueStateSets.find(stateset); itr != uniqueStateSets.end())
     {
-        DEBUG_OUTPUT<<"    uniqueState() found state"<<std::endl;
+        DEBUG_OUTPUT << "    uniqueState() found state" << std::endl;
         return *itr;
     }
 
-    DEBUG_OUTPUT<<"    uniqueState() inserting state"<<std::endl;
-
+    DEBUG_OUTPUT << "    uniqueState() inserting state" << std::endl;
 
     if (writeToFileProgramAndDataSetSets && stateset.valid())
     {
-        if (programStateSet) osgDB::writeObjectFile(*(stateset), vsg::make_string("programState_", stateMap.size(),".osgt"));
-        else osgDB::writeObjectFile(*(stateset), vsg::make_string("dataState_", stateMap.size(),".osgt"));
+        if (programStateSet)
+            osgDB::writeObjectFile(*(stateset), vsg::make_string("programState_", stateMap.size(), ".osgt"));
+        else
+            osgDB::writeObjectFile(*(stateset), vsg::make_string("dataState_", stateMap.size(), ".osgt"));
     }
 
     uniqueStateSets.insert(stateset);
@@ -57,12 +59,12 @@ SceneBuilderBase::StatePair SceneBuilderBase::computeStatePair(osg::StateSet* st
     dataState->setTextureAttributeList(stateset->getTextureAttributeList());
     dataState->setUniformList(stateset->getUniformList());
 
-    for(auto attribute : stateset->getAttributeList())
+    for (auto attribute : stateset->getAttributeList())
     {
         osg::Program* program = dynamic_cast<osg::Program*>(attribute.second.first.get());
         if (program)
         {
-            DEBUG_OUTPUT<<"Found program removing from dataState"<<program<<" inserting into programState"<<std::endl;
+            DEBUG_OUTPUT << "Found program removing from dataState" << program << " inserting into programState" << std::endl;
             dataState->removeAttribute(program);
             programState->setAttribute(program, attribute.second.second);
         }
@@ -78,21 +80,20 @@ SceneBuilderBase::StatePair& SceneBuilderBase::getStatePair()
     if (!statestack.empty() && (!statepair.first || !statepair.second))
     {
         osg::ref_ptr<osg::StateSet> combined;
-        if (statestack.size()==1)
+        if (statestack.size() == 1)
         {
             combined = statestack.back();
         }
         else
         {
             combined = new osg::StateSet;
-            for(auto& stateset : statestack)
+            for (auto& stateset : statestack)
             {
                 combined->merge(*stateset);
             }
         }
 
         statepair = computeStatePair(combined);
-
     }
     return statepair;
 }
@@ -123,8 +124,7 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
 
     vsg::Descriptors descriptors;
 
-    auto addTexture = [&] (unsigned int i)
-    {
+    auto addTexture = [&](unsigned int i) {
         const osg::StateAttribute* texatt = stateset->getTextureAttribute(i, osg::StateAttribute::TEXTURE);
         const osg::Texture* osgtex = dynamic_cast<const osg::Texture*>(texatt);
         if (osgtex)
@@ -138,7 +138,7 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
             }
             else
             {
-                std::cout<<"createVsgStateSet(..) osg::Texture, with i="<<i<<" found but cannot be mapped to vsg::DescriptorImage."<<std::endl;
+                std::cout << "createVsgStateSet(..) osg::Texture, with i=" << i << " found but cannot be mapped to vsg::DescriptorImage." << std::endl;
             }
         }
     };
@@ -166,14 +166,13 @@ vsg::ref_ptr<vsg::DescriptorSet> SceneBuilderBase::createVsgStateSet(vsg::ref_pt
     return descriptorSet;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////////////
 //
 //   SceneBuilder
 //
 void SceneBuilder::apply(osg::Node& node)
 {
-    DEBUG_OUTPUT<<"Visiting "<<node.className()<<" "<<node.getStateSet()<<std::endl;
+    DEBUG_OUTPUT << "Visiting " << node.className() << " " << node.getStateSet() << std::endl;
 
     if (node.getStateSet()) pushStateSet(*node.getStateSet());
 
@@ -184,7 +183,7 @@ void SceneBuilder::apply(osg::Node& node)
 
 void SceneBuilder::apply(osg::Group& group)
 {
-    DEBUG_OUTPUT<<"Group "<<group.className()<<" "<<group.getStateSet()<<std::endl;
+    DEBUG_OUTPUT << "Group " << group.className() << " " << group.getStateSet() << std::endl;
 
     if (group.getStateSet()) pushStateSet(*group.getStateSet());
 
@@ -195,7 +194,7 @@ void SceneBuilder::apply(osg::Group& group)
 
 void SceneBuilder::apply(osg::Transform& transform)
 {
-    DEBUG_OUTPUT<<"Transform "<<transform.className()<<" "<<transform.getStateSet()<<std::endl;
+    DEBUG_OUTPUT << "Transform " << transform.className() << " " << transform.getStateSet() << std::endl;
 
     if (transform.getStateSet()) pushStateSet(*transform.getStateSet());
 
@@ -214,7 +213,7 @@ void SceneBuilder::apply(osg::Transform& transform)
 
 void SceneBuilder::apply(osg::Billboard& billboard)
 {
-    DEBUG_OUTPUT<<"apply(osg::Billboard& billboard)"<<std::endl;
+    DEBUG_OUTPUT << "apply(osg::Billboard& billboard)" << std::endl;
 
     if (billboard.getStateSet()) pushStateSet(*billboard.getStateSet());
 
@@ -227,14 +226,13 @@ void SceneBuilder::apply(osg::Billboard& billboard)
         nodeShaderModeMasks = BILLBOARD | SHADER_TRANSLATE;
     }
 
-
     if (nodeShaderModeMasks & SHADER_TRANSLATE)
     {
         using Positions = std::vector<osg::Vec3>;
         using ChildPositions = std::map<osg::Drawable*, Positions>;
         ChildPositions childPositions;
 
-        for(unsigned int i=0; i<billboard.getNumDrawables(); ++i)
+        for (unsigned int i = 0; i < billboard.getNumDrawables(); ++i)
         {
             childPositions[billboard.getDrawable(i)].push_back(billboard.getPosition(i));
         }
@@ -243,7 +241,8 @@ void SceneBuilder::apply(osg::Billboard& billboard)
         {
             Positions positions;
 
-            ComputeBillboardBoundingBox(const Positions& in_positions) : positions(in_positions) {}
+            ComputeBillboardBoundingBox(const Positions& in_positions) :
+                positions(in_positions) {}
 
             virtual osg::BoundingBox computeBound(const osg::Drawable& drawable) const
             {
@@ -252,13 +251,13 @@ void SceneBuilder::apply(osg::Billboard& billboard)
                 if (vertices)
                 {
                     osg::BoundingBox local_bb;
-                    for(auto vertex : *vertices)
+                    for (auto vertex : *vertices)
                     {
                         local_bb.expandBy(vertex);
                     }
 
                     osg::BoundingBox world_bb;
-                    for(auto position : positions)
+                    for (auto position : positions)
                     {
                         world_bb.expandBy(local_bb._min + position);
                         world_bb.expandBy(local_bb._max + position);
@@ -271,8 +270,7 @@ void SceneBuilder::apply(osg::Billboard& billboard)
             }
         };
 
-
-        for(auto&[child, positions] : childPositions)
+        for (auto& [child, positions] : childPositions)
         {
             osg::Geometry* geometry = child->asGeometry();
             if (geometry)
@@ -288,12 +286,14 @@ void SceneBuilder::apply(osg::Billboard& billboard)
     }
     else
     {
-        for(unsigned int i=0; i<billboard.getNumDrawables(); ++i)
+        for (unsigned int i = 0; i < billboard.getNumDrawables(); ++i)
         {
             auto translate = osg::Matrixd::translate(billboard.getPosition(i));
 
-            if (matrixstack.empty()) pushMatrix(translate);
-            else pushMatrix(translate * matrixstack.back());
+            if (matrixstack.empty())
+                pushMatrix(translate);
+            else
+                pushMatrix(translate * matrixstack.back());
 
             billboard.getDrawable(i)->accept(*this);
 
@@ -310,27 +310,27 @@ void SceneBuilder::apply(osg::Geometry& geometry)
 {
     if (!geometry.getVertexArray())
     {
-        DEBUG_OUTPUT<<"SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with null geometry.getVertexArray()"<<std::endl;
+        DEBUG_OUTPUT << "SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with null geometry.getVertexArray()" << std::endl;
         return;
     }
 
-    if (geometry.getVertexArray()->getNumElements()==0)
+    if (geometry.getVertexArray()->getNumElements() == 0)
     {
-        DEBUG_OUTPUT<<"SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with empty geometry.getVertexArray()"<<std::endl;
+        DEBUG_OUTPUT << "SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with empty geometry.getVertexArray()" << std::endl;
         return;
     }
 
-    if (geometry.getNumPrimitiveSets()==0)
+    if (geometry.getNumPrimitiveSets() == 0)
     {
-        DEBUG_OUTPUT<<"SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with empty PrimitiveSetList."<<std::endl;
+        DEBUG_OUTPUT << "SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with empty PrimitiveSetList." << std::endl;
         return;
     }
 
-    for(auto& primitive : geometry.getPrimitiveSetList())
+    for (auto& primitive : geometry.getPrimitiveSetList())
     {
-        if (primitive->getNumPrimitives()==0)
+        if (primitive->getNumPrimitives() == 0)
         {
-            DEBUG_OUTPUT<<"SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with as it contains an empty PrimitiveSet : "<<primitive->className()<<std::endl;
+            DEBUG_OUTPUT << "SceneBuilder::apply(osg::Geometry& geometry), ignoring geometry with as it contains an empty PrimitiveSet : " << primitive->className() << std::endl;
             return;
         }
     }
@@ -356,7 +356,7 @@ void SceneBuilder::apply(osg::Geometry& geometry)
     {
         Masks masks(calculateShaderModeMask(statePair.first.get()) | calculateShaderModeMask(statePair.second.get()) | nodeShaderModeMasks, calculateAttributesMask(&geometry));
 
-        DEBUG_OUTPUT<<"populating masks ("<<masks.first<<", "<<masks.second<<")"<<std::endl;
+        DEBUG_OUTPUT << "populating masks (" << masks.first << ", " << masks.second << ")" << std::endl;
 
         TransformStatePair& transformStatePair = masksTransformStateMap[masks];
         StateGeometryMap& stateGeometryMap = transformStatePair.matrixStateGeometryMap[matrix];
@@ -366,7 +366,7 @@ void SceneBuilder::apply(osg::Geometry& geometry)
         transformGeometryMap[matrix].push_back(&geometry);
     }
 
-    DEBUG_OUTPUT<<"   Geometry "<<geometry.className()<<" ss="<<statestack.size()<<" ms="<<matrixstack.size()<<std::endl;
+    DEBUG_OUTPUT << "   Geometry " << geometry.className() << " ss=" << statestack.size() << " ms=" << matrixstack.size() << std::endl;
 
     if (geometry.getStateSet()) popStateSet();
 }
@@ -393,30 +393,30 @@ void SceneBuilder::popMatrix()
 
 void SceneBuilder::print()
 {
-    DEBUG_OUTPUT<<"\nprint()\n";
-    DEBUG_OUTPUT<<"   programTransformStateMap.size() = "<<programTransformStateMap.size()<<std::endl;
-    for(auto [programStateSet, transformStatePair] : programTransformStateMap)
+    DEBUG_OUTPUT << "\nprint()\n";
+    DEBUG_OUTPUT << "   programTransformStateMap.size() = " << programTransformStateMap.size() << std::endl;
+    for (auto [programStateSet, transformStatePair] : programTransformStateMap)
     {
-        DEBUG_OUTPUT<<"       programStateSet = "<<programStateSet.get()<<std::endl;
-        DEBUG_OUTPUT<<"           transformStatePair.matrixStateGeometryMap.size() = "<<transformStatePair.matrixStateGeometryMap.size()<<std::endl;
-        DEBUG_OUTPUT<<"           transformStatePair.stateTransformMap.size() = "<<transformStatePair.stateTransformMap.size()<<std::endl;
+        DEBUG_OUTPUT << "       programStateSet = " << programStateSet.get() << std::endl;
+        DEBUG_OUTPUT << "           transformStatePair.matrixStateGeometryMap.size() = " << transformStatePair.matrixStateGeometryMap.size() << std::endl;
+        DEBUG_OUTPUT << "           transformStatePair.stateTransformMap.size() = " << transformStatePair.stateTransformMap.size() << std::endl;
     }
 }
 
 osg::ref_ptr<osg::Node> SceneBuilder::createStateGeometryGraphOSG(StateGeometryMap& stateGeometryMap)
 {
-    DEBUG_OUTPUT<<"createStateGeometryGraph()"<<stateGeometryMap.size()<<std::endl;
+    DEBUG_OUTPUT << "createStateGeometryGraph()" << stateGeometryMap.size() << std::endl;
 
     if (stateGeometryMap.empty()) return nullptr;
 
     osg::ref_ptr<osg::Group> group = new osg::Group;
-    for(auto [stateset, geometries] : stateGeometryMap)
+    for (auto [stateset, geometries] : stateGeometryMap)
     {
         osg::ref_ptr<osg::Group> stateGroup = new osg::Group;
         stateGroup->setStateSet(stateset);
         group->addChild(stateGroup);
 
-        for(auto& geometry : geometries)
+        for (auto& geometry : geometries)
         {
             osg::ref_ptr<osg::Geometry> new_geometry = geometry; // new osg::Geometry(*geometry);
             new_geometry->setStateSet(nullptr);
@@ -424,25 +424,25 @@ osg::ref_ptr<osg::Node> SceneBuilder::createStateGeometryGraphOSG(StateGeometryM
         }
     }
 
-    if (group->getNumChildren()==1) return group->getChild(0);
+    if (group->getNumChildren() == 1) return group->getChild(0);
 
     return group;
 }
 
 osg::ref_ptr<osg::Node> SceneBuilder::createTransformGeometryGraphOSG(TransformGeometryMap& transformGeometryMap)
 {
-    DEBUG_OUTPUT<<"createStateGeometryGraph()"<<transformGeometryMap.size()<<std::endl;
+    DEBUG_OUTPUT << "createStateGeometryGraph()" << transformGeometryMap.size() << std::endl;
 
     if (transformGeometryMap.empty()) return nullptr;
 
     osg::ref_ptr<osg::Group> group = new osg::Group;
-    for(auto [matrix, geometries] : transformGeometryMap)
+    for (auto [matrix, geometries] : transformGeometryMap)
     {
         osg::ref_ptr<osg::MatrixTransform> transform = new osg::MatrixTransform;
         transform->setMatrix(matrix);
         group->addChild(transform);
 
-        for(auto& geometry : geometries)
+        for (auto& geometry : geometries)
         {
             osg::ref_ptr<osg::Geometry> new_geometry = geometry; // new osg::Geometry(*geometry);
             new_geometry->setStateSet(nullptr);
@@ -450,7 +450,7 @@ osg::ref_ptr<osg::Node> SceneBuilder::createTransformGeometryGraphOSG(TransformG
         }
     }
 
-    if (group->getNumChildren()==1) return group->getChild(0);
+    if (group->getNumChildren() == 1) return group->getChild(0);
 
     return group;
 }
@@ -463,7 +463,7 @@ osg::ref_ptr<osg::Node> SceneBuilder::createOSG()
 
     osg::ref_ptr<osg::Group> group = new osg::Group;
 
-    for(auto [programStateSet, transformStatePair] : programTransformStateMap)
+    for (auto [programStateSet, transformStatePair] : programTransformStateMap)
     {
         osg::ref_ptr<osg::Group> programGroup = new osg::Group;
         group->addChild(programGroup);
@@ -472,7 +472,7 @@ osg::ref_ptr<osg::Node> SceneBuilder::createOSG()
         bool transformAtTop = transformStatePair.matrixStateGeometryMap.size() < transformStatePair.stateTransformMap.size();
         if (transformAtTop)
         {
-            for(auto [matrix, stateGeometryMap] : transformStatePair.matrixStateGeometryMap)
+            for (auto [matrix, stateGeometryMap] : transformStatePair.matrixStateGeometryMap)
             {
                 osg::ref_ptr<osg::Node> stateGeometryGraph = createStateGeometryGraphOSG(stateGeometryMap);
                 if (!stateGeometryGraph) continue;
@@ -492,7 +492,7 @@ osg::ref_ptr<osg::Node> SceneBuilder::createOSG()
         }
         else
         {
-            for(auto [stateset, transformeGeometryMap] : transformStatePair.stateTransformMap)
+            for (auto [stateset, transformeGeometryMap] : transformStatePair.stateTransformMap)
             {
                 osg::ref_ptr<osg::Node> transformGeometryGraph = createTransformGeometryGraphOSG(transformeGeometryMap);
                 if (!transformGeometryGraph) continue;
@@ -502,9 +502,9 @@ osg::ref_ptr<osg::Node> SceneBuilder::createOSG()
             }
         }
 
-        DEBUG_OUTPUT<<"       programStateSet = "<<programStateSet.get()<<std::endl;
-        DEBUG_OUTPUT<<"           transformStatePair.matrixStateGeometryMap.size() = "<<transformStatePair.matrixStateGeometryMap.size()<<std::endl;
-        DEBUG_OUTPUT<<"           transformStatePair.stateTransformMap.size() = "<<transformStatePair.stateTransformMap.size()<<std::endl;
+        DEBUG_OUTPUT << "       programStateSet = " << programStateSet.get() << std::endl;
+        DEBUG_OUTPUT << "           transformStatePair.matrixStateGeometryMap.size() = " << transformStatePair.matrixStateGeometryMap.size() << std::endl;
+        DEBUG_OUTPUT << "           transformStatePair.stateTransformMap.size() = " << transformStatePair.stateTransformMap.size() << std::endl;
     }
     return group;
 }
@@ -516,14 +516,14 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
     if (transformGeometryMap.empty()) return vsg::ref_ptr<vsg::Node>();
 
     vsg::ref_ptr<vsg::Group> group = vsg::Group::create();
-    for (auto[matrix, geometries] : transformGeometryMap)
+    for (auto [matrix, geometries] : transformGeometryMap)
     {
         vsg::ref_ptr<vsg::Group> localGroup = group;
 
         bool requiresTransform = !matrix.isIdentity();
 
 #if 1
-        bool requiresTopCullGroup = (buildOptions->insertCullGroups || buildOptions->insertCullNodes) && (requiresTransform/* || geometries.size()==1*/);
+        bool requiresTopCullGroup = (buildOptions->insertCullGroups || buildOptions->insertCullNodes) && (requiresTransform /* || geometries.size()==1*/);
         bool requiresLeafCullGroup = (buildOptions->insertCullGroups || buildOptions->insertCullNodes) && !requiresTopCullGroup;
         if (requiresTransform)
         {
@@ -537,14 +537,13 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
 
             localGroup = transform;
 
-
             if (buildOptions->insertCullGroups || buildOptions->insertCullNodes)
             {
                 osg::BoundingBox overall_bb;
                 for (auto& geometry : geometries)
                 {
                     osg::BoundingBox bb = geometry->getBoundingBox();
-                    for(int i=0; i<8; ++i)
+                    for (int i = 0; i < 8; ++i)
                     {
                         overall_bb.expandBy(bb.corner(i) * matrix);
                     }
@@ -552,7 +551,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
 
                 vsg::vec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
                 vsg::vec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
-                vsg::sphere boundingSphere((bb_min + bb_max)*0.5f, vsg::length(bb_max - bb_min)*0.5f);
+                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
 
                 if (buildOptions->insertCullNodes)
                 {
@@ -569,10 +568,9 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             {
                 group->addChild(transform);
             }
-
         }
 #else
-        bool requiresTopCullGroup = (insertCullGroups || insertCullNodes) && (requiresTransform || geometries.size()==1);
+        bool requiresTopCullGroup = (insertCullGroups || insertCullNodes) && (requiresTransform || geometries.size() == 1);
         bool requiresLeafCullGroup = (insertCullGroups || insertCullNodes) && !requiresTopCullGroup;
         if (requiresTopCullGroup)
         {
@@ -580,7 +578,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             for (auto& geometry : geometries)
             {
                 osg::BoundingBox bb = geometry->getBoundingBox();
-                for(int i=0; i<8; ++i)
+                for (int i = 0; i < 8; ++i)
                 {
                     overall_bb.expandBy(bb.corner(i) * matrix);
                 }
@@ -589,12 +587,11 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             vsg::vec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
             vsg::vec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
 
-            vsg::sphere boundingSphere((bb_min + bb_max)*0.5f, vsg::length(bb_max - bb_min)*0.5f);
+            vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
             auto cullGroup = vsg::CullGroup::create(boundingSphere);
             localGroup->addChild(cullGroup);
             localGroup = cullGroup;
         }
-
 
         if (requiresTransform)
         {
@@ -616,7 +613,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
         {
 #if 1
             vsg::ref_ptr<vsg::Command> leaf;
-            if(geometriesMap.find(geometry) != geometriesMap.end())
+            if (geometriesMap.find(geometry) != geometriesMap.end())
             {
                 DEBUG_OUTPUT << "sharing geometry" << std::endl;
                 leaf = geometriesMap[geometry];
@@ -636,15 +633,15 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
                 vsg::vec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
                 vsg::vec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
 
-                vsg::sphere boundingSphere((bb_min + bb_max)*0.5f, vsg::length(bb_max - bb_min)*0.5f);
+                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
                 if (buildOptions->insertCullNodes)
                 {
-                    DEBUG_OUTPUT<<"Using CullNode"<<std::endl;
-                    localGroup->addChild( vsg::CullNode::create(boundingSphere, leaf) );
+                    DEBUG_OUTPUT << "Using CullNode" << std::endl;
+                    localGroup->addChild(vsg::CullNode::create(boundingSphere, leaf));
                 }
                 else
                 {
-                    DEBUG_OUTPUT<<"Using CullGroupe"<<std::endl;
+                    DEBUG_OUTPUT << "Using CullGroupe" << std::endl;
                     auto cullGroup = vsg::CullGroup::create(boundingSphere);
                     cullGroup->addChild(leaf);
                     localGroup->addChild(cullGroup);
@@ -663,7 +660,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
                 vsg::vec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
                 vsg::vec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
 
-                vsg::sphere boundingSphere((bb_min + bb_max)*0.5f, vsg::length(bb_max - bb_min)*0.5f);
+                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
                 if (insertCullNodes)
                 {
                     auto cullGroup = vsg::CullGroup::create(boundingSphere);
@@ -673,7 +670,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             }
 
             // has the geometry already been converted
-            if(geometriesMap.find(geometry) != geometriesMap.end())
+            if (geometriesMap.find(geometry) != geometriesMap.end())
             {
                 DEBUG_OUTPUT << "sharing geometry" << std::endl;
                 nestedGroup->addChild(vsg::ref_ptr<vsg::Node>(geometriesMap[geometry]));
@@ -698,7 +695,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
 
 vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 {
-    DEBUG_OUTPUT<<"SceneBuilder::createVSG(vsg::Paths& searchPaths)"<<std::endl;
+    DEBUG_OUTPUT << "SceneBuilder::createVSG(vsg::Paths& searchPaths)" << std::endl;
 
     // clear caches
     geometriesMap.clear();
@@ -712,24 +709,24 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
     vsg::ref_ptr<vsg::Group> transparentGroup = vsg::Group::create();
     group->addChild(transparentGroup);
 
-    for (auto[masks, transformStatePair] : masksTransformStateMap)
+    for (auto [masks, transformStatePair] : masksTransformStateMap)
     {
         unsigned int maxNumDescriptors = transformStatePair.stateTransformMap.size();
-        if (maxNumDescriptors==0)
+        if (maxNumDescriptors == 0)
         {
-            DEBUG_OUTPUT<<"  Skipping empty transformStatePair"<<std::endl;
+            DEBUG_OUTPUT << "  Skipping empty transformStatePair" << std::endl;
             continue;
         }
         else
         {
-            DEBUG_OUTPUT<<"  maxNumDescriptors = "<<maxNumDescriptors<<std::endl;
+            DEBUG_OUTPUT << "  maxNumDescriptors = " << maxNumDescriptors << std::endl;
         }
 
         uint32_t geometrymask = (masks.second | buildOptions->overrideGeomAttributes) & buildOptions->supportedGeometryAttributes;
         uint32_t shaderModeMask = (masks.first | buildOptions->overrideShaderModeMask) & buildOptions->supportedShaderModeMask;
         if (shaderModeMask & NORMAL_MAP) geometrymask |= TANGENT; // mesh propably won't have tangets so force them on if we want Normal mapping
 
-        DEBUG_OUTPUT<<"  about to call createStateSetWithGraphicsPipeline("<<shaderModeMask<<", "<<geometrymask<<", "<<maxNumDescriptors<<")"<<std::endl;
+        DEBUG_OUTPUT << "  about to call createStateSetWithGraphicsPipeline(" << shaderModeMask << ", " << geometrymask << ", " << maxNumDescriptors << ")" << std::endl;
 
         auto graphicsPipelineGroup = vsg::StateGroup::create();
 
@@ -742,7 +739,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         auto& descriptorSetLayouts = graphicsPipeline->layout->setLayouts;
 
         // attach based on use of transparency
-        if(shaderModeMask & BLEND)
+        if (shaderModeMask & BLEND)
         {
             transparentGroup->addChild(graphicsPipelineGroup);
         }
@@ -751,7 +748,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
             opaqueGroup->addChild(graphicsPipelineGroup);
         }
 
-        for (auto[stateset, transformeGeometryMap] : transformStatePair.stateTransformMap)
+        for (auto [stateset, transformeGeometryMap] : transformStatePair.stateTransformMap)
         {
             vsg::ref_ptr<vsg::Node> transformGeometryGraph = createTransformGeometryGraphVSG(transformeGeometryMap, searchPaths, geometrymask);
             if (!transformGeometryGraph) continue;
@@ -781,14 +778,13 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         }
     }
 
-
     // if we are using CullGroups then place one at the top of the created scene graph
     if (buildOptions->insertCullGroups)
     {
         vsg::ComputeBounds computeBounds;
         group->accept(computeBounds);
 
-        vsg::sphere boundingSphere((computeBounds.bounds.min+computeBounds.bounds.max)*0.5, vsg::length(computeBounds.bounds.max-computeBounds.bounds.min)*0.5);
+        vsg::sphere boundingSphere((computeBounds.bounds.min + computeBounds.bounds.max) * 0.5, vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5);
         auto cullGroup = vsg::CullGroup::create(boundingSphere);
 
         // add the groups children to the cullGroup
@@ -807,9 +803,9 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::optimizeAndConvertToVsg(osg::ref_ptr<osg::
     if (optimize)
     {
         osgUtil::IndexMeshVisitor imv;
-        #if OSG_MIN_VERSION_REQUIRED(3,6,4)
+#if OSG_MIN_VERSION_REQUIRED(3, 6, 4)
         imv.setGenerateNewIndicesOnAllGeometries(true);
-        #endif
+#endif
         osg_scene->accept(imv);
         imv.makeMesh();
 

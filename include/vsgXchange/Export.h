@@ -14,15 +14,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #if (defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__))
-    #if defined(vsgXchange_EXPORTS)
-        #define VSGXCHANGE_DECLSPEC __declspec(dllexport)
-    #elif defined(VSGXCHANGE_SHARED_LIBRARY)
-        #define VSGXCHANGE_DECLSPEC __declspec(dllimport)
-    #else
-        #define VSGXCHANGE_DECLSPEC
-    #endif
+#    if defined(vsgXchange_EXPORTS)
+#        define VSGXCHANGE_DECLSPEC __declspec(dllexport)
+#    elif defined(VSGXCHANGE_SHARED_LIBRARY)
+#        define VSGXCHANGE_DECLSPEC __declspec(dllimport)
+#    else
+#        define VSGXCHANGE_DECLSPEC
+#    endif
 #else
-    #define VSGXCHANGE_DECLSPEC
+#    define VSGXCHANGE_DECLSPEC
 #endif
 
 #endif

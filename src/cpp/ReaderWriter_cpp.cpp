@@ -11,12 +11,12 @@ ReaderWriter_cpp::ReaderWriter_cpp()
 {
 }
 
-bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>  /*options*/) const
+bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    std::cout<<"ReaderWriter_cpp::write("<<object->className()<<", "<<filename<<")"<<std::endl;
+    std::cout << "ReaderWriter_cpp::write(" << object->className() << ", " << filename << ")" << std::endl;
 
     auto ext = vsg::fileExtension(filename);
-    if (ext=="cpp")
+    if (ext == "cpp")
     {
         std::string funcname = vsg::simpleFilename(filename);
 
@@ -26,15 +26,15 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
         io.write(object, str);
 
         std::ofstream fout(filename);
-        fout<<"#include <vsg/io/ReaderWriter_vsg.h>\n";
-        fout<<"static auto "<<funcname<<" = []() {";
-        fout<<"std::istringstream str(\n";
-            write(fout, str.str());
-        fout<<");\n";
+        fout << "#include <vsg/io/ReaderWriter_vsg.h>\n";
+        fout << "static auto " << funcname << " = []() {";
+        fout << "std::istringstream str(\n";
+        write(fout, str.str());
+        fout << ");\n";
 
-        fout<<"vsg::ReaderWriter_vsg io;\n";
-        fout<<"return io.read_cast<"<<object->className()<<">(str);\n";
-        fout<<"};\n";
+        fout << "vsg::ReaderWriter_vsg io;\n";
+        fout << "return io.read_cast<" << object->className() << ">(str);\n";
+        fout << "};\n";
         fout.close();
 
         return true;
@@ -44,5 +44,5 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
 
 void ReaderWriter_cpp::write(std::ostream& out, const std::string& str) const
 {
-    out<<"R\"("<<str<<")\"";
+    out << "R\"(" << str << ")\"";
 }

@@ -20,4 +20,4 @@ namespace vsgXchange
     protected:
     };
 
-}
+} // namespace vsgXchange

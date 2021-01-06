@@ -2,8 +2,8 @@
 
 #include <vsg/all.h>
 
-#include "ShaderUtils.h"
 #include "GeometryUtils.h"
+#include "ShaderUtils.h"
 
 namespace osg2vsg
 {
@@ -44,6 +44,6 @@ namespace osg2vsg
 
         vsg::ref_ptr<PipelineCache> pipelineCache;
     };
-}
+} // namespace osg2vsg
 
 EVSG_type_name(osg2vsg::BuildOptions);

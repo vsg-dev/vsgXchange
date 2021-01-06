@@ -4,8 +4,8 @@
 
 #include <vsgXchange/Export.h>
 
-#include <map>
 #include <list>
+#include <map>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -16,18 +16,25 @@ namespace vsgXchange
 
     inline bool between(float a, float b, float c)
     {
-        if (a < c) return (a <= b) && (b <= c);
-        else return (c <= b) && (b <= a);
+        if (a < c)
+            return (a <= b) && (b <= c);
+        else
+            return (c <= b) && (b <= a);
     }
 
 #if 1
     inline bool between2(float a, float b, float c)
     {
-        if (a < c) return (a <= b) && (b < c);
-        else return (c <= b) && (b < a);
+        if (a < c)
+            return (a <= b) && (b < c);
+        else
+            return (c <= b) && (b < a);
     }
 #else
-    inline bool between2(float a, float b, float c) { return between(a,b,c); }
+    inline bool between2(float a, float b, float c)
+    {
+        return between(a, b, c);
+    }
 #endif
 
     class VSGXCHANGE_DECLSPEC ReaderWriter_freetype : public vsg::Inherit<vsg::ReaderWriter, ReaderWriter_freetype>
@@ -40,7 +47,6 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
     protected:
-
         virtual ~ReaderWriter_freetype();
 
         struct Contour
@@ -63,4 +69,4 @@ namespace vsgXchange
         mutable FT_Library _library = nullptr;
     };
 
-}
+} // namespace vsgXchange

@@ -1,22 +1,22 @@
 #include <vsg/all.h>
 
+#include <chrono>
 #include <iostream>
 #include <ostream>
-#include <chrono>
 #include <thread>
 
-#include <vsgXchange/ReaderWriter_all.h>
 #include <vsg/vk/ShaderCompiler.h>
+#include <vsgXchange/ReaderWriter_all.h>
 
 namespace vsgconv
 {
     static std::mutex s_log_mutex;
 
     template<typename... Args>
-    void log(Args ...args)
+    void log(Args... args)
     {
         std::scoped_lock lock(s_log_mutex);
-        (std::cout<< ... << args)<<std::endl;
+        (std::cout << ... << args) << std::endl;
     }
 
     void writeAndMakeDirectoryIfRequired(vsg::ref_ptr<vsg::Object> object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options)
@@ -26,7 +26,7 @@ namespace vsgconv
         {
             if (!vsg::makeDirectory(path))
             {
-                log("Warning: could not create directory for ",path);
+                log("Warning: could not create directory for ", path);
                 return;
             }
         }
@@ -36,7 +36,6 @@ namespace vsgconv
     class LeafDataCollection : public vsg::Visitor
     {
     public:
-
         vsg::ref_ptr<vsg::Objects> objects;
 
         LeafDataCollection()
@@ -56,7 +55,7 @@ namespace vsgconv
 
         void apply(vsg::Geometry& geometry) override
         {
-            for(auto& data : geometry.arrays)
+            for (auto& data : geometry.arrays)
             {
                 objects->addChild(data);
             }
@@ -68,7 +67,7 @@ namespace vsgconv
 
         void apply(vsg::VertexIndexDraw& vid) override
         {
-            for(auto& data : vid.arrays)
+            for (auto& data : vid.arrays)
             {
                 objects->addChild(data);
             }
@@ -80,7 +79,7 @@ namespace vsgconv
 
         void apply(vsg::BindVertexBuffers& bvb) override
         {
-            for(auto& data : bvb.getArrays())
+            for (auto& data : bvb.getArrays())
             {
                 objects->addChild(data);
             }
@@ -96,7 +95,7 @@ namespace vsgconv
 
         void apply(vsg::StateGroup& stategroup) override
         {
-            for(auto& command : stategroup.getStateCommands())
+            for (auto& command : stategroup.getStateCommands())
             {
                 command->accept(*this);
             }
@@ -104,7 +103,6 @@ namespace vsgconv
             stategroup.traverse(*this);
         }
     };
-
 
     struct ReadRequest
     {
@@ -119,7 +117,7 @@ namespace vsgconv
         vsg::Path dest_extension = "vsgb";
         std::map<vsg::Path, ReadRequest> readRequests;
 
-        bool operator () (vsg::Object& object, const vsg::Path& dest_filename)
+        bool operator()(vsg::Object& object, const vsg::Path& dest_filename)
         {
             dest_path = vsg::filePath(dest_filename);
             dest_extension = vsg::fileExtension(dest_filename);
@@ -137,13 +135,13 @@ namespace vsgconv
         {
             if (!plod.filename.empty())
             {
-                if (readRequests.count(plod.filename)==0)
+                if (readRequests.count(plod.filename) == 0)
                 {
                     auto src_filename = plod.filename;
                     auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + "." + dest_extension;
                     auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
 
-                    readRequests[plod.filename] = { plod.options, src_filename, dest_filename};
+                    readRequests[plod.filename] = {plod.options, src_filename, dest_filename};
                     plod.filename = dest_base_filename;
                 }
             }
@@ -168,18 +166,18 @@ namespace vsgconv
             auto vsg_scene = vsg::read(readRequest.src_filename, readRequest.options);
             if (vsg_scene)
             {
-                log("   loaded ", readRequest.src_filename, ", writing to ", readRequest.dest_filename,", level ", level);
+                log("   loaded ", readRequest.src_filename, ", writing to ", readRequest.dest_filename, ", level ", level);
 
                 vsgconv::CollectReadRequests collectReadRequests;
                 if (level < max_level && collectReadRequests(*vsg_scene, readRequest.dest_filename))
                 {
                     vsg::ref_ptr<vsg::OperationQueue> ref_queue = queue;
 
-                    for(auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
+                    for (auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
                     {
                         latch->count_up();
 
-                        ref_queue->add(vsgconv::ReadOperation::create(queue, latch, itr->second, level+1, max_level));
+                        ref_queue->add(vsgconv::ReadOperation::create(queue, latch, itr->second, level + 1, max_level));
                     }
                 }
 
@@ -200,8 +198,7 @@ namespace vsgconv
         vsg::ref_ptr<vsg::Latch> latch;
         ReadRequest readRequest;
     };
-}
-
+} // namespace vsgconv
 
 int main(int argc, char** argv)
 {
@@ -214,9 +211,9 @@ int main(int argc, char** argv)
 
     if (argc <= 1)
     {
-        std::cout<<"Usage:\n";
-        std::cout<<"    vsgconv input_filename output_filefilename\n";
-        std::cout<<"    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
+        std::cout << "Usage:\n";
+        std::cout << "    vsgconv input_filename output_filefilename\n";
+        std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
         return 1;
     }
 
@@ -231,13 +228,13 @@ int main(int argc, char** argv)
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
 
-    vsg::Path outputFilename = arguments[argc-1];
+    vsg::Path outputFilename = arguments[argc - 1];
 
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
     VsgObjects vsgObjects;
 
     // read any input files
-    for (int i=1; i<argc-1; ++i)
+    for (int i = 1; i < argc - 1; ++i)
     {
         vsg::Path filename = arguments[i];
 
@@ -250,13 +247,13 @@ int main(int argc, char** argv)
         }
         else
         {
-            std::cout<<"Failed to load "<<filename<<std::endl;
+            std::cout << "Failed to load " << filename << std::endl;
         }
     }
 
     if (vsgObjects.empty())
     {
-        std::cout<<"No files loaded."<<std::endl;
+        std::cout << "No files loaded." << std::endl;
         return 1;
     }
 
@@ -264,7 +261,7 @@ int main(int argc, char** argv)
     unsigned int numShaders = 0;
     unsigned int numNodes = 0;
 
-    for(auto& object : vsgObjects)
+    for (auto& object : vsgObjects)
     {
         if (dynamic_cast<vsg::Data*>(object.get()))
         {
@@ -280,18 +277,17 @@ int main(int argc, char** argv)
         }
     }
 
-    if (numImages==vsgObjects.size())
+    if (numImages == vsgObjects.size())
     {
         // all images
         vsg::ref_ptr<vsg::Node> vsg_scene;
 
-
         if (numImages == 1)
         {
             auto group = vsg::Group::create();
-            for(auto& object : vsgObjects)
+            for (auto& object : vsgObjects)
             {
-                vsg::ref_ptr<vsg::Node> node( dynamic_cast<vsg::Node*>(object.get()) );
+                vsg::ref_ptr<vsg::Node> node(dynamic_cast<vsg::Node*>(object.get()));
                 if (node) group->addChild(node);
             }
         }
@@ -306,7 +302,7 @@ int main(int argc, char** argv)
             else
             {
                 auto objects = vsg::Objects::create();
-                for(auto& object : vsgObjects)
+                for (auto& object : vsgObjects)
                 {
                     objects->addChild(object);
                 }
@@ -314,18 +310,20 @@ int main(int argc, char** argv)
             }
         }
     }
-    else if (numShaders==vsgObjects.size())
+    else if (numShaders == vsgObjects.size())
     {
         // all shaders
         vsg::ShaderStages stagesToCompile;
-        for(auto& object : vsgObjects)
+        for (auto& object : vsgObjects)
         {
             vsg::ShaderStage* ss = dynamic_cast<vsg::ShaderStage*>(object.get());
             vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<vsg::ShaderModule*>(object.get());
             if (sm && !sm->source.empty() && sm->code.empty())
             {
-                if (ss) stagesToCompile.emplace_back(ss);
-                else stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
+                if (ss)
+                    stagesToCompile.emplace_back(ss);
+                else
+                    stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
             }
         }
 
@@ -341,17 +339,18 @@ int main(int argc, char** argv)
             vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
         }
     }
-    else if (numNodes==vsgObjects.size())
+    else if (numNodes == vsgObjects.size())
     {
         // all nodes
         vsg::ref_ptr<vsg::Node> vsg_scene;
-        if (numNodes == 1) vsg_scene = dynamic_cast<vsg::Node*>(vsgObjects.front().get());
+        if (numNodes == 1)
+            vsg_scene = dynamic_cast<vsg::Node*>(vsgObjects.front().get());
         else
         {
             auto group = vsg::Group::create();
-            for(auto& object : vsgObjects)
+            for (auto& object : vsgObjects)
             {
-                vsg::ref_ptr<vsg::Node> node( dynamic_cast<vsg::Node*>(object.get()) );
+                vsg::ref_ptr<vsg::Node> node(dynamic_cast<vsg::Node*>(object.get()));
                 if (node) group->addChild(node);
             }
             vsg_scene = group;
@@ -380,7 +379,7 @@ int main(int argc, char** argv)
 
             vsg::observer_ptr<vsg::OperationQueue> obs_queue(operationQueue);
 
-            for(auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
+            for (auto itr = collectReadRequests.readRequests.begin(); itr != collectReadRequests.readRequests.end(); ++itr)
             {
                 operationQueue->add(vsgconv::ReadOperation::create(obs_queue, latch, itr->second, 1, levels));
             }
@@ -400,14 +399,14 @@ int main(int argc, char** argv)
     {
         if (!outputFilename.empty())
         {
-            if (vsgObjects.size()==1)
+            if (vsgObjects.size() == 1)
             {
                 vsgconv::writeAndMakeDirectoryIfRequired(vsgObjects[0], outputFilename, options);
             }
             else
             {
                 auto objects = vsg::Objects::create();
-                for(auto& object : vsgObjects)
+                for (auto& object : vsgObjects)
                 {
                     objects->addChild(object);
                 }

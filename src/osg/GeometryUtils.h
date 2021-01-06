@@ -28,10 +28,10 @@ namespace osg2vsg
 
     enum AttributeChannels : uint32_t
     {
-        VERTEX_CHANNEL = 0,  // osg 0
-        NORMAL_CHANNEL = 1, // osg 1
-        TANGENT_CHANNEL = 2, //osg 6
-        COLOR_CHANNEL = 3, // osg 2
+        VERTEX_CHANNEL = 0,    // osg 0
+        NORMAL_CHANNEL = 1,    // osg 1
+        TANGENT_CHANNEL = 2,   //osg 6
+        COLOR_CHANNEL = 3,     // osg 2
         TEXCOORD0_CHANNEL = 4, //osg 3
         TEXCOORD1_CHANNEL = 5,
         TEXCOORD2_CHANNEL = 6,
@@ -67,4 +67,4 @@ namespace osg2vsg
 
     vsg::ref_ptr<vsg::Command> convertToVsg(osg::Geometry* geometry, uint32_t requiredAttributesMask, GeometryTarget geometryTarget);
 
-}
+} // namespace osg2vsg

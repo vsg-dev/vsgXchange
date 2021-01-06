@@ -7,12 +7,12 @@
 using namespace osg2vsg;
 
 #if 1
-#define DEBUG_OUTPUT std::cout
+#    define DEBUG_OUTPUT std::cout
 #else
-#define DEBUG_OUTPUT if (false) std::cout
+#    define DEBUG_OUTPUT \
+        if (false) std::cout
 #endif
 #define INFO_OUTPUT std::cout
-
 
 uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
 {
@@ -20,13 +20,12 @@ uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
     if (stateSet)
     {
         if (stateSet->getMode(GL_BLEND) & osg::StateAttribute::ON) stateMask |= BLEND;
-        if (stateSet->getMode(GL_LIGHTING) & osg::StateAttribute::ON)  stateMask |= LIGHTING;
+        if (stateSet->getMode(GL_LIGHTING) & osg::StateAttribute::ON) stateMask |= LIGHTING;
 
         auto asMaterial = dynamic_cast<const osg::Material*>(stateSet->getAttribute(osg::StateAttribute::Type::MATERIAL));
         if (asMaterial && stateSet->getMode(GL_COLOR_MATERIAL) == osg::StateAttribute::Values::ON) stateMask |= MATERIAL;
 
-        auto hasTextureWithImageInChannel = [stateSet](unsigned int channel)
-        {
+        auto hasTextureWithImageInChannel = [stateSet](unsigned int channel) {
             auto asTex = dynamic_cast<const osg::Texture*>(stateSet->getTextureAttribute(channel, osg::StateAttribute::TEXTURE));
             if (asTex && asTex->getImage(0)) return true;
             return false;
@@ -61,7 +60,7 @@ static std::vector<std::string> createPSCDefineStrings(const uint32_t& shaderMod
     // shading modes/maps
     if (hasnormal && (shaderModeMask & LIGHTING)) defines.push_back("VSG_LIGHTING");
 
-    if(shaderModeMask & MATERIAL) defines.push_back("VSG_MATERIAL");
+    if (shaderModeMask & MATERIAL) defines.push_back("VSG_MATERIAL");
 
     if (hastex0 && (shaderModeMask & DIFFUSE_MAP)) defines.push_back("VSG_DIFFUSE_MAP");
     if (hastex0 && (shaderModeMask & OPACITY_MAP)) defines.push_back("VSG_OPACITY_MAP");
@@ -81,8 +80,7 @@ static std::vector<std::string> createPSCDefineStrings(const uint32_t& shaderMod
 static std::string processGLSLShaderSource(const std::string& source, const std::vector<std::string>& defines)
 {
     // trim leading spaces/tabs
-    auto trimLeading = [](std::string& str)
-    {
+    auto trimLeading = [](std::string& str) {
         size_t startpos = str.find_first_not_of(" \t");
         if (std::string::npos != startpos)
         {
@@ -91,44 +89,39 @@ static std::string processGLSLShaderSource(const std::string& source, const std:
     };
 
     // trim trailing spaces/tabs/newlines
-    auto trimTrailing = [](std::string& str)
-    {
+    auto trimTrailing = [](std::string& str) {
         size_t endpos = str.find_last_not_of(" \t\n");
         if (endpos != std::string::npos)
         {
-            str = str.substr(0, endpos+1);
+            str = str.substr(0, endpos + 1);
         }
     };
 
     // sanitise line by triming leading and trailing characters
-    auto sanitise = [&trimLeading, &trimTrailing](std::string& str)
-    {
+    auto sanitise = [&trimLeading, &trimTrailing](std::string& str) {
         trimLeading(str);
         trimTrailing(str);
     };
 
     // return true if str starts with match string
-    auto startsWith = [](const std::string& str, const std::string& match)
-    {
+    auto startsWith = [](const std::string& str, const std::string& match) {
         return str.compare(0, match.length(), match) == 0;
     };
 
     // returns the string between the start and end character
-    auto stringBetween = [](const std::string& str, const char& startChar, const char& endChar)
-    {
+    auto stringBetween = [](const std::string& str, const char& startChar, const char& endChar) {
         auto start = str.find_first_of(startChar);
         if (start == std::string::npos) return std::string();
 
         auto end = str.find_first_of(endChar, start);
         if (end == std::string::npos) return std::string();
 
-        if((end - start) - 1 == 0) return std::string();
+        if ((end - start) - 1 == 0) return std::string();
 
-        return str.substr(start+1, (end - start) - 1);
+        return str.substr(start + 1, (end - start) - 1);
     };
 
-    auto split = [](const std::string& str, const char& seperator)
-    {
+    auto split = [](const std::string& str, const char& seperator) {
         std::vector<std::string> elements;
 
         std::string::size_type prev_pos = 0, pos = 0;
@@ -145,8 +138,7 @@ static std::string processGLSLShaderSource(const std::string& source, const std:
         return elements;
     };
 
-    auto addLine = [](std::ostringstream& ss, const std::string& line)
-    {
+    auto addLine = [](std::ostringstream& ss, const std::string& line) {
         ss << line << "\n";
     };
 
@@ -165,7 +157,7 @@ static std::string processGLSLShaderSource(const std::string& source, const std:
         sanitise(sanitisedline);
 
         // is it the version
-        if(startsWith(sanitisedline, versionmatch))
+        if (startsWith(sanitisedline, versionmatch))
         {
             addLine(headerstream, line);
         }

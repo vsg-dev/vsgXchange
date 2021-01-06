@@ -1,19 +1,18 @@
 #include "Optimize.h"
 
-#include "ImageUtils.h"
 #include "GeometryUtils.h"
+#include "ImageUtils.h"
 #include "ShaderUtils.h"
 
-#include <vsg/nodes/MatrixTransform.h>
 #include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/MatrixTransform.h>
 
 #include <osg/io_utils>
 
 using namespace osg2vsg;
 
-
-OptimizeOsgBillboards::OptimizeOsgBillboards():
+OptimizeOsgBillboards::OptimizeOsgBillboards() :
     osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ACTIVE_CHILDREN)
 {
 }
@@ -72,21 +71,20 @@ void OptimizeOsgBillboards::optimize()
     using TransformBillboardMap = std::map<osg::Transform*, Billboards>;
     using BillboardTransformMap = std::map<osg::Billboard*, Transforms>;
 
-
     TransformBillboardMap transformBillboardMap;
     BillboardTransformMap billboardTransformMap;
 
-    for(auto[transform,nodes] : transformSubgraph)
+    for (auto [transform, nodes] : transformSubgraph)
     {
         size_t numBillboards = 0;
-        for(auto& node : nodes)
+        for (auto& node : nodes)
         {
             osg::Billboard* billboard = dynamic_cast<osg::Billboard*>(node);
             if (billboard) ++numBillboards;
         }
-        if (numBillboards>0 && numBillboards==nodes.size())
+        if (numBillboards > 0 && numBillboards == nodes.size())
         {
-            for(auto& node : nodes)
+            for (auto& node : nodes)
             {
                 osg::Billboard* billboard = dynamic_cast<osg::Billboard*>(node);
                 transformBillboardMap[transform].insert(billboard);
@@ -98,12 +96,12 @@ void OptimizeOsgBillboards::optimize()
     using ReplacementMap = std::map<osg::ref_ptr<osg::Node>, osg::ref_ptr<osg::Node>>;
     ReplacementMap replacementMap;
 
-    for(auto[billboard, transforms] : billboardTransformMap)
+    for (auto [billboard, transforms] : billboardTransformMap)
     {
         bool transformsUniqueMapToBillboard = true;
-        for(auto& transform : transforms)
+        for (auto& transform : transforms)
         {
-            if (transformBillboardMap[transform].size()>1)
+            if (transformBillboardMap[transform].size() > 1)
             {
                 transformsUniqueMapToBillboard = false;
             }
@@ -114,7 +112,7 @@ void OptimizeOsgBillboards::optimize()
 
             new_billboard->setStateSet(billboard->getStateSet());
 
-            for(auto& transform : transforms)
+            for (auto& transform : transforms)
             {
                 if (transform)
                 {
@@ -122,7 +120,7 @@ void OptimizeOsgBillboards::optimize()
                     transform->computeLocalToWorldMatrix(matrix, nullptr);
 
                     unsigned int numPositions = std::min(static_cast<unsigned int>(billboard->getPositionList().size()), billboard->getNumDrawables());
-                    for(unsigned int i=0; i<numPositions; ++i)
+                    for (unsigned int i = 0; i < numPositions; ++i)
                     {
                         auto position = billboard->getPosition(i);
                         new_billboard->addDrawable(billboard->getDrawable(i), position * matrix);
@@ -131,7 +129,7 @@ void OptimizeOsgBillboards::optimize()
                 else
                 {
                     unsigned int numPositions = std::min(static_cast<unsigned int>(billboard->getPositionList().size()), billboard->getNumDrawables());
-                    for(unsigned int i=0; i<numPositions; ++i)
+                    for (unsigned int i = 0; i < numPositions; ++i)
                     {
                         auto position = billboard->getPosition(i);
                         new_billboard->addDrawable(billboard->getDrawable(i), position);
@@ -144,22 +142,21 @@ void OptimizeOsgBillboards::optimize()
         }
     }
 
-    for(auto[nodeToReplace, replacementNode] : replacementMap)
+    for (auto [nodeToReplace, replacementNode] : replacementMap)
     {
         if (replacementNode)
         {
-            for(auto parent : nodeToReplace->getParents())
+            for (auto parent : nodeToReplace->getParents())
             {
                 parent->replaceChild(nodeToReplace.get(), replacementNode.get());
             }
         }
         else
         {
-            for(auto parent : nodeToReplace->getParents())
+            for (auto parent : nodeToReplace->getParents())
             {
                 parent->removeChild(nodeToReplace.get());
             }
         }
     }
-
 }

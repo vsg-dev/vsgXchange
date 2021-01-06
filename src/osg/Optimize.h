@@ -28,6 +28,5 @@ namespace osg2vsg
         TransformSubgraph transformSubgraph;
 
         void optimize();
-
     };
-}
+} // namespace osg2vsg

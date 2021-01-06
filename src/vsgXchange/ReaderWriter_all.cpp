@@ -2,16 +2,16 @@
 
 #include <vsg/io/ReaderWriter_vsg.h>
 
+#include "../cpp/ReaderWriter_cpp.h"
 #include "../glsl//ReaderWriter_glsl.h"
 #include "../spirv/ReaderWriter_spirv.h"
-#include "../cpp/ReaderWriter_cpp.h"
 
 #ifdef USE_FREETYPE
-#include "../freetype/FreeTypeFont.h"
+#    include "../freetype/FreeTypeFont.h"
 #endif
 
 #ifdef USE_OPENSCENEGRAPH
-#include "../osg/ReaderWriter_osg.h"
+#    include "../osg/ReaderWriter_osg.h"
 #endif
 
 using namespace vsgXchange;
