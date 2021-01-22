@@ -18,6 +18,8 @@ set(SOURCES
     spirv/ReaderWriter_spirv.cpp
 
     cpp/ReaderWriter_cpp.cpp
+
+    stbi/ReaderWriter_stbi.cpp
 )
 
 # add freetype if vailable
@@ -29,6 +31,16 @@ if(FREETYPE_FOUND)
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
+endif()
+
+find_package(assimp)
+if(assimp_FOUND)
+    set(SOURCES ${SOURCES}
+        assimp/ReaderWriter_assimp.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${assimp_LIBRARIES})
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_ASSIMP)
 endif()
 
 # add optional OpenSceneGraph components
