@@ -1,5 +1,5 @@
 #include "ReaderWriter_assimp.h"
-#include "../../include/vsgXchange/ReaderWriter_all.h"
+#include "../stbi/ReaderWriter_stbi.h"
 
 #include "assimp_vertex.h"
 #include "assimp_phong.h"
@@ -224,7 +224,9 @@ ReaderWriter_assimp::ReaderWriter_assimp()
     : _options{vsg::Options::create()}
     , _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
-    _options->readerWriter = ReaderWriter_all::create();
+    auto readerWriter = vsg::CompositeReaderWriter::create();
+    readerWriter->add(ReaderWriter_stbi::create());
+    _options->readerWriter = readerWriter;
 
     auto readSpvFile = [](const uint32_t *content, size_t size, VkShaderStageFlagBits stage) -> vsg::ref_ptr<vsg::ShaderStage> {
         const auto count = size / sizeof(vsg::ShaderModule::SPIRV::value_type);
