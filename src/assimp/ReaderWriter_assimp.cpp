@@ -8,6 +8,7 @@
 #include <stack>
 #include <strstream>
 #include <iostream>
+#include <cmath>
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/core/Array3D.h>
@@ -507,7 +508,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                 // Calculate maximum lod level
                 auto maxDim = std::max(samplerImage.data->width(), samplerImage.data->height());
-                samplerImage.sampler->maxLod = std::floorf(std::log2f(static_cast<float>(maxDim)));
+                samplerImage.sampler->maxLod = std::floor(std::log2f(static_cast<float>(maxDim)));
             }
 
             return samplerImage;

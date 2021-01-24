@@ -3,11 +3,11 @@
 #include <vsg/io/ObjectCache.h>
 #include <vsg/io/FileSystem.h>
 
+#include <cstring>
+
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-#include <filesystem>
 
 
 using namespace vsgXchange;
@@ -20,7 +20,7 @@ ReaderWriter_stbi::ReaderWriter_stbi()
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!std::filesystem::exists(filename))
+    if (!vsg::fileExists(filename))
         return {};
 
     if (const auto ext = vsg::fileExtension(filename); _supportedExtensions.count(ext) == 0)
