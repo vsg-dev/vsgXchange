@@ -16,7 +16,7 @@
 #endif
 
 #ifdef USE_ASSIMP
-#include "../assimp/ReaderWriter_assimp.h"
+#    include "../assimp/ReaderWriter_assimp.h"
 #endif
 
 using namespace vsgXchange;

@@ -1,237 +1,237 @@
 #include "ReaderWriter_assimp.h"
 #include "../stbi/ReaderWriter_stbi.h"
 
-#include "assimp_vertex.h"
-#include "assimp_phong.h"
 #include "assimp_pbr.h"
+#include "assimp_phong.h"
+#include "assimp_vertex.h"
 
-#include <stack>
-#include <sstream>
-#include <iostream>
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <stack>
 
-#include <vsg/io/FileSystem.h>
-#include <vsg/core/Array3D.h>
+#include <vsg/commands/BindIndexBuffer.h>
+#include <vsg/commands/BindVertexBuffers.h>
+#include <vsg/commands/Commands.h>
 #include <vsg/commands/Draw.h>
 #include <vsg/commands/DrawIndexed.h>
 #include <vsg/commands/PushConstants.h>
-#include <vsg/nodes/Geometry.h>
-#include <vsg/nodes/MatrixTransform.h>
-#include <vsg/state/StateGroup.h>
-#include <vsg/vk/State.h>
-#include <vsg/commands/Commands.h>
-#include <vsg/commands/BindIndexBuffer.h>
-#include <vsg/commands/BindVertexBuffers.h>
-#include <vsg/state/DescriptorSet.h>
-#include <vsg/state/DescriptorBuffer.h>
-#include <vsg/state/DescriptorImage.h>
+#include <vsg/core/Array3D.h>
+#include <vsg/io/FileSystem.h>
 #include <vsg/io/read.h>
 #include <vsg/maths/transform.h>
+#include <vsg/nodes/Geometry.h>
+#include <vsg/nodes/MatrixTransform.h>
+#include <vsg/state/DescriptorBuffer.h>
+#include <vsg/state/DescriptorImage.h>
+#include <vsg/state/DescriptorSet.h>
+#include <vsg/state/StateGroup.h>
+#include <vsg/vk/State.h>
 
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 #include <assimp/pbrmaterial.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
-
-namespace {
-
-const std::string kDiffuseMapKey("VSG_DIFFUSE_MAP");
-const std::string kSpecularMapKey("VSG_SPECULAR_MAP");
-const std::string kAmbientMapKey("VSG_AMBIENT_MAP");
-const std::string kEmissiveMapKey("VSG_EMISSIVE_MAP");
-const std::string kHeightMapKey("VSG_HEIGHT_MAP");
-const std::string kNormalMapKey("VSG_NORMAL_MAP");
-const std::string kShininessMapKey("VSG_SHININESS_MAP");
-const std::string kOpacityMapKey("VSG_OPACITY_MAP");
-const std::string kDisplacementMapKey("VSG_DISPLACEMENT_MAP");
-const std::string kLightmapMapKey("VSG_LIGHTMAP_MAP");
-const std::string kReflectionMapKey("VSG_REFLECTION_MAP");
-const std::string kMetallRoughnessMapKey("VSG_METALLROUGHNESS_MAP");
-
-struct Material
+namespace
 {
-    aiColor4D ambient{0.0f, 0.0f, 0.0f, 1.0f};
-    aiColor4D diffuse{0.0f, 0.0f, 0.0f, 1.0f};
-    aiColor4D specular{0.0f, 0.0f, 0.0f, 1.0f};
-    aiColor4D emissive{1.0f, 1.0f, 1.0f, 1.0f};
-    aiColor4D shininessTwoSided{0.0f, 0.0f, 0.0f, 0.0f};
-    float alphaMask{1.0};
-    float alphaMaskCutoff{0.5};
 
-    vsg::ref_ptr<vsg::Data> toData()
+    const std::string kDiffuseMapKey("VSG_DIFFUSE_MAP");
+    const std::string kSpecularMapKey("VSG_SPECULAR_MAP");
+    const std::string kAmbientMapKey("VSG_AMBIENT_MAP");
+    const std::string kEmissiveMapKey("VSG_EMISSIVE_MAP");
+    const std::string kHeightMapKey("VSG_HEIGHT_MAP");
+    const std::string kNormalMapKey("VSG_NORMAL_MAP");
+    const std::string kShininessMapKey("VSG_SHININESS_MAP");
+    const std::string kOpacityMapKey("VSG_OPACITY_MAP");
+    const std::string kDisplacementMapKey("VSG_DISPLACEMENT_MAP");
+    const std::string kLightmapMapKey("VSG_LIGHTMAP_MAP");
+    const std::string kReflectionMapKey("VSG_REFLECTION_MAP");
+    const std::string kMetallRoughnessMapKey("VSG_METALLROUGHNESS_MAP");
+
+    struct Material
     {
-        auto buffer = vsg::ubyteArray::create(sizeof(Material));
-        std::memcpy(buffer->data(), &ambient.r, sizeof(Material));
-        return buffer;
+        aiColor4D ambient{0.0f, 0.0f, 0.0f, 1.0f};
+        aiColor4D diffuse{0.0f, 0.0f, 0.0f, 1.0f};
+        aiColor4D specular{0.0f, 0.0f, 0.0f, 1.0f};
+        aiColor4D emissive{1.0f, 1.0f, 1.0f, 1.0f};
+        aiColor4D shininessTwoSided{0.0f, 0.0f, 0.0f, 0.0f};
+        float alphaMask{1.0};
+        float alphaMaskCutoff{0.5};
+
+        vsg::ref_ptr<vsg::Data> toData()
+        {
+            auto buffer = vsg::ubyteArray::create(sizeof(Material));
+            std::memcpy(buffer->data(), &ambient.r, sizeof(Material));
+            return buffer;
+        }
+    };
+
+    struct PbrMaterial
+    {
+        aiColor4D baseColorFactor{0.0, 0.0, 0.0, 1.0};
+        aiColor4D emissiveFactor{0.0, 0.0, 0.0, 1.0};
+        aiColor4D diffuseFactor{0.0, 0.0, 0.0, 1.0};
+        aiColor4D specularFactor{0.0, 0.0, 0.0, 1.0};
+        float metallicFactor{1.0f};
+        float roughnessFactor{1.0f};
+        float alphaMask{1.0f};
+        float alphaMaskCutoff{0.5f};
+
+        vsg::ref_ptr<vsg::Data> toData()
+        {
+            auto buffer = vsg::ubyteArray::create(sizeof(PbrMaterial));
+            std::memcpy(buffer->data(), &baseColorFactor.r, sizeof(PbrMaterial));
+            return buffer;
+        }
+    };
+
+    static vsg::vec4 kBlackColor{0.0, 0.0, 0.0, 0.0};
+    static vsg::vec4 kWhiteColor{1.0, 1.0, 1.0, 1.0};
+    static vsg::vec4 kNormalColor{127.0f / 255.0f, 127.0f / 255.0f, 1.0f, 1.0f};
+
+    vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4& color)
+    {
+        auto vsg_data = vsg::vec4Array2D::create(1, 1, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
+        std::fill(vsg_data->begin(), vsg_data->end(), color);
+        return vsg_data;
     }
-};
 
-struct PbrMaterial
-{
-    aiColor4D baseColorFactor{0.0, 0.0, 0.0, 1.0};
-    aiColor4D emissiveFactor{0.0, 0.0, 0.0, 1.0};
-    aiColor4D diffuseFactor{0.0, 0.0, 0.0, 1.0};
-    aiColor4D specularFactor{0.0, 0.0, 0.0, 1.0};
-    float metallicFactor{1.0f};
-    float roughnessFactor{1.0f};
-    float alphaMask{1.0f};
-    float alphaMaskCutoff{0.5f};
+    static auto kWhiteData = createTexture(kWhiteColor);
+    static auto kBlackData = createTexture(kBlackColor);
+    static auto kNormalData = createTexture(kNormalColor);
 
-    vsg::ref_ptr<vsg::Data> toData()
+    static std::string processGLSLShaderSource(const std::string& source, const std::vector<std::string>& defines)
     {
-        auto buffer = vsg::ubyteArray::create(sizeof(PbrMaterial));
-        std::memcpy(buffer->data(), &baseColorFactor.r, sizeof(PbrMaterial));
-        return buffer;
-    }
-};
-
-static vsg::vec4 kBlackColor{0.0, 0.0, 0.0, 0.0};
-static vsg::vec4 kWhiteColor{1.0, 1.0, 1.0, 1.0};
-static vsg::vec4 kNormalColor{127.0f / 255.0f, 127.0f / 255.0f, 1.0f, 1.0f};
-
-vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4 &color)
-{
-    auto vsg_data = vsg::vec4Array2D::create(1, 1, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
-    std::fill(vsg_data->begin(), vsg_data->end(), color);
-    return vsg_data;
-}
-
-static auto kWhiteData = createTexture(kWhiteColor);
-static auto kBlackData = createTexture(kBlackColor);
-static auto kNormalData = createTexture(kNormalColor);
-
-static std::string processGLSLShaderSource(const std::string &source, const std::vector<std::string> &defines)
-{
-    // trim leading spaces/tabs
-    auto trimLeading = [](std::string& str) {
-        size_t startpos = str.find_first_not_of(" \t");
-        if (std::string::npos != startpos)
-        {
-            str = str.substr(startpos);
-        }
-    };
-
-    // trim trailing spaces/tabs/newlines
-    auto trimTrailing = [](std::string& str) {
-        size_t endpos = str.find_last_not_of(" \t\n");
-        if (endpos != std::string::npos)
-        {
-            str = str.substr(0, endpos + 1);
-        }
-    };
-
-    // sanitise line by triming leading and trailing characters
-    auto sanitise = [&trimLeading, &trimTrailing](std::string& str) {
-        trimLeading(str);
-        trimTrailing(str);
-    };
-
-    // return true if str starts with match string
-    auto startsWith = [](const std::string& str, const std::string& match) {
-        return str.compare(0, match.length(), match) == 0;
-    };
-
-    // returns the string between the start and end character
-    auto stringBetween = [](const std::string& str, const char& startChar, const char& endChar) {
-        auto start = str.find_first_of(startChar);
-        if (start == std::string::npos) return std::string();
-
-        auto end = str.find_first_of(endChar, start);
-        if (end == std::string::npos) return std::string();
-
-        if ((end - start) - 1 == 0) return std::string();
-
-        return str.substr(start + 1, (end - start) - 1);
-    };
-
-    auto split = [](const std::string& str, const char& seperator) {
-        std::vector<std::string> elements;
-
-        std::string::size_type prev_pos = 0, pos = 0;
-
-        while ((pos = str.find(seperator, pos)) != std::string::npos)
-        {
-            auto substring = str.substr(prev_pos, pos - prev_pos);
-            elements.push_back(substring);
-            prev_pos = ++pos;
-        }
-
-        elements.push_back(str.substr(prev_pos, pos - prev_pos));
-
-        return elements;
-    };
-
-    auto addLine = [](std::ostringstream& ss, const std::string& line) {
-        ss << line << "\n";
-    };
-
-    std::istringstream iss(source);
-    std::ostringstream headerstream;
-    std::ostringstream sourcestream;
-
-    const std::string versionmatch = "#version";
-    const std::string importdefinesmatch = "#pragma import_defines";
-
-    std::vector<std::string> finaldefines;
-
-    for (std::string line; std::getline(iss, line);)
-    {
-        std::string sanitisedline = line;
-        sanitise(sanitisedline);
-
-        // is it the version
-        if (startsWith(sanitisedline, versionmatch))
-        {
-            addLine(headerstream, line);
-        }
-        // is it the defines import
-        else if (startsWith(sanitisedline, importdefinesmatch))
-        {
-            // get the import defines between ()
-            auto csv = stringBetween(sanitisedline, '(', ')');
-            auto importedDefines = split(csv, ',');
-
-            addLine(headerstream, line);
-
-            // loop the imported defines and see if it's also requested in defines, if so insert a define line
-            for (auto importedDef : importedDefines)
+        // trim leading spaces/tabs
+        auto trimLeading = [](std::string& str) {
+            size_t startpos = str.find_first_not_of(" \t");
+            if (std::string::npos != startpos)
             {
-                auto sanitiesedImportDef = importedDef;
-                sanitise(sanitiesedImportDef);
+                str = str.substr(startpos);
+            }
+        };
 
-                auto finditr = std::find(defines.begin(), defines.end(), sanitiesedImportDef);
-                if (finditr != defines.end())
+        // trim trailing spaces/tabs/newlines
+        auto trimTrailing = [](std::string& str) {
+            size_t endpos = str.find_last_not_of(" \t\n");
+            if (endpos != std::string::npos)
+            {
+                str = str.substr(0, endpos + 1);
+            }
+        };
+
+        // sanitise line by triming leading and trailing characters
+        auto sanitise = [&trimLeading, &trimTrailing](std::string& str) {
+            trimLeading(str);
+            trimTrailing(str);
+        };
+
+        // return true if str starts with match string
+        auto startsWith = [](const std::string& str, const std::string& match) {
+            return str.compare(0, match.length(), match) == 0;
+        };
+
+        // returns the string between the start and end character
+        auto stringBetween = [](const std::string& str, const char& startChar, const char& endChar) {
+            auto start = str.find_first_of(startChar);
+            if (start == std::string::npos) return std::string();
+
+            auto end = str.find_first_of(endChar, start);
+            if (end == std::string::npos) return std::string();
+
+            if ((end - start) - 1 == 0) return std::string();
+
+            return str.substr(start + 1, (end - start) - 1);
+        };
+
+        auto split = [](const std::string& str, const char& seperator) {
+            std::vector<std::string> elements;
+
+            std::string::size_type prev_pos = 0, pos = 0;
+
+            while ((pos = str.find(seperator, pos)) != std::string::npos)
+            {
+                auto substring = str.substr(prev_pos, pos - prev_pos);
+                elements.push_back(substring);
+                prev_pos = ++pos;
+            }
+
+            elements.push_back(str.substr(prev_pos, pos - prev_pos));
+
+            return elements;
+        };
+
+        auto addLine = [](std::ostringstream& ss, const std::string& line) {
+            ss << line << "\n";
+        };
+
+        std::istringstream iss(source);
+        std::ostringstream headerstream;
+        std::ostringstream sourcestream;
+
+        const std::string versionmatch = "#version";
+        const std::string importdefinesmatch = "#pragma import_defines";
+
+        std::vector<std::string> finaldefines;
+
+        for (std::string line; std::getline(iss, line);)
+        {
+            std::string sanitisedline = line;
+            sanitise(sanitisedline);
+
+            // is it the version
+            if (startsWith(sanitisedline, versionmatch))
+            {
+                addLine(headerstream, line);
+            }
+            // is it the defines import
+            else if (startsWith(sanitisedline, importdefinesmatch))
+            {
+                // get the import defines between ()
+                auto csv = stringBetween(sanitisedline, '(', ')');
+                auto importedDefines = split(csv, ',');
+
+                addLine(headerstream, line);
+
+                // loop the imported defines and see if it's also requested in defines, if so insert a define line
+                for (auto importedDef : importedDefines)
                 {
-                    addLine(headerstream, "#define " + sanitiesedImportDef);
+                    auto sanitiesedImportDef = importedDef;
+                    sanitise(sanitiesedImportDef);
+
+                    auto finditr = std::find(defines.begin(), defines.end(), sanitiesedImportDef);
+                    if (finditr != defines.end())
+                    {
+                        addLine(headerstream, "#define " + sanitiesedImportDef);
+                    }
                 }
             }
+            else
+            {
+                // standard source line
+                addLine(sourcestream, line);
+            }
         }
-        else
-        {
-            // standard source line
-            addLine(sourcestream, line);
-        }
+
+        return headerstream.str() + sourcestream.str();
     }
 
-    return headerstream.str() + sourcestream.str();
-}
-
-}
+} // namespace
 
 using namespace vsgXchange;
 
-ReaderWriter_assimp::ReaderWriter_assimp()
-    : _options{vsg::Options::create()}
-    , _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
+ReaderWriter_assimp::ReaderWriter_assimp() :
+    _options{vsg::Options::create()},
+    _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
     auto readerWriter = vsg::CompositeReaderWriter::create();
     readerWriter->add(ReaderWriter_stbi::create());
     _options->readerWriter = readerWriter;
 
-    auto readSpvFile = [](const uint32_t *content, size_t size, VkShaderStageFlagBits stage) -> vsg::ref_ptr<vsg::ShaderStage> {
+    auto readSpvFile = [](const uint32_t* content, size_t size, VkShaderStageFlagBits stage) -> vsg::ref_ptr<vsg::ShaderStage> {
         const auto count = size / sizeof(vsg::ShaderModule::SPIRV::value_type);
-        vsg::ShaderModule::SPIRV spirv(content, content+count);
+        vsg::ShaderModule::SPIRV spirv(content, content + count);
 
         if (auto shader = vsg::ShaderStage::create(stage, "main", spirv); shader.valid())
             return shader;
@@ -257,7 +257,7 @@ vsg::ref_ptr<vsg::GraphicsPipeline> ReaderWriter_assimp::createPipeline(vsg::ref
     vsg::VertexInputState::Attributes vertexAttributeDescriptions{
         VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}, // vertex data
         VkVertexInputAttributeDescription{1, 1, VK_FORMAT_R32G32B32_SFLOAT, 0}, // normal data
-        VkVertexInputAttributeDescription{2, 2, VK_FORMAT_R32G32_SFLOAT,    0}  // texcoord data
+        VkVertexInputAttributeDescription{2, 2, VK_FORMAT_R32G32_SFLOAT, 0}     // texcoord data
     };
 
     auto rasterState = vsg::RasterizationState::create();
@@ -265,8 +265,7 @@ vsg::ref_ptr<vsg::GraphicsPipeline> ReaderWriter_assimp::createPipeline(vsg::ref
 
     auto colorBlendState = vsg::ColorBlendState::create();
     colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
-        {enableBlend, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}
-    };
+        {enableBlend, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
 
     vsg::GraphicsPipelineStates pipelineStates{
         vsg::VertexInputState::create(vertexBindingsDescriptions, vertexAttributeDescriptions),
@@ -274,8 +273,7 @@ vsg::ref_ptr<vsg::GraphicsPipeline> ReaderWriter_assimp::createPipeline(vsg::ref
         rasterState,
         vsg::MultisampleState::create(),
         colorBlendState,
-        vsg::DepthStencilState::create()
-    };
+        vsg::DepthStencilState::create()};
 
     auto pipelineLayout = vsg::PipelineLayout::create(vsg::DescriptorSetLayouts{descriptorSetLayout}, pushConstantRanges);
     return vsg::GraphicsPipeline::create(pipelineLayout, vsg::ShaderStages{vs, fs}, pipelineStates);
@@ -287,8 +285,7 @@ void ReaderWriter_assimp::createDefaultPipelineAndState()
     auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", processGLSLShaderSource(assimp_phong, {}));
 
     vsg::DescriptorSetLayoutBindings descriptorBindings{
-        {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}
-    };
+        {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
 
     _defaultPipeline = createPipeline(vertexShader, fragmentShader, vsg::DescriptorSetLayout::create(descriptorBindings));
 
@@ -300,7 +297,7 @@ void ReaderWriter_assimp::createDefaultPipelineAndState()
     _defaultState = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _defaultPipeline->layout, 0, descriptorSet);
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
     int upAxis = 1, upAxisSign = 1;
 
@@ -340,7 +337,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
         xform->setMatrix(vsg::mat4((float*)&m));
         parent->addChild(xform);
 
-        for (unsigned int i=0; i<node->mNumMeshes; ++i)
+        for (unsigned int i = 0; i < node->mNumMeshes; ++i)
         {
             auto mesh = scene->mMeshes[node->mMeshes[i]];
             vsg::ref_ptr<vsg::vec3Array> vertices(new vsg::vec3Array(mesh->mNumVertices));
@@ -348,7 +345,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
             vsg::ref_ptr<vsg::vec2Array> texcoords(new vsg::vec2Array(mesh->mNumVertices));
             std::vector<unsigned int> indices;
 
-            for (unsigned int j=0; j<mesh->mNumVertices; ++j)
+            for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
             {
                 vertices->at(j) = vsg::vec3(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
 
@@ -358,7 +355,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
                 }
                 else
                 {
-                    normals->at(j) = vsg::vec3(0,0,0);
+                    normals->at(j) = vsg::vec3(0, 0, 0);
                 }
 
                 if (mesh->mTextureCoords[0])
@@ -367,15 +364,15 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
                 }
                 else
                 {
-                    texcoords->at(j) = vsg::vec2(0,0);
+                    texcoords->at(j) = vsg::vec2(0, 0);
                 }
             }
 
-            for (unsigned int j=0; j<mesh->mNumFaces; ++j)
+            for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
             {
-                const auto &face = mesh->mFaces[j];
+                const auto& face = mesh->mFaces[j];
 
-                for (unsigned int k=0; k<face.mNumIndices; ++k)
+                for (unsigned int k = 0; k < face.mNumIndices; ++k)
                     indices.push_back(face.mIndices[k]);
             }
 
@@ -412,7 +409,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
         }
 
         nodes.pop();
-        for (unsigned int i=0; i<node->mNumChildren; ++i)
+        for (unsigned int i = 0; i < node->mNumChildren; ++i)
             nodes.push({node->mChildren[i], xform});
     }
 
@@ -421,7 +418,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene *scene
     return root;
 }
 
-ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiScene *scene, vsg::ref_ptr<const vsg::Options> options) const
+ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
     BindState bindDescriptorSets;
     bindDescriptorSets.reserve(scene->mNumMaterials);
@@ -438,7 +435,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     };
 
-    auto getTexture = [&](const aiScene &scene, aiMaterial &material, aiTextureType type, std::vector<std::string> &defines) -> vsg::SamplerImage {
+    auto getTexture = [&](const aiScene& scene, aiMaterial& material, aiTextureType type, std::vector<std::string>& defines) -> vsg::SamplerImage {
         aiString texPath;
         std::array<aiTextureMapMode, 3> wrapMode{{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap}};
 
@@ -448,7 +445,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
             if (texPath.data[0] == '*')
             {
-                const auto texIndex = std::atoi(texPath.C_Str()+1);
+                const auto texIndex = std::atoi(texPath.C_Str() + 1);
                 const auto texture = scene.mTextures[texIndex];
 
                 //qCDebug(lc) << "Handle embedded texture" << texPath.C_Str() << texIndex << texture->achFormatHint << texture->mWidth << texture->mHeight;
@@ -471,7 +468,6 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 {
                     std::cerr << "Failed to load texture: " << filename << std::endl;
                 }
-
             }
 
             switch (type)
@@ -518,7 +514,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
         return {};
     };
 
-    for (unsigned int i=0; i<scene->mNumMaterials; ++i)
+    for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
         const auto material = scene->mMaterials[i];
 
@@ -552,16 +548,12 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
-
             if (material->Get(AI_MATKEY_TWOSIDED, isTwoSided); isTwoSided)
                 defines.push_back("VSG_TWOSIDED");
 
-
             vsg::DescriptorSetLayoutBindings descriptorBindings{
-                {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}
-            };
+                {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
             vsg::Descriptors descList;
-
 
             auto buffer = vsg::DescriptorBuffer::create(pbr.toData(), 10);
             descList.push_back(buffer);
@@ -658,8 +650,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             }
 
             vsg::DescriptorSetLayoutBindings descriptorBindings{
-                {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}
-            };
+                {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
             vsg::Descriptors descList;
 
             auto buffer = vsg::DescriptorBuffer::create(mat.toData(), 10);
@@ -709,7 +700,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
     return bindDescriptorSets;
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path &filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     Assimp::Importer importer;
 
@@ -724,7 +715,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path &filename, v
         }
         else
         {
-            std::cerr << "Failed to load file: " << filename << std::endl << importer.GetErrorString() << std::endl;
+            std::cerr << "Failed to load file: " << filename << std::endl
+                      << importer.GetErrorString() << std::endl;
         }
     }
 
@@ -741,13 +733,13 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path &filename, v
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(std::istream &fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     Assimp::Importer importer;
 
     if (importer.IsExtensionSupported(options->extensionHint))
     {
-        std::string buffer(1<<16, 0); // 64kB
+        std::string buffer(1 << 16, 0); // 64kB
         std::string input;
 
         while (!fin.eof())
@@ -769,4 +761,3 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(std::istream &fin, vsg::ref_
 
     return {};
 }
-

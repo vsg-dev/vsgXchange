@@ -1,13 +1,12 @@
 #include "ReaderWriter_stbi.h"
 
-#include <vsg/io/ObjectCache.h>
 #include <vsg/io/FileSystem.h>
+#include <vsg/io/ObjectCache.h>
 
 #include <cstring>
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
-
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -21,9 +20,8 @@
 
 using namespace vsgXchange;
 
-
-ReaderWriter_stbi::ReaderWriter_stbi()
-    : _supportedExtensions{"jpg", "jpeg", "jpe", "png", "gif", "bmp", "tga", "psd"}
+ReaderWriter_stbi::ReaderWriter_stbi() :
+    _supportedExtensions{"jpg", "jpeg", "jpe", "png", "gif", "bmp", "tga", "psd"}
 {
 }
 
@@ -52,7 +50,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(std::istream& fin, vsg::ref_pt
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
-    std::string buffer(1<<16, 0); // 64kB
+    std::string buffer(1 << 16, 0); // 64kB
     std::string input;
 
     while (!fin.eof())
@@ -63,8 +61,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(std::istream& fin, vsg::ref_pt
     }
 
     int width, height, channels;
-    if (const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()), 
-        &width, &height, &channels, STBI_rgb_alpha); pixels)
+    if (const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()),
+                                                  &width, &height, &channels, STBI_rgb_alpha);
+        pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
         std::memcpy(vsg_data->data(), pixels, vsg_data->dataSize());
