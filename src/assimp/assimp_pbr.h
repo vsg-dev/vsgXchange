@@ -186,6 +186,16 @@ vec3 BRDF_Diffuse_Burley(PBRInfo pbrInputs)
     return pbrInputs.diffuseColor * lightScatter * viewScatter * energyFactor;
 }
 
+vec3 BRDF_Diffuse_Disney(PBRInfo pbrInputs)
+{
+	float Fd90 = 0.5 + 2.0 * pbrInputs.perceptualRoughness * pbrInputs.VdotH * pbrInputs.VdotH;
+    vec3 f0 = vec3(0.1);
+	vec3 invF0 = vec3(1.0, 1.0, 1.0) - f0;
+	float dim = min(invF0.r, min(invF0.g, invF0.b));
+	float result = ((1.0 + (Fd90 - 1.0) * pow(1.0 - pbrInputs.NdotL, 5.0 )) * (1.0 + (Fd90 - 1.0) * pow(1.0 - pbrInputs.NdotV, 5.0 ))) * dim;
+	return pbrInputs.diffuseColor * result;
+}
+
 // The following equation models the Fresnel reflectance term of the spec equation (aka F())
 // Implementation of fresnel from [4], Equation 15
 vec3 specularReflection(PBRInfo pbrInputs)
@@ -253,7 +263,7 @@ vec3 BRDF(vec3 v, vec3 n, vec3 l, vec3 h, float perceptualRoughness, float metal
     const vec3 u_LightColor = vec3(1.0);
 
     // Calculation of analytical lighting contribution
-    vec3 diffuseContrib = (1.0 - F) * BRDF_Diffuse_Burley(pbrInputs);
+    vec3 diffuseContrib = (1.0 - F) * BRDF_Diffuse_Disney(pbrInputs);
     vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
     // Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
     vec3 color = NdotL * u_LightColor * (diffuseContrib + specContrib);

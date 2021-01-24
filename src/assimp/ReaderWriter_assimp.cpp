@@ -52,10 +52,10 @@ namespace
     struct Material
     {
         aiColor4D ambient{0.0f, 0.0f, 0.0f, 1.0f};
-        aiColor4D diffuse{0.0f, 0.0f, 0.0f, 1.0f};
+        aiColor4D diffuse{1.0f, 1.0f, 1.0f, 1.0f};
         aiColor4D specular{0.0f, 0.0f, 0.0f, 1.0f};
-        aiColor4D emissive{1.0f, 1.0f, 1.0f, 1.0f};
-        aiColor4D shininessTwoSided{0.0f, 0.0f, 0.0f, 0.0f};
+        aiColor4D emissive{0.0f, 0.0f, 0.0f, 1.0f};
+        float shininess{0.0f};
         float alphaMask{1.0};
         float alphaMaskCutoff{0.5};
 
@@ -69,9 +69,9 @@ namespace
 
     struct PbrMaterial
     {
-        aiColor4D baseColorFactor{0.0, 0.0, 0.0, 1.0};
+        aiColor4D baseColorFactor{1.0, 1.0, 1.0, 1.0};
         aiColor4D emissiveFactor{0.0, 0.0, 0.0, 1.0};
-        aiColor4D diffuseFactor{0.0, 0.0, 0.0, 1.0};
+        aiColor4D diffuseFactor{1.0, 1.0, 1.0, 1.0};
         aiColor4D specularFactor{0.0, 0.0, 0.0, 1.0};
         float metallicFactor{1.0f};
         float roughnessFactor{1.0f};
@@ -228,16 +228,6 @@ ReaderWriter_assimp::ReaderWriter_assimp() :
     auto readerWriter = vsg::CompositeReaderWriter::create();
     readerWriter->add(ReaderWriter_stbi::create());
     _options->readerWriter = readerWriter;
-
-    auto readSpvFile = [](const uint32_t* content, size_t size, VkShaderStageFlagBits stage) -> vsg::ref_ptr<vsg::ShaderStage> {
-        const auto count = size / sizeof(vsg::ShaderModule::SPIRV::value_type);
-        vsg::ShaderModule::SPIRV spirv(content, content + count);
-
-        if (auto shader = vsg::ShaderStage::create(stage, "main", spirv); shader.valid())
-            return shader;
-
-        return {};
-    };
 
     createDefaultPipelineAndState();
 }
@@ -474,13 +464,13 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             {
             case aiTextureType_DIFFUSE: defines.push_back(kDiffuseMapKey); break;
             case aiTextureType_SPECULAR: defines.push_back(kSpecularMapKey); break;
-            case aiTextureType_AMBIENT: defines.push_back(kAmbientMapKey); break;
             case aiTextureType_EMISSIVE: defines.push_back(kEmissiveMapKey); break;
             case aiTextureType_HEIGHT: defines.push_back(kHeightMapKey); break;
             case aiTextureType_NORMALS: defines.push_back(kNormalMapKey); break;
             case aiTextureType_SHININESS: defines.push_back(kShininessMapKey); break;
             case aiTextureType_OPACITY: defines.push_back(kOpacityMapKey); break;
             case aiTextureType_DISPLACEMENT: defines.push_back(kDisplacementMapKey); break;
+            case aiTextureType_AMBIENT: 
             case aiTextureType_LIGHTMAP: defines.push_back(kLightmapMapKey); break;
             case aiTextureType_REFLECTION: defines.push_back(kReflectionMapKey); break;
             case aiTextureType_UNKNOWN: defines.push_back(kMetallRoughnessMapKey); break;
@@ -617,10 +607,10 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             std::vector<std::string> defines;
 
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
-            material->Get(AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
-            material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
-            material->Get(AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
-            material->Get(AI_MATKEY_COLOR_SPECULAR, mat.specular);
+            const auto diffuseResult = material->Get(AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
+            const auto ambientResult = material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
+            const auto emissiveResult = material->Get(AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
+            const auto specularResult = material->Get(AI_MATKEY_COLOR_SPECULAR, mat.specular);
 
             aiShadingMode shadingModel = aiShadingMode_Phong;
             material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
@@ -631,21 +621,21 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
             unsigned int maxValue = 1;
             float strength = 1.0f;
-            if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &mat.shininessTwoSided.r, &maxValue) == AI_SUCCESS)
+            if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &mat.shininess, &maxValue) == AI_SUCCESS)
             {
                 maxValue = 1;
                 if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS_STRENGTH, &strength, &maxValue) == AI_SUCCESS)
-                    mat.shininessTwoSided.r *= strength;
+                    mat.shininess *= strength;
             }
             else
             {
-                mat.shininessTwoSided.r = 0.0f;
+                mat.shininess = 0.0f;
                 mat.specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
             }
 
-            if (mat.shininessTwoSided.r < 0.01f)
+            if (mat.shininess < 0.01f)
             {
-                mat.shininessTwoSided.r = 0.0f;
+                mat.shininess = 0.0f;
                 mat.specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
             }
 
@@ -653,14 +643,14 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
             vsg::Descriptors descList;
 
-            auto buffer = vsg::DescriptorBuffer::create(mat.toData(), 10);
-            descList.push_back(buffer);
-
             if (auto samplerImage = getTexture(*scene, *material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
             {
                 auto diffuseTexture = vsg::DescriptorImage::create(samplerImage, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(diffuseTexture);
                 descriptorBindings.push_back({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+
+                if (diffuseResult != AI_SUCCESS)
+                    mat.diffuse = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
             }
 
             if (auto samplerImage = getTexture(*scene, *material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
@@ -668,12 +658,21 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 auto emissiveTexture = vsg::DescriptorImage::create(samplerImage, 4, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(emissiveTexture);
                 descriptorBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+
+                if (emissiveResult != AI_SUCCESS)
+                    mat.emissive = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
             }
 
             if (auto samplerImage = getTexture(*scene, *material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
             {
                 auto aoTexture = vsg::DescriptorImage::create(samplerImage, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(aoTexture);
+                descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+            }
+            else if (auto samplerImage = getTexture(*scene, *material, aiTextureType_AMBIENT, defines); samplerImage.data.valid())
+            {
+                auto texture = vsg::DescriptorImage::create(samplerImage, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                descList.push_back(texture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
@@ -683,6 +682,19 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 descList.push_back(normalTexture);
                 descriptorBindings.push_back({2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
+
+            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
+            {
+                auto texture = vsg::DescriptorImage::create(samplerImage, 5, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                descList.push_back(texture);
+                descriptorBindings.push_back({5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+
+                if (specularResult != AI_SUCCESS)
+                    mat.specular = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
+            }
+
+            auto buffer = vsg::DescriptorBuffer::create(mat.toData(), 10);
+            descList.push_back(buffer);
 
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
             auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", processGLSLShaderSource(assimp_vertex, defines));
