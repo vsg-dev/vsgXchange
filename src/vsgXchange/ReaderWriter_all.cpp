@@ -31,10 +31,10 @@ ReaderWriter_all::ReaderWriter_all()
 #ifdef USE_FREETYPE
     add(vsgXchange::ReaderWriter_freetype::create());
 #endif
-#ifdef USE_OPENSCENEGRAPH
-    add(vsgXchange::ReaderWriter_osg::create());
-#endif
 #ifdef USE_ASSIMP
     add(vsgXchange::ReaderWriter_assimp::create());
+#endif
+#ifdef USE_OPENSCENEGRAPH
+    add(vsgXchange::ReaderWriter_osg::create());
 #endif
 }
