@@ -6,7 +6,7 @@
 #include "assimp_pbr.h"
 
 #include <stack>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 #include <cmath>
 
@@ -440,7 +440,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
     auto getTexture = [&](const aiScene &scene, aiMaterial &material, aiTextureType type, std::vector<std::string> &defines) -> vsg::SamplerImage {
         aiString texPath;
-        std::array<aiTextureMapMode, 3> wrapMode{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
+        std::array<aiTextureMapMode, 3> wrapMode{{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap}};
 
         if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode.data()) == AI_SUCCESS)
         {
@@ -455,7 +455,8 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                 if (texture->mWidth > 0 && texture->mHeight == 0)
                 {
-                    std::istrstream stream((const char*)texture->pcData, texture->mWidth);
+                    std::string str((const char*)texture->pcData, texture->mWidth);
+                    std::istringstream stream(str);
 
                     auto options = vsg::Options::create(*_options);
                     options->extensionHint = texture->achFormatHint;
