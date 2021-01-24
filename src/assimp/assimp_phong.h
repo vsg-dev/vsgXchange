@@ -3,7 +3,7 @@
 const auto assimp_phong = R"(
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
-#pragma import_defines (VSG_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_TWOSIDED)
+#pragma import_defines (VSG_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED)
 
 #ifdef VSG_DIFFUSE_MAP
 layout(binding = 0) uniform sampler2D diffuseMap;
@@ -21,6 +21,10 @@ layout(binding = 3) uniform sampler2D aoMap;
 layout(binding = 4) uniform sampler2D emissiveMap;
 #endif
 
+#ifdef VSG_SPECULAR_MAP
+layout(binding = 5) uniform sampler2D specularMap;
+#endif
+
 layout(push_constant) uniform PushConstants {
     mat4 projection;
     mat4 modelView;
@@ -32,7 +36,7 @@ layout(binding = 10) uniform MaterialData
     vec4 diffuseColor;
     vec4 specularColor;
     vec4 emissiveColor;
-    vec4 shininessTwoSided;
+    float shininess;
     float alphaMask;
     float alphaMaskCutoff;
 } material;
@@ -97,8 +101,7 @@ void main()
     vec4 diffuseColor = material.diffuseColor;
     vec4 specularColor = material.specularColor;
     vec4 emissiveColor = material.emissiveColor;
-    float shininess = material.shininessTwoSided.r;
-    float twoSided = material.shininessTwoSided.g;
+    float shininess = material.shininess;
     float ambientOcclusion = 1.0;
 
 #ifdef VSG_DIFFUSE_MAP
@@ -117,6 +120,10 @@ void main()
 
 #ifdef VSG_LIGHTMAP_MAP
     ambientOcclusion *= texture(aoMap, texCoord0.st).r;
+#endif
+
+#ifdef VSG_SPECULAR_MAP
+    specularColor *= texture(specularMap, texCoord0.st);
 #endif
 
     vec3 nd = getNormal();
