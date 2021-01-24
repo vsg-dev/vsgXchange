@@ -7,8 +7,17 @@
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
+
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #include "stb_image.h"
 
+#pragma GCC diagnostic pop
 
 using namespace vsgXchange;
 
@@ -18,7 +27,7 @@ ReaderWriter_stbi::ReaderWriter_stbi()
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     if (!vsg::fileExists(filename))
         return {};
