@@ -447,7 +447,8 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                     auto imageOptions = vsg::Options::create(*_options);
                     imageOptions->extensionHint = texture->achFormatHint;
-                    samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions);
+                    if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
+                        return {};
                 }
             }
             else
@@ -457,6 +458,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
                 {
                     std::cerr << "Failed to load texture: " << filename << std::endl;
+                    return {};
                 }
             }
 
