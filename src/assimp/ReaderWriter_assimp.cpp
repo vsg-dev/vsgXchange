@@ -716,6 +716,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
 {
     Assimp::Importer importer;
 
+    std::cout<<"ReaderWriter_assimp::read("<<filename<<")"<<std::endl;
+
     if (const auto ext = vsg::fileExtension(filename); importer.IsExtensionSupported(ext))
     {
         if (auto scene = importer.ReadFile(filename, _importFlags); scene)
