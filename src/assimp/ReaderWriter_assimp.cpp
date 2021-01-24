@@ -425,7 +425,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     };
 
-    auto getTexture = [&](const aiScene& scene, aiMaterial& material, aiTextureType type, std::vector<std::string>& defines) -> vsg::SamplerImage {
+    auto getTexture = [&](aiMaterial& material, aiTextureType type, std::vector<std::string>& defines) -> vsg::SamplerImage {
         aiString texPath;
         std::array<aiTextureMapMode, 3> wrapMode{{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap}};
 
@@ -436,7 +436,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             if (texPath.data[0] == '*')
             {
                 const auto texIndex = std::atoi(texPath.C_Str() + 1);
-                const auto texture = scene.mTextures[texIndex];
+                const auto texture = scene->mTextures[texIndex];
 
                 //qCDebug(lc) << "Handle embedded texture" << texPath.C_Str() << texIndex << texture->achFormatHint << texture->mWidth << texture->mHeight;
 
@@ -445,9 +445,10 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     std::string str((const char*)texture->pcData, texture->mWidth);
                     std::istringstream stream(str);
 
-                    auto options = vsg::Options::create(*_options);
-                    options->extensionHint = texture->achFormatHint;
-                    samplerImage.data = vsg::read_cast<vsg::Data>(stream, options);
+                    auto imageOptions = vsg::Options::create(*_options);
+                    imageOptions->extensionHint = texture->achFormatHint;
+                    if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
+                        return {};
                 }
             }
             else
@@ -457,6 +458,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
                 {
                     std::cerr << "Failed to load texture: " << filename << std::endl;
+                    return {};
                 }
             }
 
@@ -548,42 +550,42 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             auto buffer = vsg::DescriptorBuffer::create(pbr.toData(), 10);
             descList.push_back(buffer);
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
             {
                 auto diffuseTexture = vsg::DescriptorImage::create(samplerImage, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(diffuseTexture);
                 descriptorBindings.push_back({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
             {
                 auto emissiveTexture = vsg::DescriptorImage::create(samplerImage, 4, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(emissiveTexture);
                 descriptorBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
             {
                 auto aoTexture = vsg::DescriptorImage::create(samplerImage, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(aoTexture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
             {
                 auto normalTexture = vsg::DescriptorImage::create(samplerImage, 2, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(normalTexture);
                 descriptorBindings.push_back({2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_UNKNOWN, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_UNKNOWN, defines); samplerImage.data.valid())
             {
                 auto mrTexture = vsg::DescriptorImage::create(samplerImage, 1, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(mrTexture);
                 descriptorBindings.push_back({1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage, 5, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
@@ -607,8 +609,8 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             std::vector<std::string> defines;
 
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
+            material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
             const auto diffuseResult = material->Get(AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
-            const auto ambientResult = material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
             const auto emissiveResult = material->Get(AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
             const auto specularResult = material->Get(AI_MATKEY_COLOR_SPECULAR, mat.specular);
 
@@ -643,7 +645,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                 {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
             vsg::Descriptors descList;
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
             {
                 auto diffuseTexture = vsg::DescriptorImage::create(samplerImage, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(diffuseTexture);
@@ -653,7 +655,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     mat.diffuse = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
             {
                 auto emissiveTexture = vsg::DescriptorImage::create(samplerImage, 4, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(emissiveTexture);
@@ -663,27 +665,27 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     mat.emissive = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
             {
                 auto aoTexture = vsg::DescriptorImage::create(samplerImage, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(aoTexture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
-            else if (auto samplerImage = getTexture(*scene, *material, aiTextureType_AMBIENT, defines); samplerImage.data.valid())
+            else if (auto samplerImage = getTexture(*material, aiTextureType_AMBIENT, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
             {
                 auto normalTexture = vsg::DescriptorImage::create(samplerImage, 2, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(normalTexture);
                 descriptorBindings.push_back({2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (auto samplerImage = getTexture(*scene, *material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
+            if (auto samplerImage = getTexture(*material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage, 5, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
