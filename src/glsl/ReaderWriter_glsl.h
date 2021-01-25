@@ -27,6 +27,7 @@ namespace vsgXchange
         std::map<std::string, VkShaderStageFlagBits> extensionToStage;
         std::map<VkShaderStageFlagBits, std::string> stageToExtension;
     };
-    //VSG_type_name(vsgXchange::ReaderWriter_glsl);
 
 } // namespace vsgXchange
+
+EVSG_type_name(vsgXchange::ReaderWriter_glsl);

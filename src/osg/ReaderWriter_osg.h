@@ -28,6 +28,7 @@ namespace vsgXchange
 
     protected:
     };
-    //VSG_type_name(vsgXchange::ReaderWriter_osg);
 
 } // namespace vsgXchange
+
+EVSG_type_name(vsgXchange::ReaderWriter_osg);
