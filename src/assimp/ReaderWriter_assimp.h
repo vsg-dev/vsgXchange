@@ -2,16 +2,11 @@
 
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/state/DescriptorSetLayout.h>
+#include <vsg/state/DescriptorSet.h>
+#include <vsg/state/GraphicsPipeline.h>
 #include <vsgXchange/Export.h>
 
 struct aiScene;
-
-namespace vsg
-{
-    class PipelineLayout;
-    class ShaderStage;
-    class BindGraphicsPipeline;
-} // namespace vsg
 
 namespace vsgXchange
 {
