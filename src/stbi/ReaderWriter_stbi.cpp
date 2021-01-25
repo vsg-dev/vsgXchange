@@ -5,6 +5,8 @@
 
 #include <cstring>
 
+#include <iostream>
+
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -15,6 +17,38 @@
 #    pragma GCC diagnostic ignored "-Wsign-compare"
 #    pragma GCC diagnostic ignored "-Wunused-function"
 #endif
+
+void* cpp_malloc(size_t size)
+{
+    return new uint8_t[size];
+}
+
+void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
+{
+    if (!old_ptr) return cpp_malloc(new_size);
+
+    if (old_size >= new_size) return old_ptr;
+
+    uint8_t* new_ptr = new uint8_t[new_size];
+
+    std::memcpy(new_ptr, old_ptr, old_size);
+
+    delete [] (uint8_t*)(old_ptr);
+
+    return new_ptr;
+}
+
+void cpp_free(void* ptr)
+{
+    delete [] (uint8_t*)(ptr);
+}
+
+// override the stb memory allocation to make it compatible with vsg::Array* use of standard C++ new/delete.
+#define STBI_MALLOC(sz) cpp_malloc(sz)
+#define STBI_REALLOC(p, newsiz) ERROR_SHOULD_NEVER_BE_CALLED
+#define STBI_REALLOC_SIZED(p, oldsz, newsz) cpp_realloc_sized(p, oldsz, newsz)
+#define STBI_FREE(p) cpp_free(p)
+
 
 #include "stb_image.h"
 
@@ -44,9 +78,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg
     int width, height, channels;
     if (const auto pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha); pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
-        std::memcpy(vsg_data->data(), pixels, vsg_data->dataSize());
-        stbi_image_free(pixels);
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+
         return vsg_data;
     }
 
@@ -73,9 +106,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(std::istream& fin, vsg::ref_pt
                                                   &width, &height, &channels, STBI_rgb_alpha);
         pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
-        std::memcpy(vsg_data->data(), pixels, vsg_data->dataSize());
-        stbi_image_free(pixels);
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
         return vsg_data;
     }
 
