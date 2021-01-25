@@ -457,7 +457,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                 if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
                 {
-                    std::cerr << "Failed to load texture: " << filename << std::endl;
+                    std::cerr << "Failed to load texture: " << filename << " texPath = "<<texPath.C_Str()<<std::endl;
                     return {};
                 }
             }
