@@ -32,10 +32,14 @@ ReaderWriter_stbi::ReaderWriter_stbi() :
 vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     if (!vsg::fileExists(filename))
+    {
         return {};
+    }
 
-    if (const auto ext = vsg::fileExtension(filename); _supportedExtensions.count(ext) == 0)
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
+    {
         return {};
+    }
 
     int width, height, channels;
     if (const auto pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha); pixels)

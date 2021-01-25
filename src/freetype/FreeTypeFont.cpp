@@ -424,7 +424,7 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, con
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    auto ext = vsg::fileExtension(filename);
+    auto ext = vsg::lowerCaseFileExtension(filename);
     if (_supportedFormats.find(ext) == _supportedFormats.end() || !vsg::fileExists(filename))
     {
         return {};

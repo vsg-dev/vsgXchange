@@ -720,7 +720,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
 {
     Assimp::Importer importer;
 
-    if (const auto ext = vsg::fileExtension(filename); importer.IsExtensionSupported(ext))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
         if (auto scene = importer.ReadFile(filename, _importFlags); scene)
         {
@@ -741,7 +741,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
     std::ifstream file(filename, std::ios::binary);
     auto opt = vsg::Options::create(*options);
     opt->paths.push_back(vsg::filePath(filename));
-    opt->extensionHint = vsg::fileExtension(filename);
+    opt->extensionHint = vsg::lowerCaseFileExtension(filename);
 
     return read(file, opt);
 #endif
