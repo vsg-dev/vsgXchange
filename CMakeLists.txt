@@ -86,8 +86,17 @@ add_custom_target(uninstall
 # add clang-foramt build target to enforce a standard code style guide.
 find_program(CLANGFORMAT clang-format)
 if (CLANGFORMAT)
+
+    file(GLOB FILES_TO_FORMAT
+        ${CMAKE_SOURCE_DIR}/include/*/*.h
+        ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/*/*.cpp
+        ${CMAKE_SOURCE_DIR}/applications/*/*.h ${CMAKE_SOURCE_DIR}/applications/*/*.cpp)
+
+    # remoe stb_image.h for format list to avoid it being different that it's original source.
+    list(REMOVE_ITEM FILES_TO_FORMAT ${CMAKE_SOURCE_DIR}/src/stbi/stb_image.h)
+
     add_custom_target(clang-format
-        COMMAND ${CLANGFORMAT} -i ${CMAKE_SOURCE_DIR}/include/vsgXchange/*.h ${CMAKE_SOURCE_DIR}/src/*/*.h ${CMAKE_SOURCE_DIR}/src/*/*.cpp ${CMAKE_SOURCE_DIR}/applications/*/*.cpp
+        COMMAND ${CLANGFORMAT} -i ${FILES_TO_FORMAT}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Automated code format using clang-format"
     )
