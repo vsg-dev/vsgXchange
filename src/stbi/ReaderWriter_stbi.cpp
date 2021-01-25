@@ -31,12 +31,12 @@ ReaderWriter_stbi::ReaderWriter_stbi() :
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    if (!vsg::fileExists(filename))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
     {
         return {};
     }
 
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
+    if (!vsg::fileExists(filename))
     {
         return {};
     }
