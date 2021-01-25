@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vsg/io/ReaderWriter.h>
-#include <vsg/state/DescriptorSetLayout.h>
 #include <vsg/state/DescriptorSet.h>
+#include <vsg/state/DescriptorSetLayout.h>
 #include <vsg/state/GraphicsPipeline.h>
 #include <vsgXchange/Export.h>
 

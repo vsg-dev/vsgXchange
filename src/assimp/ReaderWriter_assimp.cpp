@@ -472,7 +472,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             case aiTextureType_SHININESS: defines.push_back(kShininessMapKey); break;
             case aiTextureType_OPACITY: defines.push_back(kOpacityMapKey); break;
             case aiTextureType_DISPLACEMENT: defines.push_back(kDisplacementMapKey); break;
-            case aiTextureType_AMBIENT: 
+            case aiTextureType_AMBIENT:
             case aiTextureType_LIGHTMAP: defines.push_back(kLightmapMapKey); break;
             case aiTextureType_REFLECTION: defines.push_back(kReflectionMapKey); break;
             case aiTextureType_UNKNOWN: defines.push_back(kMetallRoughnessMapKey); break;
