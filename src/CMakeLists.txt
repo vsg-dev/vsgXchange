@@ -20,6 +20,8 @@ set(SOURCES
     cpp/ReaderWriter_cpp.cpp
 
     stbi/ReaderWriter_stbi.cpp
+
+    dds/ReaderWriter_dds.cpp
 )
 
 # add freetype if vailable
