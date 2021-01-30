@@ -6,6 +6,7 @@
 #include "../glsl//ReaderWriter_glsl.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
+#include "../dds/ReaderWriter_dds.h"
 
 #ifdef USE_FREETYPE
 #    include "../freetype/FreeTypeFont.h"
@@ -28,6 +29,7 @@ ReaderWriter_all::ReaderWriter_all()
     add(vsgXchange::ReaderWriter_spirv::create());
     add(vsgXchange::ReaderWriter_cpp::create());
     add(vsgXchange::ReaderWriter_stbi::create());
+    add(vsgXchange::ReaderWriter_dds::create());
 #ifdef USE_FREETYPE
     add(vsgXchange::ReaderWriter_freetype::create());
 #endif
