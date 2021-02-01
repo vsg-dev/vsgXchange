@@ -203,8 +203,7 @@ namespace vsgconv
 int main(int argc, char** argv)
 {
     // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
-    auto options = vsg::Options::create();
-    options->readerWriters.push_back(vsgXchange::ReaderWriter_all::create());
+    auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create());
 
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
