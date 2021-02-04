@@ -43,7 +43,7 @@ if(assimp_FOUND)
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_ASSIMP)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
+    set(FIND_DEPENDENCY_ASSIMP "find_dependency(assimp)")
 endif()
 
 find_package(ktx)
@@ -54,7 +54,7 @@ if(ktx_FOUND)
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${ktx_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} KTX::ktx)
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_KTX)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(ktx)")
+    set(FIND_DEPENDENCY_KTX "find_dependency(ktx)")
 endif()
 
 # add optional OpenSceneGraph components
