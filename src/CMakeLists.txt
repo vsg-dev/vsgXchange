@@ -46,6 +46,17 @@ if(assimp_FOUND)
     set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
 endif()
 
+find_package(ktx)
+if(ktx_FOUND)
+    set(SOURCES ${SOURCES}
+        ktx/ReaderWriter_ktx.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${ktx_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} KTX::ktx)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_KTX)
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(ktx)")
+endif()
+
 # add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
 
@@ -101,6 +112,7 @@ write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersio
     COMPATIBILITY SameMajorVersion
 )
 
+string(REPLACE ";" "\n" FIND_DEPENDENCY_OUT "${FIND_DEPENDENCY}")
 configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
