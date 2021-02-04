@@ -226,10 +226,8 @@ ReaderWriter_assimp::ReaderWriter_assimp() :
     _options{vsg::Options::create()},
     _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
-    auto readerWriter = vsg::CompositeReaderWriter::create();
-    readerWriter->add(ReaderWriter_stbi::create());
-    readerWriter->add(ReaderWriter_dds::create());
-    _options->readerWriter = readerWriter;
+    _options->add(ReaderWriter_stbi::create());
+    _options->add(ReaderWriter_dds::create());
 
     createDefaultPipelineAndState();
 }
