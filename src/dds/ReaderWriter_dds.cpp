@@ -43,7 +43,7 @@ namespace
     {
         const auto width = ddsFile.GetWidth();
         const auto height = ddsFile.GetHeight();
-        const auto depth = ddsFile.GetDepth();
+        // const auto depth = ddsFile.GetDepth();  // TODO 3d textures not currently supoorted? if so need to return {};
         const auto numMipMaps = ddsFile.GetMipCount();
         const auto isCubemap = ddsFile.IsCubemap();
         const auto numArrays = ddsFile.GetArraySize();
@@ -111,6 +111,9 @@ namespace
             else
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
+        default:
+            // TODO : Need to decide if a fallback is required.
+            break;
         }
 
         return vsg_data;
@@ -127,9 +130,9 @@ namespace
         const auto isCompressed = ddsFile.IsCompressed(format);
         const auto dim = ddsFile.GetTextureDimension();
         const auto numArrays = ddsFile.GetArraySize();
-        const auto valueCount = vsg::Data::computeValueCountIncludingMipmaps(width, height, depth, numMipMaps) * numArrays;
-        const auto bpp = tinyddsloader::DDSFile::GetBitsPerPixel(format);
 
+        // const auto valueCount = vsg::Data::computeValueCountIncludingMipmaps(width, height, depth, numMipMaps) * numArrays;
+        // const auto bpp = tinyddsloader::DDSFile::GetBitsPerPixel(format);
         //std::cerr << "Fileinfo width: " << width << ", height: " << height << ", depth: " << depth << ", count: " << valueCount
         //          << ", format: " << (int)format << ", bpp: " << tinyddsloader::DDSFile::GetBitsPerPixel(format)
         //          << ", mipmaps: " << numMipMaps << ", arrays: " << numArrays
@@ -192,6 +195,9 @@ namespace
                 case tinyddsloader::DDSFile::TextureDimension::Texture3D:
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
+                case tinyddsloader::DDSFile::TextureDimension::Unknown:
+                    // TODO : need to decide what should be done, is returning {} OK or should we report an error/throw an exception?
+                    break;
                 }
 
                 //std::cout << "* Finish: " << valueCount * valueSize << ", " << vsg_data->dataSize() << std::endl;
@@ -250,6 +256,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
+    // TODO : need to come up with a more efficient means for reading a file stream into a single bloack of data.
     std::vector<uint8_t> buffer(1 << 16, 0); // 64kB
     std::vector<uint8_t> input;
 
@@ -257,7 +264,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
     {
         fin.read((char*)&buffer[0], buffer.size());
         const auto bytes_readed = fin.gcount();
-        input.insert(input.end(), buffer.begin(), buffer.end());
+        input.insert(input.end(), buffer.begin(), buffer.end());   // TODO, why is buffer.end() used? surely (buffer.begin()+bytes_readed) would be more appropriate.
     }
 
     tinyddsloader::DDSFile ddsFile;
