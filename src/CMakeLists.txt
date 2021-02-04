@@ -46,7 +46,7 @@ if(assimp_FOUND)
     set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
 endif()
 
-find_package(ktx)
+find_package(ktx QUIET)
 if(ktx_FOUND)
     set(SOURCES ${SOURCES}
         ktx/ReaderWriter_ktx.cpp

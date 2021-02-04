@@ -33,14 +33,14 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
 
     std::memcpy(new_ptr, old_ptr, old_size);
 
-    delete [] (uint8_t*)(old_ptr);
+    delete[](uint8_t*)(old_ptr);
 
     return new_ptr;
 }
 
 void cpp_free(void* ptr)
 {
-    delete [] (uint8_t*)(ptr);
+    delete[](uint8_t*)(ptr);
 }
 
 // override the stb memory allocation to make it compatible with vsg::Array* use of standard C++ new/delete.
@@ -48,7 +48,6 @@ void cpp_free(void* ptr)
 #define STBI_REALLOC(p, newsiz) ERROR_SHOULD_NEVER_BE_CALLED
 #define STBI_REALLOC_SIZED(p, oldsz, newsz) cpp_realloc_sized(p, oldsz, newsz)
 #define STBI_FREE(p) cpp_free(p)
-
 
 #include "stb_image.h"
 

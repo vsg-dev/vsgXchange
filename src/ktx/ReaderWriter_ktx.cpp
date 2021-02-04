@@ -9,25 +9,24 @@
 
 namespace
 {
-        const std::unordered_set<VkFormat> kFormatSet{
-            VK_FORMAT_R8G8B8A8_UNORM,
-            VK_FORMAT_R8G8B8A8_SNORM,
-            VK_FORMAT_R8G8B8A8_SRGB,
-            VK_FORMAT_BC7_UNORM_BLOCK,
-            VK_FORMAT_BC7_SRGB_BLOCK,
-            VK_FORMAT_BC5_UNORM_BLOCK,
-            VK_FORMAT_BC5_SNORM_BLOCK,
-            VK_FORMAT_BC4_UNORM_BLOCK,
-            VK_FORMAT_BC4_SNORM_BLOCK,
-            VK_FORMAT_BC3_UNORM_BLOCK,
-            VK_FORMAT_BC3_SRGB_BLOCK,
-            VK_FORMAT_BC2_UNORM_BLOCK,
-            VK_FORMAT_BC2_SRGB_BLOCK,
-            VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-            VK_FORMAT_BC1_RGB_SRGB_BLOCK,
-            VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-            VK_FORMAT_BC1_RGBA_SRGB_BLOCK
-        };
+    const std::unordered_set<VkFormat> kFormatSet{
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_R8G8B8A8_SNORM,
+        VK_FORMAT_R8G8B8A8_SRGB,
+        VK_FORMAT_BC7_UNORM_BLOCK,
+        VK_FORMAT_BC7_SRGB_BLOCK,
+        VK_FORMAT_BC5_UNORM_BLOCK,
+        VK_FORMAT_BC5_SNORM_BLOCK,
+        VK_FORMAT_BC4_UNORM_BLOCK,
+        VK_FORMAT_BC4_SNORM_BLOCK,
+        VK_FORMAT_BC3_UNORM_BLOCK,
+        VK_FORMAT_BC3_SRGB_BLOCK,
+        VK_FORMAT_BC2_UNORM_BLOCK,
+        VK_FORMAT_BC2_SRGB_BLOCK,
+        VK_FORMAT_BC1_RGB_UNORM_BLOCK,
+        VK_FORMAT_BC1_RGB_SRGB_BLOCK,
+        VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+        VK_FORMAT_BC1_RGBA_SRGB_BLOCK};
 
     vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture)
     {
@@ -52,7 +51,6 @@ namespace
 
             using image_t = std::vector<uint8_t>;
             std::vector<image_t> images(numMipMaps * numArrays);
-
 
             for (uint32_t i = 0; i < numMipMaps; ++i)
             {

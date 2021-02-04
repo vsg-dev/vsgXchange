@@ -6,18 +6,18 @@
 #include <cstring>
 
 #if defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wunused-function"
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wunused-variable"
+#    pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#    pragma GCC diagnostic ignored "-Wsign-compare"
+#    pragma GCC diagnostic ignored "-Wunused-function"
 #endif
 
 #define TINYDDSLOADER_IMPLEMENTATION
 #include "tinyddsloader.h"
 
 #if defined(__GNUC__)
-#pragma GCC diagnostic pop
+#    pragma GCC diagnostic pop
 #endif
 
 namespace
@@ -37,8 +37,7 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm, VK_FORMAT_BC2_UNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm_SRGB, VK_FORMAT_BC2_SRGB_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm, VK_FORMAT_BC1_RGBA_UNORM_BLOCK},
-        {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB, VK_FORMAT_BC1_RGBA_SRGB_BLOCK}
-    };
+        {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB, VK_FORMAT_BC1_RGBA_SRGB_BLOCK}};
 
     vsg::ref_ptr<vsg::Data> readCompressed(tinyddsloader::DDSFile& ddsFile, VkFormat targetFormat)
     {
@@ -118,7 +117,7 @@ namespace
         return vsg_data;
     }
 
-    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile &ddsFile)
+    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile& ddsFile)
     {
         const auto width = ddsFile.GetWidth();
         const auto height = ddsFile.GetHeight();
@@ -160,7 +159,7 @@ namespace
                         face.reserve(data->m_memSlicePitch);
                         face.assign((uint8_t*)data->m_mem, (uint8_t*)data->m_mem + data->m_memSlicePitch);
 
-                        //std::cout << "Uncompressed: Face " << j << ", Level " << i 
+                        //std::cout << "Uncompressed: Face " << j << ", Level " << i
                         //          << ", faceLodSize = " << faceLodSize << ", offset = " << p - raw << std::endl;
 
                         offset += data->m_memSlicePitch;
@@ -208,7 +207,7 @@ namespace
 
         return {};
     }
-}
+} // namespace
 
 using namespace vsgXchange;
 
