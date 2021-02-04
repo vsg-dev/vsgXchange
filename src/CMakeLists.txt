@@ -46,6 +46,17 @@ if(assimp_FOUND)
     set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
 endif()
 
+find_package(ktx)
+if(ktx_FOUND)
+    set(SOURCES ${SOURCES}
+        ktx/ReaderWriter_ktx.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${ktx_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} KTX::ktx)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_KTX)
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(ktx)")
+endif()
+
 # add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
 

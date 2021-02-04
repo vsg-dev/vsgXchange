@@ -95,9 +95,9 @@ namespace
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block64ArrayCube::create(width / 4, height / 4, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
             else
-                vsg_data = vsg::block64Array2D::create(width / 4, height / 4, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
             break;
             break;
         case VK_FORMAT_BC2_UNORM_BLOCK:
@@ -109,9 +109,9 @@ namespace
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block128ArrayCube::create(width / 4, height / 4, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             else
-                vsg_data = vsg::block128Array2D::create(width / 4, height / 4, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
         }
 
