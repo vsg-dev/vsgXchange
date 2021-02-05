@@ -3,10 +3,11 @@
 #include <vsg/io/ReaderWriter_vsg.h>
 
 #include "../cpp/ReaderWriter_cpp.h"
-#include "../glsl//ReaderWriter_glsl.h"
+#include "../glsl/ReaderWriter_glsl.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
 #include "../dds/ReaderWriter_dds.h"
+#include "../ktx/ReaderWriter_ktx.h"
 
 #ifdef USE_FREETYPE
 #    include "../freetype/FreeTypeFont.h"
@@ -20,10 +21,6 @@
 #    include "../assimp/ReaderWriter_assimp.h"
 #endif
 
-#ifdef USE_KTX
-#    include "../ktx/ReaderWriter_ktx.h"
-#endif
-
 using namespace vsgXchange;
 
 ReaderWriter_all::ReaderWriter_all()
@@ -34,14 +31,12 @@ ReaderWriter_all::ReaderWriter_all()
     add(vsgXchange::ReaderWriter_cpp::create());
     add(vsgXchange::ReaderWriter_stbi::create());
     add(vsgXchange::ReaderWriter_dds::create());
+    add(vsgXchange::ReaderWriter_ktx::create());
 #ifdef USE_FREETYPE
     add(vsgXchange::ReaderWriter_freetype::create());
 #endif
 #ifdef USE_ASSIMP
     add(vsgXchange::ReaderWriter_assimp::create());
-#endif
-#ifdef USE_KTX
-    add(vsgXchange::ReaderWriter_ktx::create());
 #endif
 #ifdef USE_OPENSCENEGRAPH
     add(vsgXchange::ReaderWriter_osg::create());

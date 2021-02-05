@@ -1,6 +1,7 @@
 #include "ReaderWriter_assimp.h"
 #include "../stbi/ReaderWriter_stbi.h"
 #include "../dds/ReaderWriter_dds.h"
+#include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
@@ -229,6 +230,7 @@ ReaderWriter_assimp::ReaderWriter_assimp() :
     auto readerWriter = vsg::CompositeReaderWriter::create();
     readerWriter->add(ReaderWriter_stbi::create());
     readerWriter->add(ReaderWriter_dds::create());
+    readerWriter->add(ReaderWriter_ktx::create());
     _options->readerWriter = readerWriter;
 
     createDefaultPipelineAndState();
