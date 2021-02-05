@@ -47,8 +47,7 @@ if(assimp_FOUND)
 endif()
 
 # Compile ktx read library
-set(SOURCES ${SOURCES}
-    ktx/ReaderWriter_ktx.cpp
+set(KTX_SOURCES
     ktx/libktx/ktx.h
     ktx/libktx/basis_sgd.h
     ktx/libktx/checkheader.c
@@ -91,11 +90,11 @@ set(SOURCES ${SOURCES}
     ktx/libktx/vkformat_enum.h
     ktx/libktx/vkformat_str.c
     ktx/libktx/ktxvulkan.h
-    ktx/libktx/vk_funcs.c
-    ktx/libktx/vk_funcs.h
     ktx/libktx/vkloader.c
     ktx/libktx/zstddeclib.c
 )
+source_group(libktx FILES ${KTX_SOURCES})
+set(SOURCES ${SOURCES} ${KTX_SOURCES} ktx/ReaderWriter_ktx.cpp)
 set(EXTRA_DEFINES ${EXTRA_DEFINES} KHRONOS_STATIC LIBKTX BASISD_SUPPORT_FXT1=0 BASISU_NO_ITERATOR_DEBUG_LEVEL KTX_FEATURE_KTX1 KTX_FEATURE_KTX2)
 
 # add optional OpenSceneGraph components
