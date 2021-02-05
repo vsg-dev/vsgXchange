@@ -1,8 +1,8 @@
 #pragma once
 
+#include <unordered_set>
 #include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Export.h>
-#include <unordered_set>
 
 namespace vsgXchange
 {

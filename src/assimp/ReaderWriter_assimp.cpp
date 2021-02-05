@@ -1,6 +1,6 @@
 #include "ReaderWriter_assimp.h"
-#include "../stbi/ReaderWriter_stbi.h"
 #include "../dds/ReaderWriter_dds.h"
+#include "../stbi/ReaderWriter_stbi.h"
 #include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
@@ -227,11 +227,9 @@ ReaderWriter_assimp::ReaderWriter_assimp() :
     _options{vsg::Options::create()},
     _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
-    auto readerWriter = vsg::CompositeReaderWriter::create();
-    readerWriter->add(ReaderWriter_stbi::create());
-    readerWriter->add(ReaderWriter_dds::create());
-    readerWriter->add(ReaderWriter_ktx::create());
-    _options->readerWriter = readerWriter;
+    _options->add(ReaderWriter_stbi::create());
+    _options->add(ReaderWriter_dds::create());
+    _options->add(ReaderWriter_ktx::create());
 
     createDefaultPipelineAndState();
 }
@@ -449,7 +447,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     std::string str((const char*)texture->pcData, texture->mWidth);
                     std::istringstream stream(str);
 
-                    auto imageOptions = vsg::Options::create(*_options);
+                    vsg::ref_ptr<vsg::Options> imageOptions(new vsg::Options(*options));
                     imageOptions->extensionHint = texture->achFormatHint;
                     if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
                         return {};
@@ -461,7 +459,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                 if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
                 {
-                    std::cerr << "Failed to load texture: " << filename << " texPath = "<<texPath.C_Str()<<std::endl;
+                    std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
                     return {};
                 }
             }

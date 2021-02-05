@@ -403,8 +403,9 @@ bool DDSFile::IsCompressed(DXGIFormat fmt) {
         case DXGIFormat::BC7_UNorm:
         case DXGIFormat::BC7_UNorm_SRGB:
             return true;
+        default:
+            return false;
     }
-    return false;
 }
 
 uint32_t DDSFile::MakeFourCC(char ch0, char ch1, char ch2, char ch3) {
@@ -787,7 +788,7 @@ Result DDSFile::Load(std::vector<uint8_t>&& dds) {
         header->m_pixelFormat.m_size != sizeof(PixelFormat)) {
         return Result::ErrorVerify;
     }
-    bool dxt10Header = false;
+    bool has_dxt10Header = false;
     if ((header->m_pixelFormat.m_flags &
          uint32_t(PixelFormatFlagBits::FourCC)) &&
         (MakeFourCC('D', 'X', '1', '0') == header->m_pixelFormat.m_fourCC)) {
@@ -795,10 +796,10 @@ Result DDSFile::Load(std::vector<uint8_t>&& dds) {
             dds.size()) {
             return Result::ErrorSize;
         }
-        dxt10Header = true;
+        has_dxt10Header = true;
     }
     ptrdiff_t offset = sizeof(uint32_t) + sizeof(Header) +
-                       (dxt10Header ? sizeof(HeaderDXT10) : 0);
+                       (has_dxt10Header ? sizeof(HeaderDXT10) : 0);
 
     m_height = header->m_height;
     m_width = header->m_width;
@@ -811,7 +812,7 @@ Result DDSFile::Load(std::vector<uint8_t>&& dds) {
         m_mipCount = 1;
     }
 
-    if (dxt10Header) {
+    if (has_dxt10Header) {
         auto dxt10Header = reinterpret_cast<const HeaderDXT10*>(
             reinterpret_cast<const char*>(header) + sizeof(Header));
 

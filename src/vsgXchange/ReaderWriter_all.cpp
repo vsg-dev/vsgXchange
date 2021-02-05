@@ -3,10 +3,10 @@
 #include <vsg/io/ReaderWriter_vsg.h>
 
 #include "../cpp/ReaderWriter_cpp.h"
-#include "../glsl/ReaderWriter_glsl.h"
+#include "../dds/ReaderWriter_dds.h"
+#include "../glsl//ReaderWriter_glsl.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
-#include "../dds/ReaderWriter_dds.h"
 #include "../ktx/ReaderWriter_ktx.h"
 
 #ifdef USE_FREETYPE

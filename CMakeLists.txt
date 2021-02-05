@@ -94,6 +94,7 @@ if (CLANGFORMAT)
 
     # remoe stb_image.h for format list to avoid it being different that it's original source.
     list(REMOVE_ITEM FILES_TO_FORMAT ${CMAKE_SOURCE_DIR}/src/stbi/stb_image.h)
+    list(REMOVE_ITEM FILES_TO_FORMAT ${CMAKE_SOURCE_DIR}/src/dds/tinyddsloader.h)
 
     add_custom_target(clang-format
         COMMAND ${CLANGFORMAT} -i ${FILES_TO_FORMAT}
