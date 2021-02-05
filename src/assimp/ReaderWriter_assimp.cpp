@@ -1,6 +1,7 @@
 #include "ReaderWriter_assimp.h"
 #include "../dds/ReaderWriter_dds.h"
 #include "../stbi/ReaderWriter_stbi.h"
+#include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
@@ -228,6 +229,7 @@ ReaderWriter_assimp::ReaderWriter_assimp() :
 {
     _options->add(ReaderWriter_stbi::create());
     _options->add(ReaderWriter_dds::create());
+    _options->add(ReaderWriter_ktx::create());
 
     createDefaultPipelineAndState();
 }
@@ -445,7 +447,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     std::string str((const char*)texture->pcData, texture->mWidth);
                     std::istringstream stream(str);
 
-                    auto imageOptions = vsg::Options::create(*_options);
+                    vsg::ref_ptr<vsg::Options> imageOptions(new vsg::Options(*options));
                     imageOptions->extensionHint = texture->achFormatHint;
                     if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
                         return {};
