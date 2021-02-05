@@ -6,6 +6,7 @@
 #include <ktxvulkan.h>
 
 #include <algorithm>
+#include <cstring>
 
 namespace
 {
