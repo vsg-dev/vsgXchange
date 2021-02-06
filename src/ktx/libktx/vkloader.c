@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vk_funcs.h"   // Must be included before ktxvulkan.h.
+#include <vulkan/vulkan.h> // Must be included before ktxvulkan.h.
 #include "ktxvulkan.h"
 #include "ktxint.h"
 #include "texture1.h"
