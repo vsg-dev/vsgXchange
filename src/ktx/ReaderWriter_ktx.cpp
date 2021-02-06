@@ -38,7 +38,7 @@ namespace
         const auto numMipMaps = texture->numLevels;
         const auto numArrays = texture->numFaces;
         const auto textureData = ktxTexture_GetData(texture);
-        const auto textureSize = ktxTexture_GetDataSize(texture);
+        //const auto textureSize = ktxTexture_GetDataSize(texture);
         const auto format = ktxTexture_GetVkFormat(texture);
         const auto valueSize = ktxTexture_GetElementSize(texture);
 
