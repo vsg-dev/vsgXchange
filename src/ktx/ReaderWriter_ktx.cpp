@@ -170,10 +170,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
 
-    if (!vsg::fileExists(filename))
-        return {};
+    vsg::Path filenameToUse = findFile(filename, options);
+    if (filenameToUse.empty()) return {};
 
-    if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromNamedFile(filename.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromNamedFile(filenameToUse.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
         return readKtx(texture);
 
     return {};
