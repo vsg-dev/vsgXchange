@@ -256,20 +256,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
-    // TODO : need to come up with a more efficient means for reading a file stream into a single bloack of data.
-    std::vector<uint8_t> buffer(1 << 16, 0); // 64kB
-    std::vector<uint8_t> input;
-
-    while (!fin.eof())
-    {
-        fin.read((char*)&buffer[0], buffer.size());
-        const auto bytes_readed = fin.gcount();
-        input.insert(input.end(), buffer.begin(), buffer.end());   // TODO, why is buffer.end() used? surely (buffer.begin()+bytes_readed) would be more appropriate.
-    }
-
     tinyddsloader::DDSFile ddsFile;
-
-    if (const auto result = ddsFile.Load(std::move(input)); result == tinyddsloader::Success)
+    if (const auto result = ddsFile.Load(fin); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }
