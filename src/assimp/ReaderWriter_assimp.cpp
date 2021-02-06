@@ -724,10 +724,13 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
 
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
-        if (auto scene = importer.ReadFile(filename, _importFlags); scene)
+        vsg::Path filenameToUse = findFile(filename, options);
+        if (filenameToUse.empty()) return {};
+
+        if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
         {
             auto opt = vsg::Options::create(*options);
-            opt->paths.push_back(vsg::filePath(filename));
+            opt->paths.push_back(vsg::filePath(filenameToUse));
 
             return processScene(scene, opt);
         }

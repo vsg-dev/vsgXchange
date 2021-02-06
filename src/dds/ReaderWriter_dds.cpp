@@ -221,17 +221,17 @@ ReaderWriter_dds::ReaderWriter_dds() :
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!vsg::fileExists(filename))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
 
-    if (const auto ext = vsg::fileExtension(filename); _supportedExtensions.count(ext) == 0)
-        return {};
+    vsg::Path filenameToUse = findFile(filename, options);
+    if (filenameToUse.empty()) return {};
 
     tinyddsloader::DDSFile ddsFile;
 
-    if (const auto result = ddsFile.Load(filename.c_str()); result == tinyddsloader::Success)
+    if (const auto result = ddsFile.Load(filenameToUse.c_str()); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }

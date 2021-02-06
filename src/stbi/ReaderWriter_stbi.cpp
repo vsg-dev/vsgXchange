@@ -62,20 +62,18 @@ ReaderWriter_stbi::ReaderWriter_stbi() :
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
     {
         return {};
     }
 
-    if (!vsg::fileExists(filename))
-    {
-        return {};
-    }
+    vsg::Path filenameToUse = findFile(filename, options);
+    if (filenameToUse.empty()) return {};
 
     int width, height, channels;
-    if (const auto pixels = stbi_load(filename.c_str(), &width, &height, &channels, STBI_rgb_alpha); pixels)
+    if (const auto pixels = stbi_load(filenameToUse.c_str(), &width, &height, &channels, STBI_rgb_alpha); pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
 
