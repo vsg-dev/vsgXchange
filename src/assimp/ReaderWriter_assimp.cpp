@@ -224,13 +224,8 @@ namespace
 using namespace vsgXchange;
 
 ReaderWriter_assimp::ReaderWriter_assimp() :
-    _options{vsg::Options::create()},
     _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
-    _options->add(ReaderWriter_stbi::create());
-    _options->add(ReaderWriter_dds::create());
-    _options->add(ReaderWriter_ktx::create());
-
     createDefaultPipelineAndState();
 }
 
@@ -447,7 +442,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     std::string str((const char*)texture->pcData, texture->mWidth);
                     std::istringstream stream(str);
 
-                    vsg::ref_ptr<vsg::Options> imageOptions(new vsg::Options(*options));
+                    auto imageOptions = vsg::Options::create(*options);
                     imageOptions->extensionHint = texture->achFormatHint;
                     if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
                         return {};
@@ -457,7 +452,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             {
                 const std::string filename = vsg::findFile(texPath.C_Str(), options);
 
-                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
+                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
                 {
                     std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
                     return {};
