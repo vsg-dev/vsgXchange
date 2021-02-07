@@ -94,7 +94,7 @@ namespace
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block64ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block64*>(raw), layout);
             else
                 vsg_data = vsg::block64Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
             break;
@@ -107,7 +107,7 @@ namespace
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block128ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block128*>(raw), layout);
             else
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
@@ -188,7 +188,7 @@ namespace
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
                     if (isCubemap && numArrays == 6)
-                        vsg_data = vsg::ubvec4ArrayCube::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                        vsg_data = vsg::ubvec4Array3D::create(width, height, 6, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     else
                         vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;

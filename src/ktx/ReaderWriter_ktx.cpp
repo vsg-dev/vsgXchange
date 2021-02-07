@@ -104,7 +104,7 @@ namespace
                     // 2d texture
                     if (texture->isCubemap)
                     {
-                        data = vsg::block64ArrayCube::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block64*>(raw), layout);
+                        data = vsg::block64Array3D::create(width / blockSize, height / blockSize, 6, reinterpret_cast<vsg::block64*>(raw), layout);
                     }
                     else
                     {
@@ -129,7 +129,7 @@ namespace
                     // 2d texture
                     if (texture->isCubemap)
                     {
-                        data = vsg::block128ArrayCube::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block128*>(raw), layout);
+                        data = vsg::block128Array3D::create(width / blockSize, height / blockSize, 6, reinterpret_cast<vsg::block128*>(raw), layout);
                     }
                     else
                     {
@@ -143,7 +143,7 @@ namespace
                 {
                     // 2d texture
                     if (texture->isCubemap)
-                        data = vsg::ubvec4ArrayCube::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                        data = vsg::ubvec4Array3D::create(width, height, 6, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     else
                         data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                 }
