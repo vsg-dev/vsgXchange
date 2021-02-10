@@ -19,8 +19,8 @@
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/read.h>
 #include <vsg/maths/transform.h>
-#include <vsg/nodes/Geometry.h>
 #include <vsg/nodes/MatrixTransform.h>
+#include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/DescriptorBuffer.h>
 #include <vsg/state/DescriptorImage.h>
 #include <vsg/state/DescriptorSet.h>
@@ -283,6 +283,7 @@ void ReaderWriter_assimp::createDefaultPipelineAndState()
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
+    bool useVertexIndexDraw = true;
     int upAxis = 1, upAxisSign = 1;
 
     if (scene->mMetaData)
@@ -387,9 +388,21 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
                 stategroup->add(state.second);
             }
 
-            stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
-            stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
-            stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
+            if (useVertexIndexDraw)
+            {
+                auto vid = vsg::VertexIndexDraw::create();
+                vid->arrays = vsg::DataList{vertices, normals, texcoords};
+                vid->indices = vsg_indices;
+                vid->indexCount = indices.size();
+                vid->instanceCount = 1;
+                stategroup->addChild(vid);
+            }
+            else
+            {
+                stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
+                stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
+                stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
+            }
         }
 
         nodes.pop();
