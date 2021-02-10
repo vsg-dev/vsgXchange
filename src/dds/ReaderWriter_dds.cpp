@@ -184,15 +184,24 @@ namespace
                 switch (dim)
                 {
                 case tinyddsloader::DDSFile::TextureDimension::Texture1D:
+                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_1D;
                     vsg_data = vsg::ubvec4Array::create(width, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
-                    if (isCubemap && numArrays == 6)
-                        vsg_data = vsg::ubvec4Array3D::create(width, height, 6, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    if (numArrays > 1)
+                    {
+                        if (isCubemap) layout.imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
+                        else layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                        vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    }
                     else
+                    {
+                        layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                         vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    }
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture3D:
+                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
