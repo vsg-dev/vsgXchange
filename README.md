@@ -1,16 +1,16 @@
 # vsgXchange
-Utility library for converting data+materials to/from VulkanSceneGraph
+Utility library for converting data+materials to/from [VulkanSceneGraph](https://github.com/vsg-dev/VulkanSceneGraph)
 
 ## Provides Builtin read support for:
 
 * reading DDS, JPEG, PNG, GIF, BMP, TGA and PSD (Photoshop Document) image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
-* reading adnd writing SPIRV shader files as vsg::ShaderModule.
+* reading and writing SPIRV shader files as vsg::ShaderModule.
 * writeng vsg::Object of all types to .cpp source files that can be directly compiled into applications
 
 ## Optional support, cmake automatically finds which depedencies are available and builds the approprioate components:
 
-* reading TrueType fonts support by FreeType as vsg::Font objects.
+* reading TrueType etc. fonts support by FreeType as vsg::Font objects.
 * reading 3d model formats supported by Assimp as vsg::Node objects.
 * reading 3d modul formats supported by OpenSceneGraph as vsg::Node objecs.
 * Comming soon : reading KTX images supported by libktx as vsg::Data objects.
@@ -22,9 +22,9 @@ Utility library for converting data+materials to/from VulkanSceneGraph
 
 ## Options depdendencies:
 
-* Freetype
-* Assimp
-* OpenSceneGraph
+* [Freetype](https://www.freetype.org/)
+* [Assimp](https://www.assimp.org/) & [Assimp on githib](https://github.com/assimp/assimp)
+* [OpenSceneGraph](http://www.openscenegraph.org/) & [OpenSceneGraph on githib](https://github.com/openscenegraph/OpenSceneGraph)
 
 ## Building vsgXchange:
 
@@ -51,8 +51,9 @@ CMake additions:
 C++ additions:
 
     auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create()); // assign a composite ReaderWriter that includes all supported formats
-    auto image = vsg::read_cast<vsg::Data>("myimage.dds", options); // pass in the options that provides the link to the ReaderWriter of interest.
-    auto model = vsg::read_cast<vsg::Data>("mymodel.gltf", options);
+    auto object = vsg::read("myimage.dds", options); // pass in the options that provides the link to the ReaderWriter of interest.
+    auto image = vsg::read_cast<vsg::Data>("myimage.dds", options); // read file and cast to vsg::Data if possible, returns vsg::ref_ptr<vsg::Data>
+    auto model = vsg::read_cast<vsg::Object>("mymodel.gltf", options); // read file and cast to vsg::Node if possible, returns vsg::ref_ptr<vsg::Node>
 
 ## How to use vsgconv utility that is built as part of vsgXchange
 
