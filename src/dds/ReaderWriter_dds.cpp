@@ -190,10 +190,7 @@ namespace
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
                     if (numArrays > 1)
                     {
-                        if (isCubemap)
-                            layout.imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
-                        else
-                            layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                        layout.imageViewType = isCubemap ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
                         vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     }
                     else
