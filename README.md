@@ -54,10 +54,17 @@ CMake additions:
 
 C++ additions:
 
-    auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create()); // assign a composite ReaderWriter that includes all supported formats
-    auto object = vsg::read("myimage.dds", options); // pass in the options that provides the link to the ReaderWriter of interest.
-    auto image = vsg::read_cast<vsg::Data>("myimage.dds", options); // read file and cast to vsg::Data if possible, returns vsg::ref_ptr<vsg::Data>
-    auto model = vsg::read_cast<vsg::Object>("mymodel.gltf", options); // read file and cast to vsg::Node if possible, returns vsg::ref_ptr<vsg::Node>
+    // assign a composite ReaderWriter that includes all supported formats
+    auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create());
+
+    // pass in the options that provides the link to the ReaderWriter of interest.
+    auto object = vsg::read("myimage.dds", options);
+
+    // read file and cast to vsg::Data if possible, returns vsg::ref_ptr<vsg::Data>
+    auto image = vsg::read_cast<vsg::Data>("myimage.dds", options);
+
+    // read file and cast to vsg::Node if possible, returns vsg::ref_ptr<vsg::Node>
+    auto model = vsg::read_cast<vsg::Object>("mymodel.gltf", options);
 
 ## How to use vsgconv utility that is built as part of vsgXchange
 
