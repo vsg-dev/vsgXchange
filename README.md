@@ -54,7 +54,7 @@ CMake additions:
 
 C++ additions:
 
-    #include <vsgXchange/ReaderWRiter_all.h>
+    #include <vsgXchange/ReaderWriter_all.h>
 
     ...
 
