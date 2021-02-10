@@ -20,10 +20,6 @@
 #    include "../assimp/ReaderWriter_assimp.h"
 #endif
 
-#ifdef USE_KTX
-#    include "../ktx/ReaderWriter_ktx.h"
-#endif
-
 using namespace vsgXchange;
 
 ReaderWriter_all::ReaderWriter_all()
@@ -39,9 +35,6 @@ ReaderWriter_all::ReaderWriter_all()
 #endif
 #ifdef USE_ASSIMP
     add(vsgXchange::ReaderWriter_assimp::create());
-#endif
-#ifdef USE_KTX
-    add(vsgXchange::ReaderWriter_ktx::create());
 #endif
 #ifdef USE_OPENSCENEGRAPH
     add(vsgXchange::ReaderWriter_osg::create());
