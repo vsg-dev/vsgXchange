@@ -8,17 +8,20 @@ Utility library for converting data+materials to/from [VulkanSceneGraph](https:/
 * reading and writing SPIRV shader files as vsg::ShaderModule.
 * writeng vsg::Object of all types to .cpp source files that can be directly compiled into applications
 
-## Optional support, cmake automatically finds which depedencies are available and builds the approprioate components:
+## Optional support:
+
+cmake automatically finds which depedencies are available and builds the approprioate components:
 
 * reading TrueType etc. fonts support by FreeType as vsg::Font objects.
-* reading 3d model formats supported by Assimp as vsg::Node objects.
-* reading 3d modul formats supported by OpenSceneGraph as vsg::Node objecs.
+* reading 3d model formats ( GLTF, OBJ, 3DS, LWO) etc. supported by Assimp as vsg::Node objects.
+* reading 3d modul formats (OpenSceneGraph, OpenFlight etc.) supported by OpenSceneGraph as vsg::Node objecs.
 * Comming soon : reading KTX images supported by libktx as vsg::Data objects.
 
 ## Required dependencies:
 
-* VulkanSDK
-* VulkanSceneGraph
+* [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
+* [VulkanSceneGraph](https://github.com/vsg-dev/VulkanSceneGraph)
+* [CMake](https://cmake.org/) minimum version 3.7
 
 ## Options depdendencies:
 
