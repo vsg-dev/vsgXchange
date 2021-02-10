@@ -135,7 +135,7 @@ namespace
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
         default:
-            // TODO : Need to decide if a fallback is required.
+            std::cerr << "ReaderWriter_dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
             break;
         }
 
@@ -196,7 +196,7 @@ namespace
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
-                    // TODO : need to decide what should be done, is returning {} OK or should we report an error/throw an exception?
+                    std::cerr << "ReaderWriter_dds::readDds() Num of dimnension ("<<(uint32_t)dim<<")  is supported." << std::endl;
                     break;
                 }
 
@@ -207,7 +207,7 @@ namespace
         }
         else
         {
-            std::cerr << "Format is not supported yet: " << (uint32_t)format << std::endl;
+            std::cerr << "ReaderWriter_dds::readDds() Format is not supported yet: " << (uint32_t)format << std::endl;
         }
 
         return {};
