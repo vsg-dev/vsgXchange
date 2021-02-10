@@ -1,7 +1,7 @@
 # vsgXchange
 Utility library for converting data+materials to/from [VulkanSceneGraph](https://github.com/vsg-dev/VulkanSceneGraph)
 
-## Provides Builtin read support for:
+## Provides builtin read support for:
 
 * reading DDS, JPEG, PNG, GIF, BMP, TGA and PSD (Photoshop Document) image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
