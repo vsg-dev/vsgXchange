@@ -425,10 +425,13 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, con
 vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
-    if (_supportedFormats.find(ext) == _supportedFormats.end() || !vsg::fileExists(filename))
+    if (_supportedFormats.find(ext) == _supportedFormats.end())
     {
         return {};
     }
+
+    vsg::Path filenameToUse = findFile(filename, options);
+    if (filenameToUse.empty()) return {};
 
     std::scoped_lock<std::mutex> lock(_mutex);
 
@@ -437,15 +440,15 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename,
 
     FT_Face face;
     FT_Long face_index = 0;
-    int error = FT_New_Face(_library, filename.c_str(), face_index, &face);
+    int error = FT_New_Face(_library, filenameToUse.c_str(), face_index, &face);
     if (error == FT_Err_Unknown_File_Format)
     {
-        std::cout << "Warning: FreeType unable to read font file : " << filename << ", error = " << FT_Err_Unknown_File_Format << std::endl;
+        std::cout << "Warning: FreeType unable to read font file : " << filenameToUse << ", error = " << FT_Err_Unknown_File_Format << std::endl;
         return {};
     }
     else if (error)
     {
-        std::cout << "Warning: FreeType unable to read font file : " << filename << ", error = " << error << std::endl;
+        std::cout << "Warning: FreeType unable to read font file : " << filenameToUse << ", error = " << error << std::endl;
         return {};
     }
 

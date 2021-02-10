@@ -29,7 +29,6 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
         BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
 
-        vsg::ref_ptr<vsg::Options> _options;
         vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
         vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
         const uint32_t _importFlags;

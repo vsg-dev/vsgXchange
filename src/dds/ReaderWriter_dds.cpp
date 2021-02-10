@@ -94,7 +94,7 @@ namespace
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block64ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block64*>(raw), layout);
             else
                 vsg_data = vsg::block64Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
             break;
@@ -107,7 +107,7 @@ namespace
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block128ArrayCube::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block128*>(raw), layout);
             else
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
@@ -184,15 +184,24 @@ namespace
                 switch (dim)
                 {
                 case tinyddsloader::DDSFile::TextureDimension::Texture1D:
+                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_1D;
                     vsg_data = vsg::ubvec4Array::create(width, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
-                    if (isCubemap && numArrays == 6)
-                        vsg_data = vsg::ubvec4ArrayCube::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    if (numArrays > 1)
+                    {
+                        if (isCubemap) layout.imageViewType = VK_IMAGE_VIEW_TYPE_CUBE;
+                        else layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                        vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    }
                     else
+                    {
+                        layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                         vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                    }
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture3D:
+                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
@@ -221,17 +230,17 @@ ReaderWriter_dds::ReaderWriter_dds() :
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!vsg::fileExists(filename))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
 
-    if (const auto ext = vsg::fileExtension(filename); _supportedExtensions.count(ext) == 0)
-        return {};
+    vsg::Path filenameToUse = findFile(filename, options);
+    if (filenameToUse.empty()) return {};
 
     tinyddsloader::DDSFile ddsFile;
 
-    if (const auto result = ddsFile.Load(filename.c_str()); result == tinyddsloader::Success)
+    if (const auto result = ddsFile.Load(filenameToUse.c_str()); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }
@@ -256,20 +265,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
-    // TODO : need to come up with a more efficient means for reading a file stream into a single bloack of data.
-    std::vector<uint8_t> buffer(1 << 16, 0); // 64kB
-    std::vector<uint8_t> input;
-
-    while (!fin.eof())
-    {
-        fin.read((char*)&buffer[0], buffer.size());
-        const auto bytes_readed = fin.gcount();
-        input.insert(input.end(), buffer.begin(), buffer.end());   // TODO, why is buffer.end() used? surely (buffer.begin()+bytes_readed) would be more appropriate.
-    }
-
     tinyddsloader::DDSFile ddsFile;
-
-    if (const auto result = ddsFile.Load(std::move(input)); result == tinyddsloader::Success)
+    if (const auto result = ddsFile.Load(fin); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }

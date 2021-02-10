@@ -1,6 +1,7 @@
 #include "ReaderWriter_assimp.h"
 #include "../dds/ReaderWriter_dds.h"
 #include "../stbi/ReaderWriter_stbi.h"
+#include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
@@ -223,12 +224,8 @@ namespace
 using namespace vsgXchange;
 
 ReaderWriter_assimp::ReaderWriter_assimp() :
-    _options{vsg::Options::create()},
     _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
-    _options->add(ReaderWriter_stbi::create());
-    _options->add(ReaderWriter_dds::create());
-
     createDefaultPipelineAndState();
 }
 
@@ -445,7 +442,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
                     std::string str((const char*)texture->pcData, texture->mWidth);
                     std::istringstream stream(str);
 
-                    auto imageOptions = vsg::Options::create(*_options);
+                    auto imageOptions = vsg::Options::create(*options);
                     imageOptions->extensionHint = texture->achFormatHint;
                     if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
                         return {};
@@ -455,7 +452,7 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
             {
                 const std::string filename = vsg::findFile(texPath.C_Str(), options);
 
-                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, _options); !samplerImage.data.valid())
+                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
                 {
                     std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
                     return {};
@@ -722,10 +719,13 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
 
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
-        if (auto scene = importer.ReadFile(filename, _importFlags); scene)
+        vsg::Path filenameToUse = findFile(filename, options);
+        if (filenameToUse.empty()) return {};
+
+        if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
         {
             auto opt = vsg::Options::create(*options);
-            opt->paths.push_back(vsg::filePath(filename));
+            opt->paths.push_back(vsg::filePath(filenameToUse));
 
             return processScene(scene, opt);
         }
