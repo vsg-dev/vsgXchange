@@ -1,7 +1,4 @@
 #include "ReaderWriter_assimp.h"
-#include "../dds/ReaderWriter_dds.h"
-#include "../stbi/ReaderWriter_stbi.h"
-#include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
