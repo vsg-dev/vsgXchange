@@ -301,7 +301,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
     auto root = vsg::MatrixTransform::create();
 
     if (upAxis == 1)
-        root->setMatrix(vsg::rotate(vsg::PIf * 0.5f, (float)upAxisSign, 0.0f, 0.0f));
+        root->setMatrix(vsg::rotate(vsg::PI * 0.5, static_cast<double>(upAxisSign), 0.0, 0.0));
 
     auto scenegraph = vsg::StateGroup::create();
     scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
@@ -324,9 +324,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
         for (unsigned int i = 0; i < node->mNumMeshes; ++i)
         {
             auto mesh = scene->mMeshes[node->mMeshes[i]];
-            vsg::ref_ptr<vsg::vec3Array> vertices(new vsg::vec3Array(mesh->mNumVertices));
-            vsg::ref_ptr<vsg::vec3Array> normals(new vsg::vec3Array(mesh->mNumVertices));
-            vsg::ref_ptr<vsg::vec2Array> texcoords(new vsg::vec2Array(mesh->mNumVertices));
+            auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
+            auto normals = vsg::vec3Array::create(mesh->mNumVertices);
+            auto texcoords = vsg::vec2Array::create(mesh->mNumVertices);
             std::vector<unsigned int> indices;
 
             for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
