@@ -54,6 +54,10 @@ CMake additions:
 
 C++ additions:
 
+    #include <vsgXchange/ReaderWRiter_all.h>
+
+    ...
+
     // assign a composite ReaderWriter that includes all supported formats
     auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create());
 
