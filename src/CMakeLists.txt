@@ -18,6 +18,10 @@ set(SOURCES
     spirv/ReaderWriter_spirv.cpp
 
     cpp/ReaderWriter_cpp.cpp
+
+    stbi/ReaderWriter_stbi.cpp
+
+    dds/ReaderWriter_dds.cpp
 )
 
 # add freetype if vailable
@@ -29,6 +33,17 @@ if(FREETYPE_FOUND)
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
+endif()
+
+find_package(assimp)
+if(assimp_FOUND)
+    set(SOURCES ${SOURCES}
+        assimp/ReaderWriter_assimp.cpp
+    )
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_ASSIMP)
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
 endif()
 
 # add optional OpenSceneGraph components
@@ -86,6 +101,7 @@ write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersio
     COMPATIBILITY SameMajorVersion
 )
 
+string(REPLACE ";" "\n" FIND_DEPENDENCY_OUT "${FIND_DEPENDENCY}")
 configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"

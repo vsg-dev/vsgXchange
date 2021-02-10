@@ -13,7 +13,7 @@ ReaderWriter_spirv::ReaderWriter_spirv()
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    auto ext = vsg::fileExtension(filename);
+    auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext == "spv" && vsg::fileExists(filename))
     {
         vsg::ShaderModule::SPIRV spirv;
@@ -27,7 +27,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::read(const vsg::Path& filename, vs
 
 bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    auto ext = vsg::fileExtension(filename);
+    auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext == "spv")
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);

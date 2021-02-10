@@ -21,3 +21,5 @@ namespace vsgXchange
     };
 
 } // namespace vsgXchange
+
+EVSG_type_name(vsgXchange::ReaderWriter_spirv);

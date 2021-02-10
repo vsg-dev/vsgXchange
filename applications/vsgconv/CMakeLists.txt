@@ -16,7 +16,7 @@ target_include_directories(vsgconv PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
 
-set_target_properties(vsgconv PROPERTIES OUTPUT_NAME vsgconv)
+set_target_properties(vsgconv PROPERTIES OUTPUT_NAME vsgconv DEBUG_POSTFIX "d")
 
 target_link_libraries(vsgconv
     vsgXchange
