@@ -22,6 +22,7 @@ cmake automatically finds which depedencies are available and builds the appropr
 * [VulkanSDK](https://www.lunarg.com/vulkan-sdk/)
 * [VulkanSceneGraph](https://github.com/vsg-dev/VulkanSceneGraph)
 * [CMake](https://cmake.org/) minimum version 3.7
+* C++17 capable compiler
 
 ## Options depdendencies:
 
