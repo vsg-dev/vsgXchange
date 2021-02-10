@@ -39,53 +39,76 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm, VK_FORMAT_BC1_RGBA_UNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB, VK_FORMAT_BC1_RGBA_SRGB_BLOCK}};
 
-    vsg::ref_ptr<vsg::Data> readCompressed(tinyddsloader::DDSFile& ddsFile, VkFormat targetFormat)
+    uint8_t* allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile)
     {
-        const auto width = ddsFile.GetWidth();
-        const auto height = ddsFile.GetHeight();
-        // const auto depth = ddsFile.GetDepth();  // TODO 3d textures not currently supoorted? if so need to return {};
         const auto numMipMaps = ddsFile.GetMipCount();
-        const auto isCubemap = ddsFile.IsCubemap();
         const auto numArrays = ddsFile.GetArraySize();
-
-        vsg::ref_ptr<vsg::Data> vsg_data;
-        using image_t = std::vector<uint8_t>;
-        std::vector<image_t> images(numMipMaps * numArrays);
-        size_t offset = 0;
-
+        size_t totalSize = 0;
         for (uint32_t i = 0; i < numMipMaps; ++i)
         {
             for (uint32_t j = 0; j < numArrays; ++j)
             {
                 const auto data = ddsFile.GetImageData(i, j);
-                auto& face = images[numArrays * i + j];
-
-                face.reserve(data->m_memSlicePitch);
-                face.assign((uint8_t*)data->m_mem, (uint8_t*)data->m_mem + data->m_memSlicePitch);
-
-                //std::cout << "Compressed: Face " << j << ", Level " << i
-                //          << ", faceLodSize = " << face.size() << ", offset = " << offset << ", memPitch = " << data->m_memPitch << ", memSlice = " << data->m_memSlicePitch << std::endl;
-
-                offset += data->m_memSlicePitch;
+                totalSize += data->m_memSlicePitch;
             }
         }
 
-        //std::cout << "Total size = " << offset << std::endl;
+        if (totalSize == 0) return nullptr;
 
-        auto raw = new uint8_t[offset];
-        offset = 0;
+        auto raw = new uint8_t[totalSize];
 
-        for (auto& image : images)
+        uint8_t* image_ptr = raw;
+        for (uint32_t i = 0; i < numMipMaps; ++i)
         {
-            std::memcpy(raw + offset, image.data(), image.size());
-            offset += image.size();
+            for (uint32_t j = 0; j < numArrays; ++j)
+            {
+                const auto data = ddsFile.GetImageData(i, j);
+
+                std::memcpy(image_ptr, data->m_mem, data->m_memSlicePitch);
+
+                image_ptr += data->m_memSlicePitch;
+            }
         }
+        return raw;
+    }
+
+    int computeImageViewType(tinyddsloader::DDSFile& ddsFile)
+    {
+        switch (ddsFile.GetTextureDimension())
+        {
+        case tinyddsloader::DDSFile::TextureDimension::Texture1D: return VK_IMAGE_VIEW_TYPE_1D;
+        case tinyddsloader::DDSFile::TextureDimension::Texture2D:
+            if (ddsFile.GetArraySize() > 1)
+            {
+                return ddsFile.IsCubemap() ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            }
+            else
+            {
+                return VK_IMAGE_VIEW_TYPE_2D;
+            }
+        case tinyddsloader::DDSFile::TextureDimension::Texture3D: return VK_IMAGE_VIEW_TYPE_3D;
+        case tinyddsloader::DDSFile::TextureDimension::Unknown: return -1;
+        }
+        return -1;
+    }
+
+    vsg::ref_ptr<vsg::Data> readCompressed(tinyddsloader::DDSFile& ddsFile, VkFormat targetFormat)
+    {
+        const auto width = ddsFile.GetWidth();
+        const auto height = ddsFile.GetHeight();
+        const auto numMipMaps = ddsFile.GetMipCount();
+        const auto numArrays = ddsFile.GetArraySize();
+
+        auto raw = allocateAndCopyToContiguousBlock(ddsFile);
+
+        vsg::ref_ptr<vsg::Data> vsg_data;
 
         vsg::Data::Layout layout;
         layout.format = targetFormat;
         layout.maxNumMipmaps = numMipMaps;
         layout.blockWidth = 4;
         layout.blockHeight = 4;
+        layout.imageViewType = computeImageViewType(ddsFile);
 
         switch (targetFormat)
         {
@@ -93,8 +116,8 @@ namespace
         case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
-            if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block64Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block64*>(raw), layout);
+            if (numArrays > 1)
+                vsg_data = vsg::block64Array3D::create(width / layout.blockWidth, height / layout.blockHeight, numArrays, reinterpret_cast<vsg::block64*>(raw), layout);
             else
                 vsg_data = vsg::block64Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
             break;
@@ -106,8 +129,8 @@ namespace
         case VK_FORMAT_BC5_SNORM_BLOCK:
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
-            if (isCubemap && numArrays == 6)
-                vsg_data = vsg::block128Array3D::create(width / layout.blockWidth, height / layout.blockHeight, 6, reinterpret_cast<vsg::block128*>(raw), layout);
+            if (numArrays > 1)
+                vsg_data = vsg::block128Array3D::create(width / layout.blockWidth, height / layout.blockHeight, numArrays, reinterpret_cast<vsg::block128*>(raw), layout);
             else
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
@@ -125,7 +148,6 @@ namespace
         const auto height = ddsFile.GetHeight();
         const auto depth = ddsFile.GetDepth();
         const auto numMipMaps = ddsFile.GetMipCount();
-        const auto isCubemap = ddsFile.IsCubemap();
         const auto format = ddsFile.GetFormat();
         const auto isCompressed = ddsFile.IsCompressed(format);
         const auto dim = ddsFile.GetTextureDimension();
@@ -146,61 +168,31 @@ namespace
             }
             else
             {
-                using image_t = std::vector<uint8_t>;
-                size_t offset = 0;
+                auto raw = allocateAndCopyToContiguousBlock(ddsFile);
+
                 vsg::ref_ptr<vsg::Data> vsg_data;
-                std::vector<image_t> images(numMipMaps * numArrays);
-
-                for (uint32_t i = 0; i < numMipMaps; ++i)
-                {
-                    for (uint32_t j = 0; j < numArrays; ++j)
-                    {
-                        const auto data = ddsFile.GetImageData(i, j);
-                        auto& face = images[numArrays * i + j];
-
-                        face.reserve(data->m_memSlicePitch);
-                        face.assign((uint8_t*)data->m_mem, (uint8_t*)data->m_mem + data->m_memSlicePitch);
-
-                        //std::cout << "Uncompressed: Face " << j << ", Level " << i
-                        //          << ", faceLodSize = " << faceLodSize << ", offset = " << p - raw << std::endl;
-
-                        offset += data->m_memSlicePitch;
-                    }
-                }
-
-                auto raw = new uint8_t[offset];
-                offset = 0;
-
-                for (auto& image : images)
-                {
-                    std::memcpy(raw + offset, image.data(), image.size());
-                    offset += image.size();
-                }
 
                 vsg::Data::Layout layout;
                 layout.format = it->second;
                 layout.maxNumMipmaps = numMipMaps;
+                layout.imageViewType = computeImageViewType(ddsFile);
 
                 switch (dim)
                 {
                 case tinyddsloader::DDSFile::TextureDimension::Texture1D:
-                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_1D;
                     vsg_data = vsg::ubvec4Array::create(width, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
                     if (numArrays > 1)
                     {
-                        layout.imageViewType = isCubemap ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
                         vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     }
                     else
                     {
-                        layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                         vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     }
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture3D:
-                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
@@ -248,10 +240,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg:
         switch (result)
         {
         case tinyddsloader::ErrorNotSupported:
-            std::cerr << "Error loading file: Feature not supported" << std::endl;
+            std::cerr << "ReaderWriter_dds::read("<<filename<<") Error loading file: Feature not supported" << std::endl;
             break;
         default:
-            std::cerr << "Error loading file: " << result << std::endl;
+            std::cerr << "ReaderWriter_dds::read("<<filename<<") Error loading file: " << result << std::endl;
             break;
         }
     }
@@ -274,10 +266,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
         switch (result)
         {
         case tinyddsloader::ErrorNotSupported:
-            std::cerr << "Error loading file: Feature not supported" << std::endl;
+            std::cerr << "ReaderWriter_dds::read(istream&) Error loading file: Feature not supported" << std::endl;
             break;
         default:
-            std::cerr << "Error loading file: " << result << std::endl;
+            std::cerr << "ReaderWriter_dds::read(istream&) Error loading file: " << result << std::endl;
             break;
         }
     }
