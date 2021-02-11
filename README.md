@@ -13,7 +13,7 @@ Utility library for converting data+materials to/from [VulkanSceneGraph](https:/
 cmake automatically finds which depedencies are available and builds the approprioate components:
 
 * reading TrueType etc. fonts support by FreeType as vsg::Font objects.
-* reading 3d model formats ( GLTF, OBJ, 3DS, LWO) etc. supported by Assimp as vsg::Node objects.
+* reading 3d model formats ( GLTF, OBJ, 3DS, LWO etc.) supported by Assimp as vsg::Node objects.
 * reading 3d modul formats (OpenSceneGraph, OpenFlight etc.) supported by OpenSceneGraph as vsg::Node objecs.
 * Comming soon : reading KTX images supported by libktx as vsg::Data objects.
 
