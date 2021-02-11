@@ -91,8 +91,7 @@ namespace
 
     vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4& color)
     {
-        auto vsg_data = vsg::vec4Array2D::create(1, 1, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
-        std::fill(vsg_data->begin(), vsg_data->end(), color);
+        auto vsg_data = vsg::vec4Array2D::create(1, 1, color, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
         return vsg_data;
     }
 
