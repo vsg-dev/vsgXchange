@@ -84,9 +84,31 @@ namespace
                 offset += image.size();
             }
 
+            uint32_t numImages = depth * numArrays;
+
             vsg::Data::Layout layout;
             layout.format = format;
             layout.maxNumMipmaps = numMipMaps;
+
+            if (depth > 1)
+            {
+                layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+            }
+            else if (numArrays > 1)
+            {
+                if (texture->isCubemap)
+                {
+                    layout.imageViewType = (numArrays > 6) ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+                }
+                else
+                {
+                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                }
+            }
+            else
+            {
+                layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
+            }
 
             switch (format)
             {
@@ -99,17 +121,13 @@ namespace
                 layout.blockWidth = blockSize;
                 layout.blockHeight = blockSize;
 
-                if (height > 1 && depth == 1)
+                if (numImages>1)
                 {
-                    // 2d texture
-                    if (texture->isCubemap)
-                    {
-                        data = vsg::block64Array3D::create(width / blockSize, height / blockSize, 6, reinterpret_cast<vsg::block64*>(raw), layout);
-                    }
-                    else
-                    {
-                        data = vsg::block64Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block64*>(raw), layout);
-                    }
+                    data = vsg::block64Array3D::create(width / blockSize, height / blockSize, numImages, reinterpret_cast<vsg::block64*>(raw), layout);
+                }
+                else
+                {
+                    data = vsg::block64Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block64*>(raw), layout);
                 }
                 break;
 
@@ -124,29 +142,21 @@ namespace
                 layout.blockWidth = blockSize;
                 layout.blockHeight = blockSize;
 
-                if (height > 1 && depth == 1)
+                if (numImages > 1)
                 {
-                    // 2d texture
-                    if (texture->isCubemap)
-                    {
-                        data = vsg::block128Array3D::create(width / blockSize, height / blockSize, 6, reinterpret_cast<vsg::block128*>(raw), layout);
-                    }
-                    else
-                    {
-                        data = vsg::block128Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block128*>(raw), layout);
-                    }
+                    data = vsg::block128Array3D::create(width / blockSize, height / blockSize, numImages, reinterpret_cast<vsg::block128*>(raw), layout);
+                }
+                else
+                {
+                    data = vsg::block128Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block128*>(raw), layout);
                 }
                 break;
 
             default:
-                if (height > 1 && depth == 1)
-                {
-                    // 2d texture
-                    if (texture->isCubemap)
-                        data = vsg::ubvec4Array3D::create(width, height, 6, reinterpret_cast<vsg::ubvec4*>(raw), layout);
-                    else
-                        data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
-                }
+                if (numImages > 1)
+                    data = vsg::ubvec4Array3D::create(width, height, numImages, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                else
+                    data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                 break;
             }
         }
