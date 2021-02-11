@@ -1,7 +1,4 @@
 #include "ReaderWriter_assimp.h"
-#include "../dds/ReaderWriter_dds.h"
-#include "../stbi/ReaderWriter_stbi.h"
-#include "../ktx/ReaderWriter_ktx.h"
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
@@ -22,8 +19,8 @@
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/read.h>
 #include <vsg/maths/transform.h>
-#include <vsg/nodes/Geometry.h>
 #include <vsg/nodes/MatrixTransform.h>
+#include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/DescriptorBuffer.h>
 #include <vsg/state/DescriptorImage.h>
 #include <vsg/state/DescriptorSet.h>
@@ -94,8 +91,7 @@ namespace
 
     vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4& color)
     {
-        auto vsg_data = vsg::vec4Array2D::create(1, 1, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
-        std::fill(vsg_data->begin(), vsg_data->end(), color);
+        auto vsg_data = vsg::vec4Array2D::create(1, 1, color, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
         return vsg_data;
     }
 
@@ -286,6 +282,7 @@ void ReaderWriter_assimp::createDefaultPipelineAndState()
 
 vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
+    bool useVertexIndexDraw = true;
     int upAxis = 1, upAxisSign = 1;
 
     if (scene->mMetaData)
@@ -304,7 +301,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
     auto root = vsg::MatrixTransform::create();
 
     if (upAxis == 1)
-        root->setMatrix(vsg::rotate(vsg::PIf * 0.5f, (float)upAxisSign, 0.0f, 0.0f));
+        root->setMatrix(vsg::rotate(vsg::PI * 0.5, static_cast<double>(upAxisSign), 0.0, 0.0));
 
     auto scenegraph = vsg::StateGroup::create();
     scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
@@ -327,9 +324,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
         for (unsigned int i = 0; i < node->mNumMeshes; ++i)
         {
             auto mesh = scene->mMeshes[node->mMeshes[i]];
-            vsg::ref_ptr<vsg::vec3Array> vertices(new vsg::vec3Array(mesh->mNumVertices));
-            vsg::ref_ptr<vsg::vec3Array> normals(new vsg::vec3Array(mesh->mNumVertices));
-            vsg::ref_ptr<vsg::vec2Array> texcoords(new vsg::vec2Array(mesh->mNumVertices));
+            auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
+            auto normals = vsg::vec3Array::create(mesh->mNumVertices);
+            auto texcoords = vsg::vec2Array::create(mesh->mNumVertices);
             std::vector<unsigned int> indices;
 
             for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
@@ -390,9 +387,21 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
                 stategroup->add(state.second);
             }
 
-            stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
-            stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
-            stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
+            if (useVertexIndexDraw)
+            {
+                auto vid = vsg::VertexIndexDraw::create();
+                vid->arrays = vsg::DataList{vertices, normals, texcoords};
+                vid->indices = vsg_indices;
+                vid->indexCount = indices.size();
+                vid->instanceCount = 1;
+                stategroup->addChild(vid);
+            }
+            else
+            {
+                stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
+                stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
+                stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
+            }
         }
 
         nodes.pop();
