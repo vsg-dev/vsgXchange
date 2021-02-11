@@ -6,7 +6,7 @@ Utility library for converting data+materials to/from [VulkanSceneGraph](https:/
 * reading DDS, JPEG, PNG, GIF, BMP, TGA and PSD (Photoshop Document) image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
 * reading and writing SPIRV shader files as vsg::ShaderModule.
-* writeng vsg::Object of all types to .cpp source files that can be directly compiled into applications
+* writing vsg::Object of all types to .cpp source files that can be directly compiled into applications
 
 ## Optional support:
 
