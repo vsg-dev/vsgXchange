@@ -33,7 +33,7 @@ include(assimp/build_vars.cmake)
 # add ktx
 include(ktx/build_vars.cmake)
 
-# add OpenSceneGraph if available
+# add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
 
 

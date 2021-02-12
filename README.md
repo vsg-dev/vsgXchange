@@ -1,19 +1,19 @@
 # vsgXchange
 Utility library for converting data+materials to/from [VulkanSceneGraph](https://github.com/vsg-dev/VulkanSceneGraph)
 
-## Provides builtin read support for:
+## Provides builtin support for:
 
 * reading DDS, JPEG, PNG, GIF, BMP, TGA and PSD (Photoshop Document) image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
 * reading and writing SPIRV shader files as vsg::ShaderModule.
-* writeng vsg::Object of all types to .cpp source files that can be directly compiled into applications
+* writing vsg::Object of all types to .cpp source files that can be directly compiled into applications.
 
 ## Optional support:
 
 cmake automatically finds which depedencies are available and builds the approprioate components:
 
 * reading TrueType etc. fonts support by FreeType as vsg::Font objects.
-* reading 3d model formats ( GLTF, OBJ, 3DS, LWO) etc. supported by Assimp as vsg::Node objects.
+* reading 3d model formats ( GLTF, OBJ, 3DS, LWO etc.) supported by Assimp as vsg::Node objects.
 * reading 3d modul formats (OpenSceneGraph, OpenFlight etc.) supported by OpenSceneGraph as vsg::Node objecs.
 * Comming soon : reading KTX images supported by libktx as vsg::Data objects.
 
