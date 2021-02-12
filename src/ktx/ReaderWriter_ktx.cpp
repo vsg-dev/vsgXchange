@@ -1,167 +1,178 @@
 #include "ReaderWriter_ktx.h"
 
+#include <vsg/core/Exception.h>
 #include <vsg/state/DescriptorImage.h>
 
 #include <ktx.h>
 #include <ktxvulkan.h>
+#include <texture.h>
+#include <vk_format.h>
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 namespace
 {
-    const std::unordered_set<VkFormat> kFormatSet{
-        VK_FORMAT_R8G8B8A8_UNORM,
-        VK_FORMAT_R8G8B8A8_SNORM,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        VK_FORMAT_BC7_UNORM_BLOCK,
-        VK_FORMAT_BC7_SRGB_BLOCK,
-        VK_FORMAT_BC5_UNORM_BLOCK,
-        VK_FORMAT_BC5_SNORM_BLOCK,
-        VK_FORMAT_BC4_UNORM_BLOCK,
-        VK_FORMAT_BC4_SNORM_BLOCK,
-        VK_FORMAT_BC3_UNORM_BLOCK,
-        VK_FORMAT_BC3_SRGB_BLOCK,
-        VK_FORMAT_BC2_UNORM_BLOCK,
-        VK_FORMAT_BC2_SRGB_BLOCK,
-        VK_FORMAT_BC1_RGB_UNORM_BLOCK,
-        VK_FORMAT_BC1_RGB_SRGB_BLOCK,
-        VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-        VK_FORMAT_BC1_RGBA_SRGB_BLOCK};
+
+    template<typename T>
+    vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Layout layout)
+    {
+        switch(arrayDimensions)
+        {
+            case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), layout);
+            case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), layout);
+            case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), layout);
+            default : return {};
+        }
+    }
 
     vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture)
     {
         vsg::ref_ptr<vsg::Data> data;
-        const auto width = texture->baseWidth;
-        const auto height = texture->baseHeight;
-        const auto depth = texture->baseDepth;
-        const auto numMipMaps = texture->numLevels;
-        const auto numArrays = texture->numFaces;
-        const auto textureData = ktxTexture_GetData(texture);
-        //const auto textureSize = ktxTexture_GetDataSize(texture);
-        const auto format = ktxTexture_GetVkFormat(texture);
-        const auto valueSize = ktxTexture_GetElementSize(texture);
 
-        if (kFormatSet.count(format) > 0)
+        uint32_t width = texture->baseWidth;
+        uint32_t height = texture->baseHeight;
+        uint32_t depth = texture->baseDepth;
+        const auto numMipMaps = texture->numLevels;
+        const auto numLayers = texture->numLayers;
+        const auto textureData = ktxTexture_GetData(texture);
+        auto valueSize = ktxTexture_GetElementSize(texture);
+        const auto format = ktxTexture_GetVkFormat(texture);
+
+        ktxFormatSize formatSize;
+        vkGetFormatSize( format, &formatSize );
+
+        if (formatSize.blockSizeInBits != valueSize*8)
         {
-            const uint32_t blockSize = texture->isCompressed ? 4 : 1;
-            size_t offset = 0;
-            auto mipWidth = (width) / blockSize;
-            auto mipHeight = (height) / blockSize;
+            throw vsg::Exception{"Mismatched of format blockSize and ktxTexture_GetElementSize(texture)."};
+        }
+
+        vsg::Data::Layout layout;
+        layout.format = format;
+        layout.blockWidth = texture->_protected->_formatSize.blockWidth;
+        layout.blockHeight = texture->_protected->_formatSize.blockHeight;
+        layout.blockDepth = texture->_protected->_formatSize.blockDepth;
+        layout.maxNumMipmaps = numMipMaps;
+
+        width /= layout.blockWidth;
+        height /= layout.blockHeight;
+        depth /= layout.blockDepth;
+
+        // compute the textureSize.
+        size_t textureSize = 0;
+        {
+            auto mipWidth = width;
+            auto mipHeight = height;
             auto mipDepth = depth;
 
-            using image_t = std::vector<uint8_t>;
-            std::vector<image_t> images(numMipMaps * numArrays);
-
-            for (uint32_t i = 0; i < numMipMaps; ++i)
+            for (uint32_t level = 0; level < numMipMaps; ++level)
             {
                 const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-
-                for (uint32_t j = 0; j < numArrays; ++j)
-                {
-                    auto& face = images[numArrays * i + j];
-
-                    if (ktx_size_t ktxOffset = 0; ktxTexture_GetImageOffset(texture, i, 0, j, &ktxOffset) == KTX_SUCCESS)
-                    {
-                        face.reserve(faceSize);
-                        face.assign((uint8_t*)textureData + ktxOffset, (uint8_t*)textureData + ktxOffset + faceSize);
-                    }
-
-                    offset += faceSize;
-                }
+                textureSize += faceSize;
 
                 if (mipWidth > 1) mipWidth /= 2;
                 if (mipHeight > 1) mipHeight /= 2;
                 if (mipDepth > 1) mipDepth /= 2;
             }
+            textureSize *= (texture->numLayers * texture->numFaces);
+        }
 
-            auto raw = new uint8_t[offset];
-            offset = 0;
+        // copy the data and repack into ordered assumed by VSG
+        uint8_t* copiedData = new uint8_t[textureSize];
 
-            for (auto& image : images)
+        size_t offset = 0;
+
+        auto mipWidth = width;
+        auto mipHeight = height;
+        auto mipDepth = depth;
+
+        for (uint32_t level = 0; level < numMipMaps; ++level)
+        {
+            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
+            for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
             {
-                std::memcpy(raw + offset, image.data(), image.size());
-                offset += image.size();
+                for (uint32_t face = 0; face < texture->numFaces; ++face)
+                {
+                    if (ktx_size_t ktxOffset = 0; ktxTexture_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
+                    {
+                        std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
+                    }
+
+                    offset += faceSize;
+                }
             }
+            if (mipWidth > 1) mipWidth /= 2;
+            if (mipHeight > 1) mipHeight /= 2;
+            if (mipDepth > 1) mipDepth /= 2;
+        }
 
-            uint32_t numImages = depth * numArrays;
+        uint32_t arrayDimensions = 0;
+        switch (texture->numDimensions)
+        {
+            case 1:
+                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D :VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+                arrayDimensions = (numLayers == 1) ? 1 : 2;
+                height = numLayers;
+                break;
 
-            vsg::Data::Layout layout;
-            layout.format = format;
-            layout.maxNumMipmaps = numMipMaps;
-
-            if (depth > 1)
-            {
-                layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
-            }
-            else if (numArrays > 1)
-            {
+            case 2:
                 if (texture->isCubemap)
                 {
-                    layout.imageViewType = (numArrays > 6) ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE;
+                    layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE :VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+                    arrayDimensions = 3;
+                    depth = 6 * numLayers;
                 }
                 else
                 {
-                    layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-                }
-            }
-            else
-            {
-                layout.imageViewType = VK_IMAGE_VIEW_TYPE_2D;
-            }
-
-            switch (format)
-            {
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
-            case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
-            case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
-            case VK_FORMAT_BC4_SNORM_BLOCK:
-            case VK_FORMAT_BC4_UNORM_BLOCK:
-                layout.blockWidth = blockSize;
-                layout.blockHeight = blockSize;
-
-                if (numImages>1)
-                {
-                    data = vsg::block64Array3D::create(width / blockSize, height / blockSize, numImages, reinterpret_cast<vsg::block64*>(raw), layout);
-                }
-                else
-                {
-                    data = vsg::block64Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block64*>(raw), layout);
+                    layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D :VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                    arrayDimensions = (numLayers == 1) ? 2 : 3;
+                    depth = numLayers;
                 }
                 break;
 
-            case VK_FORMAT_BC2_UNORM_BLOCK:
-            case VK_FORMAT_BC2_SRGB_BLOCK:
-            case VK_FORMAT_BC3_UNORM_BLOCK:
-            case VK_FORMAT_BC3_SRGB_BLOCK:
-            case VK_FORMAT_BC5_UNORM_BLOCK:
-            case VK_FORMAT_BC5_SNORM_BLOCK:
-            case VK_FORMAT_BC7_UNORM_BLOCK:
-            case VK_FORMAT_BC7_SRGB_BLOCK:
-                layout.blockWidth = blockSize;
-                layout.blockHeight = blockSize;
-
-                if (numImages > 1)
-                {
-                    data = vsg::block128Array3D::create(width / blockSize, height / blockSize, numImages, reinterpret_cast<vsg::block128*>(raw), layout);
-                }
-                else
-                {
-                    data = vsg::block128Array2D::create(width / blockSize, height / blockSize, reinterpret_cast<vsg::block128*>(raw), layout);
-                }
+            case 3:
+                layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+                arrayDimensions = 3;
                 break;
 
             default:
-                if (numImages > 1)
-                    data = vsg::ubvec4Array3D::create(width, height, numImages, reinterpret_cast<vsg::ubvec4*>(raw), layout);
-                else
-                    data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
-                break;
-            }
+                throw vsg::Exception{"Invalid number of dimensions."};
         }
 
-        ktxTexture_Destroy(texture);
+        // create the VSG image objects
+        switch(valueSize)
+        {
+            case 1:
+                // int8_t or uint8_t
+                data = createImage<std::uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            case 2:
+                // short, ushort, ubvec2, bvec2
+                data = createImage<std::uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            case 3:
+                // ubvec3 oe bcec3
+                data = createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            case 4:
+                // float, int, uint, usvec2, svec2, ubvec4, bvec4
+                data = createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            case 8:
+                // double, vec2, ivec4, uivec4, svec4, uvec4 or block64 when compressed
+                if (texture->isCompressed) data = createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
+                else data = createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            case 16:
+                // dvec2, vec4, ivec4, uivec4 or block128 when compressed
+                if (texture->isCompressed) data = createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
+                else data = createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
+                break;
+            default:
+                throw vsg::Exception{"Unsupported valueSiize."};
+        }
+
 
         return data;
     }
@@ -184,7 +195,21 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
     if (filenameToUse.empty()) return {};
 
     if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromNamedFile(filenameToUse.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
-        return readKtx(texture);
+    {
+        vsg::ref_ptr<vsg::Data> data;
+        try
+        {
+            data = readKtx(texture);
+        }
+        catch(const vsg::Exception& ve)
+        {
+            std::cout<<"ReaderWriter_ktx::read("<<filenameToUse<<") failed : "<<ve.message<<std::endl;
+        }
+
+        ktxTexture_Destroy(texture);
+
+        return data;
+    }
 
     return {};
 }
@@ -205,7 +230,13 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(std::istream& fin, vsg::ref_ptr
     }
 
     if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
-        return readKtx(texture);
+    {
+        auto result = readKtx(texture);
+
+        ktxTexture_Destroy(texture);
+
+        return result;
+    }
 
     return {};
 }
