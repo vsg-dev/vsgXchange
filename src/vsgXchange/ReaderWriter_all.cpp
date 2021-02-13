@@ -5,9 +5,9 @@
 #include "../cpp/ReaderWriter_cpp.h"
 #include "../dds/ReaderWriter_dds.h"
 #include "../glsl//ReaderWriter_glsl.h"
+#include "../ktx/ReaderWriter_ktx.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
-#include "../ktx/ReaderWriter_ktx.h"
 
 #ifdef USE_FREETYPE
 #    include "../freetype/FreeTypeFont.h"

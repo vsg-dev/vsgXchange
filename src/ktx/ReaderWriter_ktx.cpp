@@ -18,12 +18,12 @@ namespace
     template<typename T>
     vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Layout layout)
     {
-        switch(arrayDimensions)
+        switch (arrayDimensions)
         {
-            case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), layout);
-            case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), layout);
-            case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), layout);
-            default : return {};
+        case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), layout);
+        case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), layout);
+        case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), layout);
+        default: return {};
         }
     }
 
@@ -38,7 +38,7 @@ namespace
         const auto format = ktxTexture_GetVkFormat(texture);
 
         ktxFormatSize formatSize;
-        vkGetFormatSize( format, &formatSize );
+        vkGetFormatSize(format, &formatSize);
 
         if (formatSize.blockSizeInBits != texture->_protected->_formatSize.blockSizeInBits)
         {
@@ -121,97 +121,97 @@ namespace
         uint32_t arrayDimensions = 0;
         switch (texture->numDimensions)
         {
-            case 1:
-                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D :VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-                arrayDimensions = (numLayers == 1) ? 1 : 2;
-                height = numLayers;
-                break;
+        case 1:
+            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+            arrayDimensions = (numLayers == 1) ? 1 : 2;
+            height = numLayers;
+            break;
 
-            case 2:
-                if (texture->isCubemap)
-                {
-                    layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE :VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-                    arrayDimensions = 3;
-                    depth = 6 * numLayers;
-                }
-                else
-                {
-                    layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D :VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-                    arrayDimensions = (numLayers == 1) ? 2 : 3;
-                    depth = numLayers;
-                }
-                break;
-
-            case 3:
-                layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        case 2:
+            if (texture->isCubemap)
+            {
+                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
                 arrayDimensions = 3;
-                break;
+                depth = 6 * numLayers;
+            }
+            else
+            {
+                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+                arrayDimensions = (numLayers == 1) ? 2 : 3;
+                depth = numLayers;
+            }
+            break;
 
-            default:
-                throw vsg::Exception{"Invalid number of dimensions."};
+        case 3:
+            layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+            arrayDimensions = 3;
+            break;
+
+        default:
+            throw vsg::Exception{"Invalid number of dimensions."};
         }
 
         // create the VSG compressed image objects
         if (texture->isCompressed)
         {
-            switch(valueSize)
+            switch (valueSize)
             {
-                case 8 : return createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
-                case 16 : return createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
-                default: throw vsg::Exception{"Unsupported compressed format."};
+            case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
+            case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
+            default: throw vsg::Exception{"Unsupported compressed format."};
             }
         }
 
         // handle common formats
-        switch(format)
+        switch (format)
         {
-            case VK_FORMAT_R8_SRGB:
-            case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8_SRGB:
-            case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8B8_SRGB:
-            case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8B8A8_SRGB:
-            case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8_SRGB:
+        case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8_SRGB:
+        case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8B8_SRGB:
+        case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8B8A8_SRGB:
+        case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, copiedData, layout);
 
-            case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-            case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, copiedData, layout);
-            default: break;
+        case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        default: break;
         }
 
         // create the VSG uncompressed image objects
-        switch(valueSize)
+        switch (valueSize)
         {
-            case 1:
-                // int8_t or uint8_t
-                return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 2:
-                // short, ushort, ubvec2, bvec2
-                return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 3:
-                // ubvec3 or bvec3
-                return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 4:
-                // float, int, uint, usvec2, svec2, ubvec4, bvec4
-                return createImage<uint32_t>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 8:
-                // double, vec2, ivec4, uivec4, svec4, uvec4
-                return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 16:
-                // dvec2, vec4, ivec4, uivec4
-                return createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
-            default:
-                throw vsg::Exception{"Unsupported valueSize."};
+        case 1:
+            // int8_t or uint8_t
+            return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case 2:
+            // short, ushort, ubvec2, bvec2
+            return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case 3:
+            // ubvec3 or bvec3
+            return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+        case 4:
+            // float, int, uint, usvec2, svec2, ubvec4, bvec4
+            return createImage<uint32_t>(arrayDimensions, width, height, depth, copiedData, layout);
+        case 8:
+            // double, vec2, ivec4, uivec4, svec4, uvec4
+            return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        case 16:
+            // dvec2, vec4, ivec4, uivec4
+            return createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
+        default:
+            throw vsg::Exception{"Unsupported valueSize."};
         }
 
         return {};
@@ -241,9 +241,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
         {
             data = readKtx(texture, filename);
         }
-        catch(const vsg::Exception& ve)
+        catch (const vsg::Exception& ve)
         {
-            std::cout<<"ReaderWriter_ktx::read("<<filenameToUse<<") failed : "<<ve.message<<std::endl;
+            std::cout << "ReaderWriter_ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
         }
 
         ktxTexture_Destroy(texture);
@@ -276,9 +276,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(std::istream& fin, vsg::ref_ptr
         {
             data = readKtx(texture, "");
         }
-        catch(const vsg::Exception& ve)
+        catch (const vsg::Exception& ve)
         {
-            std::cout<<"ReaderWriter_ktx::read(std::istream&) failed : "<<ve.message<<std::endl;
+            std::cout << "ReaderWriter_ktx::read(std::istream&) failed : " << ve.message << std::endl;
         }
 
         ktxTexture_Destroy(texture);
