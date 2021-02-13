@@ -141,6 +141,7 @@ namespace
                 throw vsg::Exception{"Invalid number of dimensions."};
         }
 
+        // create the VSG compressed image objects
         if (texture->isCompressed)
         {
             switch(valueSize)
@@ -151,7 +152,7 @@ namespace
             }
         }
 
-        // create the VSG image objects
+        // create the VSG uncompressed image objects
         switch(valueSize)
         {
             case 1:
