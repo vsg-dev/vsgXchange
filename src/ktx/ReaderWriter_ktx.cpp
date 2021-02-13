@@ -27,7 +27,7 @@ namespace
         }
     }
 
-    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename)
+    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& /*filename*/)
     {
         uint32_t width = texture->baseWidth;
         uint32_t height = texture->baseHeight;
@@ -52,23 +52,9 @@ namespace
         layout.blockHeight = texture->_protected->_formatSize.blockHeight;
         layout.blockDepth = texture->_protected->_formatSize.blockDepth;
         layout.maxNumMipmaps = numMipMaps;
-
-        // TODO need to pass on texture->orientation setting.
-        //
-        //    KTX_ORIENT_X_LEFT, KTX_ORIENT_X_RIGHT
-        //    KTX_ORIENT_Y_UP,KTX_ORIENT_Y_DOWN
-        //    KTX_ORIENT_Z_IN, KTX_ORIENT_Z_OUT
-        //
-        //    struct ktxOrientation {
-        //    ktxOrientationX x;  /*!< Orientation in X */
-        //    ktxOrientationY y;  /*!< Orientation in Y */
-        //    ktxOrientationZ z;  /*!< Orientation in Z */
-        //    }
-        //
-        if (texture->orientation.x != KTX_ORIENT_X_RIGHT || texture->orientation.y != KTX_ORIENT_Y_DOWN || texture->orientation.z != KTX_ORIENT_Z_OUT)
-        {
-            std::cout<<"file "<<filename<<" : Orientation "<<char(texture->orientation.x)<<", "<<char(texture->orientation.y)<<", "<<char(texture->orientation.z)<<std::endl;
-        }
+        layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
+                                             ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
+                                             ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
 
         width /= layout.blockWidth;
         height /= layout.blockHeight;
