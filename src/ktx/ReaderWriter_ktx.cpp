@@ -174,7 +174,7 @@ namespace
                 // dvec2, vec4, ivec4, uivec4
                 return createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
             default:
-                throw vsg::Exception{"Unsupported valueSiize."};
+                throw vsg::Exception{"Unsupported valueSize."};
         }
 
         return {};
