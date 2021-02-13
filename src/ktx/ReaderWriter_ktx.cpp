@@ -27,10 +27,8 @@ namespace
         }
     }
 
-    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture)
+    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename)
     {
-        vsg::ref_ptr<vsg::Data> data;
-
         uint32_t width = texture->baseWidth;
         uint32_t height = texture->baseHeight;
         uint32_t depth = texture->baseDepth;
@@ -45,7 +43,7 @@ namespace
 
         if (formatSize.blockSizeInBits != valueSize*8)
         {
-            throw vsg::Exception{"Mismatched of format blockSize and ktxTexture_GetElementSize(texture)."};
+            throw vsg::Exception{"Mismatched ktxFormatSize.blockSize and ktxTexture_GetElementSize(texture)."};
         }
 
         vsg::Data::Layout layout;
@@ -54,6 +52,23 @@ namespace
         layout.blockHeight = texture->_protected->_formatSize.blockHeight;
         layout.blockDepth = texture->_protected->_formatSize.blockDepth;
         layout.maxNumMipmaps = numMipMaps;
+
+        // TODO need to pass on texture->orientation setting.
+        //
+        //    KTX_ORIENT_X_LEFT, KTX_ORIENT_X_RIGHT
+        //    KTX_ORIENT_Y_UP,KTX_ORIENT_Y_DOWN
+        //    KTX_ORIENT_Z_IN, KTX_ORIENT_Z_OUT
+        //
+        //    struct ktxOrientation {
+        //    ktxOrientationX x;  /*!< Orientation in X */
+        //    ktxOrientationY y;  /*!< Orientation in Y */
+        //    ktxOrientationZ z;  /*!< Orientation in Z */
+        //    }
+        //
+        if (texture->orientation.x != KTX_ORIENT_X_RIGHT || texture->orientation.y != KTX_ORIENT_Y_DOWN || texture->orientation.z != KTX_ORIENT_Z_OUT)
+        {
+            std::cout<<"file "<<filename<<" : Orientation "<<char(texture->orientation.x)<<", "<<char(texture->orientation.y)<<", "<<char(texture->orientation.z)<<std::endl;
+        }
 
         width /= layout.blockWidth;
         height /= layout.blockHeight;
@@ -140,41 +155,42 @@ namespace
                 throw vsg::Exception{"Invalid number of dimensions."};
         }
 
+        if (texture->isCompressed)
+        {
+            switch(valueSize)
+            {
+                case 8 : return createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
+                case 16 : return createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
+                default: throw vsg::Exception{"Unsupported compressed format."};
+            }
+        }
+
         // create the VSG image objects
         switch(valueSize)
         {
             case 1:
                 // int8_t or uint8_t
-                data = createImage<std::uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                return createImage<std::uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
             case 2:
                 // short, ushort, ubvec2, bvec2
-                data = createImage<std::uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                return createImage<std::uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
             case 3:
-                // ubvec3 oe bcec3
-                data = createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                // ubvec3 or bcec3
+                return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
             case 4:
                 // float, int, uint, usvec2, svec2, ubvec4, bvec4
-                data = createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
             case 8:
-                // double, vec2, ivec4, uivec4, svec4, uvec4 or block64 when compressed
-                if (texture->isCompressed) data = createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
-                else data = createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                // double, vec2, ivec4, uivec4, svec4, uvec4
+                return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
             case 16:
-                // dvec2, vec4, ivec4, uivec4 or block128 when compressed
-                if (texture->isCompressed) data = createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
-                else data = createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
-                break;
+                // dvec2, vec4, ivec4, uivec4
+                return createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
             default:
                 throw vsg::Exception{"Unsupported valueSiize."};
         }
 
-
-        return data;
+        return {};
     }
 
 } // namespace
@@ -199,7 +215,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
         vsg::ref_ptr<vsg::Data> data;
         try
         {
-            data = readKtx(texture);
+            data = readKtx(texture, filename);
         }
         catch(const vsg::Exception& ve)
         {
@@ -231,11 +247,19 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(std::istream& fin, vsg::ref_ptr
 
     if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
     {
-        auto result = readKtx(texture);
+        vsg::ref_ptr<vsg::Data> data;
+        try
+        {
+            data = readKtx(texture, "");
+        }
+        catch(const vsg::Exception& ve)
+        {
+            std::cout<<"ReaderWriter_ktx::read(std::istream&) failed : "<<ve.message<<std::endl;
+        }
 
         ktxTexture_Destroy(texture);
 
-        return result;
+        return data;
     }
 
     return {};
