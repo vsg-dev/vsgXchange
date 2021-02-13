@@ -35,16 +35,26 @@ namespace
         const auto numMipMaps = texture->numLevels;
         const auto numLayers = texture->numLayers;
         const auto textureData = ktxTexture_GetData(texture);
-        auto valueSize = ktxTexture_GetElementSize(texture);
         const auto format = ktxTexture_GetVkFormat(texture);
 
         ktxFormatSize formatSize;
         vkGetFormatSize( format, &formatSize );
 
-        if (formatSize.blockSizeInBits != valueSize*8)
+        if (formatSize.blockSizeInBits != texture->_protected->_formatSize.blockSizeInBits)
         {
+#if 0
+            auto before_valueSize = ktxTexture_GetElementSize(texture);
+
+            vkGetFormatSize( format, &(texture->_protected->_formatSize) );
+
+            auto after_valueSize = ktxTexture_GetElementSize(texture);
+
+            std::cout<<"ReaderWriter_ktx::read("<<filename<<") Fallback : format = "<<format<<", before_valueSize = "<<before_valueSize<<" after_valueSize = "<<after_valueSize<<std::endl;
+#endif
             throw vsg::Exception{"Mismatched ktxFormatSize.blockSize and ktxTexture_GetElementSize(texture)."};
         }
+
+        auto valueSize = ktxTexture_GetElementSize(texture);
 
         vsg::Data::Layout layout;
         layout.format = format;
@@ -152,21 +162,48 @@ namespace
             }
         }
 
+        // handle common formats
+        switch(format)
+        {
+            case VK_FORMAT_R8_SRGB:
+            case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8_SRGB:
+            case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8B8_SRGB:
+            case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+
+            case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+            case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, copiedData, layout);
+            default: break;
+        }
+
         // create the VSG uncompressed image objects
         switch(valueSize)
         {
             case 1:
                 // int8_t or uint8_t
-                return createImage<std::uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
+                return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
             case 2:
                 // short, ushort, ubvec2, bvec2
-                return createImage<std::uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
+                return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
             case 3:
-                // ubvec3 or bcec3
+                // ubvec3 or bvec3
                 return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
             case 4:
                 // float, int, uint, usvec2, svec2, ubvec4, bvec4
-                return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
+                return createImage<uint32_t>(arrayDimensions, width, height, depth, copiedData, layout);
             case 8:
                 // double, vec2, ivec4, uivec4, svec4, uvec4
                 return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
