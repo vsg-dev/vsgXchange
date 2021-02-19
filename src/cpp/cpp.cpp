@@ -1,4 +1,4 @@
-#include "ReaderWriter_cpp.h"
+#include <vsgXchange/cpp.h>
 
 #include <vsg/io/AsciiOutput.h>
 #include <vsg/io/VSG.h>
@@ -7,16 +7,16 @@
 
 using namespace vsgXchange;
 
-ReaderWriter_cpp::ReaderWriter_cpp()
+cpp::cpp()
 {
 }
 
-bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext != "cpp") return false;
 
-    std::cout << "ReaderWriter_cpp::write(" << object->className() << ", " << filename << ")" << std::endl;
+    std::cout << "cpp::write(" << object->className() << ", " << filename << ")" << std::endl;
 
     std::string funcname = vsg::simpleFilename(filename);
 
@@ -40,7 +40,7 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
     return true;
 }
 
-void ReaderWriter_cpp::write(std::ostream& out, const std::string& str) const
+void cpp::write(std::ostream& out, const std::string& str) const
 {
     out << "R\"(" << str << ")\"";
 }

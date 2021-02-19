@@ -1,9 +1,9 @@
 #include <vsgXchange/all.h>
 #include <vsgXchange/glsl.h>
+#include <vsgXchange/cpp.h>
 
 #include <vsg/io/VSG.h>
 
-#include "../cpp/ReaderWriter_cpp.h"
 #include "../dds/ReaderWriter_dds.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
@@ -26,8 +26,8 @@ all::all()
 {
     add(vsg::VSG::create());
     add(glsl::create());
+    add(cpp::create());
     add(vsgXchange::ReaderWriter_spirv::create());
-    add(vsgXchange::ReaderWriter_cpp::create());
     add(vsgXchange::ReaderWriter_stbi::create());
     add(vsgXchange::ReaderWriter_dds::create());
 #ifdef USE_FREETYPE
