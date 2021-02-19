@@ -1,10 +1,10 @@
 #include <vsgXchange/all.h>
+#include <vsgXchange/glsl.h>
 
 #include <vsg/io/VSG.h>
 
 #include "../cpp/ReaderWriter_cpp.h"
 #include "../dds/ReaderWriter_dds.h"
-#include "../glsl//ReaderWriter_glsl.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
 
@@ -25,7 +25,7 @@ using namespace vsgXchange;
 all::all()
 {
     add(vsg::VSG::create());
-    add(vsgXchange::ReaderWriter_glsl::create());
+    add(glsl::create());
     add(vsgXchange::ReaderWriter_spirv::create());
     add(vsgXchange::ReaderWriter_cpp::create());
     add(vsgXchange::ReaderWriter_stbi::create());

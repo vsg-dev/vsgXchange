@@ -1,10 +1,10 @@
-#include "ReaderWriter_glsl.h"
+#include <vsgXchange/glsl.h>
 
 #include <vsg/state/ShaderStage.h>
 
 using namespace vsgXchange;
 
-ReaderWriter_glsl::ReaderWriter_glsl()
+glsl::glsl()
 {
     add("vert", VK_SHADER_STAGE_VERTEX_BIT);
     add("tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
@@ -24,7 +24,13 @@ ReaderWriter_glsl::ReaderWriter_glsl()
     add("hlsl", VK_SHADER_STAGE_ALL);
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+void glsl::add(const std::string& ext, VkShaderStageFlagBits stage)
+{
+    extensionToStage[ext] = stage;
+    stageToExtension[stage] = ext;
+}
+
+vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::fileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);
@@ -60,7 +66,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_glsl::read(const vsg::Path& filename, vsg
     return {};
 }
 
-bool ReaderWriter_glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+bool glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::fileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);
