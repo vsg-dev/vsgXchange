@@ -10,6 +10,7 @@ set(HEADERS
     ${HEADER_PATH}/all.h
     ${HEADER_PATH}/cpp.h
     ${HEADER_PATH}/glsl.h
+    ${HEADER_PATH}/freetype.h
  )
 
 set(SOURCES
@@ -28,7 +29,7 @@ set(SOURCES
 find_package(Freetype)
 if(FREETYPE_FOUND)
     set(SOURCES ${SOURCES}
-        freetype/FreeTypeFont.cpp
+        freetype/freetype.cpp
     )
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})

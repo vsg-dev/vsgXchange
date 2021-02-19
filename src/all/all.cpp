@@ -1,16 +1,13 @@
 #include <vsgXchange/all.h>
 #include <vsgXchange/glsl.h>
 #include <vsgXchange/cpp.h>
+#include <vsgXchange/freetype.h>
 
 #include <vsg/io/VSG.h>
 
 #include "../dds/ReaderWriter_dds.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
-
-#ifdef USE_FREETYPE
-#    include "../freetype/FreeTypeFont.h"
-#endif
 
 #ifdef USE_OPENSCENEGRAPH
 #    include "../osg/ReaderWriter_osg.h"
@@ -26,13 +23,16 @@ all::all()
 {
     add(vsg::VSG::create());
     add(glsl::create());
-    add(cpp::create());
     add(vsgXchange::ReaderWriter_spirv::create());
+    add(cpp::create());
+
     add(vsgXchange::ReaderWriter_stbi::create());
     add(vsgXchange::ReaderWriter_dds::create());
+
 #ifdef USE_FREETYPE
-    add(vsgXchange::ReaderWriter_freetype::create());
+    add(freetype::create());
 #endif
+
 #ifdef USE_ASSIMP
     add(vsgXchange::ReaderWriter_assimp::create());
 #endif
