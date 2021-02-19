@@ -7,11 +7,11 @@ SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
     ${HEADER_PATH}/Export.h
-    ${HEADER_PATH}/ReaderWriter_all.h
+    ${HEADER_PATH}/all.h
  )
 
 set(SOURCES
-    vsgXchange/ReaderWriter_all.cpp
+    all/all.cpp
 
     glsl/ReaderWriter_glsl.cpp
 

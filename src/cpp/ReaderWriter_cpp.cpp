@@ -1,7 +1,7 @@
 #include "ReaderWriter_cpp.h"
 
 #include <vsg/io/AsciiOutput.h>
-#include <vsg/io/ReaderWriter_vsg.h>
+#include <vsg/io/VSG.h>
 
 #include <iostream>
 
@@ -22,17 +22,17 @@ bool ReaderWriter_cpp::write(const vsg::Object* object, const vsg::Path& filenam
 
     std::ostringstream str;
 
-    vsg::ReaderWriter_vsg io;
+    vsg::VSG io;
     io.write(object, str);
 
     std::ofstream fout(filename);
-    fout << "#include <vsg/io/ReaderWriter_vsg.h>\n";
+    fout << "#include <vsg/io/VSG.h>\n";
     fout << "static auto " << funcname << " = []() {";
     fout << "std::istringstream str(\n";
     write(fout, str.str());
     fout << ");\n";
 
-    fout << "vsg::ReaderWriter_vsg io;\n";
+    fout << "vsg::VSG io;\n";
     fout << "return io.read_cast<" << object->className() << ">(str);\n";
     fout << "};\n";
     fout.close();

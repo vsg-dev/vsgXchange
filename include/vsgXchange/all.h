@@ -28,11 +28,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
-    class VSGXCHANGE_DECLSPEC ReaderWriter_all : public vsg::Inherit<vsg::CompositeReaderWriter, ReaderWriter_all>
+    class VSGXCHANGE_DECLSPEC all : public vsg::Inherit<vsg::CompositeReaderWriter, all>
     {
     public:
-        ReaderWriter_all();
+        all();
     };
 } // namespace vsgXchange
 
-EVSG_type_name(vsgXchange::ReaderWriter_all);
+EVSG_type_name(vsgXchange::all);

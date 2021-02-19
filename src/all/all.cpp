@@ -1,6 +1,6 @@
-#include <vsgXchange/ReaderWriter_all.h>
+#include <vsgXchange/all.h>
 
-#include <vsg/io/ReaderWriter_vsg.h>
+#include <vsg/io/VSG.h>
 
 #include "../cpp/ReaderWriter_cpp.h"
 #include "../dds/ReaderWriter_dds.h"
@@ -22,9 +22,9 @@
 
 using namespace vsgXchange;
 
-ReaderWriter_all::ReaderWriter_all()
+all::all()
 {
-    add(vsg::ReaderWriter_vsg::create());
+    add(vsg::VSG::create());
     add(vsgXchange::ReaderWriter_glsl::create());
     add(vsgXchange::ReaderWriter_spirv::create());
     add(vsgXchange::ReaderWriter_cpp::create());
