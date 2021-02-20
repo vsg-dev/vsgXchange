@@ -1,5 +1,5 @@
 # add assimp if vailable
-find_package(assimp)
+find_package(assimp 5.0.0)
 
 set(SOURCES ${SOURCES}
     assimp/assimp.cpp
