@@ -4,15 +4,12 @@
 #include <vsgXchange/freetype.h>
 #include <vsgXchange/spirv.h>
 #include <vsgXchange/images.h>
+#include <vsgXchange/models.h>
 
 #include <vsg/io/VSG.h>
 
 #ifdef USE_OPENSCENEGRAPH
 #    include "../osg/ReaderWriter_osg.h"
-#endif
-
-#ifdef USE_ASSIMP
-#    include "../assimp/ReaderWriter_assimp.h"
 #endif
 
 using namespace vsgXchange;
@@ -34,7 +31,7 @@ all::all()
 #endif
 
 #ifdef USE_ASSIMP
-    add(vsgXchange::ReaderWriter_assimp::create());
+    add(vsgXchange::assimp::create());
 #endif
 #ifdef USE_OPENSCENEGRAPH
     add(vsgXchange::ReaderWriter_osg::create());
