@@ -5,7 +5,10 @@ using namespace vsgXchange;
 
 #ifndef USE_FREETYPE
 
-// no freetype support so implement as a null ReaderWriter
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// freetype ReaderWriter fallback
+//
 freetype::freetype() {}
 vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const { return {}; }
 
@@ -85,6 +88,24 @@ public:
 
 } // namespace vsgXchange
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// freetype ReaderWriter fascade
+//
+freetype::freetype() :
+    _implementation(new freetype::Implementation())
+{
+}
+
+vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(filename, options);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// freetype ReaderWriter Implementation
+//
 freetype::Implementation::Implementation()
 {
     _supportedFormats["ttf"] = "true type font format";
@@ -890,16 +911,6 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     font->options = const_cast<vsg::Options*>(options.get());
 
     return font;
-}
-
-freetype::freetype() :
-    _implementation(new freetype::Implementation())
-{
-}
-
-vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
-{
-    return _implementation->read(filename, options);
 }
 
 #endif
