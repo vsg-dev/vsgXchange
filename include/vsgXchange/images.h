@@ -81,3 +81,6 @@ namespace vsgXchange
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::images);
+EVSG_type_name(vsgXchange::stbi);
+EVSG_type_name(vsgXchange::dds);
+EVSG_type_name(vsgXchange::ktx);
