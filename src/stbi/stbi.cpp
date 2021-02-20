@@ -1,4 +1,4 @@
-#include "ReaderWriter_stbi.h"
+#include <vsgXchange/images.h>
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/ObjectCache.h>
@@ -57,12 +57,12 @@ void cpp_free(void* ptr)
 
 using namespace vsgXchange;
 
-ReaderWriter_stbi::ReaderWriter_stbi() :
+stbi::stbi() :
     _supportedExtensions{"jpg", "jpeg", "jpe", "png", "gif", "bmp", "tga", "psd"}
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
     {
@@ -83,7 +83,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(const vsg::Path& filename, vsg
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};

@@ -3,12 +3,9 @@
 #include <vsgXchange/cpp.h>
 #include <vsgXchange/freetype.h>
 #include <vsgXchange/spirv.h>
+#include <vsgXchange/images.h>
 
 #include <vsg/io/VSG.h>
-
-#include "../dds/ReaderWriter_dds.h"
-#include "../stbi/ReaderWriter_stbi.h"
-#include "../ktx/ReaderWriter_ktx.h"
 
 #ifdef USE_OPENSCENEGRAPH
 #    include "../osg/ReaderWriter_osg.h"
@@ -27,9 +24,10 @@ all::all()
     add(spirv::create());
     add(cpp::create());
 
-    add(vsgXchange::ReaderWriter_stbi::create());
-    add(vsgXchange::ReaderWriter_dds::create());
-    add(vsgXchange::ReaderWriter_ktx::create());
+    // equivlant to using vsgXchange::images
+    add(vsgXchange::stbi::create());
+    add(vsgXchange::dds::create());
+    add(vsgXchange::ktx::create());
 
 #ifdef USE_FREETYPE
     add(freetype::create());
@@ -41,4 +39,11 @@ all::all()
 #ifdef USE_OPENSCENEGRAPH
     add(vsgXchange::ReaderWriter_osg::create());
 #endif
+}
+
+images::images()
+{
+    add(vsgXchange::stbi::create());
+    add(vsgXchange::dds::create());
+    add(vsgXchange::ktx::create());
 }

@@ -1,4 +1,4 @@
-#include "ReaderWriter_ktx.h"
+#include <vsgXchange/images.h>
 
 #include <vsg/core/Exception.h>
 #include <vsg/state/DescriptorImage.h>
@@ -49,7 +49,7 @@ namespace
 
             auto after_valueSize = ktxTexture_GetElementSize(texture);
 
-            std::cout<<"ReaderWriter_ktx::read("<<filename<<") Fallback : format = "<<format<<", before_valueSize = "<<before_valueSize<<" after_valueSize = "<<after_valueSize<<std::endl;
+            std::cout<<"ktx::read("<<filename<<") Fallback : format = "<<format<<", before_valueSize = "<<before_valueSize<<" after_valueSize = "<<after_valueSize<<std::endl;
 #endif
             throw vsg::Exception{"Mismatched ktxFormatSize.blockSize and ktxTexture_GetElementSize(texture)."};
         }
@@ -221,12 +221,12 @@ namespace
 
 using namespace vsgXchange;
 
-ReaderWriter_ktx::ReaderWriter_ktx() :
+ktx::ktx() :
     _supportedExtensions{"ktx", "ktx2"}
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
@@ -243,7 +243,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
         }
         catch (const vsg::Exception& ve)
         {
-            std::cout << "ReaderWriter_ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
+            std::cout << "ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
         }
 
         ktxTexture_Destroy(texture);
@@ -254,7 +254,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(const vsg::Path& filename, vsg:
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (_supportedExtensions.count(options->extensionHint) == 0)
         return {};
@@ -278,7 +278,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_ktx::read(std::istream& fin, vsg::ref_ptr
         }
         catch (const vsg::Exception& ve)
         {
-            std::cout << "ReaderWriter_ktx::read(std::istream&) failed : " << ve.message << std::endl;
+            std::cout << "ktx::read(std::istream&) failed : " << ve.message << std::endl;
         }
 
         ktxTexture_Destroy(texture);

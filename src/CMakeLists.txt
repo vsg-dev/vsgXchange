@@ -12,6 +12,7 @@ set(HEADERS
     ${HEADER_PATH}/glsl.h
     ${HEADER_PATH}/spirv.h
     ${HEADER_PATH}/freetype.h
+    ${HEADER_PATH}/images.h
  )
 
 set(SOURCES
@@ -19,9 +20,8 @@ set(SOURCES
     cpp/cpp.cpp
     glsl/glsl.cpp
     spirv/spirv.cpp
-
-    stbi/ReaderWriter_stbi.cpp
-    dds/ReaderWriter_dds.cpp
+    stbi/stbi.cpp
+    dds/dds.cpp
 )
 
 # add freetype if available
