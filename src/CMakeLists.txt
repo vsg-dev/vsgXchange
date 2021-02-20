@@ -24,27 +24,14 @@ set(SOURCES
     dds/ReaderWriter_dds.cpp
 )
 
-# add freetype if vailable
-find_package(Freetype)
-if(FREETYPE_FOUND)
-    set(SOURCES ${SOURCES}
-        freetype/FreeTypeFont.cpp
-    )
-    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
-endif()
+# add freetype if available
+include(freetype/build_vars.cmake)
 
-find_package(assimp)
-if(assimp_FOUND)
-    set(SOURCES ${SOURCES}
-        assimp/ReaderWriter_assimp.cpp
-    )
-    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_ASSIMP)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
-endif()
+# add freetype if available
+include(assimp/build_vars.cmake)
+
+# add ktx
+include(ktx/build_vars.cmake)
 
 # add optional OpenSceneGraph components
 include(osg/build_vars.cmake)
@@ -63,6 +50,7 @@ target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
 target_include_directories(vsgXchange PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/ktx/libktx>
     $<INSTALL_INTERFACE:include>
     ${EXTRA_INCLUDES}
 )

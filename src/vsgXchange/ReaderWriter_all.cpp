@@ -5,6 +5,7 @@
 #include "../cpp/ReaderWriter_cpp.h"
 #include "../dds/ReaderWriter_dds.h"
 #include "../glsl//ReaderWriter_glsl.h"
+#include "../ktx/ReaderWriter_ktx.h"
 #include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
 
@@ -30,6 +31,7 @@ ReaderWriter_all::ReaderWriter_all()
     add(vsgXchange::ReaderWriter_cpp::create());
     add(vsgXchange::ReaderWriter_stbi::create());
     add(vsgXchange::ReaderWriter_dds::create());
+    add(vsgXchange::ReaderWriter_ktx::create());
 #ifdef USE_FREETYPE
     add(vsgXchange::ReaderWriter_freetype::create());
 #endif
