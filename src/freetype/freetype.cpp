@@ -1,20 +1,6 @@
 
 #include <vsgXchange/freetype.h>
 
-using namespace vsgXchange;
-
-#ifndef USE_FREETYPE
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// freetype ReaderWriter fallback
-//
-struct freetype::Implementation {};
-freetype::freetype() {}
-vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const { return {}; }
-
-#else
-
 #include <vsg/core/Exception.h>
 #include <vsg/nodes/Geometry.h>
 #include <vsg/nodes/Group.h>
@@ -88,6 +74,8 @@ public:
 };
 
 } // namespace vsgXchange
+
+using namespace vsgXchange;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -913,5 +901,3 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
 
     return font;
 }
-
-#endif
