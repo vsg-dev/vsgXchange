@@ -10,6 +10,7 @@ set(HEADERS
     ${HEADER_PATH}/all.h
     ${HEADER_PATH}/cpp.h
     ${HEADER_PATH}/glsl.h
+    ${HEADER_PATH}/spirv.h
     ${HEADER_PATH}/freetype.h
  )
 
@@ -17,11 +18,9 @@ set(SOURCES
     all/all.cpp
     cpp/cpp.cpp
     glsl/glsl.cpp
-
-    spirv/ReaderWriter_spirv.cpp
+    spirv/spirv.cpp
 
     stbi/ReaderWriter_stbi.cpp
-
     dds/ReaderWriter_dds.cpp
 )
 

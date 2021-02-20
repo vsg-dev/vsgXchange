@@ -1,4 +1,4 @@
-#include "ReaderWriter_spirv.h"
+#include <vsgXchange/spirv.h>
 
 #include <vsg/state/ShaderStage.h>
 #include <vsg/vk/ShaderCompiler.h>
@@ -7,25 +7,25 @@
 
 using namespace vsgXchange;
 
-ReaderWriter_spirv::ReaderWriter_spirv()
+spirv::spirv()
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_spirv::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+vsg::ref_ptr<vsg::Object> spirv::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext == "spv" && vsg::fileExists(filename))
     {
-        vsg::ShaderModule::SPIRV spirv;
-        vsg::readFile(spirv, filename);
+        vsg::ShaderModule::SPIRV spirv_module;
+        vsg::readFile(spirv_module, filename);
 
-        auto sm = vsg::ShaderModule::create(spirv);
+        auto sm = vsg::ShaderModule::create(spirv_module);
         return sm;
     }
     return vsg::ref_ptr<vsg::Object>();
 }
 
-bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+bool spirv::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext == "spv")
@@ -39,7 +39,7 @@ bool ReaderWriter_spirv::write(const vsg::Object* object, const vsg::Path& filen
                 vsg::ShaderCompiler sc;
                 if (!sc.compile(vsg::ref_ptr<vsg::ShaderStage>(const_cast<vsg::ShaderStage*>(ss))))
                 {
-                    std::cout << "ReaderWriter_spirv::write() Failed compile tp spv." << std::endl;
+                    std::cout << "spirv::write() Failed compile tp spv." << std::endl;
                     return false;
                 }
             }

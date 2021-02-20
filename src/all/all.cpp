@@ -2,11 +2,11 @@
 #include <vsgXchange/glsl.h>
 #include <vsgXchange/cpp.h>
 #include <vsgXchange/freetype.h>
+#include <vsgXchange/spirv.h>
 
 #include <vsg/io/VSG.h>
 
 #include "../dds/ReaderWriter_dds.h"
-#include "../spirv/ReaderWriter_spirv.h"
 #include "../stbi/ReaderWriter_stbi.h"
 
 #ifdef USE_OPENSCENEGRAPH
@@ -23,7 +23,7 @@ all::all()
 {
     add(vsg::VSG::create());
     add(glsl::create());
-    add(vsgXchange::ReaderWriter_spirv::create());
+    add(spirv::create());
     add(cpp::create());
 
     add(vsgXchange::ReaderWriter_stbi::create());
