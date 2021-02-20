@@ -20,8 +20,6 @@ namespace vsgXchange
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
-        bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
-
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
         vsg::ref_ptr<osg2vsg::PipelineCache> pipelineCache;

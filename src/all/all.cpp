@@ -8,9 +8,6 @@
 
 #include <vsg/io/VSG.h>
 
-#ifdef USE_OPENSCENEGRAPH
-#    include "../osg/ReaderWriter_osg.h"
-#endif
 
 using namespace vsgXchange;
 
@@ -33,7 +30,8 @@ all::all()
 #ifdef USE_ASSIMP
     add(vsgXchange::assimp::create());
 #endif
+
 #ifdef USE_OPENSCENEGRAPH
-    add(vsgXchange::ReaderWriter_osg::create());
+    add(vsgXchange::OSG::create());
 #endif
 }
