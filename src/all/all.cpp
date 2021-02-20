@@ -8,6 +8,7 @@
 
 #include "../dds/ReaderWriter_dds.h"
 #include "../stbi/ReaderWriter_stbi.h"
+#include "../ktx/ReaderWriter_ktx.h"
 
 #ifdef USE_OPENSCENEGRAPH
 #    include "../osg/ReaderWriter_osg.h"
@@ -28,6 +29,7 @@ all::all()
 
     add(vsgXchange::ReaderWriter_stbi::create());
     add(vsgXchange::ReaderWriter_dds::create());
+    add(vsgXchange::ReaderWriter_ktx::create());
 
 #ifdef USE_FREETYPE
     add(freetype::create());
