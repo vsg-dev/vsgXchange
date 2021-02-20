@@ -22,6 +22,7 @@ set(SOURCES
     spirv/spirv.cpp
     stbi/stbi.cpp
     dds/dds.cpp
+    images/images.cpp
 )
 
 # add freetype if available

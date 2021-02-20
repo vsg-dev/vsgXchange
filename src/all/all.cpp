@@ -40,10 +40,3 @@ all::all()
     add(vsgXchange::ReaderWriter_osg::create());
 #endif
 }
-
-images::images()
-{
-    add(vsgXchange::stbi::create());
-    add(vsgXchange::dds::create());
-    add(vsgXchange::ktx::create());
-}
