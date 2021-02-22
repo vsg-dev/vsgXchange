@@ -39,7 +39,7 @@ namespace vsgXchange
     };
 
     /// add png, jpeg and gif support using local build of stbi.
-    class VSGXCHANGE_DECLSPEC stbi : public vsg::Inherit<vsg::CompositeReaderWriter, stbi>
+    class VSGXCHANGE_DECLSPEC stbi : public vsg::Inherit<vsg::ReaderWriter, stbi>
     {
     public:
         stbi();
@@ -54,7 +54,7 @@ namespace vsgXchange
     };
 
     /// add dds support using local build of tinydds.
-    class VSGXCHANGE_DECLSPEC dds : public vsg::Inherit<vsg::CompositeReaderWriter, dds>
+    class VSGXCHANGE_DECLSPEC dds : public vsg::Inherit<vsg::ReaderWriter, dds>
     {
     public:
         dds();
@@ -69,7 +69,7 @@ namespace vsgXchange
     };
 
     /// add ktx using using local build of libktx
-    class VSGXCHANGE_DECLSPEC ktx : public vsg::Inherit<vsg::CompositeReaderWriter, ktx>
+    class VSGXCHANGE_DECLSPEC ktx : public vsg::Inherit<vsg::ReaderWriter, ktx>
     {
     public:
         ktx();
