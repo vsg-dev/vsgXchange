@@ -199,6 +199,85 @@ namespace vsgconv
         vsg::ref_ptr<vsg::Latch> latch;
         ReadRequest readRequest;
     };
+
+    struct indent
+    {
+        int chars = 0;
+    };
+
+    std::ostream& operator<<(std::ostream& input, indent in)
+    {
+        for(int i=0; i<in.chars; ++i) input<<' ';
+        return input;
+    }
+
+    struct pad
+    {
+        const char* str;
+        int chars;
+    };
+
+    std::ostream& operator<<(std::ostream& input, pad in)
+    {
+        input<<in.str;
+        for(int i=strlen(in.str); i<in.chars; ++i) input<<' ';
+        return input;
+    }
+
+    void printFeatures(vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation)
+    {
+        if (auto cws = rw.cast<vsg::CompositeReaderWriter>(); cws)
+        {
+            std::cout<<cws->className()<<std::endl;
+            for(auto& child : cws->readerWriters)
+            {
+                printFeatures(child, indentation+4);
+            }
+        }
+        else
+        {
+            vsg::ReaderWriter::Features features;
+            rw->getFeatures(features);
+            std::cout << indent{indentation} << rw->className() << " provides support for "<<features.extensionFeatureMap.size()<<" extensions."<<std::endl;
+
+            indentation += 4;
+
+            int padding = 16;
+            std::cout << indent{indentation} <<pad{"Extensions", padding}<<"Supported ReaderWriter methods"<<std::endl;
+            std::cout << indent{indentation} <<pad{"----------", padding}<<"------------------------------"<<std::endl;
+            for(auto& [ext, featureMask] : features.extensionFeatureMap)
+            {
+                std::cout << indent{indentation} <<pad{ext.c_str(), padding};
+
+                if (featureMask & vsg::ReaderWriter::READ_FILENAME) std::cout << "read(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_ISTREAM) std::cout << "read(std::istream, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_MEMORY) std::cout << "read(uint8_t* ptr, size_t size, ..) ";
+
+                if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) std::cout << "write(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) std::cout << "write(std::ostream, ..) ";
+                std::cout<<std::endl;
+            }
+        }
+        std::cout<<std::endl;
+    };
+
+    void printMatchedFeatures(const std::string& rw_name, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation)
+    {
+        if (rw_name == rw->className())
+        {
+            printFeatures(rw, indentation);
+            return;
+        }
+
+        if (auto cws = rw.cast<vsg::CompositeReaderWriter>(); cws)
+        {
+            for(auto& child : cws->readerWriters)
+            {
+                printMatchedFeatures(rw_name, child, indentation);
+            }
+        }
+    };
+
 } // namespace vsgconv
 
 int main(int argc, char** argv)
@@ -229,30 +308,25 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    if (arguments.read("--features"))
+    std::string rw_name;
+    if (arguments.read("--features", rw_name) || arguments.read("--features"))
     {
-        vsg::ReaderWriter::Features features;
-        for(auto& rw : options->readerWriters)
+        if (rw_name.empty())
         {
-            rw->getFeatures(features);
+            for(auto rw : options->readerWriters)
+            {
+                vsgconv::printFeatures(rw, 0);
+            }
+        }
+        else
+        {
+            for(auto rw : options->readerWriters)
+            {
+                vsgconv::printMatchedFeatures(rw_name, rw, 0);
+            }
         }
 
-        std::cout<<"Extensions\tSupported ReaderWriter methods"<<std::endl;
-        std::cout<<"----------\t------------------------------"<<std::endl;
-        for(auto& [ext, featureMask] : features.extensionFeatureMap)
-        {
-            std::cout<<ext<<"\t";
-            if (ext.length()<8) std::cout<<"\t";
-
-            if (featureMask & vsg::ReaderWriter::READ_FILENAME) std::cout<<"read(vsg::Path, ..) ";
-            if (featureMask & vsg::ReaderWriter::READ_ISTREAM) std::cout<<"read(std::istream, ..) ";
-            if (featureMask & vsg::ReaderWriter::READ_MEMORY) std::cout<<"read(uint8_t* ptr, size_t size, ..) ";
-
-            if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) std::cout<<"write(vsg::Path, ..) ";
-            if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) std::cout<<"write(std::ostream, ..) ";
-            std::cout<<std::endl;
-        }
-        return 1;
+        return 0;
     }
 
     auto batchLeafData = arguments.read("--batch");
