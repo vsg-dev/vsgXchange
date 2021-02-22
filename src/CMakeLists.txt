@@ -7,6 +7,7 @@ SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
     ${HEADER_PATH}/Export.h
+    ${HEADER_PATH}/Version.h
     ${HEADER_PATH}/all.h
     ${HEADER_PATH}/cpp.h
     ${HEADER_PATH}/glsl.h
@@ -16,6 +17,7 @@ set(HEADERS
  )
 
 set(SOURCES
+    all/Version.cpp
     all/all.cpp
     cpp/cpp.cpp
     glsl/glsl.cpp

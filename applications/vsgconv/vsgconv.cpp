@@ -7,6 +7,7 @@
 
 #include <vsg/vk/ShaderCompiler.h>
 #include <vsgXchange/all.h>
+#include <vsgXchange/Version.h>
 
 namespace vsgconv
 {
@@ -202,7 +203,7 @@ namespace vsgconv
 
 int main(int argc, char** argv)
 {
-    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
+    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.vsg
     auto options = vsg::Options::create(vsgXchange::all::create());
 
     // set up defaults and read command line arguments to override them
@@ -219,6 +220,14 @@ int main(int argc, char** argv)
     // read any commmand line options that the ReaderWrite support
     arguments.read(options);
     if (argc <= 1) return 0;
+
+    if (arguments.read({"-v", "--version"}))
+    {
+        std::cout<<"vsgXchange version = "<< vsgXchangeGetVersionString()<<", so = "<<vsgXchangeGetSOVersionString()<<std::endl;
+        if (vsgXchangeBuiltAsSharedLibrary()) std::cout<<"vsgXchange built as shared library"<<std::endl;
+        else std::cout<<"vsgXchange built as static library"<<std::endl;
+        return 1;
+    }
 
     auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
