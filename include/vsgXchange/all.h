@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </editor-fold> */
 
 #include <vsg/io/ReaderWriter.h>
-#include <vsgXchange/Export.h>
+#include <vsgXchange/Version.h>
 
 namespace vsgXchange
 {
