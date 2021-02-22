@@ -75,11 +75,6 @@ find_package(vsg REQUIRED)
 
 
 
-# create the version header
-set(VSG_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/vsgXchange/Version.h")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/all/Version.h.in" "${VSG_VERSION_HEADER}")
-
-
 add_custom_target(clobber
     COMMAND git clean -d -f -x
 )
@@ -112,3 +107,7 @@ endif()
 # source directory for main vsgXchange library
 add_subdirectory(src)
 add_subdirectory(applications/vsgconv)
+
+# create the version header
+set(VSGXCHANGE_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/vsgXchange/Version.h")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/all/Version.h.in" "${VSGXCHANGE_VERSION_HEADER}")

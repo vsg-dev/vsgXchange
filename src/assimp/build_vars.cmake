@@ -2,6 +2,10 @@
 find_package(assimp 5.0.0)
 
 if(assimp_FOUND)
+    OPTION(VSGXCHANGE_assimp "Optional Assimp support provided" ON)
+endif()
+
+if (${VSGXCHANGE_assimp})
     set(SOURCES ${SOURCES}
         assimp/assimp.cpp
     )

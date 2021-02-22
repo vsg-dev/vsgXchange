@@ -36,6 +36,23 @@ extern "C"
     /// When building against a shared libraryTo ensure the correct selection of VSGXCHANGE_DECLSPEC (provided in vsgXchange/Export.h) one must compile with the define VSGXCHANGE_SHARED_LIBRARY
     extern VSGXCHANGE_DECLSPEC int vsgXchangeBuiltAsSharedLibrary();
 
+    /// standard Features
+    #define VSGXCHANGE_all
+    #define VSGXCHANGE_images
+    #define VSGXCHANGE_models
+    #define VSGXCHANGE_stbi
+    #define VSGXCHANGE_dds
+    #define VSGXCHANGE_ktx
+    #define VSGXCHANGE_glsl
+    #define VSGXCHANGE_spv
+    #define VSGXCHANGE_cpp
+
+    /// optional Features
+    #cmakedefine VSGXCHANGE_assimp
+    #cmakedefine VSGXCHANGE_freetype
+    #cmakedefine VSGXCHANGE_OSG
+
+
 #ifdef __cplusplus
 }
 #endif
