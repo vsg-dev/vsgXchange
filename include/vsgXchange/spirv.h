@@ -17,6 +17,8 @@ namespace vsgXchange
 
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
+        bool getFeatures(Features& features) const override;
+
     protected:
     };
 

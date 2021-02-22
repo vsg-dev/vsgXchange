@@ -19,6 +19,8 @@ namespace vsgXchange
 
         void add(const std::string& ext, VkShaderStageFlagBits stage);
 
+        bool getFeatures(Features& features) const override;
+
     protected:
         std::map<std::string, VkShaderStageFlagBits> extensionToStage;
         std::map<VkShaderStageFlagBits, std::string> stageToExtension;

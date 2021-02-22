@@ -276,3 +276,9 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
 
     return {};
 }
+
+bool dds::getFeatures(Features& features) const
+{
+    features.extensionFeatureMap["dds"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    return true;
+}

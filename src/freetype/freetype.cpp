@@ -91,6 +91,15 @@ vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path& filename, vsg::ref_ptr
     return _implementation->read(filename, options);
 }
 
+bool freetype::getFeatures(Features& features) const
+{
+    for(auto& ext : _implementation->_supportedFormats)
+    {
+        features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME);
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // freetype ReaderWriter Implementation

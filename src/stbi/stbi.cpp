@@ -109,3 +109,12 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
 
     return {};
 }
+
+bool stbi::getFeatures(Features& features) const
+{
+    for(auto& ext : _supportedExtensions)
+    {
+        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    }
+    return true;
+}

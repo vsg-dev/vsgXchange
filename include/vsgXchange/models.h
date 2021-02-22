@@ -46,6 +46,8 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const;
         vsg::ref_ptr<vsg::Object> read(std::istream&, vsg::ref_ptr<const vsg::Options>) const;
 
+        bool getFeatures(Features& features) const override;
+
     protected:
         class Implementation;
         std::unique_ptr<Implementation> _implementation;
@@ -60,6 +62,8 @@ namespace vsgXchange
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const;
+
+        bool getFeatures(Features& features) const override;
 
     protected:
         class Implementation;

@@ -263,6 +263,27 @@ vsg::ref_ptr<vsg::Object> assimp::read(std::istream& fin, vsg::ref_ptr<const vsg
     return _implementation->read(fin, options);
 }
 
+bool assimp::getFeatures(Features& features) const
+{
+    std::string suported_extensions;
+    Assimp::Importer importer;
+    importer.GetExtensionList(suported_extensions);
+
+    vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+
+    std::string::size_type start = 2; // skip *.
+    std::string::size_type semicolon = suported_extensions.find(';', start);
+    while(semicolon != std::string::npos)
+    {
+        features.extensionFeatureMap[suported_extensions.substr(start, semicolon-start)] = supported_features;
+        start = semicolon+3;
+        semicolon = suported_extensions.find(';', start);
+    }
+    features.extensionFeatureMap[suported_extensions.substr(start, std::string::npos)] = supported_features;
+
+    return true;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

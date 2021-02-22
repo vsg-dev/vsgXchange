@@ -229,6 +229,32 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (arguments.read("--features"))
+    {
+        vsg::ReaderWriter::Features features;
+        for(auto& rw : options->readerWriters)
+        {
+            rw->getFeatures(features);
+        }
+
+        std::cout<<"Extensions\tSupported ReaderWriter methods"<<std::endl;
+        std::cout<<"----------\t------------------------------"<<std::endl;
+        for(auto& [ext, featureMask] : features.extensionFeatureMap)
+        {
+            std::cout<<ext<<"\t";
+            if (ext.length()<8) std::cout<<"\t";
+
+            if (featureMask & vsg::ReaderWriter::READ_FILENAME) std::cout<<"read(vsg::Path, ..) ";
+            if (featureMask & vsg::ReaderWriter::READ_ISTREAM) std::cout<<"read(std::istream, ..) ";
+            if (featureMask & vsg::ReaderWriter::READ_MEMORY) std::cout<<"read(uint8_t* ptr, size_t size, ..) ";
+
+            if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) std::cout<<"write(vsg::Path, ..) ";
+            if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) std::cout<<"write(std::ostream, ..) ";
+            std::cout<<std::endl;
+        }
+        return 1;
+    }
+
     auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");

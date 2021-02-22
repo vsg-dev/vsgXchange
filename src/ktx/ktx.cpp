@@ -288,3 +288,10 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
 
     return {};
 }
+
+bool ktx::getFeatures(Features& features) const
+{
+    features.extensionFeatureMap["ktx"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    features.extensionFeatureMap["ktx2"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    return true;
+}

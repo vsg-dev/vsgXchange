@@ -44,3 +44,9 @@ void cpp::write(std::ostream& out, const std::string& str) const
 {
     out << "R\"(" << str << ")\"";
 }
+
+bool cpp::getFeatures(Features& features) const
+{
+    features.extensionFeatureMap["cpp"] = vsg::ReaderWriter::WRITE_FILENAME;
+    return true;
+}
