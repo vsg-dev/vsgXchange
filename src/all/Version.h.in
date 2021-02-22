@@ -48,8 +48,8 @@ extern "C"
     #define VSGXCHANGE_cpp
 
     /// optional Features
-    #cmakedefine VSGXCHANGE_assimp
     #cmakedefine VSGXCHANGE_freetype
+    #cmakedefine VSGXCHANGE_assimp
     #cmakedefine VSGXCHANGE_OSG
 
 
