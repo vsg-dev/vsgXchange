@@ -253,7 +253,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
 
 vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (_supportedExtensions.count(options->extensionHint) == 0)
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
     tinyddsloader::DDSFile ddsFile;
@@ -277,8 +277,34 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
     return {};
 }
 
+vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
+        return {};
+
+    tinyddsloader::DDSFile ddsFile;
+    if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)
+    {
+        return readDds(ddsFile);
+    }
+    else
+    {
+        switch (result)
+        {
+        case tinyddsloader::ErrorNotSupported:
+            std::cerr << "dds::read(uint_8_t*, size_t) Error loading file: Feature not supported" << std::endl;
+            break;
+        default:
+            std::cerr << "dds::readuint_8_t*, size_t) Error loading file: " << result << std::endl;
+            break;
+        }
+    }
+
+    return {};
+}
+
 bool dds::getFeatures(Features& features) const
 {
-    features.extensionFeatureMap["dds"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    features.extensionFeatureMap["dds"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     return true;
 }

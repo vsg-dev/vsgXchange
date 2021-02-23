@@ -73,7 +73,8 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (filenameToUse.empty()) return {};
 
     int width, height, channels;
-    if (const auto pixels = stbi_load(filenameToUse.c_str(), &width, &height, &channels, STBI_rgb_alpha); pixels)
+    const auto pixels = stbi_load(filenameToUse.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+    if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
 
@@ -85,7 +86,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (_supportedExtensions.count(options->extensionHint) == 0)
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
     std::string buffer(1 << 16, 0); // 64kB
@@ -99,9 +100,24 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
     }
 
     int width, height, channels;
-    if (const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()),
-                                                  &width, &height, &channels, STBI_rgb_alpha);
-        pixels)
+    const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()), &width, &height, &channels, STBI_rgb_alpha);
+    if (pixels)
+    {
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+        return vsg_data;
+    }
+
+    return {};
+}
+
+vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
+        return {};
+
+    int width, height, channels;
+    const auto pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(ptr), static_cast<int>(size), &width, &height, &channels, STBI_rgb_alpha);
+    if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
         return vsg_data;
@@ -114,7 +130,7 @@ bool stbi::getFeatures(Features& features) const
 {
     for(auto& ext : _supportedExtensions)
     {
-        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     }
     return true;
 }

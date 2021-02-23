@@ -256,7 +256,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
 
 vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (_supportedExtensions.count(options->extensionHint) == 0)
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
     std::string buffer(1 << 16, 0); // 64kB
@@ -289,9 +289,35 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
     return {};
 }
 
+vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
+        return {};
+
+    ktxTexture* texture = nullptr;
+    if (ktxTexture_CreateFromMemory(ptr, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    {
+        vsg::ref_ptr<vsg::Data> data;
+        try
+        {
+            data = readKtx(texture, "");
+        }
+        catch (const vsg::Exception& ve)
+        {
+            std::cout << "ktx::read(uint_8_t*, size_t) failed : " << ve.message << std::endl;
+        }
+
+        ktxTexture_Destroy(texture);
+
+        return data;
+    }
+
+    return {};
+}
+
 bool ktx::getFeatures(Features& features) const
 {
-    features.extensionFeatureMap["ktx"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
-    features.extensionFeatureMap["ktx2"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    features.extensionFeatureMap["ktx"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    features.extensionFeatureMap["ktx2"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     return true;
 }

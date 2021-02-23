@@ -227,6 +227,7 @@ public:
 
     vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
     vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const;
+    vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const;
 
 private:
     using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
@@ -263,13 +264,18 @@ vsg::ref_ptr<vsg::Object> assimp::read(std::istream& fin, vsg::ref_ptr<const vsg
     return _implementation->read(fin, options);
 }
 
+vsg::ref_ptr<vsg::Object> assimp::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(ptr, size, options);
+}
+
 bool assimp::getFeatures(Features& features) const
 {
     std::string suported_extensions;
     Assimp::Importer importer;
     importer.GetExtensionList(suported_extensions);
 
-    vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM);
+    vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
 
     std::string::size_type start = 2; // skip *.
     std::string::size_type semicolon = suported_extensions.find(';', start);
@@ -518,12 +524,9 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
 
                 if (texture->mWidth > 0 && texture->mHeight == 0)
                 {
-                    std::string str((const char*)texture->pcData, texture->mWidth);
-                    std::istringstream stream(str);
-
                     auto imageOptions = vsg::Options::create(*options);
                     imageOptions->extensionHint = texture->achFormatHint;
-                    if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
+                    if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
                         return {};
                 }
             }
@@ -798,7 +801,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
-        vsg::Path filenameToUse = findFile(filename, options);
+        vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (filenameToUse.empty()) return {};
 
         if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
@@ -830,8 +833,9 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    Assimp::Importer importer;
+    if (!options) return {};
 
+    Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint))
     {
         std::string buffer(1 << 16, 0); // 64kB
@@ -854,5 +858,24 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
         }
     }
 
+    return {};
+}
+
+vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options) return {};
+
+    Assimp::Importer importer;
+    if (importer.IsExtensionSupported(options->extensionHint))
+    {
+        if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
+        {
+            return processScene(scene, options);
+        }
+        else
+        {
+            std::cerr << "Failed to load file from memory: " << importer.GetErrorString() << std::endl;
+        }
+    }
     return {};
 }
