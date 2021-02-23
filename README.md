@@ -103,8 +103,8 @@ To convert a OpenSceneGraph Paged database:
         vsg::VSG provides support for 2 extensions.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
-            vsgb            read(vsg::Path, ..) read(std::istream, ..) write(vsg::Path, ..) write(std::ostream, ..)
-            vsgt            read(vsg::Path, ..) read(std::istream, ..) write(vsg::Path, ..) write(std::ostream, ..)
+            vsgb            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
+            vsgt            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
 
         vsgXchange::glsl provides support for 16 extensions.
             Extensions      Supported ReaderWriter methods
@@ -139,25 +139,25 @@ To convert a OpenSceneGraph Paged database:
         vsgXchange::stbi provides support for 8 extensions.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
-            bmp             read(vsg::Path, ..) read(std::istream, ..)
-            gif             read(vsg::Path, ..) read(std::istream, ..)
-            jpe             read(vsg::Path, ..) read(std::istream, ..)
-            jpeg            read(vsg::Path, ..) read(std::istream, ..)
-            jpg             read(vsg::Path, ..) read(std::istream, ..)
-            png             read(vsg::Path, ..) read(std::istream, ..)
-            psd             read(vsg::Path, ..) read(std::istream, ..)
-            tga             read(vsg::Path, ..) read(std::istream, ..)
+            bmp             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            gif             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            jpe             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            jpeg            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            jpg             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            png             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            psd             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            tga             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
 
         vsgXchange::dds provides support for 1 extensions.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
-            dds             read(vsg::Path, ..) read(std::istream, ..)
+            dds             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
 
         vsgXchange::ktx provides support for 2 extensions.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
-            ktx             read(vsg::Path, ..) read(std::istream, ..)
-            ktx2            read(vsg::Path, ..) read(std::istream, ..)
+            ktx             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            ktx2            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
 
 ## Font file formats supported by optional vsgXchange::freetype
 
