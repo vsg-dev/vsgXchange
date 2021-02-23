@@ -3,6 +3,7 @@ Utility library for converting 3rd party images, models and fonts formats to/fro
 
 ## Provides builtin support for:
 
+vsgXchange contains source code that can directly read a [range of shader and image formats](#file-formats-supported-by-built-in-readerwriters).
 * reading KTX, DDS, JPEG, PNG, GIF, BMP, TGA and PSD image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
 * reading and writing SPIRV shader files as vsg::ShaderModule.
@@ -10,7 +11,7 @@ Utility library for converting 3rd party images, models and fonts formats to/fro
 
 ## Optional support:
 
-cmake automatically finds which depedencies are available and builds the approprioate components:
+cmake automatically finds which depedencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
