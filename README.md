@@ -12,7 +12,7 @@ Utility library for converting 3rd party images, models and fonts formats to/fro
 
 cmake automatically finds which depedencies are available and builds the approprioate components:
 
-* reading font formats, TrueType etc. supported by FreeType as vsg::Font objects.
+* reading font formats, TrueType etc. supported by FreeType as vsg::Font objects. [Further info](#font-file-formats-ssupported-by-optional-vsgxchange::freetype)
 * reading 3d model formats ( GLTF, OBJ, 3DS, LWO etc.) supported by Assimp as vsg::Node objects.
 * reading image and 3d modul formats (OpenSceneGraph, OpenFlight etc.) supported by OpenSceneGraph as vsg::Node objecs.
 
@@ -67,7 +67,7 @@ C++ additions:
     auto image = vsg::read_cast<vsg::Data>("myimage.dds", options);
 
     // read file and cast to vsg::Node if possible, returns vsg::ref_ptr<vsg::Node>
-    auto model = vsg::read_cast<vsg::Object>("mymodel.gltf", options);
+    auto model = vsg::read_cast<vsg::Node>("mymodel.gltf", options);
 
 ## How to use vsgconv utility that is built as part of vsgXchange
 
@@ -90,13 +90,12 @@ To convet 3rd part model formats to native VSG format or source file:
     vsgocnv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires OpenSceneGraph)
     vsgocnv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
 
-
 To convert a OpenSceneGraph Paged database:
 
     vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 -n 50000 # convert up to level 30, and default to needing 50,000 Vk Descriptors when rendering
 
 
-### File formats ssupported by built in ReaderWriter
+## File formats supported by built in ReaderWriters
 
     $ vsgconv --features
     vsgXchange::all
@@ -159,7 +158,7 @@ To convert a OpenSceneGraph Paged database:
             ktx             read(vsg::Path, ..) read(std::istream, ..)
             ktx2            read(vsg::Path, ..) read(std::istream, ..)
 
-## Font file formats ssupported by optional vsgXchange::freetype  ReaderWriter
+## Font file formats ssupported by optional vsgXchange::freetype
 
 Requires Freetype depeendency.
 
