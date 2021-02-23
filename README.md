@@ -87,9 +87,9 @@ To convet 3rd part model formats to native VSG format or source file:
 
     vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assump)
     vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assump)
-    vsgocnv mymodel.osgb mymodel.vsgb # convert OSG binary format to VSG binary format (requires OpenSceneGraph)
-    vsgocnv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires OpenSceneGraph)
-    vsgocnv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
+    vsgconv mymodel.osgb mymodel.vsgb # convert OSG binary format to VSG binary format (requires OpenSceneGraph)
+    vsgconv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires OpenSceneGraph)
+    vsgconv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
 
 To convert a OpenSceneGraph Paged database:
 
