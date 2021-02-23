@@ -12,9 +12,9 @@ Utility library for converting 3rd party images, models and fonts formats to/fro
 
 cmake automatically finds which depedencies are available and builds the approprioate components:
 
-* reading font formats, TrueType etc. supported by FreeType as vsg::Font objects. [Further info](#font-file-formats-ssupported-by-optional-vsgxchange::freetype)
-* reading 3d model formats ( GLTF, OBJ, 3DS, LWO etc.) supported by Assimp as vsg::Node objects.
-* reading image and 3d modul formats (OpenSceneGraph, OpenFlight etc.) supported by OpenSceneGraph as vsg::Node objecs.
+* [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font objects.
+* [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node objects.
+* [reading image and 3d modul formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph as vsg::Node objecs.
 
 ## Required dependencies:
 
@@ -158,7 +158,7 @@ To convert a OpenSceneGraph Paged database:
             ktx             read(vsg::Path, ..) read(std::istream, ..)
             ktx2            read(vsg::Path, ..) read(std::istream, ..)
 
-## Font file formats ssupported by optional vsgXchange::freetype
+## Font file formats supported by optional vsgXchange::freetype
 
 Requires Freetype depeendency.
 
