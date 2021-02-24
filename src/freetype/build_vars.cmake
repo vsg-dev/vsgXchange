@@ -2,10 +2,10 @@
 find_package(Freetype)
 
 if(FREETYPE_FOUND)
-    OPTION(VSGXCHANGE_freetype "Freetype support provided" ON)
+    OPTION(vsgXchange_freetype "Freetype support provided" ON)
 endif()
 
-if(${VSGXCHANGE_freetype})
+if(${vsgXchange_freetype})
     set(SOURCES ${SOURCES}
         freetype/freetype.cpp
     )

@@ -7,10 +7,10 @@ find_package(osgUtil)
 find_package(OpenGL)
 
 if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
-    OPTION(VSGXCHANGE_OSG "Optional OpenSceneGraph support provided" ON)
+    OPTION(vsgXchange_OSG "Optional OpenSceneGraph support provided" ON)
 endif()
 
-if (${VSGXCHANGE_OSG})
+if (${vsgXchange_OSG})
     set(SOURCES ${SOURCES}
         osg/BuildOptions.cpp
         osg/GeometryUtils.cpp

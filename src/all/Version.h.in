@@ -37,21 +37,21 @@ extern "C"
     extern VSGXCHANGE_DECLSPEC int vsgXchangeBuiltAsSharedLibrary();
 
     /// standard Features
-    #define VSGXCHANGE_all
-    #define VSGXCHANGE_images
-    #define VSGXCHANGE_models
-    #define VSGXCHANGE_stbi
-    #define VSGXCHANGE_dds
-    #define VSGXCHANGE_ktx
-    #define VSGXCHANGE_glsl
-    #define VSGXCHANGE_spv
-    #define VSGXCHANGE_cpp
+    #define vsgXchange_all
+    #define vsgXchange_images
+    #define vsgXchange_models
+    #define vsgXchange_stbi
+    #define vsgXchange_dds
+    #define vsgXchange_ktx
+    #define vsgXchange_glsl
+    #define vsgXchange_spv
+    #define vsgXchange_cpp
 
     /// optional Features
-    #cmakedefine VSGXCHANGE_freetype
-    #cmakedefine VSGXCHANGE_assimp
-    #cmakedefine VSGXCHANGE_OSG
-    #cmakedefine VSGXCHANGE_GDAL
+    #cmakedefine vsgXchange_freetype
+    #cmakedefine vsgXchange_assimp
+    #cmakedefine vsgXchange_OSG
+    #cmakedefine vsgXchange_GDAL
 
 #ifdef __cplusplus
 }

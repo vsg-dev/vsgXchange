@@ -2,10 +2,10 @@
 find_package(vsgGIS)
 
 if(vsgGIS_FOUND)
-    OPTION(VSGXCHANGE_GDAL "vsgGIS/GDAL support provided" ON)
+    OPTION(vsgXchange_GDAL "vsgGIS/GDAL support provided" ON)
 endif()
 
-if(${VSGXCHANGE_GDAL})
+if(${vsgXchange_GDAL})
     set(SOURCES ${SOURCES}
         gdal/GDAL.cpp
     )

@@ -17,7 +17,7 @@ all::all()
     add(spirv::create());
     add(cpp::create());
 
-#ifdef VSGXCHANGE_GDAL
+#ifdef vsgXchange_GDAL
     add(GDAL::create());
 #endif
 
@@ -25,15 +25,15 @@ all::all()
     add(dds::create());
     add(ktx::create());
 
-#ifdef VSGXCHANGE_freetype
+#ifdef vsgXchange_freetype
     add(freetype::create());
 #endif
 
-#ifdef VSGXCHANGE_assimp
+#ifdef vsgXchange_assimp
     add(assimp::create());
 #endif
 
-#ifdef VSGXCHANGE_OSG
+#ifdef vsgXchange_OSG
     add(OSG::create());
 #endif
 }

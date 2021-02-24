@@ -4,7 +4,7 @@ using namespace vsgXchange;
 
 images::images()
 {
-#ifdef VSGXCHANGE_GDAL
+#ifdef vsgXchange_GDAL
     add(GDAL::create());
 #endif
 
