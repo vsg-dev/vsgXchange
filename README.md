@@ -14,6 +14,7 @@ vsgXchange contains source code that can directly read a [range of shader and im
 cmake automatically finds which depedencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
+* [reading image & DEM formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
 * [reading image and 3d modul formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
 
@@ -161,7 +162,7 @@ To convert a OpenSceneGraph Paged database:
 
 ## Font file formats supported by optional vsgXchange::freetype
 
-Requires Freetype depeendency.
+Requires Freetype dependency.
 
     $ vsgconv --features vsgXchange::freetype
     vsgXchange::freetype provides support for 11 extensions.
@@ -178,6 +179,86 @@ Requires Freetype depeendency.
         ttc             read(vsg::Path, ..)
         ttf             read(vsg::Path, ..)
         woff            read(vsg::Path, ..)
+
+## Image formats support by optional vsgXchange::GDAL
+
+Requires vsgGIS dependency, which itself depends upon GDAL.
+
+    $ vsgconv --features vsgXchange::GDAL
+    vsgXchange::GDAL provides support for 71 extensions.
+        Extensions      Supported ReaderWriter methods
+        ----------      ------------------------------
+        ACE2            read(vsg::Path, ..)
+        asc             read(vsg::Path, ..)
+        bin             read(vsg::Path, ..)
+        blx             read(vsg::Path, ..)
+        bmp             read(vsg::Path, ..)
+        bt              read(vsg::Path, ..)
+        cal             read(vsg::Path, ..)
+        ct1             read(vsg::Path, ..)
+        cub             read(vsg::Path, ..)
+        dat             read(vsg::Path, ..)
+        ddf             read(vsg::Path, ..)
+        dem             read(vsg::Path, ..)
+        dt0             read(vsg::Path, ..)
+        dt1             read(vsg::Path, ..)
+        dt2             read(vsg::Path, ..)
+        dwg             read(vsg::Path, ..)
+        e00             read(vsg::Path, ..)
+        gen             read(vsg::Path, ..)
+        gff             read(vsg::Path, ..)
+        gif             read(vsg::Path, ..)
+        gpkg            read(vsg::Path, ..)
+        grb             read(vsg::Path, ..)
+        grc             read(vsg::Path, ..)
+        grd             read(vsg::Path, ..)
+        gsb             read(vsg::Path, ..)
+        gtx             read(vsg::Path, ..)
+        gxf             read(vsg::Path, ..)
+        hdf             read(vsg::Path, ..)
+        hdf5            read(vsg::Path, ..)
+        hdr             read(vsg::Path, ..)
+        hf2             read(vsg::Path, ..)
+        hgt             read(vsg::Path, ..)
+        img             read(vsg::Path, ..)
+        j2k             read(vsg::Path, ..)
+        jp2             read(vsg::Path, ..)
+        jpeg            read(vsg::Path, ..)
+        jpg             read(vsg::Path, ..)
+        kro             read(vsg::Path, ..)
+        lbl             read(vsg::Path, ..)
+        lcp             read(vsg::Path, ..)
+        map             read(vsg::Path, ..)
+        mbtiles         read(vsg::Path, ..)
+        mem             read(vsg::Path, ..)
+        mpl             read(vsg::Path, ..)
+        mpr             read(vsg::Path, ..)
+        n1              read(vsg::Path, ..)
+        nat             read(vsg::Path, ..)
+        nc              read(vsg::Path, ..)
+        ntf             read(vsg::Path, ..)
+        pdf             read(vsg::Path, ..)
+        pix             read(vsg::Path, ..)
+        png             read(vsg::Path, ..)
+        pnm             read(vsg::Path, ..)
+        ppi             read(vsg::Path, ..)
+        prf             read(vsg::Path, ..)
+        rda             read(vsg::Path, ..)
+        rgb             read(vsg::Path, ..)
+        rik             read(vsg::Path, ..)
+        rst             read(vsg::Path, ..)
+        rsw             read(vsg::Path, ..)
+        sdat            read(vsg::Path, ..)
+        sqlite          read(vsg::Path, ..)
+        ter             read(vsg::Path, ..)
+        tif             read(vsg::Path, ..)
+        tiff            read(vsg::Path, ..)
+        toc             read(vsg::Path, ..)
+        vrt             read(vsg::Path, ..)
+        webp            read(vsg::Path, ..)
+        xml             read(vsg::Path, ..)
+        xpm             read(vsg::Path, ..)
+        xyz             read(vsg::Path, ..)
 
 ## Model formats supported by optional vsgXchange::assimp
 
