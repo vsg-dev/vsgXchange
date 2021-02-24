@@ -14,9 +14,9 @@ vsgXchange contains source code that can directly read a [range of shader and im
 cmake automatically finds which depedencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
-* [reading image & DEM formats](#image-formats-support-by-optional-vsgxchangegdal) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
+* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
-* [reading image and 3d modul formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
+* [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
 
 ## Required dependencies:
 
@@ -25,7 +25,7 @@ cmake automatically finds which depedencies are available and builds the appropr
 * [CMake](https://cmake.org/) minimum version 3.7
 * C++17 capable compiler
 
-## Options depdendencies:
+## Optional depdendencies:
 
 * [Freetype](https://www.freetype.org/)
 * [vsgGIS](https://github.com/vsg-dev/vsgGIS) & [GDAL](https://gdal.org/)
@@ -87,8 +87,8 @@ To convet 3rd part image formats to native VSG format or source file:
 
 To convet 3rd part model formats to native VSG format or source file:
 
-    vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assump)
-    vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assump)
+    vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assimp)
+    vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assimp)
     vsgconv mymodel.osgb mymodel.vsgb # convert OSG binary format to VSG binary format (requires OpenSceneGraph)
     vsgconv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires OpenSceneGraph)
     vsgconv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
@@ -163,7 +163,7 @@ To convert a OpenSceneGraph Paged database:
 
 ## Font file formats supported by optional vsgXchange::freetype
 
-Requires Freetype dependency.
+Requires [Freetype](https://www.freetype.org/) dependency.
 
     $ vsgconv --features vsgXchange::freetype
     vsgXchange::freetype provides support for 11 extensions.
@@ -181,9 +181,9 @@ Requires Freetype dependency.
         ttf             read(vsg::Path, ..)
         woff            read(vsg::Path, ..)
 
-## Image formats support by optional vsgXchange::GDAL
+## Image formats supported by optional vsgXchange::GDAL
 
-Requires vsgGIS dependency, which itself depends upon GDAL.
+Requires [vsgGIS](https://github.com/vsg-dev/vsgGIS) dependency, which itself depends upon [GDAL](https://gdal.org/).
 
     $ vsgconv --features vsgXchange::GDAL
     vsgXchange::GDAL provides support for 71 extensions.
@@ -263,7 +263,7 @@ Requires vsgGIS dependency, which itself depends upon GDAL.
 
 ## Model formats supported by optional vsgXchange::assimp
 
-Requires Assump 5.x depedency.
+Requires [Assimp](https://github.com/assimp/assimp) 5.x depedency.
 
     $ vsgconv --features vsgXchange::assimp
     vsgXchange::assimp provides support for 68 extensions.
@@ -340,7 +340,7 @@ Requires Assump 5.x depedency.
 
 ## Image and Model formats supported by optional vsgXchange::OSG
 
-Requires OpenSceneGraph 3.x depedency.
+Requires [OpenSceneGraph](http://www.openscenegraph.org/) 3.x depedency.
 
     $ vsgconv --features vsgXchange::OSG
     vsgXchange::OSG provides support for 131 extensions.
