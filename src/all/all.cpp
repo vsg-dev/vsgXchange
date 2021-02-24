@@ -1,10 +1,10 @@
 #include <vsgXchange/all.h>
-#include <vsgXchange/glsl.h>
 #include <vsgXchange/cpp.h>
 #include <vsgXchange/freetype.h>
-#include <vsgXchange/spirv.h>
+#include <vsgXchange/glsl.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
+#include <vsgXchange/spirv.h>
 
 #include <vsg/io/VSG.h>
 

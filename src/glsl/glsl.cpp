@@ -90,9 +90,9 @@ bool glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
 
 bool glsl::getFeatures(Features& features) const
 {
-    for(auto& ext : extensionToStage)
+    for (auto& ext : extensionToStage)
     {
-        features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::WRITE_FILENAME );
+        features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::WRITE_FILENAME);
     }
     return true;
 }

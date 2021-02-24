@@ -128,7 +128,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
 
 bool stbi::getFeatures(Features& features) const
 {
-    for(auto& ext : _supportedExtensions)
+    for (auto& ext : _supportedExtensions)
     {
         features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     }

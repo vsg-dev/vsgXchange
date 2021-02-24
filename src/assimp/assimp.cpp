@@ -244,7 +244,6 @@ private:
     const uint32_t _importFlags;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // assimp ReaderWriter fascade
@@ -279,17 +278,16 @@ bool assimp::getFeatures(Features& features) const
 
     std::string::size_type start = 2; // skip *.
     std::string::size_type semicolon = suported_extensions.find(';', start);
-    while(semicolon != std::string::npos)
+    while (semicolon != std::string::npos)
     {
-        features.extensionFeatureMap[suported_extensions.substr(start, semicolon-start)] = supported_features;
-        start = semicolon+3;
+        features.extensionFeatureMap[suported_extensions.substr(start, semicolon - start)] = supported_features;
+        start = semicolon + 3;
         semicolon = suported_extensions.find(';', start);
     }
     features.extensionFeatureMap[suported_extensions.substr(start, std::string::npos)] = supported_features;
 
     return true;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

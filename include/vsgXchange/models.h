@@ -72,7 +72,6 @@ namespace vsgXchange
         std::unique_ptr<Implementation> _implementation;
     };
 
-
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::models);

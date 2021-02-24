@@ -2,9 +2,9 @@
 
 #include <osg/TransferFunction>
 #include <osg/io_utils>
+#include <osgDB/PluginQuery>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
-#include <osgDB/PluginQuery>
 #include <osgUtil/MeshOptimizers>
 #include <osgUtil/Optimizer>
 
@@ -64,7 +64,7 @@ bool OSG::getFeatures(Features& features) const
 {
     osgDB::FileNameList all_plugins = osgDB::listAllAvailablePlugins();
     osgDB::FileNameList plugins;
-    for(auto& filename : all_plugins)
+    for (auto& filename : all_plugins)
     {
         // the plugin list icludes the OSG's serializers so we need to discard these from being queried.
         if (filename.find("osgdb_serializers_") == std::string::npos && filename.find("osgdb_deprecated_") == std::string::npos)
@@ -74,14 +74,14 @@ bool OSG::getFeatures(Features& features) const
     }
 
     osgDB::ReaderWriterInfoList infoList;
-    for(auto& pluginName : plugins)
+    for (auto& pluginName : plugins)
     {
         osgDB::queryPlugin(pluginName, infoList);
     }
 
-    for(auto& info : infoList)
+    for (auto& info : infoList)
     {
-        for(auto& ext_description : info->extensions)
+        for (auto& ext_description : info->extensions)
         {
             features.extensionFeatureMap[ext_description.first] = vsg::ReaderWriter::READ_FILENAME;
         }

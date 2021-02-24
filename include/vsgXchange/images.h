@@ -26,8 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Version.h>
 
-#include <unordered_set>
 #include <memory>
+#include <unordered_set>
 
 namespace vsgXchange
 {

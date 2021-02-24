@@ -18,7 +18,6 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-
         class Implementation;
 
         std::unique_ptr<Implementation> _implementation;
