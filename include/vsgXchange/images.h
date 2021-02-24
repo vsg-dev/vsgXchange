@@ -24,9 +24,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </editor-fold> */
 
 #include <vsg/io/ReaderWriter.h>
-#include <vsgXchange/Export.h>
+#include <vsgXchange/Version.h>
 
 #include <unordered_set>
+#include <memory>
 
 namespace vsgXchange
 {
@@ -86,6 +87,20 @@ namespace vsgXchange
         std::unordered_set<std::string> _supportedExtensions;
     };
 
+    /// optional GDAL ReaderWriter
+    class VSGXCHANGE_DECLSPEC GDAL : public vsg::Inherit<vsg::ReaderWriter, GDAL>
+    {
+    public:
+        GDAL();
+
+        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const override;
+
+        bool getFeatures(Features& features) const override;
+
+    protected:
+        class Implementation;
+        std::unique_ptr<Implementation> _implementation;
+    };
 
 } // namespace vsgXchange
 
@@ -93,3 +108,4 @@ EVSG_type_name(vsgXchange::images);
 EVSG_type_name(vsgXchange::stbi);
 EVSG_type_name(vsgXchange::dds);
 EVSG_type_name(vsgXchange::ktx);
+EVSG_type_name(vsgXchange::GDAL);

@@ -224,48 +224,48 @@ namespace vsgconv
         return input;
     }
 
-    void printFeatures(vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation)
+    void printFeatures(std::ostream& out, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation = 0)
     {
         if (auto cws = rw.cast<vsg::CompositeReaderWriter>(); cws)
         {
-            std::cout<<cws->className()<<std::endl;
+            out<<cws->className()<<std::endl;
             for(auto& child : cws->readerWriters)
             {
-                printFeatures(child, indentation+4);
+                printFeatures(out, child, indentation+4);
             }
         }
         else
         {
             vsg::ReaderWriter::Features features;
             rw->getFeatures(features);
-            std::cout << indent{indentation} << rw->className() << " provides support for "<<features.extensionFeatureMap.size()<<" extensions."<<std::endl;
+            out << indent{indentation} << rw->className() << " provides support for "<<features.extensionFeatureMap.size()<<" extensions."<<std::endl;
 
             indentation += 4;
 
             int padding = 16;
-            std::cout << indent{indentation} <<pad{"Extensions", padding}<<"Supported ReaderWriter methods"<<std::endl;
-            std::cout << indent{indentation} <<pad{"----------", padding}<<"------------------------------"<<std::endl;
+            out << indent{indentation} <<pad{"Extensions", padding}<<"Supported ReaderWriter methods"<<std::endl;
+            out << indent{indentation} <<pad{"----------", padding}<<"------------------------------"<<std::endl;
             for(auto& [ext, featureMask] : features.extensionFeatureMap)
             {
-                std::cout << indent{indentation} <<pad{ext.c_str(), padding};
+                out << indent{indentation} <<pad{ext.c_str(), padding};
 
-                if (featureMask & vsg::ReaderWriter::READ_FILENAME) std::cout << "read(vsg::Path, ..) ";
-                if (featureMask & vsg::ReaderWriter::READ_ISTREAM) std::cout << "read(std::istream, ..) ";
-                if (featureMask & vsg::ReaderWriter::READ_MEMORY) std::cout << "read(uint8_t* ptr, size_t size, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_MEMORY) out << "read(uint8_t* ptr, size_t size, ..) ";
 
-                if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) std::cout << "write(vsg::Path, ..) ";
-                if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) std::cout << "write(std::ostream, ..) ";
-                std::cout<<std::endl;
+                if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) out << "write(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
+                out<<std::endl;
             }
         }
-        std::cout<<std::endl;
+        out<<std::endl;
     };
 
-    void printMatchedFeatures(const std::string& rw_name, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation)
+    void printMatchedFeatures(std::ostream& out, const std::string& rw_name, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation = 0)
     {
         if (rw_name == rw->className())
         {
-            printFeatures(rw, indentation);
+            printFeatures(out, rw, indentation);
             return;
         }
 
@@ -273,7 +273,7 @@ namespace vsgconv
         {
             for(auto& child : cws->readerWriters)
             {
-                printMatchedFeatures(rw_name, child, indentation);
+                printMatchedFeatures(out, rw_name, child, indentation);
             }
         }
     };
@@ -315,14 +315,14 @@ int main(int argc, char** argv)
         {
             for(auto rw : options->readerWriters)
             {
-                vsgconv::printFeatures(rw, 0);
+                vsgconv::printFeatures(std::cout, rw);
             }
         }
         else
         {
             for(auto rw : options->readerWriters)
             {
-                vsgconv::printMatchedFeatures(rw_name, rw, 0);
+                vsgconv::printMatchedFeatures(std::cout, rw_name, rw);
             }
         }
 

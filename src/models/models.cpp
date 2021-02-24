@@ -4,11 +4,11 @@ using namespace vsgXchange;
 
 models::models()
 {
-#ifdef USE_ASSIMP
-    add(vsgXchange::assimp::create());
+#ifdef VSGXCHANGE_assimp
+    add(assimp::create());
 #endif
 
-#ifdef USE_OPENSCENEGRAPH
-    add(vsgXchange::OSG::create());
+#ifdef VSGXCHANGE_OSG
+    add(OSG::create());
 #endif
 }

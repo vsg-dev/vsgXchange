@@ -51,7 +51,7 @@ extern "C"
     #cmakedefine VSGXCHANGE_freetype
     #cmakedefine VSGXCHANGE_assimp
     #cmakedefine VSGXCHANGE_OSG
-
+    #cmakedefine VSGXCHANGE_GDAL
 
 #ifdef __cplusplus
 }

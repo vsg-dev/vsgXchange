@@ -4,7 +4,11 @@ using namespace vsgXchange;
 
 images::images()
 {
-    add(vsgXchange::stbi::create());
-    add(vsgXchange::dds::create());
-    add(vsgXchange::ktx::create());
+#ifdef VSGXCHANGE_GDAL
+    add(GDAL::create());
+#endif
+
+    add(stbi::create());
+    add(dds::create());
+    add(ktx::create());
 }

@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </editor-fold> */
 
 #include <vsg/io/ReaderWriter.h>
-#include <vsgXchange/Export.h>
+#include <vsgXchange/Version.h>
 
 #include <memory>
 
@@ -38,6 +38,7 @@ namespace vsgXchange
         models();
     };
 
+    /// optional assimp ReaderWriter
     class VSGXCHANGE_DECLSPEC assimp : public vsg::Inherit<vsg::ReaderWriter, assimp>
     {
     public:
@@ -54,7 +55,7 @@ namespace vsgXchange
         std::unique_ptr<Implementation> _implementation;
     };
 
-
+    /// optional OSG ReaderWriter
     class VSGXCHANGE_DECLSPEC OSG : public vsg::Inherit<vsg::ReaderWriter, OSG>
     {
     public:

@@ -30,15 +30,23 @@ set(SOURCES
 # add freetype if available
 include(freetype/build_vars.cmake)
 
-# add freetype if available
+# add assimp if available
 include(assimp/build_vars.cmake)
 
 # add ktx
 include(ktx/build_vars.cmake)
 
-# add optional OpenSceneGraph components
+# add OpenSceneGraph support if available
 include(osg/build_vars.cmake)
 
+# add optional vsgGOS/GDAL component
+include(gdal/build_vars.cmake)
+
+if(${VSGXCHANGE_GDAL})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
+endif()
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})

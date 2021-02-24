@@ -8,7 +8,6 @@
 
 #include <vsg/io/VSG.h>
 
-
 using namespace vsgXchange;
 
 all::all()
@@ -18,20 +17,23 @@ all::all()
     add(spirv::create());
     add(cpp::create());
 
-    // equivlant to using vsgXchange::images
-    add(vsgXchange::stbi::create());
-    add(vsgXchange::dds::create());
-    add(vsgXchange::ktx::create());
+#ifdef VSGXCHANGE_GDAL
+    add(GDAL::create());
+#endif
 
-#ifdef USE_FREETYPE
+    add(stbi::create());
+    add(dds::create());
+    add(ktx::create());
+
+#ifdef VSGXCHANGE_freetype
     add(freetype::create());
 #endif
 
-#ifdef USE_ASSIMP
-    add(vsgXchange::assimp::create());
+#ifdef VSGXCHANGE_assimp
+    add(assimp::create());
 #endif
 
-#ifdef USE_OPENSCENEGRAPH
-    add(vsgXchange::OSG::create());
+#ifdef VSGXCHANGE_OSG
+    add(OSG::create());
 #endif
 }
