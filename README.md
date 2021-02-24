@@ -14,7 +14,7 @@ vsgXchange contains source code that can directly read a [range of shader and im
 cmake automatically finds which depedencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
-* [reading image & DEM formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
+* [reading image & DEM formats](#image-formats-support-by-optional-vsgxchangegdal) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
 * [reading image and 3d modul formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
 
@@ -28,8 +28,9 @@ cmake automatically finds which depedencies are available and builds the appropr
 ## Options depdendencies:
 
 * [Freetype](https://www.freetype.org/)
-* [Assimp](https://www.assimp.org/) & [Assimp on github](https://github.com/assimp/assimp)
-* [OpenSceneGraph](http://www.openscenegraph.org/) & [OpenSceneGraph on github](https://github.com/openscenegraph/OpenSceneGraph)
+* [vsgGIS](https://github.com/vsg-dev/vsgGIS) & [GDAL](https://gdal.org/)
+* [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
+* [OpenSceneGraph](http://www.openscenegraph.org/), [OpenSceneGraph on github](https://github.com/openscenegraph/OpenSceneGraph)
 
 ## Building vsgXchange:
 
