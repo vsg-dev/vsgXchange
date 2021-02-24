@@ -6,7 +6,8 @@
 #include <thread>
 
 #include <vsg/vk/ShaderCompiler.h>
-#include <vsgXchange/ReaderWriter_all.h>
+#include <vsgXchange/Version.h>
+#include <vsgXchange/all.h>
 
 namespace vsgconv
 {
@@ -198,12 +199,91 @@ namespace vsgconv
         vsg::ref_ptr<vsg::Latch> latch;
         ReadRequest readRequest;
     };
+
+    struct indent
+    {
+        int chars = 0;
+    };
+
+    std::ostream& operator<<(std::ostream& input, indent in)
+    {
+        for (int i = 0; i < in.chars; ++i) input << ' ';
+        return input;
+    }
+
+    struct pad
+    {
+        const char* str;
+        int chars;
+    };
+
+    std::ostream& operator<<(std::ostream& input, pad in)
+    {
+        input << in.str;
+        for (int i = strlen(in.str); i < in.chars; ++i) input << ' ';
+        return input;
+    }
+
+    void printFeatures(std::ostream& out, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation = 0)
+    {
+        if (auto cws = rw.cast<vsg::CompositeReaderWriter>(); cws)
+        {
+            out << cws->className() << std::endl;
+            for (auto& child : cws->readerWriters)
+            {
+                printFeatures(out, child, indentation + 4);
+            }
+        }
+        else
+        {
+            vsg::ReaderWriter::Features features;
+            rw->getFeatures(features);
+            out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions." << std::endl;
+
+            indentation += 4;
+
+            int padding = 16;
+            out << indent{indentation} << pad{"Extensions", padding} << "Supported ReaderWriter methods" << std::endl;
+            out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
+            for (auto& [ext, featureMask] : features.extensionFeatureMap)
+            {
+                out << indent{indentation} << pad{ext.c_str(), padding};
+
+                if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
+                if (featureMask & vsg::ReaderWriter::READ_MEMORY) out << "read(uint8_t* ptr, size_t size, ..) ";
+
+                if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) out << "write(vsg::Path, ..) ";
+                if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
+                out << std::endl;
+            }
+        }
+        out << std::endl;
+    };
+
+    void printMatchedFeatures(std::ostream& out, const std::string& rw_name, vsg::ref_ptr<vsg::ReaderWriter> rw, int indentation = 0)
+    {
+        if (rw_name == rw->className())
+        {
+            printFeatures(out, rw, indentation);
+            return;
+        }
+
+        if (auto cws = rw.cast<vsg::CompositeReaderWriter>(); cws)
+        {
+            for (auto& child : cws->readerWriters)
+            {
+                printMatchedFeatures(out, rw_name, child, indentation);
+            }
+        }
+    };
+
 } // namespace vsgconv
 
 int main(int argc, char** argv)
 {
-    // ise the vsg::Options object to pass the ReaderWriter_all to use when reading files.
-    auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create());
+    // use the vsg::Options object to pass the ReaderWriter_all to use when reading files.
+    auto options = vsg::Options::create(vsgXchange::all::create());
 
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
@@ -219,6 +299,37 @@ int main(int argc, char** argv)
     // read any commmand line options that the ReaderWrite support
     arguments.read(options);
     if (argc <= 1) return 0;
+
+    if (arguments.read({"-v", "--version"}))
+    {
+        std::cout << "vsgXchange version = " << vsgXchangeGetVersionString() << ", so = " << vsgXchangeGetSOVersionString() << std::endl;
+        if (vsgXchangeBuiltAsSharedLibrary())
+            std::cout << "vsgXchange built as shared library" << std::endl;
+        else
+            std::cout << "vsgXchange built as static library" << std::endl;
+        return 1;
+    }
+
+    std::string rw_name;
+    if (arguments.read("--features", rw_name) || arguments.read("--features"))
+    {
+        if (rw_name.empty())
+        {
+            for (auto rw : options->readerWriters)
+            {
+                vsgconv::printFeatures(std::cout, rw);
+            }
+        }
+        else
+        {
+            for (auto rw : options->readerWriters)
+            {
+                vsgconv::printMatchedFeatures(std::cout, rw_name, rw);
+            }
+        }
+
+        return 0;
+    }
 
     auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");

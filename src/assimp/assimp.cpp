@@ -1,4 +1,5 @@
-#include "ReaderWriter_assimp.h"
+
+#include <vsgXchange/models.h>
 
 #include "assimp_pbr.h"
 #include "assimp_phong.h"
@@ -219,13 +220,86 @@ namespace
 
 using namespace vsgXchange;
 
-ReaderWriter_assimp::ReaderWriter_assimp() :
+class assimp::Implementation
+{
+public:
+    Implementation();
+
+    vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+    vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const;
+    vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+private:
+    using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
+    using State = std::pair<StateCommandPtr, StateCommandPtr>;
+    using BindState = std::vector<State>;
+
+    vsg::ref_ptr<vsg::GraphicsPipeline> createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided = false, bool enableBlend = false) const;
+    void createDefaultPipelineAndState();
+    vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+    BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+
+    vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
+    vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
+    const uint32_t _importFlags;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// assimp ReaderWriter fascade
+//
+assimp::assimp() :
+    _implementation(new assimp::Implementation())
+{
+}
+
+vsg::ref_ptr<vsg::Object> assimp::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(filename, options);
+}
+
+vsg::ref_ptr<vsg::Object> assimp::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(fin, options);
+}
+
+vsg::ref_ptr<vsg::Object> assimp::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(ptr, size, options);
+}
+
+bool assimp::getFeatures(Features& features) const
+{
+    std::string suported_extensions;
+    Assimp::Importer importer;
+    importer.GetExtensionList(suported_extensions);
+
+    vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+
+    std::string::size_type start = 2; // skip *.
+    std::string::size_type semicolon = suported_extensions.find(';', start);
+    while (semicolon != std::string::npos)
+    {
+        features.extensionFeatureMap[suported_extensions.substr(start, semicolon - start)] = supported_features;
+        start = semicolon + 3;
+        semicolon = suported_extensions.find(';', start);
+    }
+    features.extensionFeatureMap[suported_extensions.substr(start, std::string::npos)] = supported_features;
+
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// assimp ReaderWriter implementation
+//
+assimp::Implementation::Implementation() :
     _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
 {
     createDefaultPipelineAndState();
 }
 
-vsg::ref_ptr<vsg::GraphicsPipeline> ReaderWriter_assimp::createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided, bool enableBlend) const
+vsg::ref_ptr<vsg::GraphicsPipeline> assimp::Implementation::createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided, bool enableBlend) const
 {
     vsg::PushConstantRanges pushConstantRanges{
         {VK_SHADER_STAGE_VERTEX_BIT, 0, 128} // projection view, and model matrices, actual push constant calls autoaatically provided by the VSG's DispatchTraversal
@@ -262,7 +336,7 @@ vsg::ref_ptr<vsg::GraphicsPipeline> ReaderWriter_assimp::createPipeline(vsg::ref
     return vsg::GraphicsPipeline::create(pipelineLayout, vsg::ShaderStages{vs, fs}, pipelineStates);
 }
 
-void ReaderWriter_assimp::createDefaultPipelineAndState()
+void assimp::Implementation::createDefaultPipelineAndState()
 {
     auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", processGLSLShaderSource(assimp_vertex, {}));
     auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", processGLSLShaderSource(assimp_phong, {}));
@@ -280,7 +354,7 @@ void ReaderWriter_assimp::createDefaultPipelineAndState()
     _defaultState = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _defaultPipeline->layout, 0, descriptorSet);
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
     bool useVertexIndexDraw = true;
     int upAxis = 1, upAxisSign = 1;
@@ -414,7 +488,7 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::processScene(const aiScene* scene
     return root;
 }
 
-ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
+assimp::Implementation::BindState assimp::Implementation::processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
 {
     BindState bindDescriptorSets;
     bindDescriptorSets.reserve(scene->mNumMaterials);
@@ -448,12 +522,9 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
 
                 if (texture->mWidth > 0 && texture->mHeight == 0)
                 {
-                    std::string str((const char*)texture->pcData, texture->mWidth);
-                    std::istringstream stream(str);
-
                     auto imageOptions = vsg::Options::create(*options);
                     imageOptions->extensionHint = texture->achFormatHint;
-                    if (samplerImage.data = vsg::read_cast<vsg::Data>(stream, imageOptions); !samplerImage.data.valid())
+                    if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
                         return {};
                 }
             }
@@ -722,13 +793,13 @@ ReaderWriter_assimp::BindState ReaderWriter_assimp::processMaterials(const aiSce
     return bindDescriptorSets;
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     Assimp::Importer importer;
 
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
-        vsg::Path filenameToUse = findFile(filename, options);
+        vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (filenameToUse.empty()) return {};
 
         if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
@@ -758,10 +829,11 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(const vsg::Path& filename, v
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    Assimp::Importer importer;
+    if (!options) return {};
 
+    Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint))
     {
         std::string buffer(1 << 16, 0); // 64kB
@@ -784,5 +856,24 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_assimp::read(std::istream& fin, vsg::ref_
         }
     }
 
+    return {};
+}
+
+vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options) return {};
+
+    Assimp::Importer importer;
+    if (importer.IsExtensionSupported(options->extensionHint))
+    {
+        if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
+        {
+            return processScene(scene, options);
+        }
+        else
+        {
+            std::cerr << "Failed to load file from memory: " << importer.GetErrorString() << std::endl;
+        }
+    }
     return {};
 }

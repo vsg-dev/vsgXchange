@@ -1,7 +1,8 @@
-#include "ReaderWriter_osg.h"
+#include <vsgXchange/models.h>
 
 #include <osg/TransferFunction>
 #include <osg/io_utils>
+#include <osgDB/PluginQuery>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 #include <osgUtil/MeshOptimizers>
@@ -16,12 +17,88 @@
 
 using namespace vsgXchange;
 
-ReaderWriter_osg::ReaderWriter_osg()
+namespace osg2vsg
+{
+    struct PipelineCache;
+}
+
+namespace vsgXchange
+{
+
+    class OSG::Implementation
+    {
+    public:
+        Implementation();
+
+        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const;
+
+        vsg::ref_ptr<osg2vsg::PipelineCache> pipelineCache;
+
+    protected:
+    };
+
+} // namespace vsgXchange
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// OSG ReaderWriter fascade
+//
+OSG::OSG() :
+    _implementation(new OSG::Implementation())
+{
+}
+
+bool OSG::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+{
+    return _implementation->readOptions(options, arguments);
+}
+
+vsg::ref_ptr<vsg::Object> OSG::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(filename, options);
+}
+
+bool OSG::getFeatures(Features& features) const
+{
+    osgDB::FileNameList all_plugins = osgDB::listAllAvailablePlugins();
+    osgDB::FileNameList plugins;
+    for (auto& filename : all_plugins)
+    {
+        // the plugin list icludes the OSG's serializers so we need to discard these from being queried.
+        if (filename.find("osgdb_serializers_") == std::string::npos && filename.find("osgdb_deprecated_") == std::string::npos)
+        {
+            plugins.push_back(filename);
+        }
+    }
+
+    osgDB::ReaderWriterInfoList infoList;
+    for (auto& pluginName : plugins)
+    {
+        osgDB::queryPlugin(pluginName, infoList);
+    }
+
+    for (auto& info : infoList)
+    {
+        for (auto& ext_description : info->extensions)
+        {
+            features.extensionFeatureMap[ext_description.first] = vsg::ReaderWriter::READ_FILENAME;
+        }
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// OSG ReaderWriter implementation
+//
+OSG::Implementation::Implementation()
 {
     pipelineCache = osg2vsg::PipelineCache::create();
 }
 
-bool ReaderWriter_osg::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+bool OSG::Implementation::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     if (arguments.read("--original")) options.setValue("original", true);
 
@@ -47,7 +124,7 @@ bool ReaderWriter_osg::readOptions(vsg::Options& options, vsg::CommandLine& argu
     return false;
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     osg::ref_ptr<osgDB::Options> osg_options;
 
@@ -146,15 +223,8 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_osg::read(const vsg::Path& filename, vsg:
     }
     else
     {
-        std::cout << "ReaderWriter_osg::readFile(" << filename << ") cannot convert object type " << object->className() << "." << std::endl;
+        std::cout << "OSG::ImplementationreadFile(" << filename << ") cannot convert object type " << object->className() << "." << std::endl;
     }
 
     return {};
-}
-
-bool ReaderWriter_osg::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
-{
-    std::cout << "ReaderWriter_osg::writeFile(" << object->className() << ", " << filename << ") using OSG not supported yet." << std::endl;
-
-    return false;
 }

@@ -1,4 +1,5 @@
-#include "FreeTypeFont.h"
+
+#include <vsgXchange/freetype.h>
 
 #include <vsg/core/Exception.h>
 #include <vsg/nodes/Geometry.h>
@@ -6,13 +7,103 @@
 #include <vsg/state/ShaderStage.h>
 #include <vsg/text/Font.h>
 
-using namespace vsgXchange;
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_OUTLINE_H
 
 #include <chrono>
 #include <iostream>
 #include <set>
 
-ReaderWriter_freetype::ReaderWriter_freetype()
+namespace vsgXchange
+{
+
+    inline bool between(float a, float b, float c)
+    {
+        if (a < c)
+            return (a <= b) && (b <= c);
+        else
+            return (c <= b) && (b <= a);
+    }
+
+#if 1
+    inline bool between2(float a, float b, float c)
+    {
+        if (a < c)
+            return (a <= b) && (b < c);
+        else
+            return (c <= b) && (b < a);
+    }
+#else
+    inline bool between2(float a, float b, float c)
+    {
+        return between(a, b, c);
+    }
+#endif
+
+    class freetype::Implementation
+    {
+    public:
+        Implementation();
+
+        void init() const;
+
+        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+        ~Implementation();
+
+        struct Contour
+        {
+            std::vector<vsg::vec2> points;
+            std::vector<vsg::vec3> edges;
+        };
+
+        using Contours = std::list<Contour>;
+
+        unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
+        vsg::ref_ptr<vsg::Group> createOutlineGeometry(const Contours& contours) const;
+        bool generateOutlines(FT_Outline& outline, Contours& contours) const;
+        void checkForAndFixDegenerates(Contours& contours) const;
+        float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
+        bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
+
+        std::map<std::string, std::string> _supportedFormats;
+        mutable std::mutex _mutex;
+        mutable FT_Library _library = nullptr;
+    };
+
+} // namespace vsgXchange
+
+using namespace vsgXchange;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// freetype ReaderWriter fascade
+//
+freetype::freetype() :
+    _implementation(new freetype::Implementation())
+{
+}
+
+vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(filename, options);
+}
+
+bool freetype::getFeatures(Features& features) const
+{
+    for (auto& ext : _implementation->_supportedFormats)
+    {
+        features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME);
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// freetype ReaderWriter Implementation
+//
+freetype::Implementation::Implementation()
 {
     _supportedFormats["ttf"] = "true type font format";
     _supportedFormats["ttc"] = "true type collection format";
@@ -27,31 +118,31 @@ ReaderWriter_freetype::ReaderWriter_freetype()
     _supportedFormats["woff"] = "web open font format";
 }
 
-ReaderWriter_freetype::~ReaderWriter_freetype()
+freetype::Implementation::~Implementation()
 {
     if (_library)
     {
-        // std::cout<<"ReaderWriter_freetype::~ReaderWriter_freetype() FT_Done_FreeType library = "<<_library<<std::endl;
+        // std::cout<<"freetype::Implementation::~freetype::Implementation() FT_Done_FreeType library = "<<_library<<std::endl;
         FT_Done_FreeType(_library);
     }
 }
 
-void ReaderWriter_freetype::init() const
+void freetype::Implementation::init() const
 {
     if (_library) return;
 
     int error = FT_Init_FreeType(&_library);
     if (error)
     {
-        // std::cout<<"ReaderWriter_freetype::init() failed."<<std::endl;
+        // std::cout<<"freetype::Implementation::init() failed."<<std::endl;
         return;
         //throw vsg::Exception{"FreeType an error occurred during library initialization", error};
     }
 
-    // std::cout<<"ReaderWriter_freetype() FT_Init_FreeType library = "<<_library<<std::endl;
+    // std::cout<<"freetype::Implementation() FT_Init_FreeType library = "<<_library<<std::endl;
 }
 
-unsigned char ReaderWriter_freetype::nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const
+unsigned char freetype::Implementation::nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const
 {
     unsigned char value = 0;
     if (c >= 0 && c < static_cast<int>(glyph_bitmap.width) && r >= 0 && r < static_cast<int>(glyph_bitmap.rows))
@@ -124,7 +215,7 @@ unsigned char ReaderWriter_freetype::nearerst_edge(const FT_Bitmap& glyph_bitmap
     }
 }
 
-vsg::ref_ptr<vsg::Group> ReaderWriter_freetype::createOutlineGeometry(const Contours& contours) const
+vsg::ref_ptr<vsg::Group> freetype::Implementation::createOutlineGeometry(const Contours& contours) const
 {
     auto group = vsg::Group::create();
 
@@ -148,7 +239,7 @@ vsg::ref_ptr<vsg::Group> ReaderWriter_freetype::createOutlineGeometry(const Cont
     return group;
 }
 
-bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_contours) const
+bool freetype::Implementation::generateOutlines(FT_Outline& outline, Contours& in_contours) const
 {
     //std::cout<<"charcode = "<<glyphQuad.charcode<<", width = "<<width<<", height = "<<height<<std::endl;
     //std::cout<<"   face->glyph->outline.n_contours = "<<face->glyph->outline.n_contours<<std::endl;
@@ -265,7 +356,7 @@ bool ReaderWriter_freetype::generateOutlines(FT_Outline& outline, Contours& in_c
     return true;
 }
 
-void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
+void freetype::Implementation::checkForAndFixDegenerates(Contours& contours) const
 {
     auto contains_degenerates = [](Contour& contour) -> bool {
         auto& points = contour.points;
@@ -323,7 +414,7 @@ void ReaderWriter_freetype::checkForAndFixDegenerates(Contours& contours) const
     }
 }
 
-float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const
+float freetype::Implementation::nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const
 {
     float min_distance = std::numeric_limits<float>::max();
     for (auto& contour : local_contours)
@@ -354,7 +445,7 @@ float ReaderWriter_freetype::nearest_contour_edge(const Contours& local_contours
     return sqrt(min_distance);
 };
 
-bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, const vsg::vec2& v) const
+bool freetype::Implementation::outside_contours(const Contours& local_contours, const vsg::vec2& v) const
 {
     uint32_t numLeft = 0;
     for (auto& contour : local_contours)
@@ -422,7 +513,7 @@ bool ReaderWriter_freetype::outside_contours(const Contours& local_contours, con
     return (numLeft % 2) == 0;
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
     if (_supportedFormats.find(ext) == _supportedFormats.end())

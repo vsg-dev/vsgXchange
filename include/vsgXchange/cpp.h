@@ -8,12 +8,14 @@
 namespace vsgXchange
 {
 
-    class VSGXCHANGE_DECLSPEC ReaderWriter_cpp : public vsg::Inherit<vsg::ReaderWriter, ReaderWriter_cpp>
+    class VSGXCHANGE_DECLSPEC cpp : public vsg::Inherit<vsg::ReaderWriter, cpp>
     {
     public:
-        ReaderWriter_cpp();
+        cpp();
 
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+
+        bool getFeatures(Features& features) const override;
 
     protected:
         void write(std::ostream& out, const std::string& str) const;
@@ -21,4 +23,4 @@ namespace vsgXchange
 
 } // namespace vsgXchange
 
-EVSG_type_name(vsgXchange::ReaderWriter_cpp);
+EVSG_type_name(vsgXchange::cpp);

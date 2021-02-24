@@ -1,4 +1,4 @@
-#include "ReaderWriter_dds.h"
+#include <vsgXchange/images.h>
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/ObjectCache.h>
@@ -135,7 +135,7 @@ namespace
                 vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
         default:
-            std::cerr << "ReaderWriter_dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
+            std::cerr << "dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
             break;
         }
 
@@ -196,7 +196,7 @@ namespace
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
-                    std::cerr << "ReaderWriter_dds::readDds() Num of dimnension (" << (uint32_t)dim << ")  is supported." << std::endl;
+                    std::cerr << "dds::readDds() Num of dimnension (" << (uint32_t)dim << ")  is supported." << std::endl;
                     break;
                 }
 
@@ -207,7 +207,7 @@ namespace
         }
         else
         {
-            std::cerr << "ReaderWriter_dds::readDds() Format is not supported yet: " << (uint32_t)format << std::endl;
+            std::cerr << "dds::readDds() Format is not supported yet: " << (uint32_t)format << std::endl;
         }
 
         return {};
@@ -216,12 +216,12 @@ namespace
 
 using namespace vsgXchange;
 
-ReaderWriter_dds::ReaderWriter_dds() :
+dds::dds() :
     _supportedExtensions{"dds"}
 {
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
@@ -240,10 +240,10 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg:
         switch (result)
         {
         case tinyddsloader::ErrorNotSupported:
-            std::cerr << "ReaderWriter_dds::read(" << filename << ") Error loading file: Feature not supported" << std::endl;
+            std::cerr << "dds::read(" << filename << ") Error loading file: Feature not supported" << std::endl;
             break;
         default:
-            std::cerr << "ReaderWriter_dds::read(" << filename << ") Error loading file: " << result << std::endl;
+            std::cerr << "dds::read(" << filename << ") Error loading file: " << result << std::endl;
             break;
         }
     }
@@ -251,9 +251,9 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(const vsg::Path& filename, vsg:
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (_supportedExtensions.count(options->extensionHint) == 0)
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
         return {};
 
     tinyddsloader::DDSFile ddsFile;
@@ -266,13 +266,45 @@ vsg::ref_ptr<vsg::Object> ReaderWriter_dds::read(std::istream& fin, vsg::ref_ptr
         switch (result)
         {
         case tinyddsloader::ErrorNotSupported:
-            std::cerr << "ReaderWriter_dds::read(istream&) Error loading file: Feature not supported" << std::endl;
+            std::cerr << "dds::read(istream&) Error loading file: Feature not supported" << std::endl;
             break;
         default:
-            std::cerr << "ReaderWriter_dds::read(istream&) Error loading file: " << result << std::endl;
+            std::cerr << "dds::read(istream&) Error loading file: " << result << std::endl;
             break;
         }
     }
 
     return {};
+}
+
+vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
+        return {};
+
+    tinyddsloader::DDSFile ddsFile;
+    if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)
+    {
+        return readDds(ddsFile);
+    }
+    else
+    {
+        switch (result)
+        {
+        case tinyddsloader::ErrorNotSupported:
+            std::cerr << "dds::read(uint_8_t*, size_t) Error loading file: Feature not supported" << std::endl;
+            break;
+        default:
+            std::cerr << "dds::readuint_8_t*, size_t) Error loading file: " << result << std::endl;
+            break;
+        }
+    }
+
+    return {};
+}
+
+bool dds::getFeatures(Features& features) const
+{
+    features.extensionFeatureMap["dds"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    return true;
 }

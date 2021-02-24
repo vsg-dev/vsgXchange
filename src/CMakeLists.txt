@@ -7,35 +7,46 @@ SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
     ${HEADER_PATH}/Export.h
-    ${HEADER_PATH}/ReaderWriter_all.h
+    ${HEADER_PATH}/Version.h
+    ${HEADER_PATH}/all.h
+    ${HEADER_PATH}/cpp.h
+    ${HEADER_PATH}/glsl.h
+    ${HEADER_PATH}/spirv.h
+    ${HEADER_PATH}/freetype.h
+    ${HEADER_PATH}/images.h
  )
 
 set(SOURCES
-    vsgXchange/ReaderWriter_all.cpp
-
-    glsl/ReaderWriter_glsl.cpp
-
-    spirv/ReaderWriter_spirv.cpp
-
-    cpp/ReaderWriter_cpp.cpp
-
-    stbi/ReaderWriter_stbi.cpp
-
-    dds/ReaderWriter_dds.cpp
+    all/Version.cpp
+    all/all.cpp
+    cpp/cpp.cpp
+    glsl/glsl.cpp
+    spirv/spirv.cpp
+    stbi/stbi.cpp
+    dds/dds.cpp
+    images/images.cpp
 )
 
 # add freetype if available
 include(freetype/build_vars.cmake)
 
-# add freetype if available
+# add assimp if available
 include(assimp/build_vars.cmake)
 
 # add ktx
 include(ktx/build_vars.cmake)
 
-# add optional OpenSceneGraph components
+# add OpenSceneGraph support if available
 include(osg/build_vars.cmake)
 
+# add optional vsgGOS/GDAL component
+include(gdal/build_vars.cmake)
+
+if(${VSGXCHANGE_GDAL})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
+endif()
 
 
 add_library(vsgXchange ${HEADERS} ${SOURCES})

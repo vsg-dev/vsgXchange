@@ -8,18 +8,20 @@
 namespace vsgXchange
 {
 
-    class VSGXCHANGE_DECLSPEC ReaderWriter_spirv : public vsg::Inherit<vsg::ReaderWriter, ReaderWriter_spirv>
+    class VSGXCHANGE_DECLSPEC spirv : public vsg::Inherit<vsg::ReaderWriter, spirv>
     {
     public:
-        ReaderWriter_spirv();
+        spirv();
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+
+        bool getFeatures(Features& features) const override;
 
     protected:
     };
 
 } // namespace vsgXchange
 
-EVSG_type_name(vsgXchange::ReaderWriter_spirv);
+EVSG_type_name(vsgXchange::spirv);
