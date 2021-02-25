@@ -21,7 +21,7 @@ vsg::ref_ptr<vsg::Object> assimp::read(std::istream&, vsg::ref_ptr<const vsg::Op
 {
     return {};
 }
-vsg::ref_ptr<vsg::Object> assimp::read(uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> assimp::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
