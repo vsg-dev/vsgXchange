@@ -6,8 +6,8 @@ set(EXTRA_INCLUDES)
 SET(HEADER_PATH ${CMAKE_SOURCE_DIR}/include/vsgXchange)
 
 set(HEADERS
+    ${VSGXCHANGE_VERSION_HEADER}
     ${HEADER_PATH}/Export.h
-    ${HEADER_PATH}/Version.h
     ${HEADER_PATH}/all.h
     ${HEADER_PATH}/cpp.h
     ${HEADER_PATH}/glsl.h
@@ -48,7 +48,12 @@ if(${VSGXCHANGE_GDAL})
     set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
 endif()
 
+# create the version header
+set(VSGXCHANGE_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/vsgXchange/Version.h")
+configure_file("${CMAKE_SOURCE_DIR}/src/all/Version.h.in" "${VSGXCHANGE_VERSION_HEADER}")
 
+
+# create the vsgXchange library
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 
 
@@ -59,11 +64,14 @@ set_property(TARGET vsgXchange PROPERTY CXX_STANDARD 17)
 
 target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
-target_include_directories(vsgXchange PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/ktx/libktx>
-    $<INSTALL_INTERFACE:include>
-    ${EXTRA_INCLUDES}
+target_include_directories(vsgXchange
+    PUBLIC
+        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${VSGXCHANGE_BINARY_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/src/ktx/libktx>
+        ${EXTRA_INCLUDES}
 )
 
 target_link_libraries(vsgXchange
@@ -86,6 +94,11 @@ endif()
 
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/vsgXchange DESTINATION include)
+if (NOT(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR}))
+    install(DIRECTORY ${CMAKE_BINARY_DIR}/include/vsgXchange DESTINATION include)
+endif()
+
+
 
 # [==[
 install(EXPORT vsgXchangeTargets
