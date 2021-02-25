@@ -1,5 +1,5 @@
 
-#include <vsgXchange/image.h>
+#include <vsgXchange/images.h>
 
 using namespace vsgXchange;
 
