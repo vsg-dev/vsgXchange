@@ -23,7 +23,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsgXchange/images.h>
 
-#include <vsgGIS/GDAL.h>
 #include <vsgGIS/gdal_utils.h>
 
 #include <cstring>
