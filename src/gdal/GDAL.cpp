@@ -166,7 +166,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     bool mapRGBtoRGBAHint = !options || options->mapRGBtoRGBAHint;
     if (mapRGBtoRGBAHint && numComponents == 3)
     {
-        std::cout<<"Reamppping RGB to RGBA "<<filename<<std::endl;
+        //std::cout<<"Reamppping RGB to RGBA "<<filename<<std::endl;
         numComponents = 4;
     }
 
