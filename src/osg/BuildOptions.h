@@ -37,6 +37,8 @@ namespace osg2vsg
         uint32_t overrideGeomAttributes = 0;
         uint32_t overrideShaderModeMask = ShaderModeMask::NONE;
 
+        bool mapRGBtoRGBAHint = true;
+
         std::string vertexShaderPath = "";
         std::string fragmentShaderPath = "";
 

@@ -115,7 +115,7 @@ vsg::ref_ptr<vsg::DescriptorImage> SceneBuilderBase::convertToVsgTexture(const o
     if (auto itr = texturesMap.find(osgtexture); itr != texturesMap.end()) return itr->second;
 
     const osg::Image* image = osgtexture ? osgtexture->getImage(0) : nullptr;
-    auto textureData = convertToVsg(image);
+    auto textureData = convertToVsg(image, buildOptions->mapRGBtoRGBAHint);
     if (!textureData)
     {
         // DEBUG_OUTPUT << "Could not convert osg image data" << std::endl;

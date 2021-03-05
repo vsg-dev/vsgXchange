@@ -155,6 +155,8 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         return {};
     }
 
+    bool mapRGBtoRGBAHint = !options || options->mapRGBtoRGBAHint;
+
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH"); // TODO, use the vsg::Options ?
@@ -165,9 +167,14 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         // clone the osg specific buildOptions if they have been assign to vsg::Options
         vsg::ref_ptr<osg2vsg::BuildOptions> buildOptions;
         if (default_options)
+        {
             buildOptions = osg2vsg::BuildOptions::create(*default_options);
+        }
         else
+        {
             buildOptions = osg2vsg::BuildOptions::create();
+            buildOptions->mapRGBtoRGBAHint = mapRGBtoRGBAHint;
+        }
 
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
@@ -222,12 +229,12 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
     }
     else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
     {
-        return osg2vsg::convertToVsg(osg_image);
+        return osg2vsg::convertToVsg(osg_image, mapRGBtoRGBAHint);
     }
     else if (osg::TransferFunction1D* tf = dynamic_cast<osg::TransferFunction1D*>(object.get()); tf != nullptr)
     {
         auto tf_image = tf->getImage();
-        auto vsg_image = osg2vsg::convertToVsg(tf_image);
+        auto vsg_image = osg2vsg::convertToVsg(tf_image, mapRGBtoRGBAHint);
         vsg_image->setValue("Minimum", tf->getMinimum());
         vsg_image->setValue("Maximum", tf->getMaximum());
 

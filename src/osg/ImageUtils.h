@@ -26,5 +26,5 @@ namespace osg2vsg
 
     osg::ref_ptr<osg::Image> formatImageToRGBA(const osg::Image* image);
 
-    vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image);
+    vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image, bool mapRGBtoRGBAHint);
 } // namespace osg2vsg

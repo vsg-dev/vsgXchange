@@ -336,7 +336,7 @@ namespace osg2vsg
         return vsg_data;
     }
 
-    vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image)
+    vsg::ref_ptr<vsg::Data> convertToVsg(const osg::Image* image, bool mapRGBtoRGBAHint)
     {
         if (!image)
         {
@@ -359,34 +359,48 @@ namespace osg2vsg
             numComponents = 1;
             new_image = const_cast<osg::Image*>(image);
             break;
+
         case (GL_LUMINANCE_ALPHA):
             numComponents = 2;
             new_image = const_cast<osg::Image*>(image);
             break;
-#if 1
+
         case (GL_RGB):
-        case (GL_BGR):
-            // current NVidia driver doesn't supprt RGB so expand to RGBA
-            numComponents = 4;
-            new_image = formatImage(image, GL_RGBA);
+            if (mapRGBtoRGBAHint)
+            {
+                numComponents = 4;
+                new_image = formatImage(image, GL_RGBA);
+            }
+            else
+            {
+                numComponents = 3;
+                new_image = const_cast<osg::Image*>(image);
+            }
             break;
-#else
-        case (GL_RGB):
-            numComponents = 3;
-            new_image = const_cast<osg::Image*>(image);
+
         case (GL_BGR):
-            numComponents = 3;
-            new_image = formatImage(image, GL_RGB);
+            if (mapRGBtoRGBAHint)
+            {
+                numComponents = 4;
+                new_image = formatImage(image, GL_RGBA);
+            }
+            else
+            {
+                numComponents = 3;
+                new_image = formatImage(image, GL_RGB);
+            }
             break;
-#endif
+
         case (GL_RGBA):
             numComponents = 4;
             new_image = const_cast<osg::Image*>(image);
             break;
+
         case (GL_BGRA):
             numComponents = 4;
             new_image = formatImage(image, GL_RGBA);
             break;
+
         default:
             std::cout << "Warning: convertToVsg(osg::Image*) does not support image->getPixelFormat() == " << std::hex << image->getPixelFormat() << std::endl;
             return {};
