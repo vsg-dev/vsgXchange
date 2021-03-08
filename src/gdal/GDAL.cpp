@@ -57,11 +57,11 @@ bool GDAL::getFeatures(Features& features) const
 
     vsg::ReaderWriter::FeatureMask rasterFeatureMask = vsg::ReaderWriter::READ_FILENAME;
 
-    for(int i = 0; i<driverCount; ++i)
+    for (int i = 0; i < driverCount; ++i)
     {
         auto driver = driverManager->GetDriver(i);
-        auto raster_meta = driver->GetMetadataItem( GDAL_DCAP_RASTER );
-        auto extensions_meta = driver->GetMetadataItem( GDAL_DMD_EXTENSIONS );
+        auto raster_meta = driver->GetMetadataItem(GDAL_DCAP_RASTER);
+        auto extensions_meta = driver->GetMetadataItem(GDAL_DMD_EXTENSIONS);
         // auto longname_meta = driver->GetMetadataItem( GDAL_DMD_LONGNAME );
         if (raster_meta && extensions_meta)
         {
@@ -69,7 +69,7 @@ bool GDAL::getFeatures(Features& features) const
             std::string ext;
 
             std::string::size_type start_pos = 0;
-            for(;;)
+            for (;;)
             {
                 start_pos = extensions.find_first_not_of(" .", start_pos);
                 if (start_pos == std::string::npos) break;
@@ -77,7 +77,7 @@ bool GDAL::getFeatures(Features& features) const
                 std::string::size_type deliminator_pos = extensions.find_first_of(" /", start_pos);
                 if (deliminator_pos != std::string::npos)
                 {
-                    ext = extensions.substr(start_pos, deliminator_pos-start_pos);
+                    ext = extensions.substr(start_pos, deliminator_pos - start_pos);
                     features.extensionFeatureMap[ext] = rasterFeatureMask;
                     start_pos = deliminator_pos + 1;
                     if (start_pos == extensions.length()) break;
