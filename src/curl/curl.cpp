@@ -50,6 +50,7 @@ namespace vsgXchange
     {
     public:
         Implementation();
+        virtual ~Implementation();
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
 
@@ -71,6 +72,8 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
 {
     if (containsServerAddress(filename))
     {
+        // TODO : check file cache and return load from filecache.
+
         return _implementation->read(filename, options);
     }
     else
@@ -81,6 +84,9 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 bool curl::getFeatures(Features& features) const
 {
+    features.protocolFeatureMap["http"] = vsg::ReaderWriter::READ_FILENAME;
+    features.protocolFeatureMap["https"] = vsg::ReaderWriter::READ_FILENAME;
+
     return true;
 }
 
@@ -90,6 +96,10 @@ bool curl::getFeatures(Features& features) const
 // CURL ReaderWriter implementation
 //
 curl::Implementation::Implementation()
+{
+}
+
+curl::Implementation::~Implementation()
 {
 }
 
