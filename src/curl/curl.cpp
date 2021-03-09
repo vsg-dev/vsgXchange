@@ -70,16 +70,29 @@ curl::curl()
 
 vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (containsServerAddress(filename))
+    std::cout<<"curl::read("<<filename<<")"<<std::endl;
+
+    vsg::Path serverFilename = filename;
+
+    bool contains_serverAddress = containsServerAddress(filename);
+    if (!contains_serverAddress && options && !options->paths.empty())
+    {
+        contains_serverAddress = containsServerAddress(options->paths.front());
+        if (contains_serverAddress)
+        {
+            serverFilename = vsg::concatPaths(options->paths.front(), filename);
+        }
+    }
+
+    if (contains_serverAddress)
     {
         // TODO : check file cache and return load from filecache.
-
         {
             std::scoped_lock<std::mutex> lock(_mutex);
             if (!_implementation) _implementation.reset(new curl::Implementation());
         }
 
-        return _implementation->read(filename, options);
+        return _implementation->read(serverFilename, options);
     }
     else
     {
@@ -173,9 +186,11 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     if (responseCode==0)
     {
         // success
-        auto local_optons = vsg::Options::create(*options);
-        local_optons->extensionHint = vsg::fileExtension(filename);
-        object = vsg::read(sstr, local_optons);
+        auto local_options = vsg::Options::create(*options);
+        local_options->paths.insert(local_options->paths.begin(), vsg::filePath(filename));
+        local_options->extensionHint = vsg::fileExtension(filename);
+
+        object = vsg::read(sstr, local_options);
     }
     else
     {
