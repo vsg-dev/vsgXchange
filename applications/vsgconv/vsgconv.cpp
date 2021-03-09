@@ -238,24 +238,47 @@ namespace vsgconv
         {
             vsg::ReaderWriter::Features features;
             rw->getFeatures(features);
-            out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions." << std::endl;
+            out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions, and "<<features.protocolFeatureMap.size()<<" protocols." << std::endl;
 
             indentation += 4;
 
-            int padding = 16;
-            out << indent{indentation} << pad{"Extensions", padding} << "Supported ReaderWriter methods" << std::endl;
-            out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
-            for (auto& [ext, featureMask] : features.extensionFeatureMap)
+
+            if (!features.protocolFeatureMap.empty())
             {
-                out << indent{indentation} << pad{ext.c_str(), padding};
+                int padding = 16;
+                out << indent{indentation} << pad{"Protocols", padding} << "Supported ReaderWriter methods" << std::endl;
+                out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
+                for (auto& [protocol, featureMask] : features.protocolFeatureMap)
+                {
+                    out << indent{indentation} << pad{protocol.c_str(), padding};
 
-                if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
-                if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
-                if (featureMask & vsg::ReaderWriter::READ_MEMORY) out << "read(uint8_t* ptr, size_t size, ..) ";
+                    if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
+                    if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
+                    if (featureMask & vsg::ReaderWriter::READ_MEMORY) out << "read(uint8_t* ptr, size_t size, ..) ";
 
-                if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) out << "write(vsg::Path, ..) ";
-                if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
-                out << std::endl;
+                    if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) out << "write(vsg::Path, ..) ";
+                    if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
+                    out << std::endl;
+                }
+            }
+
+            if (!features.extensionFeatureMap.empty())
+            {
+                int padding = 16;
+                out << indent{indentation} << pad{"Extensions", padding} << "Supported ReaderWriter methods" << std::endl;
+                out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
+                for (auto& [ext, featureMask] : features.extensionFeatureMap)
+                {
+                    out << indent{indentation} << pad{ext.c_str(), padding};
+
+                    if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
+                    if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
+                    if (featureMask & vsg::ReaderWriter::READ_MEMORY) out << "read(uint8_t* ptr, size_t size, ..) ";
+
+                    if (featureMask & vsg::ReaderWriter::WRITE_FILENAME) out << "write(vsg::Path, ..) ";
+                    if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
+                    out << std::endl;
+                }
             }
         }
         out << std::endl;
