@@ -63,8 +63,7 @@ namespace vsgXchange
 //
 // CURL ReaderWriter fascade
 //
-curl::curl() :
-    _implementation(new curl::Implementation())
+curl::curl()
 {
 }
 
@@ -73,6 +72,11 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (containsServerAddress(filename))
     {
         // TODO : check file cache and return load from filecache.
+
+        {
+            std::scoped_lock<std::mutex> lock(_mutex);
+            if (!_implementation) _implementation.reset(new curl::Implementation());
+        }
 
         return _implementation->read(filename, options);
     }
@@ -95,20 +99,46 @@ bool curl::getFeatures(Features& features) const
 //
 // CURL ReaderWriter implementation
 //
+
+// use static mutex and counter to track whether the curl_global_init(..) and curl_global_cleanup() should be called.
+bool curl::s_do_curl_global_init_and_cleanup = true;
+std::mutex s_curlImplementationMutex;
+uint32_t s_curlImplementationCount = 0;
+
 curl::Implementation::Implementation()
 {
+    if (curl::s_do_curl_global_init_and_cleanup)
+    {
+        std::scoped_lock<std::mutex> lock(s_curlImplementationMutex);
+        if (s_curlImplementationCount==0)
+        {
+            std::cout<<"curl_global_init()"<<std::endl;
+            curl_global_init(CURL_GLOBAL_ALL);
+        }
+        ++s_curlImplementationCount;
+    }
 }
 
 curl::Implementation::~Implementation()
 {
+    if (s_do_curl_global_init_and_cleanup)
+    {
+        std::scoped_lock<std::mutex> lock(s_curlImplementationMutex);
+        --s_curlImplementationCount;
+        if (s_curlImplementationCount==0)
+        {
+            std::cout<<"curl_global_cleanup()"<<std::endl;
+            curl_global_cleanup();
+        }
+    }
 }
 
 vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    std::cout<<"curl::Implementation::read"<<std::endl;
-
     auto [server_address, server_filename] = getServerPathAndFilename(filename);
+    if (server_address.empty() || server_filename.empty()) return {};
 
+    std::cout<<"curl::Implementation::read "<<filename<<std::endl;
     std::cout<<"   address = "<<server_address<<std::endl;
     std::cout<<"   filename = "<<server_filename<<std::endl;
 

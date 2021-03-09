@@ -31,6 +31,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
 
+    /// optional curl ReaderWriter.
+    /// depends upon libcurl for reading data from http and https.
     class VSGXCHANGE_DECLSPEC curl : public vsg::Inherit<vsg::ReaderWriter, curl>
     {
     public:
@@ -40,10 +42,14 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
+        /// specify whether libcurl should be initialized and cleaned up by vsgXchange::curl.
+        static bool s_do_curl_global_init_and_cleanup; // defaults to true
+
     protected:
         class Implementation;
 
-        std::unique_ptr<Implementation> _implementation;
+        mutable std::mutex _mutex;
+        mutable std::unique_ptr<Implementation> _implementation;
     };
 
 } // namespace vsgXchange
