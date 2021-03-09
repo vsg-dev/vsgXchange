@@ -11,6 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #include <vsgXchange/curl.h>
+#include <vsg/io/read.h>
 
 #include <curl/curl.h>
 
@@ -133,6 +134,19 @@ curl::Implementation::~Implementation()
     }
 }
 
+size_t StreamCallback(void* ptr, size_t size, size_t nmemb, void* user_data)
+{
+    size_t realsize = size * nmemb;
+    if (user_data)
+    {
+        std::ostream* ostr = reinterpret_cast<std::ostream*>(user_data);
+        ostr->write(reinterpret_cast<const char*>(ptr), realsize);
+    }
+
+    return realsize;
+}
+
+
 vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto [server_address, server_filename] = getServerPathAndFilename(filename);
@@ -142,5 +156,33 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     std::cout<<"   address = "<<server_address<<std::endl;
     std::cout<<"   filename = "<<server_filename<<std::endl;
 
-    return {};
+    auto _curl = curl_easy_init();
+
+    curl_easy_setopt(_curl, CURLOPT_USERAGENT, "libcurl-agent/1.0"); // make user controllable?
+    curl_easy_setopt(_curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(_curl, CURLOPT_WRITEFUNCTION, StreamCallback);
+
+    std::stringstream sstr;
+
+    curl_easy_setopt(_curl, CURLOPT_URL, filename.c_str());
+    curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void *)&sstr);
+
+    vsg::ref_ptr<vsg::Object> object;
+
+    CURLcode responseCode = curl_easy_perform(_curl);
+    if (responseCode==0)
+    {
+        // success
+        auto local_optons = vsg::Options::create(*options);
+        local_optons->extensionHint = vsg::fileExtension(filename);
+        object = vsg::read(sstr, local_optons);
+    }
+    else
+    {
+        std::cout<<"libcurl error responseCode = "<<responseCode<<", "<<curl_easy_strerror(responseCode)<<std::endl;
+    }
+
+    if (_curl) curl_easy_cleanup(_curl);
+
+    return object;
 }
