@@ -16,7 +16,7 @@ cmake automatically finds which depedencies are available and builds the appropr
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
 * [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
-* [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl)  i.e reading file s from http:// and https://
+* [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl)  i.e reading image and model files from http:// and https://
 * [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
 
 ## Required dependencies:
