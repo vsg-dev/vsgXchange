@@ -10,47 +10,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/all.h>
-#include <vsgXchange/cpp.h>
 #include <vsgXchange/curl.h>
-#include <vsgXchange/freetype.h>
-#include <vsgXchange/glsl.h>
-#include <vsgXchange/images.h>
-#include <vsgXchange/models.h>
-#include <vsgXchange/spirv.h>
-
-#include <vsg/io/VSG.h>
 
 using namespace vsgXchange;
 
-all::all()
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// curl ReaderWriter fallback
+//
+struct curl::Implementation
 {
-#ifdef vsgXchange_CURL
-    add(curl::create());
-#endif
-
-    add(vsg::VSG::create());
-    add(glsl::create());
-    add(spirv::create());
-    add(cpp::create());
-
-#ifdef vsgXchange_GDAL
-    add(GDAL::create());
-#endif
-
-    add(stbi::create());
-    add(dds::create());
-    add(ktx::create());
-
-#ifdef vsgXchange_freetype
-    add(freetype::create());
-#endif
-
-#ifdef vsgXchange_assimp
-    add(assimp::create());
-#endif
-
-#ifdef vsgXchange_OSG
-    add(OSG::create());
-#endif
+};
+curl::curl()
+{
+}
+vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
+{
+    return {};
+}
+bool curl::getFeatures(Features&) const
+{
+    return false;
 }

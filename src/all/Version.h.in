@@ -52,6 +52,7 @@ extern "C"
     #cmakedefine vsgXchange_assimp
     #cmakedefine vsgXchange_OSG
     #cmakedefine vsgXchange_GDAL
+    #cmakedefine vsgXchange_CURL
 
 #ifdef __cplusplus
 }

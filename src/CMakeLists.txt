@@ -39,8 +39,11 @@ include(ktx/build_vars.cmake)
 # add OpenSceneGraph support if available
 include(osg/build_vars.cmake)
 
-# add optional vsgGOS/GDAL component
+# add optional vsgGIS/GDAL component
 include(gdal/build_vars.cmake)
+
+# add optional CURL component
+include(curl/build_vars.cmake)
 
 if(${VSGXCHANGE_GDAL})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
