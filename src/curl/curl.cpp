@@ -156,7 +156,7 @@ curl::Implementation::Implementation()
         std::scoped_lock<std::mutex> lock(s_curlImplementationMutex);
         if (s_curlImplementationCount==0)
         {
-            std::cout<<"curl_global_init()"<<std::endl;
+            //std::cout<<"curl_global_init()"<<std::endl;
             curl_global_init(CURL_GLOBAL_ALL);
         }
         ++s_curlImplementationCount;
@@ -171,7 +171,7 @@ curl::Implementation::~Implementation()
         --s_curlImplementationCount;
         if (s_curlImplementationCount==0)
         {
-            std::cout<<"curl_global_cleanup()"<<std::endl;
+            //std::cout<<"curl_global_cleanup()"<<std::endl;
             curl_global_cleanup();
         }
     }
