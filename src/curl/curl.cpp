@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <curl/curl.h>
 
 #include <iostream>
+#include <fstream>
 
 using namespace vsgXchange;
 
@@ -29,8 +30,7 @@ namespace vsgXchange
 
     std::pair<vsg::Path, vsg::Path> getServerPathAndFilename(const vsg::Path& filename)
     {
-        std::string::size_type pos(filename.find("://"));
-
+        std::string::size_type pos = filename.find("://");
         if (pos != std::string::npos)
         {
             std::string::size_type pos_slash = filename.find_first_of('/',pos+3);
@@ -43,6 +43,16 @@ namespace vsgXchange
                 return {filename.substr(pos+3,std::string::npos),""};
             }
 
+        }
+        return {};
+    }
+
+    vsg::Path getFileCachePath(const vsg::Path& fileCache, const vsg::Path& filename)
+    {
+        std::string::size_type pos = filename.find("://");
+        if (pos != std::string::npos)
+        {
+            return vsg::concatPaths(fileCache, filename.substr(pos+3, std::string::npos));
         }
         return {};
     }
@@ -70,23 +80,43 @@ curl::curl()
 
 vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    std::cout<<"curl::read("<<filename<<")"<<std::endl;
-
     vsg::Path serverFilename = filename;
 
     bool contains_serverAddress = containsServerAddress(filename);
-    if (!contains_serverAddress && options && !options->paths.empty())
+
+    if (options)
     {
-        contains_serverAddress = containsServerAddress(options->paths.front());
-        if (contains_serverAddress)
+        if (!contains_serverAddress && !options->paths.empty())
         {
-            serverFilename = vsg::concatPaths(options->paths.front(), filename);
+            contains_serverAddress = containsServerAddress(options->paths.front());
+            if (contains_serverAddress)
+            {
+                serverFilename = vsg::concatPaths(options->paths.front(), filename);
+            }
+        }
+
+        if (contains_serverAddress && !options->fileCache.empty())
+        {
+            auto fileCachePath = getFileCachePath(options->fileCache, serverFilename);
+            if (vsg::fileExists(fileCachePath))
+            {
+                auto local_options = vsg::Options::create(*options);
+
+                local_options->paths.insert(local_options->paths.begin(), vsg::filePath(serverFilename));
+                local_options->extensionHint = vsg::fileExtension(filename);
+
+                std::ifstream fin(fileCachePath, std::ios::in | std::ios::binary);
+                auto object = vsg::read(fin, local_options); // do we need to remove any http URL?
+                if (object)
+                {
+                    return object;
+                }
+            }
         }
     }
 
     if (contains_serverAddress)
     {
-        // TODO : check file cache and return load from filecache.
         {
             std::scoped_lock<std::mutex> lock(_mutex);
             if (!_implementation) _implementation.reset(new curl::Implementation());
@@ -162,13 +192,6 @@ size_t StreamCallback(void* ptr, size_t size, size_t nmemb, void* user_data)
 
 vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    auto [server_address, server_filename] = getServerPathAndFilename(filename);
-    if (server_address.empty() || server_filename.empty()) return {};
-
-    std::cout<<"curl::Implementation::read "<<filename<<std::endl;
-    std::cout<<"   address = "<<server_address<<std::endl;
-    std::cout<<"   filename = "<<server_filename<<std::endl;
-
     auto _curl = curl_easy_init();
 
     curl_easy_setopt(_curl, CURLOPT_USERAGENT, "libcurl-agent/1.0"); // make user controllable?
@@ -191,10 +214,26 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
         local_options->extensionHint = vsg::fileExtension(filename);
 
         object = vsg::read(sstr, local_options);
+
+        if (object && !options->fileCache.empty())
+        {
+            auto fileCachePath = getFileCachePath(options->fileCache, filename);
+            if (!fileCachePath.empty())
+            {
+                vsg::makeDirectory(vsg::filePath(fileCachePath));
+
+                // reset the stringstream iterator to the beginning so we can copy it to the file cache file.
+                sstr.clear(std::stringstream::goodbit); sstr.seekg(0);
+
+                std::ofstream fout(fileCachePath, std::ios::out | std::ios::binary);
+
+                fout << sstr.rdbuf();
+            }
+        }
     }
     else
     {
-        std::cout<<"libcurl error responseCode = "<<responseCode<<", "<<curl_easy_strerror(responseCode)<<std::endl;
+        std::cerr<<"libcurl error responseCode = "<<responseCode<<", "<<curl_easy_strerror(responseCode)<<std::endl;
     }
 
     if (_curl) curl_easy_cleanup(_curl);
