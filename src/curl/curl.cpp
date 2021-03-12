@@ -10,13 +10,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/curl.h>
 #include <vsg/io/read.h>
+#include <vsgXchange/curl.h>
 
 #include <curl/curl.h>
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 using namespace vsgXchange;
 
@@ -25,7 +25,7 @@ namespace vsgXchange
 
     bool containsServerAddress(const vsg::Path& filename)
     {
-        return filename.compare(0, 7, "http://")==0 || filename.compare(0, 8, "https://")==0;
+        return filename.compare(0, 7, "http://") == 0 || filename.compare(0, 8, "https://") == 0;
     }
 
     std::pair<vsg::Path, vsg::Path> getServerPathAndFilename(const vsg::Path& filename)
@@ -33,16 +33,15 @@ namespace vsgXchange
         std::string::size_type pos = filename.find("://");
         if (pos != std::string::npos)
         {
-            std::string::size_type pos_slash = filename.find_first_of('/',pos+3);
-            if (pos_slash!=std::string::npos)
+            std::string::size_type pos_slash = filename.find_first_of('/', pos + 3);
+            if (pos_slash != std::string::npos)
             {
-                return {filename.substr(pos+3,pos_slash-pos-3), filename.substr(pos_slash+1,std::string::npos)};
+                return {filename.substr(pos + 3, pos_slash - pos - 3), filename.substr(pos_slash + 1, std::string::npos)};
             }
             else
             {
-                return {filename.substr(pos+3,std::string::npos),""};
+                return {filename.substr(pos + 3, std::string::npos), ""};
             }
-
         }
         return {};
     }
@@ -52,7 +51,7 @@ namespace vsgXchange
         std::string::size_type pos = filename.find("://");
         if (pos != std::string::npos)
         {
-            return vsg::concatPaths(fileCache, filename.substr(pos+3, std::string::npos));
+            return vsg::concatPaths(fileCache, filename.substr(pos + 3, std::string::npos));
         }
         return {};
     }
@@ -138,7 +137,6 @@ bool curl::getFeatures(Features& features) const
     return true;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // CURL ReaderWriter implementation
@@ -154,7 +152,7 @@ curl::Implementation::Implementation()
     if (curl::s_do_curl_global_init_and_cleanup)
     {
         std::scoped_lock<std::mutex> lock(s_curlImplementationMutex);
-        if (s_curlImplementationCount==0)
+        if (s_curlImplementationCount == 0)
         {
             //std::cout<<"curl_global_init()"<<std::endl;
             curl_global_init(CURL_GLOBAL_ALL);
@@ -169,7 +167,7 @@ curl::Implementation::~Implementation()
     {
         std::scoped_lock<std::mutex> lock(s_curlImplementationMutex);
         --s_curlImplementationCount;
-        if (s_curlImplementationCount==0)
+        if (s_curlImplementationCount == 0)
         {
             //std::cout<<"curl_global_cleanup()"<<std::endl;
             curl_global_cleanup();
@@ -189,7 +187,6 @@ size_t StreamCallback(void* ptr, size_t size, size_t nmemb, void* user_data)
     return realsize;
 }
 
-
 vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto _curl = curl_easy_init();
@@ -201,12 +198,12 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     std::stringstream sstr;
 
     curl_easy_setopt(_curl, CURLOPT_URL, filename.c_str());
-    curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void *)&sstr);
+    curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void*)&sstr);
 
     vsg::ref_ptr<vsg::Object> object;
 
     CURLcode responseCode = curl_easy_perform(_curl);
-    if (responseCode==0)
+    if (responseCode == 0)
     {
         // success
         auto local_options = vsg::Options::create(*options);
@@ -223,7 +220,8 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
                 vsg::makeDirectory(vsg::filePath(fileCachePath));
 
                 // reset the stringstream iterator to the beginning so we can copy it to the file cache file.
-                sstr.clear(std::stringstream::goodbit); sstr.seekg(0);
+                sstr.clear(std::stringstream::goodbit);
+                sstr.seekg(0);
 
                 std::ofstream fout(fileCachePath, std::ios::out | std::ios::binary);
 
@@ -233,7 +231,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     }
     else
     {
-        std::cerr<<"libcurl error responseCode = "<<responseCode<<", "<<curl_easy_strerror(responseCode)<<std::endl;
+        std::cerr << "libcurl error responseCode = " << responseCode << ", " << curl_easy_strerror(responseCode) << std::endl;
     }
 
     if (_curl) curl_easy_cleanup(_curl);

@@ -238,10 +238,9 @@ namespace vsgconv
         {
             vsg::ReaderWriter::Features features;
             rw->getFeatures(features);
-            out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions, and "<<features.protocolFeatureMap.size()<<" protocols." << std::endl;
+            out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions, and " << features.protocolFeatureMap.size() << " protocols." << std::endl;
 
             indentation += 4;
-
 
             if (!features.protocolFeatureMap.empty())
             {
