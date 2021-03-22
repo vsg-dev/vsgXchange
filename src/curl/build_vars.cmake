@@ -5,7 +5,7 @@ if(CURL_FOUND)
     OPTION(vsgXchange_CURL "Optional CURL support provided" ON)
 endif()
 
-if(${vsgXchange_GDAL})
+if(${vsgXchange_CURL})
     set(SOURCES ${SOURCES}
         curl/curl.cpp
     )
