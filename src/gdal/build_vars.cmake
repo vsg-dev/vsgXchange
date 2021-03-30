@@ -1,4 +1,4 @@
-# add freetype if available
+# add vsgGIS/GDAL if available
 find_package(vsgGIS)
 
 if(vsgGIS_FOUND)
