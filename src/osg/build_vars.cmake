@@ -4,9 +4,8 @@ find_package(osg)
 find_package(osgDB)
 find_package(osgTerrain)
 find_package(osgUtil)
-find_package(OpenGL)
 
-if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND AND OPENGL_FOUND)
+if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND)
     OPTION(vsgXchange_OSG "Optional OpenSceneGraph support provided" ON)
 endif()
 
@@ -24,7 +23,7 @@ if (${vsgXchange_OSG})
     )
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${OSG_INCLUDE_DIR})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${OPENTHREADS_LIBRARIES} ${OSG_LIBRARIES} ${OSGUTIL_LIBRARIES} ${OSGDB_LIBRARIES} ${OSGTERRAIN_LIBRARIES})
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(OpenGL)" "find_dependency(OpenThreads)" "find_dependency(osg)" "find_dependency(osgDB)" "find_dependency(osgTerrain)" "find_dependency(osgUtil)")
+    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(OpenThreads)" "find_dependency(osg)" "find_dependency(osgDB)" "find_dependency(osgTerrain)" "find_dependency(osgUtil)")
 else()
     set(SOURCES ${SOURCES}
         osg/OSG_fallback.cpp
