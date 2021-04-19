@@ -189,6 +189,7 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     uint32_t geometryMask = (osg2vsg::calculateAttributesMask(&geometry) | buildOptions->overrideGeomAttributes) & buildOptions->supportedGeometryAttributes;
     uint32_t shaderModeMask = (calculateShaderModeMask() | buildOptions->overrideShaderModeMask | nodeShaderModeMasks) & buildOptions->supportedShaderModeMask;
+    bool requiredBlending = (shaderModeMask & BLEND) != 0;
 
     // std::cout<<"Have geometry with "<<statestack.size()<<" shaderModeMask="<<shaderModeMask<<", geometryMask="<<geometryMask<<std::endl;
 
@@ -228,7 +229,23 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     stategroup->addChild(vsg_geometry);
 
-    root = stategroup;
+    if (requiredBlending &&  buildOptions->useDepthSorted)
+    {
+        auto center = geometry.getBound().center();
+
+        auto depthSorted = vsg::DepthSorted::create();
+        depthSorted->bin = 10;
+        depthSorted->center.set(center.x(), center.y(), center.z());
+        depthSorted->child = stategroup;
+
+        std::cout<<"    depthSorted "<< depthSorted<<std::endl;
+
+        root = depthSorted;
+    }
+    else
+    {
+        root = stategroup;
+    }
 }
 
 void ConvertToVsg::apply(osg::Group& group)

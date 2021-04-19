@@ -36,6 +36,7 @@ namespace osg2vsg
         uint32_t supportedShaderModeMask = ShaderModeMask::ALL_SHADER_MODE_MASK;
         uint32_t overrideGeomAttributes = 0;
         uint32_t overrideShaderModeMask = ShaderModeMask::NONE;
+        bool useDepthSorted = true;
 
         bool mapRGBtoRGBAHint = true;
 

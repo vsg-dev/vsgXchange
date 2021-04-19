@@ -27,6 +27,7 @@ void BuildOptions::read(vsg::Input& input)
     input.read("supportedShaderModeMask", supportedShaderModeMask);
     input.read("overrideGeomAttributes", overrideGeomAttributes);
     input.read("overrideShaderModeMask", overrideShaderModeMask);
+    input.read("useDepthSorted", useDepthSorted);
     input.read("vertexShaderPath", vertexShaderPath);
     input.read("fragmentShaderPath", fragmentShaderPath);
     input.read("extension", extension);
@@ -43,6 +44,7 @@ void BuildOptions::write(vsg::Output& output) const
     output.write("supportedShaderModeMask", supportedShaderModeMask);
     output.write("overrideGeomAttributes", overrideGeomAttributes);
     output.write("overrideShaderModeMask", overrideShaderModeMask);
+    output.write("useDepthSorted", useDepthSorted);
     output.write("vertexShaderPath", vertexShaderPath);
     output.write("fragmentShaderPath", fragmentShaderPath);
     output.write("extension", extension);
