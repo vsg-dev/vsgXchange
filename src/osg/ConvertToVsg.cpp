@@ -234,7 +234,7 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
         auto center = geometry.getBound().center();
 
         auto depthSorted = vsg::DepthSorted::create();
-        depthSorted->bin = 10;
+        depthSorted->binNumber = 10;
         depthSorted->center.set(center.x(), center.y(), center.z());
         depthSorted->child = stategroup;
 
