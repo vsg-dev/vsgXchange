@@ -243,7 +243,17 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
     }
     else
     {
-        root = stategroup;
+        if (buildOptions->insertCullGroups || buildOptions->insertCullNodes)
+        {
+            auto center = geometry.getBound().center();
+            auto radius = geometry.getBound().radius();
+
+            root = vsg::CullNode::create(vsg::dsphere(center.x(), center.y(), center.z(), radius), stategroup);
+        }
+        else
+        {
+            root = stategroup;
+        }
     }
 }
 
