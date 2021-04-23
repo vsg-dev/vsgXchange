@@ -232,13 +232,12 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
     if (requiredBlending &&  buildOptions->useDepthSorted)
     {
         auto center = geometry.getBound().center();
+        auto radius = geometry.getBound().radius();
 
         auto depthSorted = vsg::DepthSorted::create();
         depthSorted->binNumber = 10;
-        depthSorted->center.set(center.x(), center.y(), center.z());
+        depthSorted->bound.set(center.x(), center.y(), center.z(), radius);
         depthSorted->child = stategroup;
-
-        std::cout<<"    depthSorted "<< depthSorted<<std::endl;
 
         root = depthSorted;
     }
@@ -315,6 +314,11 @@ void ConvertToVsg::apply(osg::MatrixTransform& transform)
         }
 
         void apply(const vsg::PagedLOD&) override
+        {
+            containsCullNodes = true;
+        }
+
+        void apply(const vsg::DepthSorted&) override
         {
             containsCullNodes = true;
         }
