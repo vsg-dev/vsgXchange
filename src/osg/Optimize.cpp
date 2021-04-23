@@ -111,6 +111,7 @@ void OptimizeOsgBillboards::optimize()
     for (auto [billboard, transforms] : billboardTransformMap)
     {
         bool transformsUniqueMapToBillboard = true;
+
         for (auto& transform : transforms)
         {
             if (transformBillboardMap[transform].size() > 1)
@@ -156,18 +157,21 @@ void OptimizeOsgBillboards::optimize()
 
     for (auto [nodeToReplace, replacementNode] : replacementMap)
     {
-        if (replacementNode)
+        if (nodeToReplace)
         {
-            for (auto parent : nodeToReplace->getParents())
+            if (replacementNode)
             {
-                parent->replaceChild(nodeToReplace.get(), replacementNode.get());
+                for (auto parent : nodeToReplace->getParents())
+                {
+                    parent->replaceChild(nodeToReplace.get(), replacementNode.get());
+                }
             }
-        }
-        else
-        {
-            for (auto parent : nodeToReplace->getParents())
+            else
             {
-                parent->removeChild(nodeToReplace.get());
+                for (auto parent : nodeToReplace->getParents())
+                {
+                    parent->removeChild(nodeToReplace.get());
+                }
             }
         }
     }
