@@ -189,6 +189,7 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     uint32_t geometryMask = (osg2vsg::calculateAttributesMask(&geometry) | buildOptions->overrideGeomAttributes) & buildOptions->supportedGeometryAttributes;
     uint32_t shaderModeMask = (calculateShaderModeMask() | buildOptions->overrideShaderModeMask | nodeShaderModeMasks) & buildOptions->supportedShaderModeMask;
+    bool requiredBlending = (shaderModeMask & BLEND) != 0;
 
     // std::cout<<"Have geometry with "<<statestack.size()<<" shaderModeMask="<<shaderModeMask<<", geometryMask="<<geometryMask<<std::endl;
 
@@ -228,7 +229,32 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     stategroup->addChild(vsg_geometry);
 
-    root = stategroup;
+    if (requiredBlending &&  buildOptions->useDepthSorted)
+    {
+        auto center = geometry.getBound().center();
+        auto radius = geometry.getBound().radius();
+
+        auto depthSorted = vsg::DepthSorted::create();
+        depthSorted->binNumber = 10;
+        depthSorted->bound.set(center.x(), center.y(), center.z(), radius);
+        depthSorted->child = stategroup;
+
+        root = depthSorted;
+    }
+    else
+    {
+        if (buildOptions->insertCullGroups || buildOptions->insertCullNodes)
+        {
+            auto center = geometry.getBound().center();
+            auto radius = geometry.getBound().radius();
+
+            root = vsg::CullNode::create(vsg::dsphere(center.x(), center.y(), center.z(), radius), stategroup);
+        }
+        else
+        {
+            root = stategroup;
+        }
+    }
 }
 
 void ConvertToVsg::apply(osg::Group& group)
@@ -298,6 +324,11 @@ void ConvertToVsg::apply(osg::MatrixTransform& transform)
         }
 
         void apply(const vsg::PagedLOD&) override
+        {
+            containsCullNodes = true;
+        }
+
+        void apply(const vsg::DepthSorted&) override
         {
             containsCullNodes = true;
         }
