@@ -107,6 +107,7 @@ namespace osg2vsg
         void apply(osg::Billboard& billboard);
         void apply(osg::LOD& lod);
         void apply(osg::PagedLOD& plod);
+        void apply(osg::Switch& sw);
         void apply(osgTerrain::TerrainTile& terrainTile);
     };
 

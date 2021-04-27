@@ -21,23 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <sstream>
 #include <stack>
 
-#include <vsg/commands/BindIndexBuffer.h>
-#include <vsg/commands/BindVertexBuffers.h>
-#include <vsg/commands/Commands.h>
-#include <vsg/commands/Draw.h>
-#include <vsg/commands/DrawIndexed.h>
-#include <vsg/commands/PushConstants.h>
-#include <vsg/core/Array3D.h>
-#include <vsg/io/FileSystem.h>
-#include <vsg/io/read.h>
-#include <vsg/maths/transform.h>
-#include <vsg/nodes/MatrixTransform.h>
-#include <vsg/nodes/VertexIndexDraw.h>
-#include <vsg/state/DescriptorBuffer.h>
-#include <vsg/state/DescriptorImage.h>
-#include <vsg/state/DescriptorSet.h>
-#include <vsg/state/StateGroup.h>
-#include <vsg/vk/State.h>
+#include <vsg/all.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/pbrmaterial.h>

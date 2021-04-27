@@ -569,6 +569,22 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
     root = vsg_lod;
 }
 
+void ConvertToVsg::apply(osg::Switch& sw)
+{
+    auto vsg_sw = vsg::Switch::create();
+
+    for(unsigned int i=0; i<sw.getNumChildren(); ++i)
+    {
+        auto vsg_child = convert(sw.getChild(i));
+        if (vsg_child)
+        {
+            vsg_sw->addChild(sw.getValue(i), vsg_child);
+        }
+    }
+
+    root = vsg_sw;
+}
+
 void ConvertToVsg::apply(osgTerrain::TerrainTile& tile)
 {
     root = nullptr;
