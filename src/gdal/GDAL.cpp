@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsgGIS/gdal_utils.h>
+#include <vsgGIS/TileDatabase.h>
 
 #include <cstring>
 #include <iostream>
@@ -41,6 +42,7 @@ namespace vsgXchange
 GDAL::GDAL() :
     _implementation(new GDAL::Implementation())
 {
+    vsgGIS::init();
 }
 
 vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
