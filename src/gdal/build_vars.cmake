@@ -1,5 +1,5 @@
 # add vsgGIS/GDAL if available
-find_package(vsgGIS)
+find_package(vsgGIS QUIET)
 
 if(vsgGIS_FOUND)
     OPTION(vsgXchange_GDAL "vsgGIS/GDAL support provided" ON)
