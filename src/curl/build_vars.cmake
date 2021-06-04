@@ -13,6 +13,6 @@ if(${vsgXchange_CURL})
     set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(CURL)")
 else()
     set(SOURCES ${SOURCES}
-        curl/CURL_fallback.cpp
+        curl/curl_fallback.cpp
     )
 endif()
