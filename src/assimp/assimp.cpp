@@ -370,7 +370,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     auto root = vsg::MatrixTransform::create();
 
     if (upAxis == 1)
-        root->setMatrix(vsg::rotate(vsg::PI * 0.5, static_cast<double>(upAxisSign), 0.0, 0.0));
+        root->matrix = vsg::rotate(vsg::PI * 0.5, static_cast<double>(upAxisSign), 0.0, 0.0);
 
     auto scenegraph = vsg::StateGroup::create();
     scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
@@ -387,7 +387,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
         m.Transpose();
 
         auto xform = vsg::MatrixTransform::create();
-        xform->setMatrix(vsg::mat4((float*)&m));
+        xform->matrix = vsg::mat4((float*)&m);
         parent->addChild(xform);
 
         for (unsigned int i = 0; i < node->mNumMeshes; ++i)
