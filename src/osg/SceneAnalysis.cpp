@@ -179,7 +179,7 @@ void VsgSceneAnalysis::apply(const vsg::StateGroup& stategroup)
 {
     _sceneStats->insert(&stategroup);
 
-    for (auto& command : stategroup.getStateCommands())
+    for (auto& command : stategroup.stateCommands)
     {
         command->accept(*this);
     }

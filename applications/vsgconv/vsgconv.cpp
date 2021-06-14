@@ -96,7 +96,7 @@ namespace vsgconv
 
         void apply(vsg::StateGroup& stategroup) override
         {
-            for (auto& command : stategroup.getStateCommands())
+            for (auto& command : stategroup.stateCommands)
             {
                 command->accept(*this);
             }
