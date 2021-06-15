@@ -80,7 +80,7 @@ namespace vsgconv
 
         void apply(vsg::BindVertexBuffers& bvb) override
         {
-            for (auto& data : bvb.getArrays())
+            for (auto& data : bvb.arrays)
             {
                 objects->addChild(data);
             }
@@ -88,9 +88,9 @@ namespace vsgconv
 
         void apply(vsg::BindIndexBuffer& bib) override
         {
-            if (bib.getIndices())
+            if (bib.indices)
             {
-                objects->addChild(vsg::ref_ptr<vsg::Data>(bib.getIndices()));
+                objects->addChild(vsg::ref_ptr<vsg::Data>(bib.indices));
             }
         }
 
