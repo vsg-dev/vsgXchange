@@ -288,7 +288,7 @@ void ConvertToVsg::apply(osg::MatrixTransform& transform)
     ScopedPushPop spp(*this, transform.getStateSet());
 
     auto vsg_transform = vsg::MatrixTransform::create();
-    vsg_transform->setMatrix(osg2vsg::convert(transform.getMatrix()));
+    vsg_transform->matrix = osg2vsg::convert(transform.getMatrix());
 
     for (unsigned int i = 0; i < transform.getNumChildren(); ++i)
     {
@@ -338,7 +338,7 @@ void ConvertToVsg::apply(osg::MatrixTransform& transform)
     vsg_transform->accept(checkForCullNodes);
 
     // need to run visitor to seeif it contains any CullNode/LOD/PagedLOD
-    vsg_transform->setSubgraphRequiresLocalFrustum(checkForCullNodes.containsCullNodes);
+    vsg_transform->subgraphRequiresLocalFrustum = checkForCullNodes.containsCullNodes;
 
     root = vsg_transform;
 }
@@ -442,7 +442,7 @@ void ConvertToVsg::apply(osg::Billboard& billboard)
             auto translate = osg::Matrixd::translate(billboard.getPosition(i));
 
             auto vsg_transform = vsg::MatrixTransform::create();
-            vsg_transform->setMatrix(osg2vsg::convert(translate));
+            vsg_transform->matrix = osg2vsg::convert(translate);
 
             auto vsg_child = convert(billboard.getDrawable(i));
 
@@ -454,10 +454,10 @@ void ConvertToVsg::apply(osg::Billboard& billboard)
         }
     }
 
-    if (vsg_group->getNumChildren() == 9)
+    if (vsg_group->children.size() == 9)
         root = nullptr;
-    else if (vsg_group->getNumChildren() == 1)
-        root = vsg_group->getChild(0);
+    else if (vsg_group->children.size() == 1)
+        root = vsg_group->children[0];
     else
         root = vsg_group;
 
@@ -472,7 +472,7 @@ void ConvertToVsg::apply(osg::LOD& lod)
     osg::Vec3d center = (lod.getCenterMode() == osg::LOD::USER_DEFINED_CENTER) ? lod.getCenter() : bs.center();
     double radius = (lod.getRadius() > 0.0) ? lod.getRadius() : bs.radius();
 
-    vsg_lod->setBound(vsg::dsphere(center.x(), center.y(), center.z(), radius));
+    vsg_lod->bound.set(center.x(), center.y(), center.z(), radius);
 
     unsigned int numChildren = std::min(lod.getNumChildren(), lod.getNumRanges());
 
@@ -519,7 +519,7 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
     osg::Vec3d center = (plod.getCenterMode() == osg::LOD::USER_DEFINED_CENTER) ? plod.getCenter() : bs.center();
     double radius = (plod.getRadius() > 0.0) ? plod.getRadius() : bs.radius();
 
-    vsg_lod->setBound(vsg::dsphere(center.x(), center.y(), center.z(), radius));
+    vsg_lod->bound.set(center.x(), center.y(), center.z(), radius);
 
     unsigned int numChildren = plod.getNumChildren();
     unsigned int numRanges = plod.getNumRanges();
@@ -562,8 +562,8 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
     if (children.size() == 2)
     {
         vsg_lod->filename = children[0].filename;
-        vsg_lod->setChild(0, vsg::PagedLOD::Child{children[0].minimumScreenHeightRatio, children[0].node});
-        vsg_lod->setChild(1, vsg::PagedLOD::Child{children[1].minimumScreenHeightRatio, children[1].node});
+        vsg_lod->children[0] = vsg::PagedLOD::Child{children[0].minimumScreenHeightRatio, children[0].node};
+        vsg_lod->children[1] = vsg::PagedLOD::Child{children[1].minimumScreenHeightRatio, children[1].node};
     }
 
     root = vsg_lod;

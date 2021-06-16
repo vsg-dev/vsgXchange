@@ -700,7 +700,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
         }
     }
 
-    if (group->getNumChildren() == 1) return vsg::ref_ptr<vsg::Node>(group->getChild(0));
+    if (group->children.size() == 1) return vsg::ref_ptr<vsg::Node>(group->children[0]);
 
     return group;
 }
@@ -800,7 +800,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         auto cullGroup = vsg::CullGroup::create(boundingSphere);
 
         // add the groups children to the cullGroup
-        cullGroup->setChildren(group->getChildren());
+        cullGroup->children = group->children;
 
         // now use the cullGroup as the root.
         group = cullGroup;
