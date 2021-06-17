@@ -18,9 +18,6 @@ using namespace vsgXchange;
 //
 // GDAL ReaderWriter fallback
 //
-struct GDAL::Implementation
-{
-};
 GDAL::GDAL()
 {
 }

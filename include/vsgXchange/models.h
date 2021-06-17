@@ -25,8 +25,22 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Version.h>
+#include <vsg/all.h>
 
 #include <memory>
+namespace osg2vsg
+{
+    struct PipelineCache : public vsg::Inherit<vsg::Object, PipelineCache>
+    {
+        using Key = std::tuple<uint32_t, uint32_t, std::string, std::string>;
+        using PipelineMap = std::map<Key, vsg::ref_ptr<vsg::BindGraphicsPipeline>>;
+
+        std::mutex mutex;
+        PipelineMap pipelineMap;
+
+        vsg::ref_ptr<vsg::BindGraphicsPipeline> getOrCreateBindGraphicsPipeline(uint32_t shaderModeMask, uint32_t geometryMask, const std::string& vertShaderPath = "", const std::string& fragShaderPath = "");
+    };
+} // namespace osg2vsg
 
 namespace vsgXchange
 {
@@ -51,7 +65,30 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        class Implementation;
+        class Implementation
+        {
+        public:
+            Implementation();
+
+            vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+            vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const;
+            vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+        private:
+            class aiScene;
+            using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
+            using State = std::pair<StateCommandPtr, StateCommandPtr>;
+            using BindState = std::vector<State>;
+
+            vsg::ref_ptr<vsg::GraphicsPipeline> createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided = false, bool enableBlend = false) const;
+            void createDefaultPipelineAndState();
+            vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+            BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+
+            vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
+            vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
+            const uint32_t _importFlags;
+        };
         std::unique_ptr<Implementation> _implementation;
     };
 
@@ -68,7 +105,19 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        class Implementation;
+        class Implementation
+        {
+        public:
+            Implementation();
+
+            vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+            bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const;
+
+            vsg::ref_ptr<osg2vsg::PipelineCache> pipelineCache;
+
+        protected:
+        };
         std::unique_ptr<Implementation> _implementation;
     };
 

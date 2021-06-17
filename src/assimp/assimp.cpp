@@ -214,31 +214,6 @@ namespace
 } // namespace
 
 using namespace vsgXchange;
-
-class assimp::Implementation
-{
-public:
-    Implementation();
-
-    vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
-    vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const;
-    vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const;
-
-private:
-    using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
-    using State = std::pair<StateCommandPtr, StateCommandPtr>;
-    using BindState = std::vector<State>;
-
-    vsg::ref_ptr<vsg::GraphicsPipeline> createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided = false, bool enableBlend = false) const;
-    void createDefaultPipelineAndState();
-    vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
-    BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
-
-    vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
-    vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
-    const uint32_t _importFlags;
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // assimp ReaderWriter fascade

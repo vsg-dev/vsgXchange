@@ -29,29 +29,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsgXchange;
 
-namespace osg2vsg
-{
-    struct PipelineCache;
-}
 
-namespace vsgXchange
-{
 
-    class OSG::Implementation
-    {
-    public:
-        Implementation();
-
-        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
-
-        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const;
-
-        vsg::ref_ptr<osg2vsg::PipelineCache> pipelineCache;
-
-    protected:
-    };
-
-} // namespace vsgXchange
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

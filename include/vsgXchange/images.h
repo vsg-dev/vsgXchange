@@ -98,7 +98,15 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        class Implementation;
+        class Implementation
+        {
+        public:
+            Implementation();
+
+            vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+        protected:
+        };
         std::unique_ptr<Implementation> _implementation;
     };
 

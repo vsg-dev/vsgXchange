@@ -46,8 +46,16 @@ namespace vsgXchange
         static bool s_do_curl_global_init_and_cleanup; // defaults to true
 
     protected:
-        class Implementation;
+        class Implementation
+        {
+        public:
+            Implementation();
+            virtual ~Implementation();
 
+            vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+        protected:
+        };
         mutable std::mutex _mutex;
         mutable std::unique_ptr<Implementation> _implementation;
     };

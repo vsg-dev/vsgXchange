@@ -18,9 +18,7 @@ using namespace vsgXchange;
 //
 // assimp ReaderWriter fallback
 //
-struct assimp::Implementation
-{
-};
+
 assimp::assimp()
 {
 }

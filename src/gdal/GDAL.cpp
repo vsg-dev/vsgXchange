@@ -19,22 +19,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <iostream>
 
 using namespace vsgXchange;
-
-namespace vsgXchange
-{
-
-    class GDAL::Implementation
-    {
-    public:
-        Implementation();
-
-        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
-
-    protected:
-    };
-
-} // namespace vsgXchange
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // GDAL ReaderWriter fascade

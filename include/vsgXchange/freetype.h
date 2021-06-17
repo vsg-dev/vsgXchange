@@ -25,6 +25,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Export.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_OUTLINE_H
 
 #include <memory>
 
@@ -41,8 +44,36 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        class Implementation;
+        class Implementation
+        {
+        public:
+            Implementation();
 
+            void init() const;
+
+            vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+
+            ~Implementation();
+
+            struct Contour
+            {
+                std::vector<vsg::vec2> points;
+                std::vector<vsg::vec3> edges;
+            };
+
+            using Contours = std::list<Contour>;
+
+            unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
+            vsg::ref_ptr<vsg::Group> createOutlineGeometry(const Contours& contours) const;
+            bool generateOutlines(FT_Outline& outline, Contours& contours) const;
+            void checkForAndFixDegenerates(Contours& contours) const;
+            float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
+            bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
+
+            std::map<std::string, std::string> _supportedFormats;
+            mutable std::mutex _mutex;
+            mutable FT_Library _library = nullptr;
+        };
         std::unique_ptr<Implementation> _implementation;
     };
 

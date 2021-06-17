@@ -55,18 +55,6 @@ namespace vsgXchange
         }
         return {};
     }
-
-    class curl::Implementation
-    {
-    public:
-        Implementation();
-        virtual ~Implementation();
-
-        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
-
-    protected:
-    };
-
 } // namespace vsgXchange
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
