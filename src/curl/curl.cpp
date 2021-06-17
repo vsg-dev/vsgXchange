@@ -73,10 +73,14 @@ namespace vsgXchange
 //
 // CURL ReaderWriter fascade
 //
-curl::curl()
+curl::curl() :
+    _implementation(nullptr)
 {
 }
-
+curl::~curl()
+{
+    if (_implementation) delete _implementation;
+}
 vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     vsg::Path serverFilename = filename;

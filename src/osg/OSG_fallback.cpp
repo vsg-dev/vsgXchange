@@ -21,9 +21,14 @@ using namespace vsgXchange;
 struct OSG::Implementation
 {
 };
-OSG::OSG()
+OSG::OSG() :
+    _implementation(nullptr)
 {
 }
+OSG::~OSG()
+{
+    if (_implementation) delete _implementation;
+};
 bool OSG::readOptions(vsg::Options&, vsg::CommandLine&) const
 {
     return false;

@@ -95,7 +95,10 @@ freetype::freetype() :
     _implementation(new freetype::Implementation())
 {
 }
-
+freetype::~freetype()
+{
+    if (_implementation) delete _implementation;
+};
 vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(filename, options);

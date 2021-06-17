@@ -61,7 +61,10 @@ OSG::OSG() :
     _implementation(new OSG::Implementation())
 {
 }
-
+OSG::~OSG()
+{
+    if (_implementation) delete _implementation;
+};
 bool OSG::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     return _implementation->readOptions(options, arguments);
