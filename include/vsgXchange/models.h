@@ -52,7 +52,7 @@ namespace vsgXchange
 
     protected:
         class Implementation;
-        std::unique_ptr<Implementation> _implementation;
+        Implementation* _implementation;
     };
 
     /// optional OSG ReaderWriter
@@ -69,7 +69,7 @@ namespace vsgXchange
 
     protected:
         class Implementation;
-        std::unique_ptr<Implementation> _implementation;
+        Implementation* _implementation;
     };
 
 } // namespace vsgXchange

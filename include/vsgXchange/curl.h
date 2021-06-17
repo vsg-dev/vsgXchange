@@ -49,7 +49,7 @@ namespace vsgXchange
         class Implementation;
 
         mutable std::mutex _mutex;
-        mutable std::unique_ptr<Implementation> _implementation;
+        mutable Implementation* _implementation;
     };
 
 } // namespace vsgXchange
