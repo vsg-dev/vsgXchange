@@ -92,12 +92,13 @@ namespace vsgXchange
     {
     public:
         GDAL();
-        ~GDAL();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const override;
 
         bool getFeatures(Features& features) const override;
 
     protected:
+        ~GDAL();
+
         class Implementation;
         Implementation* _implementation;
     };

@@ -37,7 +37,6 @@ namespace vsgXchange
     {
     public:
         curl();
-        ~curl();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
         bool getFeatures(Features& features) const override;
@@ -46,8 +45,9 @@ namespace vsgXchange
         static bool s_do_curl_global_init_and_cleanup; // defaults to true
 
     protected:
-        class Implementation;
+        ~curl();
 
+        class Implementation;
         mutable std::mutex _mutex;
         mutable Implementation* _implementation;
     };
