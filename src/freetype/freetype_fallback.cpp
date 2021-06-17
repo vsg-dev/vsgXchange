@@ -27,7 +27,6 @@ freetype::freetype() :
 }
 freetype::~freetype()
 {
-    if (_implementation) delete _implementation;
 };
 vsg::ref_ptr<vsg::Object> freetype::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
 {

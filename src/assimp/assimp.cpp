@@ -249,7 +249,7 @@ assimp::assimp() :
 }
 assimp::~assimp()
 {
-    if (_implementation) delete _implementation;
+    delete _implementation;
 }
 vsg::ref_ptr<vsg::Object> assimp::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {

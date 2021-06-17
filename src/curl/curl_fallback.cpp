@@ -27,7 +27,6 @@ curl::curl() :
 }
 curl::~curl()
 {
-    if (_implementation) delete _implementation;
 }
 vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
 {

@@ -46,7 +46,7 @@ GDAL::GDAL() :
 }
 GDAL::~GDAL()
 {
-    if (_implementation) delete _implementation;
+    delete _implementation;
 }
 vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
