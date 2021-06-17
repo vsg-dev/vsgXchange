@@ -37,7 +37,7 @@ namespace vsgXchange
     {
     public:
         curl();
-
+        ~curl();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
         bool getFeatures(Features& features) const override;
@@ -49,7 +49,7 @@ namespace vsgXchange
         class Implementation;
 
         mutable std::mutex _mutex;
-        mutable std::unique_ptr<Implementation> _implementation;
+        mutable Implementation* _implementation;
     };
 
 } // namespace vsgXchange

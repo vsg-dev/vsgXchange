@@ -43,7 +43,7 @@ namespace vsgXchange
     {
     public:
         assimp();
-
+        ~assimp();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const;
         vsg::ref_ptr<vsg::Object> read(std::istream&, vsg::ref_ptr<const vsg::Options>) const;
         vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const override;
@@ -52,7 +52,7 @@ namespace vsgXchange
 
     protected:
         class Implementation;
-        std::unique_ptr<Implementation> _implementation;
+        Implementation* _implementation;
     };
 
     /// optional OSG ReaderWriter
@@ -60,7 +60,7 @@ namespace vsgXchange
     {
     public:
         OSG();
-
+        ~OSG();
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const;
@@ -69,7 +69,7 @@ namespace vsgXchange
 
     protected:
         class Implementation;
-        std::unique_ptr<Implementation> _implementation;
+        Implementation* _implementation;
     };
 
 } // namespace vsgXchange

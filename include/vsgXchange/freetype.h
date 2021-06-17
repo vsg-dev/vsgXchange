@@ -35,7 +35,7 @@ namespace vsgXchange
     {
     public:
         freetype();
-
+        ~freetype();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
         bool getFeatures(Features& features) const override;
@@ -43,7 +43,7 @@ namespace vsgXchange
     protected:
         class Implementation;
 
-        std::unique_ptr<Implementation> _implementation;
+        Implementation* _implementation;
     };
 
 } // namespace vsgXchange
