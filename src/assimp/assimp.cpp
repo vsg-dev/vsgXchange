@@ -44,43 +44,6 @@ namespace
     const std::string kReflectionMapKey("VSG_REFLECTION_MAP");
     const std::string kMetallRoughnessMapKey("VSG_METALLROUGHNESS_MAP");
 
-    struct Material
-    {
-        aiColor4D ambient{0.0f, 0.0f, 0.0f, 1.0f};
-        aiColor4D diffuse{1.0f, 1.0f, 1.0f, 1.0f};
-        aiColor4D specular{0.0f, 0.0f, 0.0f, 1.0f};
-        aiColor4D emissive{0.0f, 0.0f, 0.0f, 1.0f};
-        float shininess{0.0f};
-        float alphaMask{1.0};
-        float alphaMaskCutoff{0.5};
-
-        vsg::ref_ptr<vsg::Data> toData()
-        {
-            auto buffer = vsg::ubyteArray::create(sizeof(Material));
-            std::memcpy(buffer->data(), &ambient.r, sizeof(Material));
-            return buffer;
-        }
-    };
-
-    struct PbrMaterial
-    {
-        aiColor4D baseColorFactor{1.0, 1.0, 1.0, 1.0};
-        aiColor4D emissiveFactor{0.0, 0.0, 0.0, 1.0};
-        aiColor4D diffuseFactor{1.0, 1.0, 1.0, 1.0};
-        aiColor4D specularFactor{0.0, 0.0, 0.0, 1.0};
-        float metallicFactor{1.0f};
-        float roughnessFactor{1.0f};
-        float alphaMask{1.0f};
-        float alphaMaskCutoff{0.5f};
-
-        vsg::ref_ptr<vsg::Data> toData()
-        {
-            auto buffer = vsg::ubyteArray::create(sizeof(PbrMaterial));
-            std::memcpy(buffer->data(), &baseColorFactor.r, sizeof(PbrMaterial));
-            return buffer;
-        }
-    };
-
     static vsg::vec4 kBlackColor{0.0, 0.0, 0.0, 0.0};
     static vsg::vec4 kWhiteColor{1.0, 1.0, 1.0, 1.0};
     static vsg::vec4 kNormalColor{127.0f / 255.0f, 127.0f / 255.0f, 1.0f, 1.0f};
@@ -345,8 +308,8 @@ void assimp::Implementation::createDefaultPipelineAndState()
     _defaultPipeline = createPipeline(vertexShader, fragmentShader, vsg::DescriptorSetLayout::create(descriptorBindings));
 
     // create texture image and associated DescriptorSets and binding
-    Material mat;
-    auto material = vsg::DescriptorBuffer::create(mat.toData(), 10);
+    auto mat = vsg::PhongMaterialValue::create();
+    auto material = vsg::DescriptorBuffer::create(mat, 10);
 
     auto descriptorSet = vsg::DescriptorSet::create(_defaultPipeline->layout->setLayouts.front(), vsg::Descriptors{material});
     _defaultState = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _defaultPipeline->layout, 0, descriptorSet);
@@ -386,99 +349,107 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     {
         auto [node, parent] = nodes.top();
 
-        aiMatrix4x4 m = node->mTransformation;
-        m.Transpose();
-
-        auto xform = vsg::MatrixTransform::create();
-        xform->matrix = vsg::mat4((float*)&m);
-        parent->addChild(xform);
-
-        for (unsigned int i = 0; i < node->mNumMeshes; ++i)
+        if (node)
         {
-            auto mesh = scene->mMeshes[node->mMeshes[i]];
-            auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
-            auto normals = vsg::vec3Array::create(mesh->mNumVertices);
-            auto texcoords = vsg::vec2Array::create(mesh->mNumVertices);
-            std::vector<unsigned int> indices;
+            aiMatrix4x4 m = node->mTransformation;
+            m.Transpose();
 
-            for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
+            auto xform = vsg::MatrixTransform::create();
+            xform->matrix = vsg::mat4((float*)&m);
+            parent->addChild(xform);
+
+            for (unsigned int i = 0; i < node->mNumMeshes; ++i)
             {
-                vertices->at(j) = vsg::vec3(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
+                auto mesh = scene->mMeshes[node->mMeshes[i]];
+                auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
+                auto normals = vsg::vec3Array::create(mesh->mNumVertices);
+                auto texcoords = vsg::vec2Array::create(mesh->mNumVertices);
+                std::vector<unsigned int> indices;
 
-                if (mesh->mNormals)
+                for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
                 {
-                    normals->at(j) = vsg::vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
+                    vertices->at(j) = vsg::vec3(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z);
+
+                    if (mesh->mNormals)
+                    {
+                        normals->at(j) = vsg::vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
+                    }
+                    else
+                    {
+                        normals->at(j) = vsg::vec3(0, 0, 0);
+                    }
+
+                    if (mesh->mTextureCoords[0])
+                    {
+                        texcoords->at(j) = vsg::vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y);
+                    }
+                    else
+                    {
+                        texcoords->at(j) = vsg::vec2(0, 0);
+                    }
+                }
+
+                for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
+                {
+                    const auto& face = mesh->mFaces[j];
+
+                    for (unsigned int k = 0; k < face.mNumIndices; ++k)
+                        indices.push_back(face.mIndices[k]);
+                }
+
+                vsg::ref_ptr<vsg::Data> vsg_indices;
+
+                if (indices.size() < std::numeric_limits<uint16_t>::max())
+                {
+                    auto myindices = vsg::ushortArray::create(static_cast<uint16_t>(indices.size()));
+                    std::copy(indices.begin(), indices.end(), myindices->data());
+                    vsg_indices = myindices;
                 }
                 else
                 {
-                    normals->at(j) = vsg::vec3(0, 0, 0);
+                    auto myindices = vsg::uintArray::create(static_cast<uint32_t>(indices.size()));
+                    std::copy(indices.begin(), indices.end(), myindices->data());
+                    vsg_indices = myindices;
                 }
 
-                if (mesh->mTextureCoords[0])
+                auto stategroup = vsg::StateGroup::create();
+                xform->addChild(stategroup);
+
+                //qCDebug(lc) << "Using material:" << scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
+                if (mesh->mMaterialIndex < stateSets.size())
                 {
-                    texcoords->at(j) = vsg::vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y);
+                    auto state = stateSets[mesh->mMaterialIndex];
+
+                    stategroup->add(state.first);
+                    stategroup->add(state.second);
+                }
+
+                if (useVertexIndexDraw)
+                {
+                    auto vid = vsg::VertexIndexDraw::create();
+                    vid->arrays = vsg::DataList{vertices, normals, texcoords};
+                    vid->indices = vsg_indices;
+                    vid->indexCount = indices.size();
+                    vid->instanceCount = 1;
+                    stategroup->addChild(vid);
                 }
                 else
                 {
-                    texcoords->at(j) = vsg::vec2(0, 0);
+                    stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
+                    stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
+                    stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
                 }
             }
 
-            for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
-            {
-                const auto& face = mesh->mFaces[j];
+            nodes.pop();
 
-                for (unsigned int k = 0; k < face.mNumIndices; ++k)
-                    indices.push_back(face.mIndices[k]);
-            }
-
-            vsg::ref_ptr<vsg::Data> vsg_indices;
-
-            if (indices.size() < std::numeric_limits<uint16_t>::max())
-            {
-                auto myindices = vsg::ushortArray::create(static_cast<uint16_t>(indices.size()));
-                std::copy(indices.begin(), indices.end(), myindices->data());
-                vsg_indices = myindices;
-            }
-            else
-            {
-                auto myindices = vsg::uintArray::create(static_cast<uint32_t>(indices.size()));
-                std::copy(indices.begin(), indices.end(), myindices->data());
-                vsg_indices = myindices;
-            }
-
-            auto stategroup = vsg::StateGroup::create();
-            xform->addChild(stategroup);
-
-            //qCDebug(lc) << "Using material:" << scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
-            if (mesh->mMaterialIndex < stateSets.size())
-            {
-                auto state = stateSets[mesh->mMaterialIndex];
-
-                stategroup->add(state.first);
-                stategroup->add(state.second);
-            }
-
-            if (useVertexIndexDraw)
-            {
-                auto vid = vsg::VertexIndexDraw::create();
-                vid->arrays = vsg::DataList{vertices, normals, texcoords};
-                vid->indices = vsg_indices;
-                vid->indexCount = indices.size();
-                vid->instanceCount = 1;
-                stategroup->addChild(vid);
-            }
-            else
-            {
-                stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
-                stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
-                stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
-            }
+            for (unsigned int i = 0; i < node->mNumChildren; ++i)
+                nodes.push({node->mChildren[i], xform});
         }
-
-        nodes.pop();
-        for (unsigned int i = 0; i < node->mNumChildren; ++i)
-            nodes.push({node->mChildren[i], xform});
+        else
+        {
+            nodes.pop();
+        }
     }
 
     root->addChild(scenegraph);
@@ -588,7 +559,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         bool hasPbrSpecularGlossiness{false};
         material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS, hasPbrSpecularGlossiness);
 
-        if (PbrMaterial pbr; material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
+        if (vsg::PbrMaterial pbr; material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
             // PBR path
             std::vector<std::string> defines;
@@ -622,7 +593,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
             vsg::Descriptors descList;
 
-            auto buffer = vsg::DescriptorBuffer::create(pbr.toData(), 10);
+            auto buffer = vsg::DescriptorBuffer::create(vsg::PbrMaterialValue::create(pbr), 10);
             descList.push_back(buffer);
 
             vsg::SamplerImage samplerImage;
@@ -681,7 +652,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         else
         {
             // Phong shading
-            Material mat;
+            vsg::PhongMaterial mat;
             std::vector<std::string> defines;
 
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
@@ -708,13 +679,13 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             else
             {
                 mat.shininess = 0.0f;
-                mat.specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
+                mat.specular.set(0.0f, 0.0f, 0.0f, 0.0f);
             }
 
             if (mat.shininess < 0.01f)
             {
                 mat.shininess = 0.0f;
-                mat.specular = aiColor4D(0.0f, 0.0f, 0.0f, 0.0f);
+                mat.specular.set(0.0f, 0.0f, 0.0f, 0.0f);
             }
 
             vsg::DescriptorSetLayoutBindings descriptorBindings{
@@ -729,7 +700,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 descriptorBindings.push_back({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
                 if (diffuseResult != AI_SUCCESS)
-                    mat.diffuse = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
+                    mat.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
             if (samplerImage = getTexture(*material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
@@ -739,7 +710,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 descriptorBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
                 if (emissiveResult != AI_SUCCESS)
-                    mat.emissive = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
+                    mat.emissive.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
             if (samplerImage = getTexture(*material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
@@ -769,10 +740,10 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 descriptorBindings.push_back({5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
                 if (specularResult != AI_SUCCESS)
-                    mat.specular = aiColor4D{1.0f, 1.0f, 1.0f, 1.0f};
+                    mat.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
-            auto buffer = vsg::DescriptorBuffer::create(mat.toData(), 10);
+            auto buffer = vsg::DescriptorBuffer::create(vsg::PhongMaterialValue::create(mat), 10);
             descList.push_back(buffer);
 
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
