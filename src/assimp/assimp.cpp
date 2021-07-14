@@ -774,7 +774,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
         if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
         {
             auto opt = vsg::Options::create(*options);
-            opt->paths.push_back(vsg::filePath(filenameToUse));
+            opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
             return processScene(scene, opt);
         }
