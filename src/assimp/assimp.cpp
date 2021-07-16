@@ -444,9 +444,16 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
 
     if (scene->mMetaData)
     {
-        int upAxis = 1, upAxisSign = 1;
+        int upAxis = 1;
         scene->mMetaData->Get("UpAxis", upAxis);
-        scene->mMetaData->Get("UpAxisSign", upAxisSign);
+
+        // unclear on how to intepret theUPAxisSign so will leave it unused.
+        // int upAxisSign = 1;
+        // scene->mMetaData->Get("UpAxisSign", upAxisSign);
+
+        if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+        else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+        else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
     }
 
     vsg::dmat4 matrix;
