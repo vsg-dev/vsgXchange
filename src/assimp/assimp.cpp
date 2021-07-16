@@ -194,7 +194,7 @@ private:
 
     vsg::ref_ptr<vsg::GraphicsPipeline> createPipeline(vsg::ref_ptr<vsg::ShaderStage> vs, vsg::ref_ptr<vsg::ShaderStage> fs, vsg::ref_ptr<vsg::DescriptorSetLayout> descriptorSetLayout, bool doubleSided = false, bool enableBlend = false) const;
     void createDefaultPipelineAndState();
-    vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+    vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const;
     BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
 
     vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
@@ -315,28 +315,14 @@ void assimp::Implementation::createDefaultPipelineAndState()
     _defaultState = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _defaultPipeline->layout, 0, descriptorSet);
 }
 
-vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const
 {
     bool useVertexIndexDraw = true;
-    int upAxis = 1, upAxisSign = 1;
-
-    if (scene->mMetaData)
-    {
-        if (!scene->mMetaData->Get("UpAxis", upAxis))
-            upAxis = 1;
-
-        if (!scene->mMetaData->Get("UpAxisSign", upAxisSign))
-            upAxisSign = 1;
-    }
 
     // Process materials
     //auto pipelineLayout = _defaultPipeline->layout;
     auto stateSets = processMaterials(scene, options);
 
-    auto root = vsg::MatrixTransform::create();
-
-    if (upAxis == 1)
-        root->matrix = vsg::rotate(vsg::PI * 0.5, static_cast<double>(upAxisSign), 0.0, 0.0);
 
     auto scenegraph = vsg::StateGroup::create();
     scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
@@ -452,9 +438,39 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
         }
     }
 
-    root->addChild(scenegraph);
 
-    return root;
+    vsg::CoordinateConvention source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+    if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end()) source_coordianteConvention = itr->second;
+
+    if (scene->mMetaData)
+    {
+        int upAxis = 1;
+        scene->mMetaData->Get("UpAxis", upAxis);
+
+        // unclear on how to intepret theUPAxisSign so will leave it unused.
+        // int upAxisSign = 1;
+        // scene->mMetaData->Get("UpAxisSign", upAxisSign);
+
+        if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+        else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+        else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
+    }
+
+    vsg::dmat4 matrix;
+    if (vsg::transform(source_coordianteConvention, options->sceneCoordinateConvention, matrix))
+    {
+        auto root = vsg::MatrixTransform::create(matrix);
+        root->addChild(scenegraph);
+
+        std::cout<<"Need to rotate = "<<root->matrix<<std::endl;
+
+        return root;
+    }
+    else
+    {
+        return scenegraph;
+    }
+
 }
 
 assimp::Implementation::BindState assimp::Implementation::processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
@@ -776,7 +792,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
-            return processScene(scene, opt);
+            return processScene(scene, opt, ext);
         }
         else
         {
@@ -817,7 +833,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
 
         if (auto scene = importer.ReadFileFromMemory(input.data(), input.size(), _importFlags); scene)
         {
-            return processScene(scene, options);
+            return processScene(scene, options, options->extensionHint);
         }
         else
         {
@@ -837,7 +853,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
     {
         if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
         {
-            return processScene(scene, options);
+            return processScene(scene, options, options->extensionHint);
         }
         else
         {
