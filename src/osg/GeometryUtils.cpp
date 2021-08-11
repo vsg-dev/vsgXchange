@@ -412,8 +412,8 @@ namespace osg2vsg
         {
             vsg::ref_ptr<vsg::VertexIndexDraw> vid(new vsg::VertexIndexDraw());
 
-            vid->arrays = attributeArrays;
-            vid->indices = vsgindices;
+            vid->assignArrays(attributeArrays);
+            vid->assignIndices(vsgindices);
             vid->indexCount = vsgindices->size();
             vid->instanceCount = instanceCount;
             vid->firstIndex = 0;
