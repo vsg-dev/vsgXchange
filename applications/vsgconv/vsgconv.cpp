@@ -358,6 +358,7 @@ int main(int argc, char** argv)
     auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
+    bool compileShaders = !arguments.read({"--no-compile", "--nc"});
 
     // read shaders
     vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
@@ -447,30 +448,38 @@ int main(int argc, char** argv)
     else if (numShaders == vsgObjects.size())
     {
         // all shaders
-        vsg::ShaderStages stagesToCompile;
-        for (auto& object : vsgObjects)
+        if (compileShaders)
         {
-            vsg::ShaderStage* ss = dynamic_cast<vsg::ShaderStage*>(object.get());
-            vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<vsg::ShaderModule*>(object.get());
-            if (sm && !sm->source.empty() && sm->code.empty())
+            vsg::ShaderStages stagesToCompile;
+            for (auto& object : vsgObjects)
             {
-                if (ss)
-                    stagesToCompile.emplace_back(ss);
-                else
-                    stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
+                vsg::ShaderStage* ss = dynamic_cast<vsg::ShaderStage*>(object.get());
+                vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<vsg::ShaderModule*>(object.get());
+                if (sm && !sm->source.empty() && sm->code.empty())
+                {
+                    if (ss)
+                        stagesToCompile.emplace_back(ss);
+                    else
+                        stagesToCompile.emplace_back(vsg::ShaderStage::create(VK_SHADER_STAGE_ALL, "main", vsg::ref_ptr<vsg::ShaderModule>(sm)));
+                }
+            }
+
+            if (!stagesToCompile.empty())
+            {
+                auto shaderCompiler = vsg::ShaderCompiler::create();
+                shaderCompiler->compile(stagesToCompile);
+            }
+
+            if (!outputFilename.empty() && !stagesToCompile.empty())
+            {
+                // TODO work out how to handle multiple input shaders when we only have one output filename.
+                vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
             }
         }
-
-        if (!stagesToCompile.empty())
-        {
-            auto shaderCompiler = vsg::ShaderCompiler::create();
-            shaderCompiler->compile(stagesToCompile);
-        }
-
-        if (!outputFilename.empty() && !stagesToCompile.empty())
+        else
         {
             // TODO work out how to handle multiple input shaders when we only have one output filename.
-            vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
+            vsgconv::writeAndMakeDirectoryIfRequired(vsgObjects.front(), outputFilename, options);
         }
     }
     else if (numNodes == vsgObjects.size())

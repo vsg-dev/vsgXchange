@@ -58,122 +58,6 @@ namespace
     static auto kBlackData = createTexture(kBlackColor);
     static auto kNormalData = createTexture(kNormalColor);
 
-    static std::string processGLSLShaderSource(const std::string& source, const std::vector<std::string>& defines)
-    {
-        // trim leading spaces/tabs
-        auto trimLeading = [](std::string& str) {
-            size_t startpos = str.find_first_not_of(" \t");
-            if (std::string::npos != startpos)
-            {
-                str = str.substr(startpos);
-            }
-        };
-
-        // trim trailing spaces/tabs/newlines
-        auto trimTrailing = [](std::string& str) {
-            size_t endpos = str.find_last_not_of(" \t\n");
-            if (endpos != std::string::npos)
-            {
-                str = str.substr(0, endpos + 1);
-            }
-        };
-
-        // sanitise line by triming leading and trailing characters
-        auto sanitise = [&trimLeading, &trimTrailing](std::string& str) {
-            trimLeading(str);
-            trimTrailing(str);
-        };
-
-        // return true if str starts with match string
-        auto startsWith = [](const std::string& str, const std::string& match) {
-            return str.compare(0, match.length(), match) == 0;
-        };
-
-        // returns the string between the start and end character
-        auto stringBetween = [](const std::string& str, const char& startChar, const char& endChar) {
-            auto start = str.find_first_of(startChar);
-            if (start == std::string::npos) return std::string();
-
-            auto end = str.find_first_of(endChar, start);
-            if (end == std::string::npos) return std::string();
-
-            if ((end - start) - 1 == 0) return std::string();
-
-            return str.substr(start + 1, (end - start) - 1);
-        };
-
-        auto split = [](const std::string& str, const char& seperator) {
-            std::vector<std::string> elements;
-
-            std::string::size_type prev_pos = 0, pos = 0;
-
-            while ((pos = str.find(seperator, pos)) != std::string::npos)
-            {
-                auto substring = str.substr(prev_pos, pos - prev_pos);
-                elements.push_back(substring);
-                prev_pos = ++pos;
-            }
-
-            elements.push_back(str.substr(prev_pos, pos - prev_pos));
-
-            return elements;
-        };
-
-        auto addLine = [](std::ostringstream& ss, const std::string& line) {
-            ss << line << "\n";
-        };
-
-        std::istringstream iss(source);
-        std::ostringstream headerstream;
-        std::ostringstream sourcestream;
-
-        const std::string versionmatch = "#version";
-        const std::string importdefinesmatch = "#pragma import_defines";
-
-        std::vector<std::string> finaldefines;
-
-        for (std::string line; std::getline(iss, line);)
-        {
-            std::string sanitisedline = line;
-            sanitise(sanitisedline);
-
-            // is it the version
-            if (startsWith(sanitisedline, versionmatch))
-            {
-                addLine(headerstream, line);
-            }
-            // is it the defines import
-            else if (startsWith(sanitisedline, importdefinesmatch))
-            {
-                // get the import defines between ()
-                auto csv = stringBetween(sanitisedline, '(', ')');
-                auto importedDefines = split(csv, ',');
-
-                addLine(headerstream, line);
-
-                // loop the imported defines and see if it's also requested in defines, if so insert a define line
-                for (auto importedDef : importedDefines)
-                {
-                    auto sanitiesedImportDef = importedDef;
-                    sanitise(sanitiesedImportDef);
-
-                    auto finditr = std::find(defines.begin(), defines.end(), sanitiesedImportDef);
-                    if (finditr != defines.end())
-                    {
-                        addLine(headerstream, "#define " + sanitiesedImportDef);
-                    }
-                }
-            }
-            else
-            {
-                // standard source line
-                addLine(sourcestream, line);
-            }
-        }
-
-        return headerstream.str() + sourcestream.str();
-    }
-
 } // namespace
 
 using namespace vsgXchange;
@@ -299,8 +183,8 @@ vsg::ref_ptr<vsg::GraphicsPipeline> assimp::Implementation::createPipeline(vsg::
 
 void assimp::Implementation::createDefaultPipelineAndState()
 {
-    auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", processGLSLShaderSource(assimp_vertex, {}));
-    auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", processGLSLShaderSource(assimp_phong, {}));
+    auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex);
+    auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_phong);
 
     vsg::DescriptorSetLayoutBindings descriptorBindings{
         {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
@@ -445,15 +329,16 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     if (scene->mMetaData)
     {
         int upAxis = 1;
-        scene->mMetaData->Get("UpAxis", upAxis);
+        if (scene->mMetaData->Get("UpAxis", upAxis))
+        {
+            if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+            else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+            else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
 
-        // unclear on how to intepret theUPAxisSign so will leave it unused.
-        // int upAxisSign = 1;
-        // scene->mMetaData->Get("UpAxisSign", upAxisSign);
-
-        if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
-        else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
-        else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
+            // unclear on how to intepret the UpAxisSign so will leave it unused for now.
+            // int upAxisSign = 1;
+            // scene->mMetaData->Get("UpAxisSign", upAxisSign);
+        }
     }
 
     vsg::dmat4 matrix;
@@ -575,10 +460,12 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         bool hasPbrSpecularGlossiness{false};
         material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS, hasPbrSpecularGlossiness);
 
+        auto shaderHints = vsg::ShaderCompileSettings::create();
+        std::vector<std::string>& defines = shaderHints->defines;
+
         if (vsg::PbrMaterial pbr; material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
             // PBR path
-            std::vector<std::string> defines;
             bool isTwoSided{false};
 
             if (hasPbrSpecularGlossiness)
@@ -658,8 +545,9 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
             auto descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, descList);
 
-            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", processGLSLShaderSource(assimp_vertex, defines));
-            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", processGLSLShaderSource(assimp_pbr, defines));
+            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex, shaderHints);
+            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_pbr, shaderHints);
+
             auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
             auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout, 0, descriptorSet);
 
@@ -669,7 +557,6 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         {
             // Phong shading
             vsg::PhongMaterial mat;
-            std::vector<std::string> defines;
 
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
             material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
@@ -763,8 +650,9 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             descList.push_back(buffer);
 
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
-            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", processGLSLShaderSource(assimp_vertex, defines));
-            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", processGLSLShaderSource(assimp_phong, defines));
+
+            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex, shaderHints);
+            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_phong, shaderHints);
 
             auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
 
