@@ -84,12 +84,7 @@ target_link_libraries(vsgXchange
         ${EXTRA_LIBRARIES}
 )
 
-install(TARGETS vsgXchange EXPORT vsgXchangeTargets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
-)
+install(TARGETS vsgXchange ${INSTALL_TARGETS_DEFAULT_FLAGS})
 
 if (BUILD_SHARED_LIBS)
     target_compile_definitions(vsgXchange INTERFACE VSGXCHANGE_SHARED_LIBRARY)
@@ -107,7 +102,7 @@ endif()
 install(EXPORT vsgXchangeTargets
     FILE vsgXchangeTargets.cmake
     NAMESPACE vsgXchange::
-    DESTINATION lib/cmake/vsgXchange
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
 )
 
 include(CMakePackageConfigHelpers)
@@ -120,7 +115,7 @@ string(REPLACE ";" "\n" FIND_DEPENDENCY_OUT "${FIND_DEPENDENCY}")
 configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
-    DESTINATION lib/cmake/vsgXchange
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
 )
 
 # ]==]
