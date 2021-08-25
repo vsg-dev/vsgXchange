@@ -35,6 +35,10 @@ add_target_clang_format(
         ${CMAKE_SOURCE_DIR}/src/dds/tinyddsloader.h
 )
 add_target_clobber()
+add_target_docs(
+    FILES
+        ${CMAKE_SOURCE_DIR}/include
+)
 add_target_uninstall()
 
 add_option_maintainer(
@@ -45,3 +49,5 @@ add_option_maintainer(
 # source directory for main vsgXchange library
 add_subdirectory(src)
 add_subdirectory(applications/vsgconv)
+
+add_feature_summary()
