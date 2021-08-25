@@ -69,11 +69,11 @@ target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
 target_include_directories(vsgXchange
     PUBLIC
-        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${VSGXCHANGE_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/src/ktx/libktx>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/ktx/libktx>
         ${EXTRA_INCLUDES}
 )
 
