@@ -18,6 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
 #include <vsgXchange/spirv.h>
+#include <vsgXchange/nastran.h>
 
 #include <vsg/io/VSG.h>
 
@@ -41,6 +42,7 @@ all::all()
     add(stbi::create());
     add(dds::create());
     add(ktx::create());
+    add(nastran::create());
 
 #ifdef vsgXchange_freetype
     add(freetype::create());

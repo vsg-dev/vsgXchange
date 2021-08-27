@@ -14,6 +14,7 @@ set(HEADERS
     ${HEADER_PATH}/spirv.h
     ${HEADER_PATH}/freetype.h
     ${HEADER_PATH}/images.h
+    ${HEADER_PATH}/nastran.h
  )
 
 set(SOURCES
@@ -25,6 +26,7 @@ set(SOURCES
     stbi/stbi.cpp
     dds/dds.cpp
     images/images.cpp
+    nastran/nastran.cpp
 )
 
 # add freetype if available
