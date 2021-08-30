@@ -20,10 +20,10 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(vsg REQUIRED)
 
-setup_build_vars()
-setup_dir_vars()
+vsg_setup_build_vars()
+vsg_setup_dir_vars()
 
-add_target_clang_format(
+vsg_add_target_clang_format(
     FILES
         ${CMAKE_SOURCE_DIR}/include/*/*.h
         ${CMAKE_SOURCE_DIR}/src/*/*.h
@@ -34,14 +34,14 @@ add_target_clang_format(
         ${CMAKE_SOURCE_DIR}/src/stbi/stb_image.h
         ${CMAKE_SOURCE_DIR}/src/dds/tinyddsloader.h
 )
-add_target_clobber()
-add_target_docs(
+vsg_add_target_clobber()
+vsg_add_target_docs(
     FILES
         ${CMAKE_SOURCE_DIR}/include
 )
-add_target_uninstall()
+vsg_add_target_uninstall()
 
-add_option_maintainer(
+vsg_add_option_maintainer(
     PREFIX ${PROJECT_NAME}
     RCLEVEL ${VSGXCHANGE_RELEASE_CANDIDATE}
 )
@@ -50,4 +50,4 @@ add_option_maintainer(
 add_subdirectory(src)
 add_subdirectory(applications/vsgconv)
 
-add_feature_summary()
+vsg_add_feature_summary()
