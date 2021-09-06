@@ -96,26 +96,8 @@ if (NOT(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR}))
     install(DIRECTORY ${CMAKE_BINARY_DIR}/include/vsgXchange DESTINATION include)
 endif()
 
-
-
-# [==[
-install(EXPORT vsgXchangeTargets
-    FILE vsgXchangeTargets.cmake
-    NAMESPACE vsgXchange::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
-)
-
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
-    VERSION ${VSGXCHANGE_MAJOR_VERSION}.${VSGXCHANGE_MINOR_VERSION}.${VSGXCHANGE_PATCH_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
 string(REPLACE ";" "\n" FIND_DEPENDENCY_OUT "${FIND_DEPENDENCY}")
-configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
-
-install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
+vsg_add_cmake_support_files(
+    CONFIG_TEMPLATE
+        vsgXchangeConfig.cmake.in
 )
-
-# ]==]
