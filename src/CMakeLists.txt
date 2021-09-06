@@ -69,11 +69,11 @@ target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
 target_include_directories(vsgXchange
     PUBLIC
-        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${VSGXCHANGE_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/src/ktx/libktx>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src/ktx/libktx>
         ${EXTRA_INCLUDES}
 )
 
@@ -90,31 +90,13 @@ if (BUILD_SHARED_LIBS)
     target_compile_definitions(vsgXchange INTERFACE VSGXCHANGE_SHARED_LIBRARY)
 endif()
 
-
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/vsgXchange DESTINATION include)
 if (NOT(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR}))
     install(DIRECTORY ${CMAKE_BINARY_DIR}/include/vsgXchange DESTINATION include)
 endif()
 
-
-
-# [==[
-install(EXPORT vsgXchangeTargets
-    FILE vsgXchangeTargets.cmake
-    NAMESPACE vsgXchange::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
-)
-
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file("${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
-    COMPATIBILITY SameMajorVersion
-)
-
 string(REPLACE ";" "\n" FIND_DEPENDENCY_OUT "${FIND_DEPENDENCY}")
-configure_file("${CMAKE_SOURCE_DIR}/src/vsgXchangeConfig.cmake.in" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" @ONLY)
-
-install(FILES "${CMAKE_BINARY_DIR}/src/vsgXchangeConfig.cmake" "${CMAKE_BINARY_DIR}/src/vsgXchangeConfigVersion.cmake"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vsgXchange
+vsg_add_cmake_support_files(
+    CONFIG_TEMPLATE
+        vsgXchangeConfig.cmake.in
 )
-
-# ]==]
