@@ -90,7 +90,6 @@ if (BUILD_SHARED_LIBS)
     target_compile_definitions(vsgXchange INTERFACE VSGXCHANGE_SHARED_LIBRARY)
 endif()
 
-
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/vsgXchange DESTINATION include)
 if (NOT(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR}))
     install(DIRECTORY ${CMAKE_BINARY_DIR}/include/vsgXchange DESTINATION include)
