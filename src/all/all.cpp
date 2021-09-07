@@ -17,9 +17,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/glsl.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
-#include <vsgXchange/spirv.h>
 
 #include <vsg/io/VSG.h>
+#include <vsg/io/spirv.h>
 
 using namespace vsgXchange;
 
@@ -30,8 +30,9 @@ all::all()
 #endif
 
     add(vsg::VSG::create());
+    add(vsg::spirv::create());
+
     add(glsl::create());
-    add(spirv::create());
     add(cpp::create());
 
 #ifdef vsgXchange_GDAL
