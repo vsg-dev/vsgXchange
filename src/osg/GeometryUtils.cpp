@@ -151,31 +151,6 @@ namespace osg2vsg
         return mask;
     }
 
-    VkPrimitiveTopology convertToTopology(osg::PrimitiveSet::Mode primitiveMode)
-    {
-        switch (primitiveMode)
-        {
-        case osg::PrimitiveSet::Mode::POINTS: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case osg::PrimitiveSet::Mode::LINES: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case osg::PrimitiveSet::Mode::LINE_STRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case osg::PrimitiveSet::Mode::TRIANGLES: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        case osg::PrimitiveSet::Mode::TRIANGLE_FAN: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-        case osg::PrimitiveSet::Mode::LINES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::LINE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::TRIANGLES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::PATCHES: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-
-        //not supported
-        case osg::PrimitiveSet::Mode::LINE_LOOP:
-        case osg::PrimitiveSet::Mode::QUADS:
-        case osg::PrimitiveSet::Mode::QUAD_STRIP:
-        case osg::PrimitiveSet::Mode::POLYGON:
-        default: return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM; // use as unsupported flag`
-        }
-    }
-
     VkSamplerAddressMode covertToSamplerAddressMode(osg::Texture::WrapMode wrapmode)
     {
         switch (wrapmode)

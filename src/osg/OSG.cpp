@@ -182,7 +182,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
 
-        bool original_conversion = false;
+        bool original_conversion = true;
         options->getValue("original", original_conversion);
         if (original_conversion)
         {
