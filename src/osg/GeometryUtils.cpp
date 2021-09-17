@@ -282,7 +282,7 @@ namespace osg2vsg
 
         // convert attribute arrays, create defaults for any requested that don't exist for now to ensure pipline gets required data
         vsg::ref_ptr<vsg::Data> vertices(osg2vsg::convertToVsg(ingeometry->getVertexArray(), bindOverallPaddingCount));
-        if (!vertices.valid() || vertices->valueCount() == 0) return vsg::ref_ptr<vsg::Geometry>();
+        if (!vertices.valid() || vertices->valueCount() == 0) return {};
 
         // normals
         vsg::ref_ptr<vsg::Data> normals(osg2vsg::convertToVsg(ingeometry->getNormalArray(), bindOverallPaddingCount));
@@ -404,7 +404,7 @@ namespace osg2vsg
         geometry->arrays = attributeArrays;
 
         // copy into ushortArray
-        if (indices.size() > 0)
+        if (vsgindices)
         {
             geometry->indices = vsgindices;
 
