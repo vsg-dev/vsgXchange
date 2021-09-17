@@ -329,7 +329,7 @@ namespace osg2vsg
 
         vsg::Geometry::DrawCommands drawCommands;
 
-        std::vector<uint16_t> indcies; // use to combine indicies from all drawelements
+        std::vector<uint16_t> indices; // use to combine indicies from all drawelements
         osg::Geometry::PrimitiveSetList& primitiveSets = ingeometry->getPrimitiveSetList();
         for (osg::Geometry::PrimitiveSetList::const_iterator itr = primitiveSets.begin();
              itr != primitiveSets.end();
@@ -339,10 +339,10 @@ namespace osg2vsg
             if (de)
             {
                 // merge indicies
-                auto numindcies = de->getNumIndices();
-                for (unsigned int i = 0; i < numindcies; i++)
+                auto numindices = de->getNumIndices();
+                for (unsigned int i = 0; i < numindices; i++)
                 {
-                    indcies.push_back(de->index(i));
+                    indices.push_back(de->index(i));
                 }
             }
             else
@@ -358,10 +358,10 @@ namespace osg2vsg
         }
 
         vsg::ref_ptr<vsg::ushortArray> vsgindices;
-        if (indcies.size() > 0)
+        if (indices.size() > 0)
         {
-            vsgindices = new vsg::ushortArray(indcies.size());
-            std::copy(indcies.begin(), indcies.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
+            vsgindices = new vsg::ushortArray(indices.size());
+            std::copy(indices.begin(), indices.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
         }
 
         if (geometryTarget == VSG_COMMANDS)
@@ -404,7 +404,7 @@ namespace osg2vsg
         geometry->arrays = attributeArrays;
 
         // copy into ushortArray
-        if (indcies.size() > 0)
+        if (indices.size() > 0)
         {
             geometry->indices = vsgindices;
 
