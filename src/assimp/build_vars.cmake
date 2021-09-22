@@ -11,7 +11,9 @@ if (${vsgXchange_assimp})
     )
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(assimp)")
+    endif()
 else()
     set(SOURCES ${SOURCES}
         assimp/assimp_fallback.cpp

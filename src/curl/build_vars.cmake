@@ -10,7 +10,9 @@ if(${vsgXchange_CURL})
         curl/curl.cpp
     )
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${CURL_LIBRARIES})
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(CURL)")
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(CURL)")
+    endif()
 else()
     set(SOURCES ${SOURCES}
         curl/curl_fallback.cpp
