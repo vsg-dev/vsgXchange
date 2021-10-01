@@ -16,8 +16,12 @@ CMakeScripts
 Makefile
 cmake_install.cmake
 install_manifest.txt
-src/vsgXchangeConfig.cmake
-src/vsgXchangeConfigVersion.cmake
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
+Doxyfile.docs
+vsgXchangeConfig.cmake
+vsgXchangeConfigVersion.cmake
+
 
 # Compiled Object files
 *.slo

@@ -639,6 +639,8 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
                 }
             }
 
+            if (!leaf) continue;
+
             if (requiresLeafCullGroup)
             {
                 osg::BoundingBox bb = geometry->getBoundingBox();

@@ -55,8 +55,6 @@ namespace osg2vsg
 
     uint32_t calculateAttributesMask(const osg::Geometry* geometry);
 
-    VkPrimitiveTopology convertToTopology(osg::PrimitiveSet::Mode primitiveMode);
-
     VkSamplerAddressMode covertToSamplerAddressMode(osg::Texture::WrapMode wrapmode);
 
     std::pair<VkFilter, VkSamplerMipmapMode> convertToFilterAndMipmapMode(osg::Texture::FilterMode filtermode);

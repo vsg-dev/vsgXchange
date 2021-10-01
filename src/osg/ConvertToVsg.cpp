@@ -193,6 +193,12 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     // std::cout<<"Have geometry with "<<statestack.size()<<" shaderModeMask="<<shaderModeMask<<", geometryMask="<<geometryMask<<std::endl;
 
+    auto vsg_geometry = osg2vsg::convertToVsg(&geometry, geometryMask, buildOptions->geometryTarget);
+    if (!vsg_geometry)
+    {
+        return;
+    }
+
     auto stategroup = vsg::StateGroup::create();
 
     auto bindGraphicsPipeline = getOrCreateBindGraphicsPipeline(shaderModeMask, geometryMask);
@@ -204,11 +210,6 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
         }
     }
 
-    auto vsg_geometry = osg2vsg::convertToVsg(&geometry, geometryMask, buildOptions->geometryTarget);
-    if (!vsg_geometry)
-    {
-        return;
-    }
 
     if (!statestack.empty())
     {

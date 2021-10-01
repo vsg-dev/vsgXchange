@@ -151,31 +151,6 @@ namespace osg2vsg
         return mask;
     }
 
-    VkPrimitiveTopology convertToTopology(osg::PrimitiveSet::Mode primitiveMode)
-    {
-        switch (primitiveMode)
-        {
-        case osg::PrimitiveSet::Mode::POINTS: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case osg::PrimitiveSet::Mode::LINES: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case osg::PrimitiveSet::Mode::LINE_STRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case osg::PrimitiveSet::Mode::TRIANGLES: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        case osg::PrimitiveSet::Mode::TRIANGLE_FAN: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-        case osg::PrimitiveSet::Mode::LINES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::LINE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::TRIANGLES_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::TRIANGLE_STRIP_ADJACENCY: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-        case osg::PrimitiveSet::Mode::PATCHES: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-
-        //not supported
-        case osg::PrimitiveSet::Mode::LINE_LOOP:
-        case osg::PrimitiveSet::Mode::QUADS:
-        case osg::PrimitiveSet::Mode::QUAD_STRIP:
-        case osg::PrimitiveSet::Mode::POLYGON:
-        default: return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM; // use as unsupported flag`
-        }
-    }
-
     VkSamplerAddressMode covertToSamplerAddressMode(osg::Texture::WrapMode wrapmode)
     {
         switch (wrapmode)
@@ -307,7 +282,7 @@ namespace osg2vsg
 
         // convert attribute arrays, create defaults for any requested that don't exist for now to ensure pipline gets required data
         vsg::ref_ptr<vsg::Data> vertices(osg2vsg::convertToVsg(ingeometry->getVertexArray(), bindOverallPaddingCount));
-        if (!vertices.valid() || vertices->valueCount() == 0) return vsg::ref_ptr<vsg::Geometry>();
+        if (!vertices.valid() || vertices->valueCount() == 0) return {};
 
         // normals
         vsg::ref_ptr<vsg::Data> normals(osg2vsg::convertToVsg(ingeometry->getNormalArray(), bindOverallPaddingCount));
@@ -354,7 +329,7 @@ namespace osg2vsg
 
         vsg::Geometry::DrawCommands drawCommands;
 
-        std::vector<uint16_t> indcies; // use to combine indicies from all drawelements
+        std::vector<uint16_t> indices; // use to combine indicies from all drawelements
         osg::Geometry::PrimitiveSetList& primitiveSets = ingeometry->getPrimitiveSetList();
         for (osg::Geometry::PrimitiveSetList::const_iterator itr = primitiveSets.begin();
              itr != primitiveSets.end();
@@ -364,10 +339,10 @@ namespace osg2vsg
             if (de)
             {
                 // merge indicies
-                auto numindcies = de->getNumIndices();
-                for (unsigned int i = 0; i < numindcies; i++)
+                auto numindices = de->getNumIndices();
+                for (unsigned int i = 0; i < numindices; i++)
                 {
-                    indcies.push_back(de->index(i));
+                    indices.push_back(de->index(i));
                 }
             }
             else
@@ -383,10 +358,10 @@ namespace osg2vsg
         }
 
         vsg::ref_ptr<vsg::ushortArray> vsgindices;
-        if (indcies.size() > 0)
+        if (indices.size() > 0)
         {
-            vsgindices = new vsg::ushortArray(indcies.size());
-            std::copy(indcies.begin(), indcies.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
+            vsgindices = new vsg::ushortArray(indices.size());
+            std::copy(indices.begin(), indices.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
         }
 
         if (geometryTarget == VSG_COMMANDS)
@@ -429,7 +404,7 @@ namespace osg2vsg
         geometry->arrays = attributeArrays;
 
         // copy into ushortArray
-        if (indcies.size() > 0)
+        if (vsgindices)
         {
             geometry->indices = vsgindices;
 
