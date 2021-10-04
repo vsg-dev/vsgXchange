@@ -10,7 +10,10 @@ if(${vsgXchange_GDAL})
         gdal/GDAL.cpp
     )
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
+    endif()
 else()
     set(SOURCES ${SOURCES}
         gdal/GDAL_fallback.cpp

@@ -166,10 +166,12 @@ vsg::ref_ptr<vsg::Data> ConvertToVsg::copy(osg::Array* src_array)
     case (osg::Array::MatrixArrayType): return copyArray<vsg::mat4Array>(src_array);
     case (osg::Array::MatrixdArrayType): return copyArray<vsg::dmat4Array>(src_array);
 
+#if OSG_MIN_VERSION_REQUIRED(3, 5, 7)
     case (osg::Array::QuatArrayType): return {};
 
     case (osg::Array::UInt64ArrayType): return {};
     case (osg::Array::Int64ArrayType): return {};
+#endif
     default: return {};
     }
 }

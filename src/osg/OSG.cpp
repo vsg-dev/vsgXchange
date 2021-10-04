@@ -232,7 +232,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
             return vsg_scene;
         }
     }
-    else if (osg::Image* osg_image = object->asImage(); osg_image != nullptr)
+    else if (osg::Image* osg_image = dynamic_cast<osg::Image*>(object.get()); osg_image != nullptr)
     {
         return osg2vsg::convertToVsg(osg_image, mapRGBtoRGBAHint);
     }

@@ -242,6 +242,7 @@ namespace osg2vsg
         case (GL_COMPRESSED_SIGNED_R11_EAC):
         case (GL_COMPRESSED_RG11_EAC):
         case (GL_COMPRESSED_SIGNED_RG11_EAC):
+#if OSG_MIN_VERSION_REQUIRED(3, 5, 8)
         case (GL_COMPRESSED_RGBA_ASTC_4x4_KHR):
         case (GL_COMPRESSED_RGBA_ASTC_5x4_KHR):
         case (GL_COMPRESSED_RGBA_ASTC_5x5_KHR):
@@ -270,6 +271,7 @@ namespace osg2vsg
         case (GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR):
         case (GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR):
         case (GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR):
+#endif
             break;
         default:
             break;

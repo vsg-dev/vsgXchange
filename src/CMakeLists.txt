@@ -44,12 +44,6 @@ include(gdal/build_vars.cmake)
 # add optional CURL component
 include(curl/build_vars.cmake)
 
-if(${VSGXCHANGE_GDAL})
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
-    set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
-endif()
-
 # create the version header
 set(VSGXCHANGE_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/vsgXchange/Version.h")
 configure_file("${CMAKE_SOURCE_DIR}/src/all/Version.h.in" "${VSGXCHANGE_VERSION_HEADER}")
