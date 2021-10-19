@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/models.h>
 
 #include <osg/TransferFunction>
+#include <osg/AnimationPath>
 #include <osg/io_utils>
 #include <osgDB/PluginQuery>
 #include <osgDB/ReadFile>
@@ -150,6 +151,47 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         else
             osg_options = new osgDB::Options();
         osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), options->paths.begin(), options->paths.end());
+    }
+
+    auto ext = vsg::lowerCaseFileExtension(filename);
+    if (ext=="path")
+    {
+        auto foundPath = vsg::findFile(filename, options);
+        if (!foundPath.empty())
+        {
+            std::ifstream fin(foundPath);
+            if (!fin) return {};
+
+            osg::ref_ptr<osg::AnimationPath> osg_animationPath = new osg::AnimationPath;
+            osg_animationPath->read(fin);
+
+            auto vsg_animationPath = vsg::AnimationPath::create();
+
+            switch(osg_animationPath->getLoopMode())
+            {
+                case(osg::AnimationPath::SWING):
+                    vsg_animationPath->mode = vsg::AnimationPath::FORWARD_AND_BACK;
+                    break;
+                case(osg::AnimationPath::LOOP):
+                    vsg_animationPath->mode = vsg::AnimationPath::REPEAT;
+                    break;
+                case(osg::AnimationPath::NO_LOOPING):
+                    vsg_animationPath->mode = vsg::AnimationPath::ONCE;
+                    break;
+            }
+
+            for(auto& [time, cp] : osg_animationPath->getTimeControlPointMap())
+            {
+                const auto& position = cp.getPosition();
+                const auto& rotation = cp.getRotation();
+                // const auto& scale = cp.getScale(); // TODO
+
+                vsg_animationPath->add(time, vsg::dvec3(position.x(), position.y(), position.z()), vsg::dquat(rotation.x(), rotation.y(), rotation.z(), rotation.w()));
+            }
+
+            return vsg_animationPath;
+        }
+        return {};
     }
 
     osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename, osg_options.get());
