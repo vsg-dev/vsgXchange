@@ -239,7 +239,7 @@ vsg::ref_ptr<vsg::Group> freetype::Implementation::createOutlineGeometry(const C
 
         auto geometry = vsg::Geometry::create();
         auto vertices = vsg::vec3Array::create(points.size());
-        geometry->arrays.push_back(vertices);
+        geometry->assignArrays({vertices});
 
         for (size_t i = 0; i < points.size(); ++i)
         {

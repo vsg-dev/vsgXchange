@@ -56,21 +56,21 @@ namespace vsgconv
 
         void apply(vsg::Geometry& geometry) override
         {
-            for (auto& data : geometry.arrays)
+            for (auto& array : geometry.arrays)
             {
-                objects->addChild(data);
+                if (array->data) objects->addChild(array->data);
             }
-            if (geometry.indices)
+            if (geometry.indices && geometry.indices->data)
             {
-                objects->addChild(geometry.indices);
+                objects->addChild(geometry.indices->data);
             }
         }
 
         void apply(vsg::VertexIndexDraw& vid) override
         {
-            for (auto& data : vid.arrays)
+            for (auto& array : vid.arrays)
             {
-                objects->addChild(data);
+                if (array->data) objects->addChild(array->data);
             }
             if (vid.indices)
             {
@@ -80,17 +80,17 @@ namespace vsgconv
 
         void apply(vsg::BindVertexBuffers& bvb) override
         {
-            for (auto& data : bvb.arrays)
+            for (auto& array : bvb.arrays)
             {
-                objects->addChild(data);
+                if (array->data) objects->addChild(array->data);
             }
         }
 
         void apply(vsg::BindIndexBuffer& bib) override
         {
-            if (bib.indices)
+            if (bib.indices && bib.indices->data)
             {
-                objects->addChild(vsg::ref_ptr<vsg::Data>(bib.indices));
+                objects->addChild(bib.indices->data);
             }
         }
 

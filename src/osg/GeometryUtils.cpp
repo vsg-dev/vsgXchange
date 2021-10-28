@@ -401,12 +401,12 @@ namespace osg2vsg
         // fallback to create the vsg geometry
         auto geometry = vsg::Geometry::create();
 
-        geometry->arrays = attributeArrays;
+        geometry->assignArrays(attributeArrays);
 
         // copy into ushortArray
         if (vsgindices)
         {
-            geometry->indices = vsgindices;
+            geometry->assignIndices(vsgindices);
 
             drawCommands.push_back(vsg::DrawIndexed::create(vsgindices->valueCount(), instanceCount, 0, 0, 0));
         }
