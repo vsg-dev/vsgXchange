@@ -1,6 +1,5 @@
 include(CMakeFindDependencyMacro)
 
-find_dependency(Vulkan)
 find_dependency(vsg)
 @FIND_DEPENDENCY_OUT@
 

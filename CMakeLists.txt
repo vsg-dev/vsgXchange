@@ -17,7 +17,6 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-find_package(Vulkan REQUIRED)
 find_package(vsg 0.1.8 REQUIRED)
 
 vsg_setup_build_vars()
