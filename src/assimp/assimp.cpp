@@ -302,8 +302,8 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 if (useVertexIndexDraw)
                 {
                     auto vid = vsg::VertexIndexDraw::create();
-                    vid->arrays = vsg::DataList{vertices, normals, texcoords};
-                    vid->indices = vsg_indices;
+                    vid->assignArrays(vsg::DataList{vertices, normals, texcoords});
+                    vid->assignIndices(vsg_indices);
                     vid->indexCount = indices.size();
                     vid->instanceCount = 1;
                     stategroup->addChild(vid);
