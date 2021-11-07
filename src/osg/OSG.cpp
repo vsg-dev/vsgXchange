@@ -255,21 +255,9 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
 
                 uint32_t tileMultiplier = std::min(estimatedNumOfTilesBelow, maxNumTilesBelow) + 1;
 
-                vsg::CollectDescriptorStats collectStats;
-                vsg_scene->accept(collectStats);
-
-                auto resourceHints = vsg::ResourceHints::create();
-
-                resourceHints->maxSlot = collectStats.maxSlot;
-                resourceHints->numDescriptorSets = static_cast<uint32_t>(collectStats.computeNumDescriptorSets() * tileMultiplier);
-                resourceHints->descriptorPoolSizes = collectStats.computeDescriptorPoolSizes();
-
-                for (auto& poolSize : resourceHints->descriptorPoolSizes)
-                {
-                    poolSize.descriptorCount = poolSize.descriptorCount * tileMultiplier;
-                }
-
-                vsg_scene->setObject("ResourceHints", resourceHints);
+                vsg::CollectResourceRequirements collectResourceRequirements;
+                vsg_scene->accept(collectResourceRequirements);
+                vsg_scene->setObject("ResourceHints", collectResourceRequirements.createResourceHints(tileMultiplier));
             }
             return vsg_scene;
         }
