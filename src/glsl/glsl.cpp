@@ -62,6 +62,12 @@ vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<con
         fin.read(reinterpret_cast<char*>(source.data()), fileSize);
         fin.close();
 
+        // handle any #includes in the source
+        if (source.find("include") != std::string::npos)
+        {
+            source = vsg::insertIncludes(source, prependPathToOptionsIfRequired(found_filename, options));
+        }
+
         auto sm = vsg::ShaderModule::create(source);
 
         if (stage_itr->second == VK_SHADER_STAGE_ALL)
