@@ -1,7 +1,7 @@
 #pragma once
 
-const auto assimp_phong = R"(
-#version 450
+const auto assimp_phong =
+R"(#version 450
 #extension GL_ARB_separate_shader_objects : enable
 #pragma import_defines (VSG_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED)
 
