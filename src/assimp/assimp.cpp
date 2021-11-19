@@ -352,8 +352,6 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
         auto root = vsg::MatrixTransform::create(matrix);
         root->addChild(scenegraph);
 
-        std::cout<<"Need to rotate = "<<root->matrix<<std::endl;
-
         return root;
     }
     else
