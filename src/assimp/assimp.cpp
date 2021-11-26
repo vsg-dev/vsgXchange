@@ -678,7 +678,18 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
         vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (filenameToUse.empty()) return {};
 
-        if (auto scene = importer.ReadFile(filenameToUse, _importFlags); scene)
+        uint32_t flags = _importFlags;
+        if(options->assimpSmoothNormals)
+        {
+            importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, options->assimpCreaseAngle);
+            flags |= aiProcess_GenSmoothNormals;
+        }
+        else if(options->assimpSharpNormals)
+        {
+            flags |= aiProcess_GenNormals;
+        }
+
+        if (auto scene = importer.ReadFile(filenameToUse, flags); scene)
         {
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
