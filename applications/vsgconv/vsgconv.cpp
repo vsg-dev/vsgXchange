@@ -214,13 +214,13 @@ namespace vsgconv
     struct pad
     {
         const char* str;
-        int chars;
+        size_t chars;
     };
 
     std::ostream& operator<<(std::ostream& input, pad in)
     {
         input << in.str;
-        for (int i = strlen(in.str); i < in.chars; ++i) input << ' ';
+        for (size_t i = strlen(in.str); i < in.chars; ++i) input << ' ';
         return input;
     }
 
@@ -241,10 +241,13 @@ namespace vsgconv
             out << indent{indentation} << rw->className() << " provides support for " << features.extensionFeatureMap.size() << " extensions, and " << features.protocolFeatureMap.size() << " protocols." << std::endl;
 
             indentation += 4;
+            bool precedingNewline = false;
 
             if (!features.protocolFeatureMap.empty())
             {
-                int padding = 16;
+                if (precedingNewline) out<<std::endl;
+
+                size_t padding = 16;
                 out << indent{indentation} << pad{"Protocols", padding} << "Supported ReaderWriter methods" << std::endl;
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [protocol, featureMask] : features.protocolFeatureMap)
@@ -259,11 +262,14 @@ namespace vsgconv
                     if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
                     out << std::endl;
                 }
+                precedingNewline = true;
             }
 
             if (!features.extensionFeatureMap.empty())
             {
-                int padding = 16;
+                if (precedingNewline) out<<std::endl;
+
+                size_t padding = 16;
                 out << indent{indentation} << pad{"Extensions", padding} << "Supported ReaderWriter methods" << std::endl;
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [ext, featureMask] : features.extensionFeatureMap)
@@ -278,6 +284,30 @@ namespace vsgconv
                     if (featureMask & vsg::ReaderWriter::WRITE_OSTREAM) out << "write(std::ostream, ..) ";
                     out << std::endl;
                 }
+                precedingNewline = true;
+            }
+
+            if (!features.optionNameTypeMap.empty())
+            {
+                if (precedingNewline) out<<std::endl;
+
+                // expand the padding to encompass any long value strings
+                size_t maxValueWidth = 19;
+                for (auto& vt : features.optionNameTypeMap)
+                {
+                    if (vt.first.length() > maxValueWidth) maxValueWidth = vt.first.length();
+                }
+
+                size_t padding = maxValueWidth+2;
+
+                // print out the options
+                out << indent{indentation} << pad{"vsg::Options::Value", padding} << "type" << std::endl;
+                out << indent{indentation} << pad{"-------------------", padding} << "----" << std::endl;
+                for (auto& [value, type] : features.optionNameTypeMap)
+                {
+                    out << indent{indentation} << pad{value.c_str(), padding}<<type<< std::endl;
+                }
+                precedingNewline = true;
             }
         }
         out << std::endl;
