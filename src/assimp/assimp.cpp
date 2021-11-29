@@ -136,6 +136,11 @@ bool assimp::getFeatures(Features& features) const
     }
     features.extensionFeatureMap[suported_extensions.substr(start, std::string::npos)] = supported_features;
 
+    // enumerate the supported vsg::Options::setValue(str, value) options
+    features.optionNameTypeMap[assimp::generate_smooth_normals] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::generate_sharp_normals] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::crease_angle] = vsg::type_name<float>();
+
     return true;
 }
 
@@ -679,15 +684,12 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
         if (filenameToUse.empty()) return {};
 
         uint32_t flags = _importFlags;
-        bool optionFlag;
-        if(options->getValue("generate_smooth_normals", optionFlag) && optionFlag)
+        if (vsg::value<bool>(false, assimp::generate_smooth_normals, options))
         {
-            float angle = 80.0;
-            options->getValue("crease_angle", angle);
-            importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, angle);
+            importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, vsg::value<float>(80.0f, assimp::crease_angle, options));
             flags |= aiProcess_GenSmoothNormals;
         }
-        else if(options->getValue("generate_sharp_normals", optionFlag) && optionFlag)
+        else if (vsg::value<bool>(false, assimp::generate_sharp_normals, options))
         {
             flags |= aiProcess_GenNormals;
         }
