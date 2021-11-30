@@ -102,6 +102,12 @@ bool OSG::getFeatures(Features& features) const
             features.extensionFeatureMap[ext_description.first] = vsg::ReaderWriter::READ_FILENAME;
         }
     }
+
+    // enumerate the supported vsg::Options::setValue(str, value) options
+    features.optionNameTypeMap[OSG::original_converter] = vsg::type_name<bool>();
+    features.optionNameTypeMap[OSG::read_build_options] = vsg::type_name<std::string>();
+    features.optionNameTypeMap[OSG::write_build_options] = vsg::type_name<std::string>();
+
     return true;
 }
 
@@ -116,28 +122,10 @@ OSG::Implementation::Implementation()
 
 bool OSG::Implementation::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
-    if (arguments.read("--original")) options.setValue("original", true);
-
-    std::string filename;
-    if (arguments.read("--read-osg", filename))
-    {
-        auto defaults = vsg::read(filename);
-        std::cout << "vsg::read(" << filename << ") defaults " << defaults << std::endl;
-        if (defaults)
-        {
-            options.setObject("osg", defaults);
-        }
-    }
-
-    if (arguments.read("--write-osg", filename))
-    {
-        auto defaults = osg2vsg::BuildOptions::create();
-        if (vsg::write(defaults, filename))
-        {
-            std::cout << "Written osg2vsg defaults to: " << filename << std::endl;
-        }
-    }
-    return false;
+    bool result = arguments.readAndAssign<void>(OSG::original_converter, &options);
+    result = arguments.readAndAssign<std::string>(OSG::read_build_options, &options) || result;
+    result = arguments.readAndAssign<std::string>(OSG::write_build_options, &options) || result;
+    return result;
 }
 
 vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -206,27 +194,30 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
     {
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH"); // TODO, use the vsg::Options ?
 
-        // check to see if osg_options have been assigned to vsg::Options
-        auto default_options = options->getObject<osg2vsg::BuildOptions>("osg");
-
-        // clone the osg specific buildOptions if they have been assign to vsg::Options
         vsg::ref_ptr<osg2vsg::BuildOptions> buildOptions;
-        if (default_options)
+
+        std::string build_options_filename;
+        if (options->getValue(OSG::read_build_options, build_options_filename))
         {
-            buildOptions = osg2vsg::BuildOptions::create(*default_options);
+            buildOptions = vsg::read_cast<osg2vsg::BuildOptions>(build_options_filename, options);
         }
-        else
+
+        if (!buildOptions)
         {
             buildOptions = osg2vsg::BuildOptions::create();
             buildOptions->mapRGBtoRGBAHint = mapRGBtoRGBAHint;
+        }
+
+        if (options->getValue(OSG::write_build_options, build_options_filename))
+        {
+            vsg::write(buildOptions, build_options_filename, options);
         }
 
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
 
         bool original_conversion = false;
-        options->getValue("original", original_conversion);
-        if (original_conversion)
+        if (options->getValue("original", original_conversion) && original_conversion)
         {
             osg2vsg::SceneBuilder sceneBuilder(buildOptions);
             auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);

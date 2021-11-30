@@ -146,18 +146,9 @@ bool assimp::getFeatures(Features& features) const
 
 bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
-    bool result = false;
-    bool flag;
-    result = arguments.read(std::string("--") + assimp::generate_smooth_normals, flag);
-    options.setValue(assimp::generate_smooth_normals, flag);
-
-    result = arguments.read(std::string("--") + assimp::generate_sharp_normals, flag);
-    options.setValue(assimp::generate_sharp_normals, flag);
-
-    float angle;
-    result = arguments.read(std::string("--") + assimp::crease_angle, angle);
-    options.setValue(assimp::crease_angle, angle);
-
+    bool result = arguments.readAndAssign<void>(assimp::generate_smooth_normals, &options);
+    result = arguments.readAndAssign<void>(assimp::generate_sharp_normals, &options) || result;
+    result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     return result;
 }
 

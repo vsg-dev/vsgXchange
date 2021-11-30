@@ -50,8 +50,8 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
         // vsg::Options::setValue(str, value) suppoorted options:
-        static constexpr const char* generate_smooth_normals = "generate_smooth_normals"; /// bool
-        static constexpr const char* generate_sharp_normals = "generate_sharp_normals"; ///  bool
+        static constexpr const char* generate_smooth_normals = "generate_smooth_normals";
+        static constexpr const char* generate_sharp_normals = "generate_sharp_normals";
         static constexpr const char* crease_angle = "crease_angle"; /// float
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
@@ -68,11 +68,17 @@ namespace vsgXchange
     {
     public:
         OSG();
-        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
         vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const override;
 
         bool getFeatures(Features& features) const override;
+
+        // vsg::Options::setValue(str, value) suppoorted options:
+        static constexpr const char* original_converter = "original_converter"; // select early osg2vsg impementation
+        static constexpr const char* read_build_options = "read_build_options"; // read build options from specified file
+        static constexpr const char* write_build_options = "write_build_options"; // write build options to specified file
+
+        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
     protected:
         ~OSG();
