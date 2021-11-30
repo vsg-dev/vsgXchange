@@ -50,9 +50,11 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
         // vsg::Options::setValue(str, value) suppoorted options:
-        static constexpr const char* generate_smooth_normals = "generate_smooth_normals"; /// -bool
+        static constexpr const char* generate_smooth_normals = "generate_smooth_normals"; /// bool
         static constexpr const char* generate_sharp_normals = "generate_sharp_normals"; ///  bool
         static constexpr const char* crease_angle = "crease_angle"; /// float
+
+        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
     protected:
         ~assimp();
