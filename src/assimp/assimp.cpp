@@ -485,7 +485,6 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         if (vsg::PbrMaterial pbr; material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
             // PBR path
-            bool isTwoSided{false};
 
             if (hasPbrSpecularGlossiness)
             {
@@ -508,14 +507,9 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
-            bool optionFlag{false};
-            if(options->getValue(assimp::two_sided, optionFlag) && optionFlag) 
-            {
-                isTwoSided = true;
-                defines.push_back("VSG_TWOSIDED");
-            }
-            else if (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS && isTwoSided)
-                defines.push_back("VSG_TWOSIDED");
+
+            bool isTwoSided = vsg::value<bool>(false, assimp::two_sided, options) || (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS);
+            if (isTwoSided) defines.push_back("VSG_TWOSIDED");
 
             vsg::DescriptorSetLayoutBindings descriptorBindings{
                 {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
