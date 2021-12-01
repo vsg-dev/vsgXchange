@@ -150,6 +150,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     bool result = arguments.readAndAssign<void>(assimp::generate_smooth_normals, &options);
     result = arguments.readAndAssign<void>(assimp::generate_sharp_normals, &options) || result;
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
+    result = arguments.readAndAssign<void>(assimp::two_sided, &options) || result;
     return result;
 }
 
@@ -507,13 +508,13 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
-            bool optionFlag;
+            bool optionFlag{false};
             if(options->getValue("two_sided", optionFlag) && optionFlag) 
-                {
-                    isTwoSided = true;
-                    defines.push_back("VSG_TWOSIDED");
-                }
-            else if (material->Get(AI_MATKEY_TWOSIDED, isTwoSided); isTwoSided)
+            {
+                isTwoSided = true;
+                defines.push_back("VSG_TWOSIDED");
+            }
+            else if (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS && isTwoSided)
                 defines.push_back("VSG_TWOSIDED");
 
             vsg::DescriptorSetLayoutBindings descriptorBindings{
@@ -592,7 +593,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
 
             bool isTwoSided{false};
-            bool optionFlag;
+            bool optionFlag{false};
             if(options->getValue("two_sided", optionFlag) && optionFlag) 
             {
                 isTwoSided = true;
