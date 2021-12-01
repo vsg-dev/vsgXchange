@@ -509,7 +509,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
             bool optionFlag{false};
-            if(options->getValue("two_sided", optionFlag) && optionFlag) 
+            if(options->getValue(assimp::two_sided, optionFlag) && optionFlag) 
             {
                 isTwoSided = true;
                 defines.push_back("VSG_TWOSIDED");
@@ -594,7 +594,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
 
             bool isTwoSided{false};
             bool optionFlag{false};
-            if(options->getValue("two_sided", optionFlag) && optionFlag) 
+            if(options->getValue(assimp::two_sided, optionFlag) && optionFlag) 
             {
                 isTwoSided = true;
                 defines.push_back("VSG_TWOSIDED");
