@@ -216,8 +216,8 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         buildOptions->options = options;
         buildOptions->pipelineCache = pipelineCache;
 
-        bool original_conversion = false;
-        if (options->getValue("original", original_conversion) && original_conversion)
+        bool original = false;
+        if (options->getValue(OSG::original_converter, original) && original)
         {
             osg2vsg::SceneBuilder sceneBuilder(buildOptions);
             auto vsg_scene = sceneBuilder.optimizeAndConvertToVsg(osg_scene, searchPaths);
