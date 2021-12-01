@@ -53,6 +53,7 @@ namespace vsgXchange
         static constexpr const char* generate_smooth_normals = "generate_smooth_normals";
         static constexpr const char* generate_sharp_normals = "generate_sharp_normals";
         static constexpr const char* crease_angle = "crease_angle"; /// float
+        static constexpr const char* two_sided = "two_sided"; ///  bool
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
