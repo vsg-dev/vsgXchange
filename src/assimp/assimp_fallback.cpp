@@ -44,3 +44,7 @@ bool assimp::getFeatures(Features&) const
 {
     return false;
 }
+bool assimp::readOptions(vsg::Options&, vsg::CommandLine&) const
+{
+    return false;
+}
