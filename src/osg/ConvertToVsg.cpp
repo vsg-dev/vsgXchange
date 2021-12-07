@@ -109,6 +109,11 @@ vsg::ref_ptr<vsg::Node> ConvertToVsg::convert(osg::Node* node)
         if (node) node->accept(*this);
 
         nodeMap[node] = root;
+
+        if (root && buildOptions->copyNames && !node->getName().empty())
+        {
+            root->setValue("Name", node->getName());
+        }
     }
 
     return root;

@@ -28,6 +28,11 @@ void BuildOptions::read(vsg::Input& input)
     input.read("overrideGeomAttributes", overrideGeomAttributes);
     input.read("overrideShaderModeMask", overrideShaderModeMask);
     input.read("useDepthSorted", useDepthSorted);
+    if (input.version_greater_equal(0, 2, 0))
+    {
+        input.read("mapRGBtoRGBAHint", mapRGBtoRGBAHint);
+        input.read("copyNames", copyNames);
+    }
     input.read("vertexShaderPath", vertexShaderPath);
     input.read("fragmentShaderPath", fragmentShaderPath);
     input.read("extension", extension);
@@ -45,6 +50,11 @@ void BuildOptions::write(vsg::Output& output) const
     output.write("overrideGeomAttributes", overrideGeomAttributes);
     output.write("overrideShaderModeMask", overrideShaderModeMask);
     output.write("useDepthSorted", useDepthSorted);
+    if (output.version_greater_equal(0, 2, 0))
+    {
+        output.write("mapRGBtoRGBAHint", mapRGBtoRGBAHint);
+        output.write("copyNames", copyNames);
+    }
     output.write("vertexShaderPath", vertexShaderPath);
     output.write("fragmentShaderPath", fragmentShaderPath);
     output.write("extension", extension);

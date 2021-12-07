@@ -39,6 +39,7 @@ namespace osg2vsg
         bool useDepthSorted = true;
 
         bool mapRGBtoRGBAHint = true;
+        bool copyNames = true;
 
         std::string vertexShaderPath = "";
         std::string fragmentShaderPath = "";
