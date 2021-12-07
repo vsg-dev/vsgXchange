@@ -336,6 +336,7 @@ int main(int argc, char** argv)
 {
     // use the vsg::Options object to pass the ReaderWriter_all to use when reading files.
     auto options = vsg::Options::create(vsgXchange::all::create());
+    options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
 
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
@@ -389,9 +390,6 @@ int main(int argc, char** argv)
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
     bool compileShaders = !arguments.read({"--no-compile", "--nc"});
-
-    // read shaders
-    vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH");
 
     vsg::Path outputFilename = arguments[argc - 1];
 
