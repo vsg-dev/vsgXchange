@@ -191,7 +191,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
     osg::ref_ptr<osg::Object> object = rr.takeObject();
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
-        vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH"); // TODO, use the vsg::Options ?
+        vsg::Paths searchPaths = options ? options->paths : vsg::getEnvPaths("VSG_FILE_PATH");
 
         vsg::ref_ptr<osg2vsg::BuildOptions> buildOptions;
 
