@@ -182,14 +182,13 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         return {};
     }
 
-    osg::ref_ptr<osg::Object> object = osgDB::readRefObjectFile(filename, osg_options.get());
-    if (!object)
-    {
-        return {};
-    }
+    osgDB::ReaderWriter::ReadResult rr = osgDB::Registry::instance()->readObject(filename, osg_options.get());
+    // if (!rr.success()) OSG_WARN << "Error reading file " << filename << ": " << rr.statusMessage() << std::endl;
+    if (!rr.validObject()) return {};
 
     bool mapRGBtoRGBAHint = !options || options->mapRGBtoRGBAHint;
 
+    osg::ref_ptr<osg::Object> object = rr.takeObject();
     if (osg::Node* osg_scene = object->asNode(); osg_scene != nullptr)
     {
         vsg::Paths searchPaths = vsg::getEnvPaths("VSG_FILE_PATH"); // TODO, use the vsg::Options ?
