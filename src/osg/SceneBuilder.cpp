@@ -540,10 +540,10 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
         if (requiresTransform)
         {
             // need to insert a transform
-            vsg::mat4 vsgmatrix = vsg::mat4(matrix(0, 0), matrix(0, 1), matrix(0, 2), matrix(0, 3),
-                                            matrix(1, 0), matrix(1, 1), matrix(1, 2), matrix(1, 3),
-                                            matrix(2, 0), matrix(2, 1), matrix(2, 2), matrix(2, 3),
-                                            matrix(3, 0), matrix(3, 1), matrix(3, 2), matrix(3, 3));
+            vsg::dmat4 vsgmatrix = vsg::dmat4(matrix(0, 0), matrix(0, 1), matrix(0, 2), matrix(0, 3),
+                                              matrix(1, 0), matrix(1, 1), matrix(1, 2), matrix(1, 3),
+                                              matrix(2, 0), matrix(2, 1), matrix(2, 2), matrix(2, 3),
+                                              matrix(3, 0), matrix(3, 1), matrix(3, 2), matrix(3, 3));
 
             vsg::ref_ptr<vsg::MatrixTransform> transform = vsg::MatrixTransform::create(vsgmatrix);
 
@@ -561,9 +561,9 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
                     }
                 }
 
-                vsg::vec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
-                vsg::vec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
-                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
+                vsg::dvec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
+                vsg::dvec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
+                vsg::dsphere boundingSphere((bb_min + bb_max) * 0.5, vsg::length(bb_max - bb_min) * 0.5);
 
                 if (buildOptions->insertCullNodes)
                 {
@@ -596,10 +596,10 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
                 }
             }
 
-            vsg::vec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
-            vsg::vec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
+            vsg::dvec3 bb_min(overall_bb.xMin(), overall_bb.yMin(), overall_bb.zMin());
+            vsg::dvec3 bb_max(overall_bb.xMax(), overall_bb.yMax(), overall_bb.zMax());
 
-            vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
+            vsg::dsphere boundingSphere((bb_min + bb_max) * 0.5, vsg::length(bb_max - bb_min) * 0.5);
             auto cullGroup = vsg::CullGroup::create(boundingSphere);
             localGroup->addChild(cullGroup);
             localGroup = cullGroup;
@@ -644,10 +644,10 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             if (requiresLeafCullGroup)
             {
                 osg::BoundingBox bb = geometry->getBoundingBox();
-                vsg::vec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
-                vsg::vec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
+                vsg::dvec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
+                vsg::dvec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
 
-                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
+                vsg::dsphere boundingSphere((bb_min + bb_max) * 0.5, vsg::length(bb_max - bb_min) * 0.5);
                 if (buildOptions->insertCullNodes)
                 {
                     DEBUG_OUTPUT << "Using CullNode" << std::endl;
@@ -671,10 +671,10 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createTransformGeometryGraphVSG(TransformG
             if (requiresLeafCullGroup)
             {
                 osg::BoundingBox bb = geometry->getBoundingBox();
-                vsg::vec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
-                vsg::vec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
+                vsg::dvec3 bb_min(bb.xMin(), bb.yMin(), bb.zMin());
+                vsg::dvec3 bb_max(bb.xMax(), bb.yMax(), bb.zMax());
 
-                vsg::sphere boundingSphere((bb_min + bb_max) * 0.5f, vsg::length(bb_max - bb_min) * 0.5f);
+                vsg::dsphere boundingSphere((bb_min + bb_max) * 0.5, vsg::length(bb_max - bb_min) * 0.5);
                 if (insertCullNodes)
                 {
                     auto cullGroup = vsg::CullGroup::create(boundingSphere);
@@ -798,7 +798,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
         vsg::ComputeBounds computeBounds;
         group->accept(computeBounds);
 
-        vsg::sphere boundingSphere((computeBounds.bounds.min + computeBounds.bounds.max) * 0.5, vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5);
+        vsg::dsphere boundingSphere((computeBounds.bounds.min + computeBounds.bounds.max) * 0.5, vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5);
         auto cullGroup = vsg::CullGroup::create(boundingSphere);
 
         // add the groups children to the cullGroup
