@@ -106,7 +106,7 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
                 auto local_options = vsg::Options::create(*options);
 
                 local_options->paths.insert(local_options->paths.begin(), vsg::filePath(serverFilename));
-                local_options->extensionHint = vsg::fileExtension(filename);
+                local_options->extensionHint = vsg::lowerCaseFileExtension(filename);
 
                 std::ifstream fin(fileCachePath, std::ios::in | std::ios::binary);
                 auto object = vsg::read(fin, local_options); // do we need to remove any http URL?
