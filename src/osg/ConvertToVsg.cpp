@@ -73,6 +73,7 @@ vsg::Path ConvertToVsg::mapFileName(const std::string& filename)
 
 void ConvertToVsg::optimize(osg::Node* osg_scene)
 {
+#if 0
     osgUtil::IndexMeshVisitor imv;
 #if OSG_MIN_VERSION_REQUIRED(3, 6, 4)
     imv.setGenerateNewIndicesOnAllGeometries(true);
@@ -90,6 +91,7 @@ void ConvertToVsg::optimize(osg::Node* osg_scene)
 
     osgUtil::Optimizer optimizer;
     optimizer.optimize(osg_scene, osgUtil::Optimizer::DEFAULT_OPTIMIZATIONS & ~osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS);
+#endif
 
     osg2vsg::OptimizeOsgBillboards optimizeBillboards;
     osg_scene->accept(optimizeBillboards);
