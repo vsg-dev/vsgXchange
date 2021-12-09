@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "ImageUtils.h"
 #include "ShaderUtils.h"
 
+#include <osg/TemplatePrimitiveIndexFunctor>
 #include <osgUtil/MeshOptimizers>
 #include <osgUtil/TangentSpaceGenerator>
 
@@ -258,6 +259,37 @@ namespace osg2vsg
         return matvalue;
     }
 
+    struct ConvertPrimitives
+    {
+        std::vector<uint32_t> points;
+        std::vector<uint32_t> lines;
+        std::vector<uint32_t> triangles;
+        std::vector<uint32_t> quads;
+
+        void operator() (unsigned int i0)
+        {
+            points.push_back(i0);
+        }
+        void operator() (unsigned int i0, unsigned int i1)
+        {
+            lines.push_back(i0);
+            lines.push_back(i1);
+        }
+        void operator() (unsigned int i0, unsigned int i1, unsigned int i2)
+        {
+            triangles.push_back(i0);
+            triangles.push_back(i1);
+            triangles.push_back(i2);
+        }
+        void operator() (unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3)
+        {
+            quads.push_back(i0);
+            quads.push_back(i1);
+            quads.push_back(i2);
+            quads.push_back(i3);
+        }
+    };
+
     vsg::ref_ptr<vsg::Command> convertToVsg(osg::Geometry* ingeometry, uint32_t requiredAttributesMask, GeometryTarget geometryTarget)
     {
         uint32_t instanceCount = 1;
@@ -329,39 +361,55 @@ namespace osg2vsg
 
         vsg::Geometry::DrawCommands drawCommands;
 
-        std::vector<uint16_t> indices; // use to combine indicies from all drawelements
-        osg::Geometry::PrimitiveSetList& primitiveSets = ingeometry->getPrimitiveSetList();
-        for (osg::Geometry::PrimitiveSetList::const_iterator itr = primitiveSets.begin();
-             itr != primitiveSets.end();
-             ++itr)
+        osg::TemplatePrimitiveIndexFunctor<ConvertPrimitives> collectPrimitives;
+        ingeometry->accept(collectPrimitives);
+#if 0
+        // TODO : need to add support for points and lines.
+        if (collectPrimitives.points.size()>0)
         {
-            osg::DrawElements* de = (*itr)->getDrawElements();
-            if (de)
-            {
-                // merge indicies
-                auto numindices = de->getNumIndices();
-                for (unsigned int i = 0; i < numindices; i++)
-                {
-                    indices.push_back(de->index(i));
-                }
-            }
-            else
-            {
-                // see if we have a drawarrays and create a draw command
-                if ((*itr)->getType() == osg::PrimitiveSet::Type::DrawArraysPrimitiveType) //  asDrawArrays != nullptr)
-                {
-                    osg::DrawArrays* da = dynamic_cast<osg::DrawArrays*>((*itr).get());
-
-                    drawCommands.push_back(vsg::Draw::create(da->getCount(), instanceCount, da->getFirst(), 0));
-                }
-            }
+            std::cout<<"Warning: points not yet supported by vsgXchange/OSG loader."<<std::endl;
         }
 
-        vsg::ref_ptr<vsg::ushortArray> vsgindices;
-        if (indices.size() > 0)
+        if (collectPrimitives.lines.size()>0)
         {
-            vsgindices = new vsg::ushortArray(indices.size());
-            std::copy(indices.begin(), indices.end(), reinterpret_cast<uint16_t*>(vsgindices->dataPointer()));
+            std::cout<<"Warning: lines not yet supported by vsgXchange/OSG loader."<<std::endl;
+        }
+#endif
+        auto& triangles = collectPrimitives.triangles;
+        auto& quads = collectPrimitives.quads;
+
+        for(size_t i=0; i<quads.size(); i+=4)
+        {
+            triangles.push_back(quads[i+0]);
+            triangles.push_back(quads[i+1]);
+            triangles.push_back(quads[i+2]);
+
+            triangles.push_back(quads[i+0]);
+            triangles.push_back(quads[i+2]);
+            triangles.push_back(quads[i+3]);
+        }
+
+        // nothing to draw so return a null ref_ptr<>
+        if (triangles.empty()) return {};
+
+        vsg::ref_ptr<vsg::Data> vsgindices;
+        if (vertices->valueCount() > 16384)
+        {
+            auto indices = vsg::uintArray::create(triangles.size());
+            for(size_t i=0; i<triangles.size(); ++i)
+            {
+                indices->set(i, triangles[i]);
+            }
+            vsgindices = indices;
+        }
+        else
+        {
+            auto indices = vsg::ushortArray::create(triangles.size());
+            for(size_t i=0; i<triangles.size(); ++i)
+            {
+                indices->set(i, triangles[i]);
+            }
+            vsgindices = indices;
         }
 
         if (geometryTarget == VSG_COMMANDS)
@@ -389,7 +437,7 @@ namespace osg2vsg
 
             vid->assignArrays(attributeArrays);
             vid->assignIndices(vsgindices);
-            vid->indexCount = vsgindices->size();
+            vid->indexCount = vsgindices->valueCount();
             vid->instanceCount = instanceCount;
             vid->firstIndex = 0;
             vid->vertexOffset = 0;
