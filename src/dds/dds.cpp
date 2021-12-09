@@ -229,7 +229,7 @@ namespace
 using namespace vsgXchange;
 
 dds::dds() :
-    _supportedExtensions{"dds"}
+    _supportedExtensions{".dds"}
 {
 }
 
@@ -317,6 +317,9 @@ vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_pt
 
 bool dds::getFeatures(Features& features) const
 {
-    features.extensionFeatureMap["dds"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    for(auto& ext : _supportedExtensions)
+    {
+        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    }
     return true;
 }

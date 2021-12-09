@@ -95,11 +95,12 @@ bool OSG::getFeatures(Features& features) const
         osgDB::queryPlugin(pluginName, infoList);
     }
 
+    const std::string dotPrefix = ".";
     for (auto& info : infoList)
     {
         for (auto& ext_description : info->extensions)
         {
-            features.extensionFeatureMap[ext_description.first] = vsg::ReaderWriter::READ_FILENAME;
+            features.extensionFeatureMap[dotPrefix + ext_description.first] = vsg::ReaderWriter::READ_FILENAME;
         }
     }
 
@@ -142,7 +143,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
     }
 
     auto ext = vsg::lowerCaseFileExtension(filename);
-    if (ext=="path")
+    if (ext==".path")
     {
         auto foundPath = vsg::findFile(filename, options);
         if (!foundPath.empty())
