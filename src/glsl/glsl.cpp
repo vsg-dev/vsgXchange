@@ -18,22 +18,22 @@ using namespace vsgXchange;
 
 glsl::glsl()
 {
-    add("vert", VK_SHADER_STAGE_VERTEX_BIT);
-    add("tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    add("tese", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    add("geom", VK_SHADER_STAGE_GEOMETRY_BIT);
-    add("frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-    add("comp", VK_SHADER_STAGE_COMPUTE_BIT);
-    add("mesh", VK_SHADER_STAGE_MESH_BIT_NV);
-    add("task", VK_SHADER_STAGE_TASK_BIT_NV);
-    add("rgen", VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    add("rint", VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    add("rahit", VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    add("rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    add("rmiss", VK_SHADER_STAGE_MISS_BIT_NV);
-    add("rcall", VK_SHADER_STAGE_CALLABLE_BIT_NV);
-    add("glsl", VK_SHADER_STAGE_ALL);
-    add("hlsl", VK_SHADER_STAGE_ALL);
+    add(".vert", VK_SHADER_STAGE_VERTEX_BIT);
+    add(".tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
+    add(".tese", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+    add(".geom", VK_SHADER_STAGE_GEOMETRY_BIT);
+    add(".frag", VK_SHADER_STAGE_FRAGMENT_BIT);
+    add(".comp", VK_SHADER_STAGE_COMPUTE_BIT);
+    add(".mesh", VK_SHADER_STAGE_MESH_BIT_NV);
+    add(".task", VK_SHADER_STAGE_TASK_BIT_NV);
+    add(".rgen", VK_SHADER_STAGE_RAYGEN_BIT_NV);
+    add(".rint", VK_SHADER_STAGE_INTERSECTION_BIT_NV);
+    add(".rahit", VK_SHADER_STAGE_ANY_HIT_BIT_NV);
+    add(".rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
+    add(".rmiss", VK_SHADER_STAGE_MISS_BIT_NV);
+    add(".rcall", VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    add(".glsl", VK_SHADER_STAGE_ALL);
+    add(".hlsl", VK_SHADER_STAGE_ALL);
 }
 
 void glsl::add(const std::string& ext, VkShaderStageFlagBits stage)
@@ -44,7 +44,7 @@ void glsl::add(const std::string& ext, VkShaderStageFlagBits stage)
 
 vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    auto ext = vsg::fileExtension(filename);
+    auto ext = vsg::lowerCaseFileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);
     if (stage_itr != extensionToStage.end())
     {
@@ -86,7 +86,7 @@ vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 bool glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
-    auto ext = vsg::fileExtension(filename);
+    auto ext = vsg::lowerCaseFileExtension(filename);
     auto stage_itr = extensionToStage.find(ext);
     if (stage_itr != extensionToStage.end())
     {

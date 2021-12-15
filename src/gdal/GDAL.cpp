@@ -62,6 +62,8 @@ bool GDAL::getFeatures(Features& features) const
 
     vsg::ReaderWriter::FeatureMask rasterFeatureMask = vsg::ReaderWriter::READ_FILENAME;
 
+    const std::string dotPrefix = ".";
+
     for (int i = 0; i < driverCount; ++i)
     {
         auto driver = driverManager->GetDriver(i);
@@ -83,14 +85,14 @@ bool GDAL::getFeatures(Features& features) const
                 if (deliminator_pos != std::string::npos)
                 {
                     ext = extensions.substr(start_pos, deliminator_pos - start_pos);
-                    features.extensionFeatureMap[ext] = rasterFeatureMask;
+                    features.extensionFeatureMap[dotPrefix + ext] = rasterFeatureMask;
                     start_pos = deliminator_pos + 1;
                     if (start_pos == extensions.length()) break;
                 }
                 else
                 {
                     ext = extensions.substr(start_pos, std::string::npos);
-                    features.extensionFeatureMap[ext] = rasterFeatureMask;
+                    features.extensionFeatureMap[dotPrefix + ext] = rasterFeatureMask;
                     break;
                 }
             }
@@ -112,7 +114,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
 {
     // GDAL tries to load all datatypes so up front catch VSG and OSG native formats.
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
-    if (ext == "vsgb" || ext == "vsgt" || ext == "osgb" || ext == "osgt" || ext == "osg") return {};
+    if (ext == ".vsgb" || ext == ".vsgt" || ext == ".osgb" || ext == ".osgt" || ext == ".osg") return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (filenameToUse.empty()) return {};

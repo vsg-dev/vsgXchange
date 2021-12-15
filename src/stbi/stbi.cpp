@@ -70,7 +70,7 @@ void cpp_free(void* ptr)
 using namespace vsgXchange;
 
 stbi::stbi() :
-    _supportedExtensions{"jpg", "jpeg", "jpe", "png", "gif", "bmp", "tga", "psd", "pgm", "ppm"}
+    _supportedExtensions{".jpg", ".jpeg", ".jpe", ".png", ".gif", ".bmp", ".tga", ".psd", ".pgm", ".ppm"}
 {
 }
 

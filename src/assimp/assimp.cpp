@@ -126,12 +126,12 @@ bool assimp::getFeatures(Features& features) const
 
     vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
 
-    std::string::size_type start = 2; // skip *.
+    std::string::size_type start = 1; // skip *
     std::string::size_type semicolon = suported_extensions.find(';', start);
     while (semicolon != std::string::npos)
     {
         features.extensionFeatureMap[suported_extensions.substr(start, semicolon - start)] = supported_features;
-        start = semicolon + 3;
+        start = semicolon + 2;
         semicolon = suported_extensions.find(';', start);
     }
     features.extensionFeatureMap[suported_extensions.substr(start, std::string::npos)] = supported_features;

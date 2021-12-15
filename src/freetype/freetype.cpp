@@ -119,17 +119,17 @@ bool freetype::getFeatures(Features& features) const
 //
 freetype::Implementation::Implementation()
 {
-    _supportedFormats["ttf"] = "true type font format";
-    _supportedFormats["ttc"] = "true type collection format";
-    _supportedFormats["pfb"] = "type1 binary format";
-    _supportedFormats["pfa"] = "type2 ascii format";
-    _supportedFormats["cid"] = "Postscript CID-Fonts format";
-    _supportedFormats["cff"] = "OpenType format";
-    _supportedFormats["cef"] = "OpenType format";
-    _supportedFormats["otf"] = "OpenType format";
-    _supportedFormats["fon"] = "Windows bitmap fonts format";
-    _supportedFormats["fnt"] = "Windows bitmap fonts format";
-    _supportedFormats["woff"] = "web open font format";
+    _supportedFormats[".ttf"] = "true type font format";
+    _supportedFormats[".ttc"] = "true type collection format";
+    _supportedFormats[".pfb"] = "type1 binary format";
+    _supportedFormats[".pfa"] = "type2 ascii format";
+    _supportedFormats[".cid"] = "Postscript CID-Fonts format";
+    _supportedFormats[".cff"] = "OpenType format";
+    _supportedFormats[".cef"] = "OpenType format";
+    _supportedFormats[".otf"] = "OpenType format";
+    _supportedFormats[".fon"] = "Windows bitmap fonts format";
+    _supportedFormats[".fnt"] = "Windows bitmap fonts format";
+    _supportedFormats[".woff"] = "web open font format";
 }
 
 freetype::Implementation::~Implementation()

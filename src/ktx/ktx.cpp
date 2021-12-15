@@ -234,7 +234,7 @@ namespace
 using namespace vsgXchange;
 
 ktx::ktx() :
-    _supportedExtensions{"ktx", "ktx2"}
+    _supportedExtensions{".ktx", ".ktx2"}
 {
 }
 
@@ -329,7 +329,9 @@ vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_pt
 
 bool ktx::getFeatures(Features& features) const
 {
-    features.extensionFeatureMap["ktx"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
-    features.extensionFeatureMap["ktx2"] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    for(auto& ext : _supportedExtensions)
+    {
+        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+    }
     return true;
 }
