@@ -8,7 +8,7 @@
 /**
  * @file
  * @~English
- * @brief Utilitiy for interpreting a data format descriptor.
+ * @brief Utility for interpreting a data format descriptor.
  * @author Andrew Garrard
  */
 

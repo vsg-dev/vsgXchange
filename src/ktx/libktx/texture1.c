@@ -21,15 +21,15 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "dfdutils/dfd.h"
 #include "ktx.h"
 #include "ktxint.h"
-#include "stream.h"
 #include "filestream.h"
 #include "memstream.h"
 #include "texture1.h"
-#include "uthash.h"
+#include "unused.h"
 #include "gl_format.h"
 
 typedef struct ktxTexture1_private {
@@ -64,7 +64,6 @@ static KTX_error_code
 ktxTexture1_construct(ktxTexture1* This, ktxTextureCreateInfo* createInfo,
                       ktxTextureCreateStorageEnum storageAllocation)
 {
-    ktxTexture1_private* private;
     ktxTexture_protected* prtctd;
     ktxFormatSize formatSize;
     GLuint typeSize;
@@ -91,7 +90,6 @@ ktxTexture1_construct(ktxTexture1* This, ktxTextureCreateInfo* createInfo,
     if (result != KTX_SUCCESS)
         return result;
     prtctd = This->_protected;
-    private = This->_private;
 
     This->isCompressed
                     = (formatSize.flags & KTX_FORMAT_SIZE_COMPRESSED_BIT);
@@ -293,9 +291,9 @@ ktxTexture1_constructFromStreamAndHeader(ktxTexture1* This, ktxStream* pStream,
                 ktx_uint8_t* src = pKvd;
                 ktx_uint8_t* end = pKvd + kvdLen;
                 while (src < end) {
-                    ktx_uint32_t keyAndValueByteSize = *((ktx_uint32_t*)src);
-                    _ktxSwapEndian32(&keyAndValueByteSize, 1);
-                    src += _KTX_PAD4(keyAndValueByteSize);
+                    ktx_uint32_t* pKeyAndValueByteSize = (ktx_uint32_t*)src;
+                    _ktxSwapEndian32(pKeyAndValueByteSize, 1);
+                    src += _KTX_PAD4(*pKeyAndValueByteSize);
                 }
             }
 
@@ -332,8 +330,10 @@ ktxTexture1_constructFromStreamAndHeader(ktxTexture1* This, ktxStream* pStream,
                     switch (This->numDimensions) {
                       case 3:
                         This->orientation.z = orient[2];
+                        FALLTHROUGH;
                       case 2:
                         This->orientation.y = orient[1];
+                        FALLTHROUGH;
                       case 1:
                         This->orientation.x = orient[0];
                     }
@@ -782,6 +782,57 @@ ktxTexture1_CreateFromMemory(const ktx_uint8_t* bytes, ktx_size_t size,
 /**
  * @memberof ktxTexture1
  * @~English
+ * @brief Create a ktxTexture1 from KTX-formatted data from a `ktxStream`.
+ *
+ * The address of a newly created ktxTexture1 reflecting the contents of the
+ * serialized KTX data is written to the location pointed at by @p newTex.
+ *
+ * The create flag KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT should not be set,
+ * if the ktxTexture1 is ultimately to be uploaded to OpenGL or Vulkan. This
+ * will minimize memory usage by allowing, for example, loading the images
+ * directly from the source into a Vulkan staging buffer.
+ *
+ * The create flag KTX_TEXTURE_CREATE_RAW_KVDATA_BIT should not be used. It is
+ * provided solely to enable implementation of the @e libktx v1 API on top of
+ * ktxTexture1.
+ *
+ * @param[in] stream pointer to the stream to read KTX data from.
+ * @param[in] createFlags bitmask requesting specific actions during creation.
+ * @param[in,out] newTex  pointer to a location in which store the address of
+ *                        the newly created texture.
+ *
+ * @return      KTX_SUCCESS on success, other KTX_* enum values on error.
+ *
+ * @exception KTX_INVALID_VALUE Either @p bytes is NULL or @p size is 0.
+ *
+ * For other exceptions, see ktxTexture_CreateFromStdioStream().
+ */
+KTX_error_code
+ktxTexture1_CreateFromStream(ktxStream* stream,
+                             ktxTextureCreateFlags createFlags,
+                             ktxTexture1** newTex)
+{
+    KTX_error_code result;
+    if (newTex == NULL)
+        return KTX_INVALID_VALUE;
+
+    ktxTexture1* tex = (ktxTexture1*)malloc(sizeof(ktxTexture1));
+    if (tex == NULL)
+        return KTX_OUT_OF_MEMORY;
+
+    result = ktxTexture1_constructFromStream(tex, stream, createFlags);
+    if (result == KTX_SUCCESS)
+        *newTex = (ktxTexture1*)tex;
+    else {
+        free(tex);
+        *newTex = NULL;
+    }
+    return result;
+}
+
+/**
+ * @memberof ktxTexture1
+ * @~English
  * @brief Destroy a ktxTexture1 object.
  *
  * This frees the memory associated with the texture contents and the memory
@@ -823,10 +874,11 @@ ktxTexture1_calcDataSizeLevels(ktxTexture1* This, ktx_uint32_t levels)
         ktx_size_t levelSize = ktxTexture_calcLevelSize(ktxTexture(This), i,
                                                         KTX_FORMAT_VERSION_ONE);
         /* mipPadding. NOTE: this adds padding after the last level too. */
-        if (KTX_GL_UNPACK_ALIGNMENT != 4)
+        #if KTX_GL_UNPACK_ALIGNMENT != 4
             dataSize += _KTX_PAD4(levelSize);
-        else
+        #else
             dataSize += levelSize;
+        #endif
     }
     return dataSize;
 }
@@ -1300,6 +1352,7 @@ cleanup:
 ktx_bool_t
 ktxTexture1_NeedsTranscoding(ktxTexture1* This)
 {
+    UNUSED(This);
     return KTX_FALSE;
 }
 
@@ -1314,6 +1367,12 @@ ktxTexture1_SetImageFromMemory(ktxTexture1* This, ktx_uint32_t level,
                                ktx_uint32_t layer, ktx_uint32_t faceSlice,
                                const ktx_uint8_t* src, ktx_size_t srcSize)
 {
+    UNUSED(This);
+    UNUSED(level);
+    UNUSED(layer);
+    UNUSED(faceSlice);
+    UNUSED(src);
+    UNUSED(srcSize);
     return KTX_INVALID_OPERATION;
 }
 
@@ -1322,18 +1381,28 @@ ktxTexture1_SetImageFromStdioStream(ktxTexture1* This, ktx_uint32_t level,
                                     ktx_uint32_t layer, ktx_uint32_t faceSlice,
                                     FILE* src, ktx_size_t srcSize)
 {
+    UNUSED(This);
+    UNUSED(level);
+    UNUSED(layer);
+    UNUSED(faceSlice);
+    UNUSED(src);
+    UNUSED(srcSize);
     return KTX_INVALID_OPERATION;
 }
 
 KTX_error_code
 ktxTexture1_WriteToStdioStream(ktxTexture1* This, FILE* dstsstr)
 {
+    UNUSED(This);
+    UNUSED(dstsstr);
     return KTX_INVALID_OPERATION;
 }
 
 KTX_error_code
 ktxTexture1_WriteToNamedFile(ktxTexture1* This, const char* const dstname)
 {
+    UNUSED(This);
+    UNUSED(dstname);
     return KTX_INVALID_OPERATION;
 }
 
@@ -1341,6 +1410,18 @@ KTX_error_code
 ktxTexture1_WriteToMemory(ktxTexture1* This,
                           ktx_uint8_t** ppDstBytes, ktx_size_t* pSize)
 {
+    UNUSED(This);
+    UNUSED(ppDstBytes);
+    UNUSED(pSize);
+    return KTX_INVALID_OPERATION;
+}
+
+KTX_error_code
+ktxTexture1_WriteToStream(ktxTexture1* This,
+                          ktxStream* dststr)
+{
+    UNUSED(This);
+    UNUSED(dststr);
     return KTX_INVALID_OPERATION;
 }
 
@@ -1371,6 +1452,7 @@ struct ktxTexture_vtbl ktxTexture1_vtbl = {
     (PFNKTEXWRITETOSTDIOSTREAM)ktxTexture1_WriteToStdioStream,
     (PFNKTEXWRITETONAMEDFILE)ktxTexture1_WriteToNamedFile,
     (PFNKTEXWRITETOMEMORY)ktxTexture1_WriteToMemory,
+    (PFNKTEXWRITETOSTREAM)ktxTexture1_WriteToStream,
 };
 
 /** @} */

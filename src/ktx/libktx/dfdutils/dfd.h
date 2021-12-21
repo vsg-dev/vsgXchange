@@ -87,7 +87,7 @@ uint32_t *createDFDDepthStencil(int depthBits,
                                 int stencilBits,
                                 int sizeBytes);
 
-/** Result of interpreting the data format descriptor. */
+/** @brief Result of interpreting the data format descriptor. */
 enum InterpretDFDResult {
     i_LITTLE_ENDIAN_FORMAT_BIT = 0, /*!< Confirmed little-endian (default for 8bpc). */
     i_BIG_ENDIAN_FORMAT_BIT = 1,    /*!< Confirmed big-endian. */
@@ -112,7 +112,7 @@ enum InterpretDFDResult {
     i_UNSUPPORTED_MIXED_CHANNELS            = i_UNSUPPORTED_ERROR_BIT + 4
 };
 
-/** Interpretation of a channel from the data format descriptor. */
+/** @brief Interpretation of a channel from the data format descriptor. */
 typedef struct _InterpretedDFDChannel {
     uint32_t offset; /*!< Offset in bits for packed, bytes for unpacked. */
     uint32_t size;   /*!< Size in bits for packed, bytes for unpacked. */
@@ -145,15 +145,20 @@ uint32_t getDFDNumComponents(const uint32_t* DFD);
 void
 recreateBytesPlane0FromSampleInfo(const uint32_t* DFD, uint32_t* bytesPlane0);
 
+/** @brief Colourspace primaries information.
+ *
+ * Structure to store the 1931 CIE x,y chromaticities of the red, green, and blue
+ * display primaries and the reference white point of a colourspace.
+ */
 typedef struct _Primaries {
-    float Rx;
-    float Ry;
-    float Gx;
-    float Gy;
-    float Bx;
-    float By;
-    float Wx;
-    float Wy;
+    float Rx; /*!< Red x. */
+    float Ry; /*!< Red y. */
+    float Gx; /*!< Green x. */
+    float Gy; /*!< Green y. */
+    float Bx; /*!< Blue x. */
+    float By; /*!< Blue y. */
+    float Wx; /*!< White x. */
+    float Wy; /*!< White y. */
 } Primaries;
 
 khr_df_primaries_e findMapping(Primaries *p, float latitude);

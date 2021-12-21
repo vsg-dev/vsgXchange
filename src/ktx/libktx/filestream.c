@@ -50,8 +50,6 @@
   #define S_IFIFO _S_IFIFO
   #define S_IFSOCK 0xC000
   typedef unsigned short mode_t;
-#elif defined(__MINGW32__)
-  #define S_IFSOCK 0xC000
 #endif
 
 #define KTX_FILE_STREAM_MAX (1 << (sizeof(ktx_off_t) - 1) - 1)
@@ -267,7 +265,7 @@ KTX_error_code ktxFileStream_setpos(ktxStream* str, ktx_off_t pos)
         return result;
     }
 
-    if (pos > fileSize)
+    if (pos > (ktx_off_t)fileSize)
         return KTX_INVALID_OPERATION;
 
     if (fseeko(str->data.file, pos, SEEK_SET) < 0)
