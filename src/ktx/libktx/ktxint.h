@@ -1,7 +1,7 @@
 /* -*- tab-width: 4; -*- */
 /* vi: set sw=2 ts=4 expandtab: */
 
-/* $Id: 79811ed2a4e0cdeb295002a13a981ac0817ddac4 $ */
+/* $Id: e36ad79b5eac8ea237d6a05602c71aadab575519 $ */
 
 /*
  * Copyright 2010-2020 The Khronos Group Inc.
@@ -17,7 +17,6 @@
 #define KTXINT_H
 
 #include <math.h>
-#include "stream.h"
 
 /* Define this to include the ETC unpack software in the library. */
 #ifndef SUPPORT_SOFTWARE_ETC_UNPACK

@@ -31,11 +31,11 @@
 #include <ktx.h>
 
 #include "dfdutils/dfd.h"
-#include "stream.h"
 #include "filestream.h"
 #include "memstream.h"
 #include "ktxint.h"
 #include "basis_sgd.h"
+#include "unused.h"
 
 /*===========================================================*
  * Common Utilities for version 1 and 2.                     *
@@ -55,7 +55,7 @@ printKVData(ktx_uint8_t* pKvd, ktx_uint32_t kvdLen)
     KTX_error_code result;
     ktxHashList kvDataHead = 0;
 
-    assert(pKvd != NULL);
+    assert(pKvd != NULL && kvdLen > 0);
 
     result = ktxHashList_Deserialize(&kvDataHead,
                                      kvdLen, pKvd);
@@ -344,6 +344,7 @@ printBasisSGDInfo(ktx_uint8_t* bgd, ktx_uint64_t byteLength,
                 ktx_uint32_t numImages)
 {
     ktxBasisLzGlobalHeader* bgdh = (ktxBasisLzGlobalHeader*)(bgd);
+    UNUSED(byteLength);
 
     fprintf(stdout, "endpointCount: %d\n", bgdh->endpointCount);
     fprintf(stdout, "selectorCount: %d\n", bgdh->selectorCount);
@@ -398,11 +399,15 @@ printKTX2Info2(ktxStream* stream, KTX_header2* pHeader)
     printDFD(DFD);
     free(DFD);
 
-    fprintf(stdout, "\nKeyValue Data\n\n");
-    metadata = malloc(pHeader->keyValueData.byteLength);
-    stream->read(stream, metadata, pHeader->keyValueData.byteLength);
-    printKVData(metadata, pHeader->keyValueData.byteLength);
-    free(metadata);
+    if (pHeader->keyValueData.byteLength) {
+        fprintf(stdout, "\nKey/Value Data\n\n");
+        metadata = malloc(pHeader->keyValueData.byteLength);
+        stream->read(stream, metadata, pHeader->keyValueData.byteLength);
+        printKVData(metadata, pHeader->keyValueData.byteLength);
+        free(metadata);
+    } else {
+        fprintf(stdout, "\nNo Key/Value data.\n");
+    }
 
     if (pHeader->supercompressionGlobalData.byteOffset != 0
         && pHeader->supercompressionGlobalData.byteLength != 0) {
@@ -521,8 +526,6 @@ ktxPrintInfoForStdioStream(FILE* stdioStream)
     if (result == KTX_SUCCESS)
         result = ktxPrintInfoForStream(&stream);
     return result;
-
-    return KTX_SUCCESS;
 }
 
 /**
@@ -536,6 +539,8 @@ ktxPrintInfoForStdioStream(FILE* stdioStream)
 KTX_error_code
 ktxPrintInfoForNamedFile(const char* const filename)
 {
+    // TODO: Implement
+    UNUSED(filename);
     return KTX_SUCCESS;
 }
 
@@ -558,5 +563,4 @@ ktxPrintInfoForMemory(const ktx_uint8_t* bytes, ktx_size_t size)
     if (result == KTX_SUCCESS)
         result = ktxPrintInfoForStream(&stream);
     return result;
-    return KTX_SUCCESS;
 }

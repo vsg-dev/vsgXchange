@@ -27,16 +27,16 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ktx.h"
 #include "ktxint.h"
 #include "formatsize.h"
-#include "stream.h"
 #include "filestream.h"
 #include "memstream.h"
 #include "texture1.h"
 #include "texture2.h"
-#include "uthash.h"
+#include "unused.h"
 
 ktx_size_t ktxTexture_GetDataSize(ktxTexture* This);
 
@@ -194,11 +194,13 @@ ktxTexture_constructFromStream(ktxTexture* This, ktxStream* pStream,
                                ktxTextureCreateFlags createFlags)
 {
     ktxStream* stream;
+    UNUSED(createFlags); // Reference to keep compiler happy.
 
     assert(This != NULL);
     assert(pStream->data.mem != NULL);
     assert(pStream->type == eStreamTypeFile
-           || pStream->type == eStreamTypeMemory);
+           || pStream->type == eStreamTypeMemory
+           || pStream->type == eStreamTypeCustom);
 
     This->_protected = (struct ktxTexture_protected *)
                                 malloc(sizeof(struct ktxTexture_protected));
@@ -273,7 +275,8 @@ ktxDetermineFileType_(ktxStream* pStream, ktxFileType_* pFileType,
     assert(pStream != NULL && pFileType != NULL);
     assert(pStream->data.mem != NULL);
     assert(pStream->type == eStreamTypeFile
-           || pStream->type == eStreamTypeMemory);
+           || pStream->type == eStreamTypeMemory
+           || pStream->type == eStreamTypeCustom);
 
     result = pStream->read(pStream, pHeader, sizeof(ktx2_ident_ref));
     if (result == KTX_SUCCESS) {
@@ -302,7 +305,7 @@ ktxDetermineFileType_(ktxStream* pStream, ktxFileType_* pFileType,
 }
 
 /**
- * @memberof ktxTexture @private
+ * @memberof ktxTexture
  * @~English
  * @brief Construct (initialize) a ktx1 or ktx2 texture according to the stream
  *        data.
@@ -310,7 +313,7 @@ ktxDetermineFileType_(ktxStream* pStream, ktxFileType_* pFileType,
  * @copydetails ktxTexture_CreateFromStdioStream
  */
 KTX_error_code
-ktxTexture_createFromStream(ktxStream* pStream,
+ktxTexture_CreateFromStream(ktxStream* pStream,
                             ktxTextureCreateFlags createFlags,
                             ktxTexture** newTex)
 {
@@ -373,7 +376,7 @@ ktxTexture_CreateFromStdioStream(FILE* stdioStream,
 
     result = ktxFileStream_construct(&stream, stdioStream, KTX_FALSE);
     if (result == KTX_SUCCESS) {
-        result = ktxTexture_createFromStream(&stream, createFlags, newTex);
+        result = ktxTexture_CreateFromStream(&stream, createFlags, newTex);
     }
     return result;
 }
@@ -426,7 +429,7 @@ ktxTexture_CreateFromNamedFile(const char* const filename,
 
     result = ktxFileStream_construct(&stream, file, KTX_TRUE);
     if (result == KTX_SUCCESS) {
-        result = ktxTexture_createFromStream(&stream, createFlags, newTex);
+        result = ktxTexture_CreateFromStream(&stream, createFlags, newTex);
     }
     return result;
 }
@@ -474,7 +477,7 @@ ktxTexture_CreateFromMemory(const ktx_uint8_t* bytes, ktx_size_t size,
 
     result = ktxMemStream_construct_ro(&stream, bytes, size);
     if (result == KTX_SUCCESS) {
-        result = ktxTexture_createFromStream(&stream, createFlags, newTex);
+        result = ktxTexture_CreateFromStream(&stream, createFlags, newTex);
     }
     return result;}
 
@@ -562,11 +565,11 @@ ktxTexture_calcImageSize(ktxTexture* This, ktx_uint32_t level,
     // Round up to next whole block. We can't use KTX_PADN because some of
     // the block sizes are not powers of 2.
     blockCount.x
-        = (uint32_t)ceilf(levelWidth / prtctd->_formatSize.blockWidth);
+        = (ktx_uint32_t)ceilf(levelWidth / prtctd->_formatSize.blockWidth);
     blockCount.y
-        = (uint32_t)ceilf(levelHeight / prtctd->_formatSize.blockHeight);
-    blockCount.x = MAX(1, blockCount.x);
-    blockCount.y = MAX(1, blockCount.y);
+        = (ktx_uint32_t)ceilf(levelHeight / prtctd->_formatSize.blockHeight);
+    blockCount.x = MAX(prtctd->_formatSize.minBlocksX, blockCount.x);
+    blockCount.y = MAX(prtctd->_formatSize.minBlocksX, blockCount.y);
 
     blockSizeInBytes = prtctd->_formatSize.blockSizeInBits / 8;
 
@@ -574,7 +577,9 @@ ktxTexture_calcImageSize(ktxTexture* This, ktx_uint32_t level,
         assert(This->isCompressed);
         return blockCount.x * blockCount.y * blockSizeInBytes;
     } else {
-        assert(prtctd->_formatSize.blockWidth == prtctd->_formatSize.blockHeight == prtctd->_formatSize.blockDepth == 1);
+        assert(prtctd->_formatSize.blockWidth == 1U
+               && prtctd->_formatSize.blockHeight == 1U
+               && prtctd->_formatSize.blockDepth == 1U);
         rowBytes = blockCount.x * blockSizeInBytes;
         if (fv == KTX_FORMAT_VERSION_ONE)
             (void)padRow(&rowBytes);
@@ -730,7 +735,7 @@ ktxTexture_layerSize(ktxTexture* This, ktx_uint32_t level,
     if (fv == KTX_FORMAT_VERSION_ONE && KTX_GL_UNPACK_ALIGNMENT != 4) {
         if (This->isCubemap && !This->isArray) {
             /* cubePadding. NOTE: this adds padding after the last face too. */
-            _KTX_PAD4(layerSize);
+            layerSize += _KTX_PAD4(layerSize);
         }
     }
     return layerSize * This->numFaces;
@@ -841,7 +846,9 @@ ktxTexture_rowInfo(ktxTexture* This, ktx_uint32_t level,
     assert (This != NULL);
 
     assert(!This->isCompressed);
-    assert(prtctd->_formatSize.blockWidth == prtctd->_formatSize.blockHeight == prtctd->_formatSize.blockDepth == 1);
+    assert(prtctd->_formatSize.blockWidth == 1U
+           && prtctd->_formatSize.blockHeight == 1U
+           && prtctd->_formatSize.blockDepth == 1U);
 
     blockCount.x = MAX(1, (This->baseWidth / prtctd->_formatSize.blockWidth)  >> level);
     *numRows = MAX(1, (This->baseHeight / prtctd->_formatSize.blockHeight)  >> level);

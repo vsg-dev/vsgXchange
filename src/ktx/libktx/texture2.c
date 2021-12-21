@@ -21,6 +21,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 #include <zstd.h>
 #include <zstd_errors.h>
 #include <KHR/khr_df.h>
@@ -28,11 +29,10 @@
 #include "dfdutils/dfd.h"
 #include "ktx.h"
 #include "ktxint.h"
-#include "stream.h"
 #include "filestream.h"
 #include "memstream.h"
 #include "texture2.h"
-#include "uthash.h"
+#include "unused.h"
 #include "vk_format.h"
 
 // FIXME: Test this #define and put it in a header somewhere.
@@ -105,60 +105,75 @@ struct BDFD e5b9g9r9_ufloat_comparator = {
     .bytesPlane5 = 0,
     .bytesPlane6 = 0,
     .bytesPlane7 = 0,
-    .samples[0].bitOffset = 0,
-    .samples[0].bitLength = 8,
-    .samples[0].channelType = KHR_DF_CHANNEL_RGBSDA_RED,
-    .samples[0].samplePosition0 = 0,
-    .samples[0].samplePosition1 = 0,
-    .samples[0].samplePosition2 = 0,
-    .samples[0].samplePosition3 = 0,
-    .samples[0].lower = 0,
-    .samples[0].upper = 8448,
-    .samples[1].bitOffset = 27,
-    .samples[1].bitLength = 4,
-    .samples[1].channelType = KHR_DF_CHANNEL_RGBSDA_RED | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
-    .samples[1].samplePosition0 = 0,
-    .samples[1].samplePosition1 = 0,
-    .samples[1].samplePosition2 = 0,
-    .samples[1].samplePosition3 = 0,
-    .samples[1].lower = 15,
-    .samples[1].upper = 31,
-    .samples[2].bitOffset = 9,
-    .samples[2].bitLength = 8,
-    .samples[2].channelType = KHR_DF_CHANNEL_RGBSDA_GREEN,
-    .samples[2].samplePosition0 = 0,
-    .samples[2].samplePosition1 = 0,
-    .samples[2].samplePosition2 = 0,
-    .samples[2].samplePosition3 = 0,
-    .samples[2].lower = 0,
-    .samples[2].upper = 8448,
-    .samples[3].bitOffset = 27,
-    .samples[3].bitLength = 4,
-    .samples[3].channelType = KHR_DF_CHANNEL_RGBSDA_GREEN | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
-    .samples[3].samplePosition0 = 0,
-    .samples[3].samplePosition1 = 0,
-    .samples[3].samplePosition2 = 0,
-    .samples[3].samplePosition3 = 0,
-    .samples[3].lower = 15,
-    .samples[3].upper = 31,
-    .samples[4].bitOffset = 18,
-    .samples[4].bitLength = 8,
-    .samples[4].channelType = KHR_DF_CHANNEL_RGBSDA_BLUE,
-    .samples[4].samplePosition0 = 0,
-    .samples[4].samplePosition1 = 0,
-    .samples[4].samplePosition2 = 0,
-    .samples[4].samplePosition3 = 0,
-    .samples[4].lower = 0,
-    .samples[4].upper = 8448,
-    .samples[5].bitOffset = 27,
-    .samples[5].bitLength = 4,
-    .samples[5].channelType = KHR_DF_CHANNEL_RGBSDA_BLUE | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
-    .samples[5].samplePosition0 = 0,
-    .samples[5].samplePosition1 = 0,
-    .samples[5].samplePosition2 = 0,
-    .samples[5].samplePosition3 = 0,
-    .samples[5].lower = 15,
-    .samples[5].upper = 31,
+    // gcc likes this way. It does not like, e.g.,
+    // .samples[0].bitOffset = 0, etc. which is accepted by both clang & msvc.
+    // I find the standards docs impenetrable so I don't know which is correct.
+    .samples[0] = {
+        .bitOffset = 0,
+        .bitLength = 8,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_RED,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 0,
+        .upper = 8448,
+    },
+    .samples[1] = {
+        .bitOffset = 27,
+        .bitLength = 4,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_RED | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 15,
+        .upper = 31,
+    },
+    .samples[2] = {
+        .bitOffset = 9,
+        .bitLength = 8,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_GREEN,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 0,
+        .upper = 8448,
+    },
+    .samples[3] = {
+        .bitOffset = 27,
+        .bitLength = 4,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_GREEN | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 15,
+        .upper = 31,
+    },
+    .samples[4] = {
+        .bitOffset = 18,
+        .bitLength = 8,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_BLUE,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 0,
+        .upper = 8448,
+    },
+    .samples[5] = {
+        .bitOffset = 27,
+        .bitLength = 4,
+        .channelType = KHR_DF_CHANNEL_RGBSDA_BLUE | KHR_DF_SAMPLE_DATATYPE_EXPONENT,
+        .samplePosition0 = 0,
+        .samplePosition1 = 0,
+        .samplePosition2 = 0,
+        .samplePosition3 = 0,
+        .lower = 15,
+        .upper = 31,
+    }
 };
 #else
 // For compilers which order bitfields from the msb rather than lsb.
@@ -216,7 +231,6 @@ ktx_uint32_t e5b9g9r9_ufloat_comparator[e5b9g9r9_bdbwordcount] = {
 bool
 ktxFormatSize_initFromDfd(ktxFormatSize* This, ktx_uint32_t* pDfd)
 {
-    bool notDepthStencil = false;
     uint32_t* pBdb = pDfd + 1;
 
     // Check the DFD is of the expected type and version.
@@ -235,9 +249,13 @@ ktxFormatSize_initFromDfd(ktxFormatSize* This, ktx_uint32_t* pDfd)
     This->blockSizeInBits = KHR_DFDVAL(pBdb, BYTESPLANE0) * 8;
     This->paletteSizeInBits = 0; // No paletted formats in ktx v2.
     This->flags = 0;
+    This->minBlocksX = This->minBlocksY = 1;
     if (KHR_DFDVAL(pBdb, MODEL) >= KHR_DF_MODEL_DXT1A) {
         // A block compressed format. Entire block is a single sample.
         This->flags |= KTX_FORMAT_SIZE_COMPRESSED_BIT;
+        if (KHR_DFDVAL(pBdb, MODEL) == KHR_DF_MODEL_PVRTC) {
+            This->minBlocksX = This->minBlocksY = 2;
+        }
     } else {
         // An uncompressed format.
 
@@ -410,10 +428,8 @@ ktxTexture2_construct(ktxTexture2* This, ktxTextureCreateInfo* createInfo,
 
     // Create levelIndex. Offsets are from start of the KTX2 stream.
     ktxLevelIndexEntry* levelIndex = This->_private->_levelIndex;
-    ktx_uint32_t levelIndexSize;
 
     This->_private->_firstLevelFileOffset = 0;
-    levelIndexSize = sizeof(ktxLevelIndexEntry) * This->numLevels;
 
     for (ktx_uint32_t level = 0; level < This->numLevels; level++) {
         levelIndex[level].uncompressedByteLength =
@@ -754,8 +770,10 @@ ktxTexture2_constructFromStreamAndHeader(ktxTexture2* This, ktxStream* pStream,
                         switch (This->numDimensions) {
                           case 3:
                             This->orientation.z = orientationStr[2];
+                            FALLTHROUGH;
                           case 2:
                             This->orientation.y = orientationStr[1];
+                            FALLTHROUGH;
                           case 1:
                             This->orientation.x = orientationStr[0];
                         }
@@ -773,13 +791,15 @@ ktxTexture2_constructFromStreamAndHeader(ktxTexture2* This, ktxStream* pStream,
                         result = KTX_FILE_DATA_ERROR;
                         goto cleanup;
                     }
-                    if (This->isArray && This->numDimensions == 2
-                        && !This->isCubemap)
-                    {
+                    if (This->isArray) {
                         This->isVideo = KTX_TRUE;
                         This->duration = animData[0];
                         This->timescale = animData[1];
                         This->loopcount = animData[2];
+                    } else {
+                        // animData is only valid for array textures.
+                        result = KTX_FILE_DATA_ERROR;
+                        goto cleanup;
                     }
                 } else {
                     result = KTX_SUCCESS; // Not finding video is okay.
@@ -1289,6 +1309,57 @@ ktxTexture2_CreateFromMemory(const ktx_uint8_t* bytes, ktx_size_t size,
 
     result = ktxTexture2_constructFromMemory(tex, bytes, size,
                                              createFlags);
+    if (result == KTX_SUCCESS)
+        *newTex = (ktxTexture2*)tex;
+    else {
+        free(tex);
+        *newTex = NULL;
+    }
+    return result;
+}
+
+/**
+ * @memberof ktxTexture2
+ * @~English
+ * @brief Create a ktxTexture2 from KTX-formatted data from a stream.
+ *
+ * The address of a newly created ktxTexture2 reflecting the contents of the
+ * serialized KTX data is written to the location pointed at by @p newTex.
+ *
+ * The create flag KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT should not be set,
+ * if the ktxTexture is ultimately to be uploaded to OpenGL or Vulkan. This
+ * will minimize memory usage by allowing, for example, loading the images
+ * directly from the source into a Vulkan staging buffer.
+ *
+ * The create flag KTX_TEXTURE_CREATE_RAW_KVDATA_BIT should not be used. It is
+ * provided solely to enable implementation of the @e libktx v1 API on top of
+ * ktxTexture.
+ *
+ * @param[in] stream pointer to the stream to read KTX data from.
+ * @param[in] createFlags bitmask requesting specific actions during creation.
+ * @param[in,out] newTex  pointer to a location in which store the address of
+ *                        the newly created texture.
+ *
+ * @return      KTX_SUCCESS on success, other KTX_* enum values on error.
+ *
+ * @exception KTX_INVALID_VALUE Either @p bytes is NULL or @p size is 0.
+ *
+ * For other exceptions, see ktxTexture_CreateFromStdioStream().
+ */
+KTX_error_code
+ktxTexture2_CreateFromStream(ktxStream* stream,
+                             ktxTextureCreateFlags createFlags,
+                             ktxTexture2** newTex)
+{
+    KTX_error_code result;
+    if (newTex == NULL)
+        return KTX_INVALID_VALUE;
+
+    ktxTexture2* tex = (ktxTexture2*)malloc(sizeof(ktxTexture2));
+    if (tex == NULL)
+        return KTX_OUT_OF_MEMORY;
+
+    result = ktxTexture2_constructFromStream(tex, stream, createFlags);
     if (result == KTX_SUCCESS)
         *newTex = (ktxTexture2*)tex;
     else {
@@ -1999,7 +2070,7 @@ ktxTexture2_IterateLoadLevelFaces(ktxTexture2* This, PFNKTXITERCB iterCb,
         // With the exception of non-array cubemaps the entire level
         // is passed at once because that is how OpenGL and Vulkan need them.
         // Vulkan could take all the faces at once too but we iterate
-        // them separately or OpenGL.
+        // them separately for OpenGL.
         if (This->isCubemap && !This->isArray) {
             ktx_uint8_t* pFace = pData;
             struct blockCount {
@@ -2011,8 +2082,8 @@ ktxTexture2_IterateLoadLevelFaces(ktxTexture2* This, PFNKTXITERCB iterCb,
               = (uint32_t)ceilf((float)width / prtctd->_formatSize.blockWidth);
             blockCount.y
               = (uint32_t)ceilf((float)height / prtctd->_formatSize.blockHeight);
-            blockCount.x = MAX(1, blockCount.x);
-            blockCount.y = MAX(1, blockCount.y);
+            blockCount.x = MAX(prtctd->_formatSize.minBlocksX, blockCount.x);
+            blockCount.y = MAX(prtctd->_formatSize.minBlocksX, blockCount.y);
             faceSize = blockCount.x * blockCount.y
                        * prtctd->_formatSize.blockSizeInBits / 8;
 
@@ -2218,7 +2289,7 @@ ktxTexture2_inflateZstdInt(ktxTexture2* This, ktx_uint8_t* pDeflatedData,
     ktxLevelIndexEntry* nindex;
     ktx_uint32_t uncompressedLevelAlignment;
 
-    ZSTD_DCtx* dctx = ZSTD_createDCtx();
+    ZSTD_DCtx* dctx;
 
     if (pDeflatedData == NULL)
         return KTX_INVALID_VALUE;
@@ -2237,6 +2308,7 @@ ktxTexture2_inflateZstdInt(ktxTexture2* This, ktx_uint8_t* pDeflatedData,
         ktxTexture2_calcPostInflationLevelAlignment(This);
 
     ktx_size_t inflatedByteLength = 0;
+    dctx = ZSTD_createDCtx();
     for (int32_t level = This->numLevels - 1; level >= 0; level--) {
         size_t levelByteLength =
             ZSTD_decompressDCtx(dctx, pInflatedData + levelOffset,
@@ -2268,6 +2340,7 @@ ktxTexture2_inflateZstdInt(ktxTexture2* This, ktx_uint8_t* pDeflatedData,
     This->dataSize = inflatedByteLength;
     This->supercompressionScheme = KTX_SS_NONE;
     memcpy(cindex, nindex, levelIndexByteLength); // Update level index
+    free(nindex);
     This->_private->_requiredLevelAlignment = uncompressedLevelAlignment;
     // Set bytesPlane as we're now sized.
     uint32_t* bdb = This->pDfd + 1;
@@ -2288,6 +2361,12 @@ ktxTexture2_SetImageFromMemory(ktxTexture2* This, ktx_uint32_t level,
                                ktx_uint32_t layer, ktx_uint32_t faceSlice,
                                const ktx_uint8_t* src, ktx_size_t srcSize)
 {
+    UNUSED(This);
+    UNUSED(level);
+    UNUSED(layer);
+    UNUSED(faceSlice);
+    UNUSED(src);
+    UNUSED(srcSize);
     return KTX_INVALID_OPERATION;
 }
 
@@ -2296,18 +2375,28 @@ ktxTexture2_SetImageFromStdioStream(ktxTexture2* This, ktx_uint32_t level,
                                     ktx_uint32_t layer, ktx_uint32_t faceSlice,
                                     FILE* src, ktx_size_t srcSize)
 {
+    UNUSED(This);
+    UNUSED(level);
+    UNUSED(layer);
+    UNUSED(faceSlice);
+    UNUSED(src);
+    UNUSED(srcSize);
     return KTX_INVALID_OPERATION;
 }
 
 KTX_error_code
 ktxTexture2_WriteToStdioStream(ktxTexture2* This, FILE* dstsstr)
 {
+    UNUSED(This);
+    UNUSED(dstsstr);
     return KTX_INVALID_OPERATION;
 }
 
 KTX_error_code
 ktxTexture2_WriteToNamedFile(ktxTexture2* This, const char* const dstname)
 {
+    UNUSED(This);
+    UNUSED(dstname);
     return KTX_INVALID_OPERATION;
 }
 
@@ -2315,6 +2404,18 @@ KTX_error_code
 ktxTexture2_WriteToMemory(ktxTexture2* This,
                           ktx_uint8_t** ppDstBytes, ktx_size_t* pSize)
 {
+    UNUSED(This);
+    UNUSED(ppDstBytes);
+    UNUSED(pSize);
+    return KTX_INVALID_OPERATION;
+}
+
+KTX_error_code
+ktxTexture2_WriteToStream(ktxTexture2* This,
+                          ktxStream* dststr)
+{
+    UNUSED(This);
+    UNUSED(dststr);
     return KTX_INVALID_OPERATION;
 }
 
@@ -2345,6 +2446,7 @@ struct ktxTexture_vtbl ktxTexture2_vtbl = {
     (PFNKTEXWRITETOSTDIOSTREAM)ktxTexture2_WriteToStdioStream,
     (PFNKTEXWRITETONAMEDFILE)ktxTexture2_WriteToNamedFile,
     (PFNKTEXWRITETOMEMORY)ktxTexture2_WriteToMemory,
+    (PFNKTEXWRITETOSTREAM)ktxTexture2_WriteToStream,
 };
 
 /** @} */

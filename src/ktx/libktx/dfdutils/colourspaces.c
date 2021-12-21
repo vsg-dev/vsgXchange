@@ -2,6 +2,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @~English
+ * @brief Helper functions for colourspaces.
+ */
+
 #include <KHR/khr_df.h>
 #include "dfd.h"
 
@@ -26,12 +32,12 @@ sPrimaryMapping primaryMap[] = {
 /**
  * @brief Map a set of primaries to a KDFS primaries enum.
  *
- * @param(in) p           pointer to a Primaries struct filled in with the primary values.
- * @param(in) latitude tolerance to use while matching. A suitable value might be 0.002
+ * @param[in] p           pointer to a Primaries struct filled in with the primary values.
+ * @param[in] latitude tolerance to use while matching. A suitable value might be 0.002
  *                 but it depends on the application.
  */
 khr_df_primaries_e findMapping(Primaries *p, float latitude) {
-    int i;
+    unsigned int i;
     for (i = 0; i < sizeof(primaryMap)/sizeof(sPrimaryMapping); ++i) {
         if (primaryMap[i].primaries.Rx - p->Rx <= latitude && p->Rx - primaryMap[i].primaries.Rx <= latitude &&
             primaryMap[i].primaries.Gx - p->Gx <= latitude && p->Gx - primaryMap[i].primaries.Gx <= latitude &&
