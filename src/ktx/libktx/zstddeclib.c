@@ -6409,13 +6409,17 @@ static const U32 LL_bits[MaxLL+1] = { 0, 0, 0, 0, 0, 0, 0, 0,
                                       1, 1, 1, 1, 2, 2, 3, 3,
                                       4, 6, 7, 8, 9,10,11,12,
                                      13,14,15,16 };
+#if 0
 static const S16 LL_defaultNorm[MaxLL+1] = { 4, 3, 2, 2, 2, 2, 2, 2,
                                              2, 2, 2, 2, 2, 1, 1, 1,
                                              2, 2, 2, 2, 2, 2, 2, 2,
                                              2, 3, 2, 1, 1, 1, 1, 1,
                                             -1,-1,-1,-1 };
+#endif
 #define LL_DEFAULTNORMLOG 6  /* for static allocation */
+#if 0
 static const U32 LL_defaultNormLog = LL_DEFAULTNORMLOG;
+#endif
 
 static const U32 ML_bits[MaxML+1] = { 0, 0, 0, 0, 0, 0, 0, 0,
                                       0, 0, 0, 0, 0, 0, 0, 0,
@@ -6424,6 +6428,7 @@ static const U32 ML_bits[MaxML+1] = { 0, 0, 0, 0, 0, 0, 0, 0,
                                       1, 1, 1, 1, 2, 2, 3, 3,
                                       4, 4, 5, 7, 8, 9,10,11,
                                      12,13,14,15,16 };
+#if 0
 static const S16 ML_defaultNorm[MaxML+1] = { 1, 4, 3, 2, 2, 2, 2, 2,
                                              2, 1, 1, 1, 1, 1, 1, 1,
                                              1, 1, 1, 1, 1, 1, 1, 1,
@@ -6431,15 +6436,20 @@ static const S16 ML_defaultNorm[MaxML+1] = { 1, 4, 3, 2, 2, 2, 2, 2,
                                              1, 1, 1, 1, 1, 1, 1, 1,
                                              1, 1, 1, 1, 1, 1,-1,-1,
                                             -1,-1,-1,-1,-1 };
+#endif
 #define ML_DEFAULTNORMLOG 6  /* for static allocation */
+#if 0
 static const U32 ML_defaultNormLog = ML_DEFAULTNORMLOG;
 
 static const S16 OF_defaultNorm[DefaultMaxOff+1] = { 1, 1, 1, 1, 1, 1, 2, 2,
                                                      2, 1, 1, 1, 1, 1, 1, 1,
                                                      1, 1, 1, 1, 1, 1, 1, 1,
                                                     -1,-1,-1,-1,-1 };
+#endif
 #define OF_DEFAULTNORMLOG 5  /* for static allocation */
+#if 0
 static const U32 OF_defaultNormLog = OF_DEFAULTNORMLOG;
+#endif
 
 
 /*-*******************************************
