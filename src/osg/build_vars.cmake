@@ -1,9 +1,10 @@
 # Find OpenScenegraph
-find_package(OpenThreads)
-find_package(osg)
-find_package(osgDB)
-find_package(osgTerrain)
-find_package(osgUtil)
+set(OSG_MIN_VERSION 3.6)
+find_package(OpenThreads ${OSG_MIN_VERSION})
+find_package(osg ${OSG_MIN_VERSION})
+find_package(osgDB ${OSG_MIN_VERSION})
+find_package(osgTerrain ${OSG_MIN_VERSION})
+find_package(osgUtil ${OSG_MIN_VERSION})
 
 if(OSG_FOUND AND OSGDB_FOUND AND OSGTERRAIN_FOUND AND OSGUTIL_FOUND)
     OPTION(vsgXchange_OSG "Optional OpenSceneGraph support provided" ON)
