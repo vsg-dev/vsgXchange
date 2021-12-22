@@ -1,11 +1,26 @@
 # add assimp if vailable
+find_package(assimp 5.1 QUIET)
+if(NOT assimp_FOUND)
 find_package(assimp 5.0 QUIET)
+endif()
+
+
 
 if(assimp_FOUND)
     OPTION(vsgXchange_assimp "Optional Assimp support provided" ON)
 endif()
 
 if (${vsgXchange_assimp})
+
+    string(REPLACE "." ";" ASSIMP_VERSION_LIST ${assimp_VERSION})
+    list(GET ASSIMP_VERSION_LIST 0 ASSIMP_VERSION_MAJOR)
+    list(GET ASSIMP_VERSION_LIST 1 ASSIMP_VERSION_MINOR)
+    list(GET ASSIMP_VERSION_LIST 2 ASSIMP_VERSION_PATCH)
+
+    message("\nassimp_VERSION "${assimp_VERSION})
+
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} "ASSIMP_VERSION_MAJOR=${ASSIMP_VERSION_MAJOR}" "ASSIMP_VERSION_MINOR=${ASSIMP_VERSION_MINOR}" "ASSIMP_VERSION_PATCH=${ASSIMP_VERSION_PATCH}" )
+
     set(SOURCES ${SOURCES}
         assimp/assimp.cpp
     )
