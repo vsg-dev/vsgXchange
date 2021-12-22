@@ -17,7 +17,11 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-find_package(vsg 0.2.1 REQUIRED)
+set(VSG_MIN_VERSION 0.2.1)
+find_package(vsg ${VSG_MIN_VERSION} REQUIRED)
+
+# for generated cmake support files
+set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsg ${VSG_MIN_VERSION} REQUIRED)")
 
 vsg_setup_build_vars()
 vsg_setup_dir_vars()
