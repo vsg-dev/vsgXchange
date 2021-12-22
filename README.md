@@ -97,7 +97,7 @@ To convet 3rd part model formats to native VSG format or source file:
 
 To convert a OpenSceneGraph Paged database:
 
-    vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 -n 50000 # convert up to level 30, and default to needing 50,000 Vk Descriptors when rendering
+    vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 # convert up to level 30
 
 
 ## File formats supported by all built in ReaderWriters
