@@ -24,8 +24,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/all.h>
 
 #include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
-#define ASSIMP_5_0 1
+#define ASSIMP_5_0 (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==0)
 
 #if ASSIMP_5_0
 #include <assimp/pbrmaterial.h>
@@ -33,9 +35,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <assimp/material.h>
 #include <assimp/GltfMaterial.h>
 #endif
-
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
 
 namespace
 {
@@ -107,6 +106,9 @@ private:
 assimp::assimp() :
     _implementation(new assimp::Implementation())
 {
+    std::cout<<"ASSIMP_VERSION_MAJOR "<<ASSIMP_VERSION_MAJOR<<std::endl;
+    std::cout<<"ASSIMP_VERSION_MINOR "<<ASSIMP_VERSION_MINOR<<std::endl;
+    std::cout<<"ASSIMP_VERSION_PATCH "<<ASSIMP_VERSION_PATCH<<std::endl;
 }
 assimp::~assimp()
 {
