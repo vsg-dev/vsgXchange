@@ -53,7 +53,7 @@ vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<con
 
         std::string source;
 
-        std::ifstream fin(found_filename, std::ios::ate);
+        std::ifstream fin(found_filename, std::ios::ate | std::ios::binary);
         size_t fileSize = fin.tellg();
 
         source.resize(fileSize);
