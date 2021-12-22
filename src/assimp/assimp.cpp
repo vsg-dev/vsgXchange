@@ -24,7 +24,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/all.h>
 
 #include <assimp/Importer.hpp>
+
+#if ASSIMP_5_0
 #include <assimp/pbrmaterial.h>
+#else
+#include <assimp/material.h>
+#include <assimp/GltfMaterial.h>
+#endif
+
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
