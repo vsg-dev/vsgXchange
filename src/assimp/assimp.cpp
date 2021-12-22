@@ -25,6 +25,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <assimp/Importer.hpp>
 
+#define ASSIMP_5_0 1
+
 #if ASSIMP_5_0
 #include <assimp/pbrmaterial.h>
 #else
@@ -484,12 +486,23 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         const auto material = scene->mMaterials[i];
 
         bool hasPbrSpecularGlossiness{false};
+#if ASSIMP_5_0
+        // no equivilant in 5.1.x
         material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS, hasPbrSpecularGlossiness);
+#else
+        // ASSIMP_5_1 TODO
+#endif
 
         auto shaderHints = vsg::ShaderCompileSettings::create();
         std::vector<std::string>& defines = shaderHints->defines;
 
-        if (vsg::PbrMaterial pbr; material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
+        vsg::PbrMaterial pbr;
+#if ASSIMP_5_0
+        if (material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
+#else
+        // ASSIMP_5_1 TODO
+        if (false)
+#endif
         {
             // PBR path
 
@@ -499,7 +512,12 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 material->Get(AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
                 material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
+#if ASSIMP_5_0
                 if (material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
+#else
+                // ASSIMP_5_1 TODO
+                if (false)
+#endif
                 {
                     if (float shininess; material->Get(AI_MATKEY_SHININESS, shininess))
                         pbr.specularFactor.a = shininess / 1000;
@@ -507,8 +525,12 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             }
             else
             {
+#if ASSIMP_5_0
                 material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, pbr.metallicFactor);
                 material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, pbr.roughnessFactor);
+#else
+                // ASSIMP_5_1 TODO
+#endif
             }
 
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
