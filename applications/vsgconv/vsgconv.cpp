@@ -115,7 +115,7 @@ namespace vsgconv
     struct CollectReadRequests : public vsg::Visitor
     {
         vsg::Path dest_path;
-        vsg::Path dest_extension = "vsgb";
+        vsg::Path dest_extension = ".vsgb";
         std::map<vsg::Path, ReadRequest> readRequests;
 
         bool operator()(vsg::Object& object, const vsg::Path& dest_filename)
@@ -139,7 +139,7 @@ namespace vsgconv
                 if (readRequests.count(plod.filename) == 0)
                 {
                     auto src_filename = plod.filename;
-                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + "." + dest_extension;
+                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + dest_extension;
                     auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
 
                     readRequests[plod.filename] = {plod.options, src_filename, dest_filename};
