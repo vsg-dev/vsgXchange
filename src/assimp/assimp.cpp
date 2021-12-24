@@ -27,13 +27,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#define ASSIMP_5_0 (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==0)
-
-#if ASSIMP_5_0
-#include <assimp/pbrmaterial.h>
+#if (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==0)
+    #include <assimp/pbrmaterial.h>
+    #define AI_MATKEY_BASE_COLOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR
+    #define AI_MATKEY_GLOSSINESS_FACTOR AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR
+    #define AI_MATKEY_METALLIC_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR
+    #define AI_MATKEY_ROUGHNESS_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR
 #else
-#include <assimp/material.h>
-#include <assimp/GltfMaterial.h>
+    #include <assimp/material.h>
+    #include <assimp/GltfMaterial.h>
 #endif
 
 namespace
@@ -493,22 +495,12 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness{false};
 
-#if ASSIMP_5_0
-        material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS, hasPbrSpecularGlossiness);
-#else
-        // no equivilant to AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS in 5.1.4
-#endif
-
         if (material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor)) hasPbrSpecularGlossiness = true;
 
         auto shaderHints = vsg::ShaderCompileSettings::create();
         std::vector<std::string>& defines = shaderHints->defines;
 
-#if ASSIMP_5_0
-        if (material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
-#else
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
-#endif
         {
             // PBR path
 
@@ -517,11 +509,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 defines.push_back("VSG_WORKFLOW_SPECGLOSS");
                 material->Get(AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
 
-#if ASSIMP_5_0
-                if (material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
-#else
                 if (material->Get(AI_MATKEY_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
-#endif
                 {
                     if (float shininess; material->Get(AI_MATKEY_SHININESS, shininess))
                         pbr.specularFactor.a = shininess / 1000;
@@ -529,13 +517,8 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             }
             else
             {
-#if ASSIMP_5_0
-                material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, pbr.metallicFactor);
-                material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, pbr.roughnessFactor);
-#else
                 material->Get(AI_MATKEY_METALLIC_FACTOR, pbr.metallicFactor);
                 material->Get(AI_MATKEY_ROUGHNESS_FACTOR, pbr.roughnessFactor);
-#endif
             }
 
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
