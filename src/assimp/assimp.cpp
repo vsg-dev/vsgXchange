@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 AndrÃ© Normann & Robert Osfield
+Copyright(c) 2021 André Normann & Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -93,6 +93,99 @@ private:
     void createDefaultPipelineAndState();
     vsg::ref_ptr<vsg::Object> processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const;
     BindState processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const;
+
+    VkSamplerAddressMode getWrapMode(aiTextureMapMode mode) const
+    {
+        switch (mode)
+        {
+        case aiTextureMapMode_Wrap: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case aiTextureMapMode_Clamp: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case aiTextureMapMode_Decal: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        case aiTextureMapMode_Mirror: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        default: break;
+        }
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+
+    SamplerData getTexture(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, aiMaterial& material, aiTextureType type, std::vector<std::string>& defines) const
+    {
+        aiString texPath;
+        std::array<aiTextureMapMode, 3> wrapMode{{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap}};
+
+        if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode.data()) == AI_SUCCESS)
+        {
+            SamplerData samplerImage;
+
+            if (texPath.data[0] == '*')
+            {
+                const auto texIndex = std::atoi(texPath.C_Str() + 1);
+                const auto texture = scene->mTextures[texIndex];
+
+                //qCDebug(lc) << "Handle embedded texture" << texPath.C_Str() << texIndex << texture->achFormatHint << texture->mWidth << texture->mHeight;
+
+                if (texture->mWidth > 0 && texture->mHeight == 0)
+                {
+                    auto imageOptions = vsg::Options::create(*options);
+                    imageOptions->extensionHint = texture->achFormatHint;
+                    if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
+                        return {};
+                }
+            }
+            else
+            {
+                const std::string filename = vsg::findFile(texPath.C_Str(), options);
+
+                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
+                {
+                    std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
+                    return {};
+                }
+            }
+
+            switch (type)
+            {
+            case aiTextureType_DIFFUSE: defines.push_back(kDiffuseMapKey); break;
+            case aiTextureType_SPECULAR: defines.push_back(kSpecularMapKey); break;
+            case aiTextureType_EMISSIVE: defines.push_back(kEmissiveMapKey); break;
+            case aiTextureType_HEIGHT: defines.push_back(kHeightMapKey); break;
+            case aiTextureType_NORMALS: defines.push_back(kNormalMapKey); break;
+            case aiTextureType_SHININESS: defines.push_back(kShininessMapKey); break;
+            case aiTextureType_OPACITY: defines.push_back(kOpacityMapKey); break;
+            case aiTextureType_DISPLACEMENT: defines.push_back(kDisplacementMapKey); break;
+            case aiTextureType_AMBIENT:
+            case aiTextureType_LIGHTMAP: defines.push_back(kLightmapMapKey); break;
+            case aiTextureType_REFLECTION: defines.push_back(kReflectionMapKey); break;
+            case aiTextureType_UNKNOWN: defines.push_back(kMetallRoughnessMapKey); break;
+            default: break;
+            }
+
+            samplerImage.sampler = vsg::Sampler::create();
+
+            samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
+            samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
+            samplerImage.sampler->addressModeW = getWrapMode(wrapMode[2]);
+
+            samplerImage.sampler->anisotropyEnable = VK_TRUE;
+            samplerImage.sampler->maxAnisotropy = 16.0f;
+
+            samplerImage.sampler->maxLod = samplerImage.data->getLayout().maxNumMipmaps;
+
+            if (samplerImage.sampler->maxLod <= 1.0)
+            {
+                //                if (texPath.length > 0)
+                //                    std::cout << "Auto generating mipmaps for texture: " << scene.GetShortFilename(texPath.C_Str()) << std::endl;;
+
+                // Calculate maximum lod level
+                auto maxDim = std::max(samplerImage.data->width(), samplerImage.data->height());
+                samplerImage.sampler->maxLod = std::floor(std::log2f(static_cast<float>(maxDim)));
+            }
+
+            return samplerImage;
+        }
+
+        return {};
+    }
+
 
     vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
     vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
@@ -393,96 +486,6 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
     BindState bindDescriptorSets;
     bindDescriptorSets.reserve(scene->mNumMaterials);
 
-    auto getWrapMode = [](aiTextureMapMode mode) {
-        switch (mode)
-        {
-        case aiTextureMapMode_Wrap: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        case aiTextureMapMode_Clamp: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-        case aiTextureMapMode_Decal: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-        case aiTextureMapMode_Mirror: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-        default: break;
-        }
-        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    };
-
-    auto getTexture = [&](aiMaterial& material, aiTextureType type, std::vector<std::string>& defines) -> SamplerData {
-        aiString texPath;
-        std::array<aiTextureMapMode, 3> wrapMode{{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap}};
-
-        if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode.data()) == AI_SUCCESS)
-        {
-            SamplerData samplerImage;
-
-            if (texPath.data[0] == '*')
-            {
-                const auto texIndex = std::atoi(texPath.C_Str() + 1);
-                const auto texture = scene->mTextures[texIndex];
-
-                //qCDebug(lc) << "Handle embedded texture" << texPath.C_Str() << texIndex << texture->achFormatHint << texture->mWidth << texture->mHeight;
-
-                if (texture->mWidth > 0 && texture->mHeight == 0)
-                {
-                    auto imageOptions = vsg::Options::create(*options);
-                    imageOptions->extensionHint = texture->achFormatHint;
-                    if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
-                        return {};
-                }
-            }
-            else
-            {
-                const std::string filename = vsg::findFile(texPath.C_Str(), options);
-
-                if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
-                {
-                    std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
-                    return {};
-                }
-            }
-
-            switch (type)
-            {
-            case aiTextureType_DIFFUSE: defines.push_back(kDiffuseMapKey); break;
-            case aiTextureType_SPECULAR: defines.push_back(kSpecularMapKey); break;
-            case aiTextureType_EMISSIVE: defines.push_back(kEmissiveMapKey); break;
-            case aiTextureType_HEIGHT: defines.push_back(kHeightMapKey); break;
-            case aiTextureType_NORMALS: defines.push_back(kNormalMapKey); break;
-            case aiTextureType_SHININESS: defines.push_back(kShininessMapKey); break;
-            case aiTextureType_OPACITY: defines.push_back(kOpacityMapKey); break;
-            case aiTextureType_DISPLACEMENT: defines.push_back(kDisplacementMapKey); break;
-            case aiTextureType_AMBIENT:
-            case aiTextureType_LIGHTMAP: defines.push_back(kLightmapMapKey); break;
-            case aiTextureType_REFLECTION: defines.push_back(kReflectionMapKey); break;
-            case aiTextureType_UNKNOWN: defines.push_back(kMetallRoughnessMapKey); break;
-            default: break;
-            }
-
-            samplerImage.sampler = vsg::Sampler::create();
-
-            samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
-            samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
-            samplerImage.sampler->addressModeW = getWrapMode(wrapMode[2]);
-
-            samplerImage.sampler->anisotropyEnable = VK_TRUE;
-            samplerImage.sampler->maxAnisotropy = 16.0f;
-
-            samplerImage.sampler->maxLod = samplerImage.data->getLayout().maxNumMipmaps;
-
-            if (samplerImage.sampler->maxLod <= 1.0)
-            {
-                //                if (texPath.length > 0)
-                //                    std::cout << "Auto generating mipmaps for texture: " << scene.GetShortFilename(texPath.C_Str()) << std::endl;;
-
-                // Calculate maximum lod level
-                auto maxDim = std::max(samplerImage.data->width(), samplerImage.data->height());
-                samplerImage.sampler->maxLod = std::floor(std::log2f(static_cast<float>(maxDim)));
-            }
-
-            return samplerImage;
-        }
-
-        return {};
-    };
-
     for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
         const auto material = scene->mMaterials[i];
@@ -494,6 +497,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
 #else
         // ASSIMP_5_1 TODO
 #endif
+        std::cout<<"hasPbrSpecularGlossiness = "<<hasPbrSpecularGlossiness<<std::endl;
 
         auto shaderHints = vsg::ShaderCompileSettings::create();
         std::vector<std::string>& defines = shaderHints->defines;
@@ -550,42 +554,42 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             descList.push_back(buffer);
 
             SamplerData samplerImage;
-            if (samplerImage = getTexture(*material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
             {
                 auto diffuseTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(diffuseTexture);
                 descriptorBindings.push_back({0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
             {
                 auto emissiveTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 4, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(emissiveTexture);
                 descriptorBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
             {
                 auto aoTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(aoTexture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
             {
                 auto normalTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 2, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(normalTexture);
                 descriptorBindings.push_back({2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_UNKNOWN, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_UNKNOWN, defines); samplerImage.data.valid())
             {
                 auto mrTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 1, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(mrTexture);
                 descriptorBindings.push_back({1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 5, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
@@ -652,7 +656,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             vsg::Descriptors descList;
 
             SamplerData samplerImage;
-            if (samplerImage = getTexture(*material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_DIFFUSE, defines); samplerImage.data.valid())
             {
                 auto diffuseTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 0, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(diffuseTexture);
@@ -662,7 +666,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                     mat.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_EMISSIVE, defines); samplerImage.data.valid())
             {
                 auto emissiveTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 4, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(emissiveTexture);
@@ -672,27 +676,27 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                     mat.emissive.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_LIGHTMAP, defines); samplerImage.data.valid())
             {
                 auto aoTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(aoTexture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
-            else if (samplerImage = getTexture(*material, aiTextureType_AMBIENT, defines); samplerImage.data.valid())
+            else if (samplerImage = getTexture(scene, options, *material, aiTextureType_AMBIENT, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 3, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
                 descriptorBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_NORMALS, defines); samplerImage.data.valid())
             {
                 auto normalTexture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 2, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(normalTexture);
                 descriptorBindings.push_back({2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
             }
 
-            if (samplerImage = getTexture(*material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
+            if (samplerImage = getTexture(scene, options, *material, aiTextureType_SPECULAR, defines); samplerImage.data.valid())
             {
                 auto texture = vsg::DescriptorImage::create(samplerImage.sampler, samplerImage.data, 5, 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
                 descList.push_back(texture);
