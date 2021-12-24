@@ -17,7 +17,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include "assimp_vertex.h"
 
 #include <cmath>
-#include <iostream>
 #include <sstream>
 #include <stack>
 
@@ -35,7 +34,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
     #define AI_MATKEY_ROUGHNESS_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR
 #else
     #include <assimp/material.h>
-    #include <assimp/GltfMaterial.h>
+
+    #if (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==1 && ASSIMP_VERSION_PATCH==0)
+        #define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
+    #else
+        #include <assimp/GltfMaterial.h>
+    #endif
 #endif
 
 namespace
@@ -201,9 +205,9 @@ private:
 assimp::assimp() :
     _implementation(new assimp::Implementation())
 {
-    std::cout<<"ASSIMP_VERSION_MAJOR "<<ASSIMP_VERSION_MAJOR<<std::endl;
-    std::cout<<"ASSIMP_VERSION_MINOR "<<ASSIMP_VERSION_MINOR<<std::endl;
-    std::cout<<"ASSIMP_VERSION_PATCH "<<ASSIMP_VERSION_PATCH<<std::endl;
+    // std::cout<<"ASSIMP_VERSION_MAJOR "<<ASSIMP_VERSION_MAJOR<<std::endl;
+    // std::cout<<"ASSIMP_VERSION_MINOR "<<ASSIMP_VERSION_MINOR<<std::endl;
+    // std::cout<<"ASSIMP_VERSION_PATCH "<<ASSIMP_VERSION_PATCH<<std::endl;
 }
 assimp::~assimp()
 {
@@ -492,13 +496,11 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
     {
         const auto material = scene->mMaterials[i];
 
-        vsg::PbrMaterial pbr;
-        bool hasPbrSpecularGlossiness{false};
-
-        if (material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor)) hasPbrSpecularGlossiness = true;
-
         auto shaderHints = vsg::ShaderCompileSettings::create();
         std::vector<std::string>& defines = shaderHints->defines;
+
+        vsg::PbrMaterial pbr;
+        bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
