@@ -490,24 +490,24 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
     {
         const auto material = scene->mMaterials[i];
 
+        vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness{false};
+
 #if ASSIMP_5_0
-        // no equivilant in 5.1.x
         material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS, hasPbrSpecularGlossiness);
 #else
-        // ASSIMP_5_1 TODO
+        // no equivilant to AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS in 5.1.4
 #endif
-        std::cout<<"hasPbrSpecularGlossiness = "<<hasPbrSpecularGlossiness<<std::endl;
+
+        if (material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor)) hasPbrSpecularGlossiness = true;
 
         auto shaderHints = vsg::ShaderCompileSettings::create();
         std::vector<std::string>& defines = shaderHints->defines;
 
-        vsg::PbrMaterial pbr;
 #if ASSIMP_5_0
         if (material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
 #else
-        // ASSIMP_5_1 TODO
-        if (false)
+        if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
 #endif
         {
             // PBR path
@@ -516,13 +516,11 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             {
                 defines.push_back("VSG_WORKFLOW_SPECGLOSS");
                 material->Get(AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
-                material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
 #if ASSIMP_5_0
                 if (material->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
 #else
-                // ASSIMP_5_1 TODO
-                if (false)
+                if (material->Get(AI_MATKEY_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
 #endif
                 {
                     if (float shininess; material->Get(AI_MATKEY_SHININESS, shininess))
@@ -535,13 +533,13 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
                 material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, pbr.metallicFactor);
                 material->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, pbr.roughnessFactor);
 #else
-                // ASSIMP_5_1 TODO
+                material->Get(AI_MATKEY_METALLIC_FACTOR, pbr.metallicFactor);
+                material->Get(AI_MATKEY_ROUGHNESS_FACTOR, pbr.roughnessFactor);
 #endif
             }
 
             material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
-
 
             bool isTwoSided = vsg::value<bool>(false, assimp::two_sided, options) || (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS);
             if (isTwoSided) defines.push_back("VSG_TWOSIDED");
