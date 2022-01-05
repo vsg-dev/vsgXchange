@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 André Normann & Robert Osfield
+Copyright(c) 2021 Andre Normann & Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -343,6 +343,30 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
     scenegraph->add(_defaultState);
 
+    std::map<std::string, vsg::ref_ptr<vsg::Camera>> cameraMap;
+
+    if (scene->mNumCameras > 0)
+    {
+        for(unsigned int li = 0; li<scene->mNumCameras; ++li)
+        {
+            auto* camera = scene->mCameras[li];
+            auto vsg_camera = vsg::Camera::create();
+            vsg_camera->name = camera->mName.C_Str();
+
+            vsg_camera->viewMatrix = vsg::LookAt::create(
+                vsg::dvec3(camera->mPosition[0], camera->mPosition[1], camera->mPosition[2]), // eye
+                vsg::dvec3(camera->mLookAt[0], camera->mLookAt[1], camera->mLookAt[2]), // center
+                vsg::dvec3(camera->mUp[0], camera->mUp[1], camera->mUp[2]) // up
+            );
+
+            double verticalFOV = vsg::degrees( atan(tan(static_cast<double>(camera->mHorizontalFOV) * 0.5) / camera->mAspect) * 2.0);
+            vsg_camera->projectionMatrix = vsg::Perspective::create(verticalFOV, camera->mAspect, camera->mClipPlaneNear, camera->mClipPlaneFar);
+
+            // the aiNodes in the scene with the same name as the camera will provide a place to add the camera, this is added in the node handling in the for loop below.
+            cameraMap[vsg_camera->name] = vsg_camera;
+        }
+    }
+
     std::stack<std::pair<aiNode*, vsg::ref_ptr<vsg::Group>>> nodes;
     nodes.push({scene->mRootNode, scenegraph});
 
@@ -358,6 +382,12 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
             auto xform = vsg::MatrixTransform::create();
             xform->matrix = vsg::mat4((float*)&m);
             parent->addChild(xform);
+
+            std::string name = node->mName.C_Str();
+            if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
+            {
+                xform->addChild(camera_itr->second);
+            }
 
             for (unsigned int i = 0; i < node->mNumMeshes; ++i)
             {
