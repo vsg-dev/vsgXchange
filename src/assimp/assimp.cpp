@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 André Normann & Robert Osfield
+Copyright(c) 2021 Andrï¿½ Normann & Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -393,6 +393,8 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
                 {
                     const auto& face = mesh->mFaces[j];
+
+                    if(face.mNumIndices != 3) continue;
 
                     for (unsigned int k = 0; k < face.mNumIndices; ++k)
                         indices.push_back(face.mIndices[k]);
