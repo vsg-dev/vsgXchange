@@ -394,6 +394,9 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 {
                     const auto& face = mesh->mFaces[j];
 
+                    // A face can contain points, lines and triangles, having 1, 2 & 3 indicies respectively
+                    // We need to query the number of indicies and build the appropriate primitives in VSG
+                    // TODO: Add point and line primitives. At present we can only deal with triangles, so ignore others.
                     if(face.mNumIndices != 3) continue;
 
                     for (unsigned int k = 0; k < face.mNumIndices; ++k)
