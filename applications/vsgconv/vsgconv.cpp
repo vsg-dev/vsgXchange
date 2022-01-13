@@ -364,6 +364,7 @@ int main(int argc, char** argv)
 
     if (arguments.read({"-v", "--version"}))
     {
+        std::cout << "VulkanSceneGraph version = " << vsgGetVersionString() << ", so = " << vsgGetSOVersionString() << std::endl;
         std::cout << "vsgXchange version = " << vsgXchangeGetVersionString() << ", so = " << vsgXchangeGetSOVersionString() << std::endl;
         if (vsgXchangeBuiltAsSharedLibrary())
             std::cout << "vsgXchange built as shared library" << std::endl;
