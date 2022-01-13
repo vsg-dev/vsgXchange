@@ -1,9 +1,17 @@
-#pragma once
-
-const auto assimp_phong =
-R"(#version 450
+#include <vsg/io/VSG.h>
+static auto assimp_phong_frag = []() {std::istringstream str(
+R"(#vsga 0.2.5
+Root id=1 vsg::ShaderStage
+{
+  NumUserObjects 0
+  stage 16
+  entryPointName "main"
+  module id=2 vsg::ShaderModule
+  {
+    NumUserObjects 0
+    Source "#version 450
 #extension GL_ARB_separate_shader_objects : enable
-#pragma import_defines (VSG_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED)
+#pragma import_defines (VSG_POINT_SPRITE, VSG_DIFFUSE_MAP, VSG_GREYSACLE_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED)
 
 #ifdef VSG_DIFFUSE_MAP
 layout(binding = 0) uniform sampler2D diffuseMap;
@@ -41,9 +49,12 @@ layout(binding = 10) uniform MaterialData
     float alphaMaskCutoff;
 } material;
 
-layout(location = 0) in vec3 worldPos;
+layout(location = 0) in vec3 eyePos;
 layout(location = 1) in vec3 normalDir;
-layout(location = 2) in vec2 texCoord0;
+layout(location = 2) in vec4 vertexColor;
+#ifndef VSG_POINT_SPRITE
+layout(location = 3) in vec2 texCoord0;
+#endif
 layout(location = 5) in vec3 viewDir;
 layout(location = 6) in vec3 lightDir;
 
@@ -59,8 +70,8 @@ vec3 getNormal()
 
     //tangentNormal *= vec3(2,2,1);
 
-    vec3 q1 = dFdx(worldPos);
-    vec3 q2 = dFdy(worldPos);
+    vec3 q1 = dFdx(eyePos);
+    vec3 q2 = dFdy(eyePos);
     vec2 st1 = dFdx(texCoord0);
     vec2 st2 = dFdy(texCoord0);
 
@@ -97,15 +108,24 @@ vec3 computeLighting(vec3 ambientColor, vec3 diffuseColor, vec3 specularColor, v
 
 void main()
 {
-    vec4 ambientColor = material.ambientColor;
-    vec4 diffuseColor = material.diffuseColor;
-    vec4 specularColor = material.specularColor;
-    vec4 emissiveColor = material.emissiveColor;
+#ifdef VSG_POINT_SPRITE
+    vec2 texCoord0 = gl_PointCoord.xy;
+#endif
+
+    vec4 ambientColor = vertexColor * material.ambientColor;
+    vec4 diffuseColor = vertexColor * material.diffuseColor;
+    vec4 specularColor = vertexColor * material.specularColor;
+    vec4 emissiveColor = vertexColor * material.emissiveColor;
     float shininess = material.shininess;
     float ambientOcclusion = 1.0;
 
 #ifdef VSG_DIFFUSE_MAP
-    diffuseColor *= texture(diffuseMap, texCoord0.st);
+    #ifdef VSG_GREYSACLE_DIFFUSE_MAP
+        float v = texture(diffuseMap, texCoord0.st).s;
+        diffuseColor *= vec4(v, v, v, 1.0);
+    #else
+        diffuseColor *= texture(diffuseMap, texCoord0.st);
+    #endif
 #endif
 
     if (material.alphaMask == 1.0f)
@@ -139,4 +159,14 @@ void main()
 #endif
     outColor.a = diffuseColor.a;
 }
-)";
+"
+    hints id=0
+    SPIRVSize 0
+    SPIRV
+  }
+  NumSpecializationConstants 0
+}
+)");
+vsg::VSG io;
+return io.read_cast<vsg::ShaderStage>(str);
+};

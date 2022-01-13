@@ -1,9 +1,17 @@
-#pragma once
-
-const auto assimp_pbr =
-R"(#version 450
+#include <vsg/io/VSG.h>
+static auto assimp_pbr_frag = []() {std::istringstream str(
+R"(#vsga 0.2.5
+Root id=1 vsg::ShaderStage
+{
+  NumUserObjects 0
+  stage 16
+  entryPointName "main"
+  module id=2 vsg::ShaderModule
+  {
+    NumUserObjects 0
+    Source "#version 450
 #extension GL_ARB_separate_shader_objects : enable
-#pragma import_defines (VSG_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_METALLROUGHNESS_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED, VSG_WORKFLOW_SPECGLOSS)
+#pragma import_defines (VSG_DIFFUSE_MAP, VSG_GREYSACLE_DIFFUSE_MAP, VSG_EMISSIVE_MAP, VSG_LIGHTMAP_MAP, VSG_NORMAL_MAP, VSG_METALLROUGHNESS_MAP, VSG_SPECULAR_MAP, VSG_TWOSIDED, VSG_WORKFLOW_SPECGLOSS)
 
 const float PI = 3.14159265359;
 const float RECIPROCAL_PI = 0.31830988618;
@@ -52,9 +60,10 @@ layout(binding = 10) uniform PbrData
     float alphaMaskCutoff;
 } pbr;
 
-layout(location = 0) in vec3 worldPos;
+layout(location = 0) in vec3 eyePos;
 layout(location = 1) in vec3 normalDir;
-layout(location = 2) in vec2 texCoord0;
+layout(location = 2) in vec4 vertexColor;
+layout(location = 3) in vec2 texCoord0;
 layout(location = 5) in vec3 viewDir;
 layout(location = 6) in vec3 lightDir;
 
@@ -114,8 +123,8 @@ vec3 getNormal()
 
     //tangentNormal *= vec3(2,2,1);
 
-    vec3 q1 = dFdx(worldPos);
-    vec3 q2 = dFdy(worldPos);
+    vec3 q1 = dFdx(eyePos);
+    vec3 q2 = dFdy(eyePos);
     vec2 st1 = dFdx(texCoord0);
     vec2 st2 = dFdy(texCoord0);
 
@@ -143,7 +152,7 @@ vec3 BRDF_Diffuse_Custom_Lambert(PBRInfo pbrInputs)
     return pbrInputs.diffuseColor * RECIPROCAL_PI * pow(pbrInputs.NdotV, 0.5 + 0.3 * pbrInputs.perceptualRoughness);
 }
 
-// [Gotanda 2012, "Beyond a Simple Physically Based Blinn-Phong Model in Real-Time"]
+// [Gotanda 2012, \"Beyond a Simple Physically Based Blinn-Phong Model in Real-Time\"]
 vec3 BRDF_Diffuse_OrenNayar(PBRInfo pbrInputs)
 {
     float a = pbrInputs.alphaRoughness;
@@ -156,7 +165,7 @@ vec3 BRDF_Diffuse_OrenNayar(PBRInfo pbrInputs)
     return pbrInputs.diffuseColor / PI * ( C1 + C2 ) * ( 1 + pbrInputs.perceptualRoughness * 0.5 );
 }
 
-// [Gotanda 2014, "Designing Reflectance Models for New Consoles"]
+// [Gotanda 2014, \"Designing Reflectance Models for New Consoles\"]
 vec3 BRDF_Diffuse_Gotanda(PBRInfo pbrInputs)
 {
     float a = pbrInputs.alphaRoughness;
@@ -220,7 +229,7 @@ float geometricOcclusion(PBRInfo pbrInputs)
 }
 
 // The following equation(s) model the distribution of microfacet normals across the area being drawn (aka D())
-// Implementation from "Average Irregularity Representation of a Roughened Surface for Ray Reflection" by T. S. Trowbridge, and K. P. Reitz
+// Implementation from \"Average Irregularity Representation of a Roughened Surface for Ray Reflection\" by T. S. Trowbridge, and K. P. Reitz
 // Follows the distribution function recommended in the SIGGRAPH 2013 course notes from EPIC Games [1], Equation 3.
 float microfacetDistribution(PBRInfo pbrInputs)
 {
@@ -309,9 +318,14 @@ void main()
     vec3 f0 = vec3(0.04);
 
 #ifdef VSG_DIFFUSE_MAP
-    baseColor = SRGBtoLINEAR(texture(diffuseMap, texCoord0)) * pbr.baseColorFactor;
+    #ifdef VSG_GREYSACLE_DIFFUSE_MAP
+        float v = texture(diffuseMap, texCoord0.st).s * pbr.baseColorFactor;
+        baseColor = vertexColor * vec4(v, v, v, 1.0);
+    #else
+        baseColor = vertexColor * SRGBtoLINEAR(texture(diffuseMap, texCoord0)) * pbr.baseColorFactor;
+    #endif
 #else
-    baseColor = pbr.baseColorFactor;
+    baseColor = vertexColor * pbr.baseColorFactor;
 #endif
 
     if (pbr.alphaMask == 1.0f)
@@ -392,4 +406,14 @@ void main()
 
     outColor = LINEARtoSRGB(vec4(color, baseColor.a));
 }
-)";
+"
+    hints id=0
+    SPIRVSize 0
+    SPIRV
+  }
+  NumSpecializationConstants 0
+}
+)");
+vsg::VSG io;
+return io.read_cast<vsg::ShaderStage>(str);
+};

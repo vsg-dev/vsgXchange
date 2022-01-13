@@ -12,9 +12,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/models.h>
 
-#include "assimp_pbr.h"
-#include "assimp_phong.h"
-#include "assimp_vertex.h"
+#include "shaders/assimp_vert.cpp"
+#include "shaders/assimp_pbr_frag.cpp"
+#include "shaders/assimp_phong_frag.cpp"
 
 #include <cmath>
 #include <sstream>
@@ -284,13 +284,15 @@ vsg::ref_ptr<vsg::GraphicsPipeline> assimp::Implementation::createPipeline(vsg::
     vsg::VertexInputState::Bindings vertexBindingsDescriptions{
         VkVertexInputBindingDescription{0, sizeof(vsg::vec3), VK_VERTEX_INPUT_RATE_VERTEX}, // vertex data
         VkVertexInputBindingDescription{1, sizeof(vsg::vec3), VK_VERTEX_INPUT_RATE_VERTEX}, // normal data
-        VkVertexInputBindingDescription{2, sizeof(vsg::vec2), VK_VERTEX_INPUT_RATE_VERTEX}  // texcoord data
+        VkVertexInputBindingDescription{2, sizeof(vsg::vec2), VK_VERTEX_INPUT_RATE_VERTEX},  // texcoord data
+        VkVertexInputBindingDescription{3, sizeof(vsg::vec4), VK_VERTEX_INPUT_RATE_INSTANCE}  // color data
     };
 
     vsg::VertexInputState::Attributes vertexAttributeDescriptions{
         VkVertexInputAttributeDescription{0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}, // vertex data
         VkVertexInputAttributeDescription{1, 1, VK_FORMAT_R32G32B32_SFLOAT, 0}, // normal data
-        VkVertexInputAttributeDescription{2, 2, VK_FORMAT_R32G32_SFLOAT, 0}     // texcoord data
+        VkVertexInputAttributeDescription{2, 2, VK_FORMAT_R32G32_SFLOAT, 0},     // texcoord data
+        VkVertexInputAttributeDescription{3, 3, VK_FORMAT_R32G32B32A32_SFLOAT, 0}     // texcoord data
     };
 
     auto rasterState = vsg::RasterizationState::create();
@@ -314,8 +316,8 @@ vsg::ref_ptr<vsg::GraphicsPipeline> assimp::Implementation::createPipeline(vsg::
 
 void assimp::Implementation::createDefaultPipelineAndState()
 {
-    auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex);
-    auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_phong);
+    auto vertexShader = assimp_vert();
+    auto fragmentShader = assimp_phong_frag();
 
     vsg::DescriptorSetLayoutBindings descriptorBindings{
         {10, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
@@ -395,6 +397,9 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
                 auto normals = vsg::vec3Array::create(mesh->mNumVertices);
                 auto texcoords = vsg::vec2Array::create(mesh->mNumVertices);
+                auto colors = vsg::vec4Array::create(1);
+                colors->set(0, vsg::vec4(1.0, 1.0, 1.0, 1.0));
+
                 std::vector<unsigned int> indices;
 
                 for (unsigned int j = 0; j < mesh->mNumVertices; ++j)
@@ -463,7 +468,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 if (useVertexIndexDraw)
                 {
                     auto vid = vsg::VertexIndexDraw::create();
-                    vid->assignArrays(vsg::DataList{vertices, normals, texcoords});
+                    vid->assignArrays(vsg::DataList{vertices, normals, texcoords, colors});
                     vid->assignIndices(vsg_indices);
                     vid->indexCount = indices.size();
                     vid->instanceCount = 1;
@@ -471,7 +476,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 }
                 else
                 {
-                    stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords}));
+                    stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords, colors}));
                     stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
                     stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
                 }
@@ -617,8 +622,10 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
             auto descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, descList);
 
-            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex, shaderHints);
-            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_pbr, shaderHints);
+            auto vertexShader = assimp_vert();
+            auto fragmentShader = assimp_pbr_frag();
+            vertexShader->module->hints = shaderHints;
+            fragmentShader->module->hints = shaderHints;
 
             auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
             auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout, 0, descriptorSet);
@@ -729,8 +736,10 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
 
             auto descriptorSetLayout = vsg::DescriptorSetLayout::create(descriptorBindings);
 
-            auto vertexShader = vsg::ShaderStage::create(VK_SHADER_STAGE_VERTEX_BIT, "main", assimp_vertex, shaderHints);
-            auto fragmentShader = vsg::ShaderStage::create(VK_SHADER_STAGE_FRAGMENT_BIT, "main", assimp_phong, shaderHints);
+            auto vertexShader = assimp_vert();
+            auto fragmentShader = assimp_pbr_frag();
+            vertexShader->module->hints = shaderHints;
+            fragmentShader->module->hints = shaderHints;
 
             auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
 

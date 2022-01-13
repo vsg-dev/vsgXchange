@@ -341,11 +341,18 @@ int main(int argc, char** argv)
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
-    if (argc <= 1)
+    if (argc <= 1 || arguments.read({"-h", "--help"}))
     {
         std::cout << "Usage:\n";
         std::cout << "    vsgconv input_filename output_filefilename\n";
         std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
+        std::cout << "Options:\n";
+        std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
+        std::cout << "    --features rw_name  # list formats sipportred \n";
+        std::cout << "    -v --version        # report version \n";
+        std::cout << "    --no-compile --nc   # \n";
+        std::cout << "    --batch             # batch all vertex and texture data \n";
+        std::cout << "    --rgb               # leave RGB source data in it's original form rather than converting to RGBA \n";
         return 1;
     }
 
@@ -357,6 +364,7 @@ int main(int argc, char** argv)
 
     if (arguments.read({"-v", "--version"}))
     {
+        std::cout << "VulkanSceneGraph version = " << vsgGetVersionString() << ", so = " << vsgGetSOVersionString() << std::endl;
         std::cout << "vsgXchange version = " << vsgXchangeGetVersionString() << ", so = " << vsgXchangeGetSOVersionString() << std::endl;
         if (vsgXchangeBuiltAsSharedLibrary())
             std::cout << "vsgXchange built as shared library" << std::endl;
