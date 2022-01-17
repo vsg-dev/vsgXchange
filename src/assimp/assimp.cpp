@@ -90,6 +90,10 @@ public:
     vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const;
     vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const;
 
+    vsg::vec3 convert(const aiVector3D& v) const { return vsg::vec3(v[0], v[1], v[2]); }
+    vsg::dvec3 dconvert(const aiVector3D& v) const { return vsg::dvec3(v[0], v[1], v[2]); }
+    vsg::vec3 convert(const aiColor3D& v) const { return vsg::vec3(v[0], v[1], v[2]); }
+
 private:
     using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
     using State = std::pair<StateCommandPtr, StateCommandPtr>;
@@ -368,6 +372,86 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
             cameraMap[vsg_camera->name] = vsg_camera;
         }
     }
+    std::map<std::string, vsg::ref_ptr<vsg::Light>> lightMap;
+
+    if (scene->mNumLights > 0)
+    {
+        std::cout<<"scene->mNumLights = "<<scene->mNumLights<<std::endl;
+        for(unsigned int li = 0; li < scene->mNumLights; ++li)
+        {
+            auto* light = scene->mLights[li];
+
+            std::cout<<"light "<<light->mName.C_Str()<<std::endl;
+            switch(light->mType)
+            {
+                case(aiLightSource_UNDEFINED):
+                {
+                    std::cout<<"    light->mType = aiLightSource_UNDEFINED"<<std::endl;
+                    auto vsg_light = vsg::Light::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    vsg_light->setValue("light_type", "UNDEFINED");
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                case(aiLightSource_DIRECTIONAL):
+                {
+                    std::cout<<"    light->mType = aiLightSource_DIRECTIONAL"<<std::endl;
+                    auto vsg_light = vsg::DirectionalLight::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    vsg_light->direction = dconvert(light->mDirection);
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                case(aiLightSource_POINT):
+                {
+                    std::cout<<"    light->mType = aiLightSource_POINT"<<std::endl;
+                    auto vsg_light = vsg::PointLight::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    vsg_light->position = dconvert(light->mDirection);
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                case(aiLightSource_SPOT):
+                {
+                    std::cout<<"    light->mType = aiLightSource_SPOT"<<std::endl;
+                    auto vsg_light = vsg::SpotLight::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    vsg_light->position = dconvert(light->mDirection);
+                    vsg_light->direction = dconvert(light->mDirection);
+                    vsg_light->innerAngle = light->mAngleInnerCone;
+                    vsg_light->outerAngle = light->mAngleOuterCone;
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                case(aiLightSource_AMBIENT):
+                {
+                    std::cout<<"    light->mType = aiLightSource_AMBIENT"<<std::endl;
+                    auto vsg_light = vsg::AmbientLight::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                case(aiLightSource_AREA):
+                {
+                    std::cout<<"    light->mType = aiLightSource_AREA"<<std::endl;
+                    auto vsg_light = vsg::Light::create();
+                    vsg_light->name = light->mName.C_Str();
+                    vsg_light->color = convert(light->mColorDiffuse);
+                    vsg_light->setValue("light_type", "AREA");
+                    lightMap[vsg_light->name] = vsg_light;
+                    break;
+                }
+                default:
+                    std::cout<<"    light->mType = "<<light->mType<<std::endl;
+                    break;
+            }
+        }
+    }
 
     std::stack<std::pair<aiNode*, vsg::ref_ptr<vsg::Group>>> nodes;
     nodes.push({scene->mRootNode, scenegraph});
@@ -389,6 +473,11 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
             if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
             {
                 xform->addChild(camera_itr->second);
+            }
+
+            if (auto light_itr = lightMap.find(name); light_itr != lightMap.end())
+            {
+                xform->addChild(light_itr->second);
             }
 
             for (unsigned int i = 0; i < node->mNumMeshes; ++i)
