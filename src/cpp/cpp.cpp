@@ -54,7 +54,34 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
 void cpp::write(std::ostream& out, const std::string& str) const
 {
-    out << "R\"(" << str << ")\"";
+    std::size_t max_string_literal_length = 16360;
+    if (str.length() > max_string_literal_length)
+    {
+        std::size_t n = 0;
+        while( (n+max_string_literal_length) < str.length() )
+        {
+            auto pos_previous_end_of_line = str.find_last_of("\n", n + max_string_literal_length);
+            if (pos_previous_end_of_line  > n)
+            {
+                out << "R\"(" << str.substr(n, pos_previous_end_of_line+1 - n)  << ")\"\n";
+                n = pos_previous_end_of_line+1;
+            }
+            else
+            {
+                out << "R\"(" << str.substr(n, max_string_literal_length)  << ")\" ";
+                n += max_string_literal_length;
+            }
+        }
+
+        if (n<str.length())
+        {
+            out << "R\"(" << str.substr(n, std::string::npos) << ")\"";
+        }
+    }
+    else
+    {
+        out << "R\"(" << str << ")\"";
+    }
 }
 
 bool cpp::getFeatures(Features& features) const
