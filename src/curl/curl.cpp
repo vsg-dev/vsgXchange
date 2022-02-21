@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <curl/curl.h>
 
 #include <fstream>
+#include <sstream>
 #include <iostream>
 
 using namespace vsgXchange;
