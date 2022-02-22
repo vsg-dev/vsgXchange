@@ -102,7 +102,7 @@ namespace
         }
 
         // copy the data and repack into ordered assumed by VSG
-        uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, layout.allocatorType));
+        uint8_t* copiedData = new uint8_t[textureSize];
 
         size_t offset = 0;
 
