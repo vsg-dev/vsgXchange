@@ -15,6 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <curl/curl.h>
 
+#include <sstream>
 #include <fstream>
 #include <sstream>
 #include <iostream>
