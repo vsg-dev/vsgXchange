@@ -72,9 +72,9 @@ namespace vsgconv
             {
                 if (array->data) objects->addChild(array->data);
             }
-            if (vid.indices)
+            if (vid.indices && vid.indices->data)
             {
-                objects->addChild(vid.indices);
+                objects->addChild(vid.indices->data);
             }
         }
 
