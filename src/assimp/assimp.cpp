@@ -50,32 +50,6 @@ namespace
         vsg::ref_ptr<vsg::Data> data;
     };
 
-    const std::string kDiffuseMapKey("VSG_DIFFUSE_MAP");
-    const std::string kSpecularMapKey("VSG_SPECULAR_MAP");
-    const std::string kAmbientMapKey("VSG_AMBIENT_MAP");
-    const std::string kEmissiveMapKey("VSG_EMISSIVE_MAP");
-    const std::string kHeightMapKey("VSG_HEIGHT_MAP");
-    const std::string kNormalMapKey("VSG_NORMAL_MAP");
-    const std::string kShininessMapKey("VSG_SHININESS_MAP");
-    const std::string kOpacityMapKey("VSG_OPACITY_MAP");
-    const std::string kDisplacementMapKey("VSG_DISPLACEMENT_MAP");
-    const std::string kLightmapMapKey("VSG_LIGHTMAP_MAP");
-    const std::string kReflectionMapKey("VSG_REFLECTION_MAP");
-    const std::string kMetallRoughnessMapKey("VSG_METALLROUGHNESS_MAP");
-
-    static vsg::vec4 kBlackColor{0.0, 0.0, 0.0, 0.0};
-    static vsg::vec4 kWhiteColor{1.0, 1.0, 1.0, 1.0};
-    static vsg::vec4 kNormalColor{127.0f / 255.0f, 127.0f / 255.0f, 1.0f, 1.0f};
-
-    vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4& color)
-    {
-        auto vsg_data = vsg::vec4Array2D::create(1, 1, color, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
-        return vsg_data;
-    }
-
-    static auto kWhiteData = createTexture(kWhiteColor);
-    static auto kBlackData = createTexture(kBlackColor);
-    static auto kNormalData = createTexture(kNormalColor);
 
 } // namespace
 
@@ -93,6 +67,32 @@ public:
     vsg::vec3 convert(const aiVector3D& v) const { return vsg::vec3(v[0], v[1], v[2]); }
     vsg::dvec3 dconvert(const aiVector3D& v) const { return vsg::dvec3(v[0], v[1], v[2]); }
     vsg::vec3 convert(const aiColor3D& v) const { return vsg::vec3(v[0], v[1], v[2]); }
+
+    const std::string kDiffuseMapKey{"VSG_DIFFUSE_MAP"};
+    const std::string kSpecularMapKey{"VSG_SPECULAR_MAP"};
+    const std::string kAmbientMapKey{"VSG_AMBIENT_MAP"};
+    const std::string kEmissiveMapKey{"VSG_EMISSIVE_MAP"};
+    const std::string kHeightMapKey{"VSG_HEIGHT_MAP"};
+    const std::string kNormalMapKey{"VSG_NORMAL_MAP"};
+    const std::string kShininessMapKey{"VSG_SHININESS_MAP"};
+    const std::string kOpacityMapKey{"VSG_OPACITY_MAP"};
+    const std::string kDisplacementMapKey{"VSG_DISPLACEMENT_MAP"};
+    const std::string kLightmapMapKey{"VSG_LIGHTMAP_MAP"};
+    const std::string kReflectionMapKey{"VSG_REFLECTION_MAP"};
+    const std::string kMetallRoughnessMapKey{"VSG_METALLROUGHNESS_MAP"};
+
+    vsg::ref_ptr<vsg::Data> createTexture(const vsg::vec4& color)
+    {
+        auto vsg_data = vsg::vec4Array2D::create(1, 1, color, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
+        return vsg_data;
+    }
+    const vsg::vec4 kBlackColor{0.0, 0.0, 0.0, 0.0};
+    const vsg::vec4 kWhiteColor{1.0, 1.0, 1.0, 1.0};
+    const vsg::vec4 kNormalColor{127.0f / 255.0f, 127.0f / 255.0f, 1.0f, 1.0f};
+
+    vsg::ref_ptr<vsg::Data> kWhiteData = createTexture(kWhiteColor);
+    vsg::ref_ptr<vsg::Data> kBlackData = createTexture(kBlackColor);
+    vsg::ref_ptr<vsg::Data> kNormalData = createTexture(kNormalColor);
 
 private:
     using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
