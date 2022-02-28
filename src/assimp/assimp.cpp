@@ -196,6 +196,41 @@ private:
         return {};
     }
 
+    bool hasAlphaBlend(aiMaterial* material) const
+    {
+        aiString alphaMode;
+        float opacity = 1.0;
+        if ((material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("BLEND"))
+             || (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0))
+            return true;
+        return false;
+    }
+
+    struct BlendDetector : vsg::Inherit<vsg::Visitor, BlendDetector>
+    {
+        void apply(vsg::Object& object) override
+        {
+            object.traverse(*this);
+        }
+
+        void apply(vsg::BindGraphicsPipeline& bgp) override
+        {
+            for (auto gps : bgp.pipeline->pipelineStates)
+            {
+                gps->accept(*this);
+            }
+            bgp.traverse(*this);
+        }
+
+        void apply(vsg::ColorBlendState& cbs) override
+        {
+          for (auto attachment : cbs.attachments)
+            if (attachment.blendEnable)
+                result = true;
+        }
+
+        bool result{false};
+    };
 
     vsg::ref_ptr<vsg::GraphicsPipeline> _defaultPipeline;
     vsg::ref_ptr<vsg::BindDescriptorSet> _defaultState;
@@ -304,7 +339,7 @@ vsg::ref_ptr<vsg::GraphicsPipeline> assimp::Implementation::createPipeline(vsg::
 
     auto colorBlendState = vsg::ColorBlendState::create();
     colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
-        {enableBlend, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
+        {enableBlend, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO, VK_BLEND_OP_ADD, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
 
     vsg::GraphicsPipelineStates pipelineStates{
         vsg::VertexInputState::create(vertexBindingsDescriptions, vertexAttributeDescriptions),
@@ -543,16 +578,6 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                 }
 
                 auto stategroup = vsg::StateGroup::create();
-                xform->addChild(stategroup);
-
-                //qCDebug(lc) << "Using material:" << scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
-                if (mesh->mMaterialIndex < stateSets.size())
-                {
-                    auto state = stateSets[mesh->mMaterialIndex];
-
-                    stategroup->add(state.first);
-                    stategroup->add(state.second);
-                }
 
                 if (useVertexIndexDraw)
                 {
@@ -568,6 +593,37 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
                     stategroup->addChild(vsg::BindVertexBuffers::create(0, vsg::DataList{vertices, normals, texcoords, colors}));
                     stategroup->addChild(vsg::BindIndexBuffer::create(vsg_indices));
                     stategroup->addChild(vsg::DrawIndexed::create(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0));
+                }
+
+                //qCDebug(lc) << "Using material:" << scene->mMaterials[mesh->mMaterialIndex]->GetName().C_Str();
+                bool isDepthSorted = false;
+                if (mesh->mMaterialIndex < stateSets.size())
+                {
+                    auto state = stateSets[mesh->mMaterialIndex];
+
+                    stategroup->add(state.first);
+                    stategroup->add(state.second);
+
+                    BlendDetector blend;
+                    state.first->accept(blend);
+                    if (blend.result)
+                    {
+                        vsg::ComputeBounds computeBounds;
+                        stategroup->accept(computeBounds);
+                        vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
+                        double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
+
+                        auto depthSorted = vsg::DepthSorted::create();
+                        depthSorted->binNumber = 10;
+                        depthSorted->bound.set(center[0], center[1], center[2], radius);
+                        depthSorted->child = stategroup;
+                        xform->addChild(depthSorted);
+                        isDepthSorted = true;
+                    }
+                }
+                if (!isDepthSorted)
+                {
+                    xform->addChild(stategroup);
                 }
             }
 
@@ -630,6 +686,10 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
 
         vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
+
+        bool alphaBlend = hasAlphaBlend(material);
+        if (alphaBlend)
+            pbr.alphaMask = 0.0f;
 
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
@@ -716,7 +776,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             vertexShader->module->hints = shaderHints;
             fragmentShader->module->hints = shaderHints;
 
-            auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
+            auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided, alphaBlend);
             auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout, 0, descriptorSet);
 
             bindDescriptorSets.push_back({vsg::BindGraphicsPipeline::create(pipeline), bindDescriptorSet});
@@ -726,6 +786,8 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             // Phong shading
             vsg::PhongMaterial mat;
 
+            if (alphaBlend)
+                mat.alphaMask = 0.0f;
             material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
             material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
             const auto diffuseResult = material->Get(AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
@@ -830,7 +892,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
             vertexShader->module->hints = shaderHints;
             fragmentShader->module->hints = shaderHints;
 
-            auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided);
+            auto pipeline = createPipeline(vertexShader, fragmentShader, descriptorSetLayout, isTwoSided, alphaBlend);
 
             auto descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, descList);
             auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout, 0, descriptorSet);
