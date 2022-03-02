@@ -32,7 +32,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 void* cpp_malloc(size_t size)
 {
-    return vsg::allocate(size, vsg::ALLOCATOR_DATA);
+    return vsg::allocate(size, vsg::ALLOCATOR_AFFINITY_DATA);
 }
 
 void cpp_free(void* ptr)

@@ -285,7 +285,7 @@ namespace osg2vsg
 
         // stop the OSG image from deleting the image data as we are passing this on to the vsg Data object
         auto size = image->getTotalSizeInBytesIncludingMipmaps();
-        void* data = vsg::allocate(size, layout.allocatorType);
+        void* data = vsg::allocate(size, vsg::ALLOCATOR_AFFINITY_DATA);
         memcpy(data, image->data(), size);
 
         layout.maxNumMipmaps = image->getNumMipmapLevels();
