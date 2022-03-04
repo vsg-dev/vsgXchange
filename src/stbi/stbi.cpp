@@ -55,7 +55,6 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
     return new_ptr;
 }
 
-
 // override the stb memory allocation to make it compatible with vsg::Array* use of standard C++ new/delete.
 #define STBI_MALLOC(sz) cpp_malloc(sz)
 #define STBI_REALLOC(p, newsiz) ERROR_SHOULD_NEVER_BE_CALLED
