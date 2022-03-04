@@ -32,7 +32,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 void* cpp_malloc(size_t size)
 {
-    return new uint8_t[size];
+    return vsg::allocate(size, vsg::ALLOCATOR_AFFINITY_DATA);
+}
+
+void cpp_free(void* ptr)
+{
+    vsg::deallocate(ptr);
 }
 
 void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
@@ -41,18 +46,13 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
 
     if (old_size >= new_size) return old_ptr;
 
-    uint8_t* new_ptr = new uint8_t[new_size];
+    void* new_ptr = vsg::allocate(new_size);
 
     std::memcpy(new_ptr, old_ptr, old_size);
 
-    delete[](uint8_t*)(old_ptr);
+    vsg::deallocate(old_ptr);
 
     return new_ptr;
-}
-
-void cpp_free(void* ptr)
-{
-    delete[](uint8_t*)(ptr);
 }
 
 // override the stb memory allocation to make it compatible with vsg::Array* use of standard C++ new/delete.
