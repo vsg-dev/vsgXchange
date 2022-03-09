@@ -35,10 +35,6 @@ all::all()
     add(glsl::create());
     add(cpp::create());
 
-#ifdef vsgXchange_GDAL
-    add(GDAL::create());
-#endif
-
     add(stbi::create());
     add(dds::create());
     add(ktx::create());
@@ -49,6 +45,10 @@ all::all()
 
 #ifdef vsgXchange_assimp
     add(assimp::create());
+#endif
+
+#ifdef vsgXchange_GDAL
+    add(GDAL::create());
 #endif
 
 #ifdef vsgXchange_OSG
