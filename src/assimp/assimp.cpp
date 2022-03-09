@@ -37,6 +37,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
     #if (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==1 && ASSIMP_VERSION_PATCH==0)
         #define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
+        #define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0
     #else
         #include <assimp/GltfMaterial.h>
     #endif
