@@ -95,6 +95,14 @@ public:
     vsg::ref_ptr<vsg::Data> kBlackData = createTexture(kBlackColor);
     vsg::ref_ptr<vsg::Data> kNormalData = createTexture(kNormalColor);
 
+    using CameraMap = std::map<std::string, vsg::ref_ptr<vsg::Camera>>;
+    CameraMap processCameras(const aiScene* scene) const;
+
+    using LightMap = std::map<std::string, vsg::ref_ptr<vsg::Light>>;
+    LightMap processLights(const aiScene* scene) const;
+
+    vsg::ref_ptr<vsg::MatrixTransform> processCoordinateFrame(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const;
+
 private:
     using StateCommandPtr = vsg::ref_ptr<vsg::StateCommand>;
     using State = std::pair<StateCommandPtr, StateCommandPtr>;
@@ -372,21 +380,9 @@ void assimp::Implementation::createDefaultPipelineAndState()
     _defaultState = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, _defaultPipeline->layout, 0, descriptorSet);
 }
 
-vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const
+assimp::Implementation::CameraMap assimp::Implementation::processCameras(const aiScene* scene) const
 {
-    bool useVertexIndexDraw = true;
-
-    // Process materials
-    //auto pipelineLayout = _defaultPipeline->layout;
-    auto stateSets = processMaterials(scene, options);
-
-
-    auto scenegraph = vsg::StateGroup::create();
-    scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
-    scenegraph->add(_defaultState);
-
-    std::map<std::string, vsg::ref_ptr<vsg::Camera>> cameraMap;
-
+    CameraMap cameraMap;
     if (scene->mNumCameras > 0)
     {
         for(unsigned int li = 0; li<scene->mNumCameras; ++li)
@@ -408,7 +404,12 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
             cameraMap[vsg_camera->name] = vsg_camera;
         }
     }
-    std::map<std::string, vsg::ref_ptr<vsg::Light>> lightMap;
+    return cameraMap;
+}
+
+assimp::Implementation::LightMap assimp::Implementation::processLights(const aiScene* scene) const
+{
+    LightMap lightMap;
 
     if (scene->mNumLights > 0)
     {
@@ -488,6 +489,53 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
             }
         }
     }
+    return lightMap;
+}
+
+vsg::ref_ptr<vsg::MatrixTransform> assimp::Implementation::processCoordinateFrame(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const
+{
+    vsg::CoordinateConvention source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+    if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end()) source_coordianteConvention = itr->second;
+
+    if (scene->mMetaData)
+    {
+        int upAxis = 1;
+        if (scene->mMetaData->Get("UpAxis", upAxis))
+        {
+            if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+            else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+            else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
+
+            // unclear on how to intepret the UpAxisSign so will leave it unused for now.
+            // int upAxisSign = 1;
+            // scene->mMetaData->Get("UpAxisSign", upAxisSign);
+        }
+    }
+
+    vsg::dmat4 matrix;
+    if (vsg::transform(source_coordianteConvention, options->sceneCoordinateConvention, matrix))
+    {
+        return vsg::MatrixTransform::create(matrix);
+    }
+    else
+    {
+        return {};
+    }
+}
+
+vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& ext) const
+{
+    bool useVertexIndexDraw = true;
+
+    // Process materials
+    //auto pipelineLayout = _defaultPipeline->layout;
+    auto stateSets = processMaterials(scene, options);
+    auto cameraMap = processCameras(scene);
+    auto lightMap = processLights(scene);
+
+    auto scenegraph = vsg::StateGroup::create();
+    scenegraph->add(vsg::BindGraphicsPipeline::create(_defaultPipeline));
+    scenegraph->add(_defaultState);
 
     std::stack<std::pair<aiNode*, vsg::ref_ptr<vsg::Group>>> nodes;
     nodes.push({scene->mRootNode, scenegraph});
@@ -639,38 +687,15 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
         }
     }
 
-
-    vsg::CoordinateConvention source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
-    if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end()) source_coordianteConvention = itr->second;
-
-    if (scene->mMetaData)
+    if (auto transform = processCoordinateFrame(scene, options, ext))
     {
-        int upAxis = 1;
-        if (scene->mMetaData->Get("UpAxis", upAxis))
-        {
-            if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
-            else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
-            else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
-
-            // unclear on how to intepret the UpAxisSign so will leave it unused for now.
-            // int upAxisSign = 1;
-            // scene->mMetaData->Get("UpAxisSign", upAxisSign);
-        }
-    }
-
-    vsg::dmat4 matrix;
-    if (vsg::transform(source_coordianteConvention, options->sceneCoordinateConvention, matrix))
-    {
-        auto root = vsg::MatrixTransform::create(matrix);
-        root->addChild(scenegraph);
-
-        return root;
+        transform->addChild(scenegraph);
+        return transform;
     }
     else
     {
         return scenegraph;
     }
-
 }
 
 assimp::Implementation::BindState assimp::Implementation::processMaterials(const aiScene* scene, vsg::ref_ptr<const vsg::Options> options) const
