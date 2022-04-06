@@ -543,54 +543,7 @@ struct assimp::Implementation::SceneConverter
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
 
-    struct ConvertedMaterial
-    {
-        const aiMaterial* material = nullptr;
-
-        bool blending = false;
-        vsg::ref_ptr<vsg::ShaderSet> shaderSet;
-
-        bool assignTexture(const std::string& name, vsg::ref_ptr<vsg::Data> textureData = {}, vsg::ref_ptr<vsg::Sampler> sampler = {})
-        {
-            if (auto& textureBinding = shaderSet->getUniformBinding(name))
-            {
-                // set up bindings
-                if (!textureBinding.define.empty()) defines.push_back(textureBinding.define);
-                descriptorBindings.push_back(VkDescriptorSetLayoutBinding{textureBinding.binding, textureBinding.descriptorType, textureBinding.descriptorCount, textureBinding.stageFlags, nullptr});
-
-                if (!sampler) sampler = vsg::Sampler::create();
-
-                // create texture image and associated DescriptorSets and binding
-                auto texture = vsg::DescriptorImage::create(sampler, textureData ? textureData : textureBinding.data, textureBinding.binding, 0, textureBinding.descriptorType);
-                descriptors.push_back(texture);
-                return true;
-            }
-            return false;
-        }
-
-        bool assignUniform(const std::string& name, vsg::ref_ptr<vsg::Data> data = {})
-        {
-            if (auto& uniformBinding = shaderSet->getUniformBinding(name))
-            {
-                // set up bindings
-                if (!uniformBinding.define.empty()) defines.push_back(uniformBinding.define);
-                descriptorBindings.push_back(VkDescriptorSetLayoutBinding{uniformBinding.binding, uniformBinding.descriptorType, uniformBinding.descriptorCount, uniformBinding.stageFlags, nullptr});
-
-                auto uniform = vsg::DescriptorBuffer::create(data ? data : uniformBinding.data, uniformBinding.binding);
-                descriptors.push_back(uniform);
-
-                return true;
-            }
-            return false;
-        }
-
-        vsg::Descriptors descriptors;
-        std::vector<std::string> defines;
-        vsg::DescriptorSetLayoutBindings descriptorBindings;
-        vsg::ref_ptr<vsg::DescriptorSet> descriptorSet;
-    };
-
-    std::vector<ConvertedMaterial> convertedMaterials;
+    std::vector<vsg::ref_ptr<vsg::DescriptorConfig>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
 
     vsg::ref_ptr<vsg::ShaderSet> getOrCreatePhrShaderSet()
@@ -674,18 +627,15 @@ struct assimp::Implementation::SceneConverter
         }
     }
 
-    void convert(const aiMaterial* material, ConvertedMaterial& convertedMaterial)
+    void convert(const aiMaterial* material, vsg::DescriptorConfig& convertedMaterial)
     {
         std::cout<<"process(material = "<<material<<")"<<std::endl;
-        convertedMaterial.material = material;
-
         auto& defines = convertedMaterial.defines;
 
         vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
         convertedMaterial.blending = hasAlphaBlend(material);
-
 
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
@@ -875,9 +825,9 @@ struct assimp::Implementation::SceneConverter
             return;
         }
 
-        auto& material = convertedMaterials[mesh->mMaterialIndex];
+        auto& material = *convertedMaterials[mesh->mMaterialIndex];
         auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
-        auto& defines = config->shaderHints->defines = material.defines;
+        /*auto& defines =*/ config->shaderHints->defines = material.defines;
 
         std::cout<<"    numVertices = "<<mesh->mNumVertices<<std::endl;
         std::cout<<"    mesh->mNormals = "<<mesh->mNormals<<std::endl;
@@ -1056,7 +1006,8 @@ struct assimp::Implementation::SceneConverter
         convertedMaterials.resize(scene->mNumMaterials);
         for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
         {
-            convert(scene->mMaterials[i], convertedMaterials[i]);
+            convertedMaterials[i] = vsg::DescriptorConfig::create();
+            convert(scene->mMaterials[i], *convertedMaterials[i]);
         }
 
         // convet the meshses
@@ -1074,7 +1025,7 @@ struct assimp::Implementation::SceneConverter
             transform->addChild(vsg_scene);
 
             // TODO check if subgraph requires culling
-            transform->subgraphRequiresLocalFrustum = false;
+            // transform->subgraphRequiresLocalFrustum = false;
 
             return transform;
         }
@@ -1143,7 +1094,7 @@ struct assimp::Implementation::SceneConverter
             transform->children = children;
 
             // TODO check if subgraph requires culling
-            transform->subgraphRequiresLocalFrustum = false;
+            //transform->subgraphRequiresLocalFrustum = false;
 
             return transform;
         }
