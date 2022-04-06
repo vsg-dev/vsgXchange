@@ -546,10 +546,48 @@ struct assimp::Implementation::SceneConverter
     struct ConvertedMaterial
     {
         const aiMaterial* material = nullptr;
-        bool blending = false;
-        vsg::ref_ptr<vsg::GraphicsPipelineConfig> config;
-        vsg::Descriptors descriptors;
 
+        bool blending = false;
+        vsg::ref_ptr<vsg::ShaderSet> shaderSet;
+
+        bool assignTexture(const std::string& name, vsg::ref_ptr<vsg::Data> textureData = {}, vsg::ref_ptr<vsg::Sampler> sampler = {})
+        {
+            if (auto& textureBinding = shaderSet->getUniformBinding(name))
+            {
+                // set up bindings
+                if (!textureBinding.define.empty()) defines.push_back(textureBinding.define);
+                descriptorBindings.push_back(VkDescriptorSetLayoutBinding{textureBinding.binding, textureBinding.descriptorType, textureBinding.descriptorCount, textureBinding.stageFlags, nullptr});
+
+                if (!sampler) sampler = vsg::Sampler::create();
+
+                // create texture image and associated DescriptorSets and binding
+                auto texture = vsg::DescriptorImage::create(sampler, textureData ? textureData : textureBinding.data, textureBinding.binding, 0, textureBinding.descriptorType);
+                descriptors.push_back(texture);
+                return true;
+            }
+            return false;
+        }
+
+        bool assignUniform(const std::string& name, vsg::ref_ptr<vsg::Data> data = {})
+        {
+            if (auto& uniformBinding = shaderSet->getUniformBinding(name))
+            {
+                // set up bindings
+                if (!uniformBinding.define.empty()) defines.push_back(uniformBinding.define);
+                descriptorBindings.push_back(VkDescriptorSetLayoutBinding{uniformBinding.binding, uniformBinding.descriptorType, uniformBinding.descriptorCount, uniformBinding.stageFlags, nullptr});
+
+                auto uniform = vsg::DescriptorBuffer::create(data ? data : uniformBinding.data, uniformBinding.binding);
+                descriptors.push_back(uniform);
+
+                return true;
+            }
+            return false;
+        }
+
+        vsg::Descriptors descriptors;
+        std::vector<std::string> defines;
+        vsg::DescriptorSetLayoutBindings descriptorBindings;
+        vsg::ref_ptr<vsg::DescriptorSet> descriptorSet;
     };
 
     std::vector<ConvertedMaterial> convertedMaterials;
@@ -640,27 +678,19 @@ struct assimp::Implementation::SceneConverter
     {
         std::cout<<"process(material = "<<material<<")"<<std::endl;
         convertedMaterial.material = material;
-        convertedMaterial.config = vsg::GraphicsPipelineConfig::create();
 
-        auto& config = *convertedMaterial.config;
-        auto& defines = config.shaderHints->defines;
-        auto& descriptors = convertedMaterial.descriptors;
+        auto& defines = convertedMaterial.defines;
 
         vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
         convertedMaterial.blending = hasAlphaBlend(material);
-        if (convertedMaterial.blending)
-        {
-            config.colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
-                {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
-        }
 
 
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
             // PBR path
-            config.shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
+            convertedMaterial.shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
 
             if (convertedMaterial.blending)
                 pbr.alphaMask = 0.0f;
@@ -691,40 +721,40 @@ struct assimp::Implementation::SceneConverter
             SamplerData samplerImage;
             if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "diffuseMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "emuisseMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("emuisseMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "aoMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_NORMALS); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "normalMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
             }
 #if 0
             if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "", samplerImage.data, samplerImage.sampler);// ??
+                convertedMaterial.assignTexture(descriptors, "", samplerImage.data, samplerImage.sampler);// ??
             }
 #endif
             if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "specularlMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("specularlMap", samplerImage.data, samplerImage.sampler);
             }
 
-            config.assignUniform(descriptors, "material", vsg::PbrMaterialValue::create(pbr));
+            convertedMaterial.assignUniform("material", vsg::PbrMaterialValue::create(pbr));
         }
         else
         {
             // Phong shading
-            config.shaderSet = vsg::createPhongShaderSet(options);
+            convertedMaterial.shaderSet = vsg::createPhongShaderSet(options);
 
             vsg::PhongMaterial mat;
 
@@ -773,7 +803,7 @@ struct assimp::Implementation::SceneConverter
             SamplerData samplerImage;
             if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "diffuseMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
 
                 if (diffuseResult != AI_SUCCESS)
                     mat.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
@@ -781,7 +811,7 @@ struct assimp::Implementation::SceneConverter
 
             if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "emissiveMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("emissiveMap", samplerImage.data, samplerImage.sampler);
 
                 if (emissiveResult != AI_SUCCESS)
                     mat.emissive.set(1.0f, 1.0f, 1.0f, 1.0f);
@@ -789,32 +819,36 @@ struct assimp::Implementation::SceneConverter
 
             if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "aoMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
             }
             else if (samplerImage = convertTexture(*material, aiTextureType_AMBIENT); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "aoMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_NORMALS); samplerImage.data.valid())
             {
-                config.assignTexture(descriptors, "normalMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
             {
                 // TODO phong shader doesn't present have a specular texture maps
-                config.assignTexture(descriptors, "specularMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
 
                 if (specularResult != AI_SUCCESS)
                     mat.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
             }
 
-            config.assignUniform(descriptors, "material", vsg::PhongMaterialValue::create(mat));
+            convertedMaterial.assignUniform("material", vsg::PhongMaterialValue::create(mat));
         }
 
-        std::cout<<"   descriptors.size() = "<<descriptors.size()<<std::endl;
-        for(auto& descriptor : descriptors) std::cout<<"     "<<descriptor<<std::endl;
+
+        auto descriptorSetLayout = vsg::DescriptorSetLayout::create(convertedMaterial.descriptorBindings);
+        convertedMaterial.descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, convertedMaterial.descriptors);
+
+        std::cout<<"   descriptors.size() = "<<convertedMaterial.descriptors.size()<<std::endl;
+        for(auto& descriptor : convertedMaterial.descriptors) std::cout<<"     "<<descriptor<<std::endl;
 
         std::cout<<"   defines.size() = "<<defines.size()<<std::endl;
         for(auto& define : defines) std::cout<<"     "<<define<<std::endl;
@@ -842,13 +876,8 @@ struct assimp::Implementation::SceneConverter
         }
 
         auto& material = convertedMaterials[mesh->mMaterialIndex];
-        auto& config = *material.config;
-        auto& defines = config.shaderHints->defines;
-        auto& descriptors = material.descriptors;
-
-        auto previous_defines = defines;
-
-        std::cout<<"    mesh material descriptors.size() = "<<material.descriptors.size()<<std::endl;
+        auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
+        auto& defines = config->shaderHints->defines = material.defines;
 
         std::cout<<"    numVertices = "<<mesh->mNumVertices<<std::endl;
         std::cout<<"    mesh->mNormals = "<<mesh->mNormals<<std::endl;
@@ -859,18 +888,18 @@ struct assimp::Implementation::SceneConverter
 
         auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
         std::memcpy(vertices->dataPointer(), mesh->mVertices, mesh->mNumVertices * 12);
-        config.assignArray(vertexArrays, "vsg_Vertex", VK_VERTEX_INPUT_RATE_VERTEX, vertices);
+        config->assignArray(vertexArrays, "vsg_Vertex", VK_VERTEX_INPUT_RATE_VERTEX, vertices);
 
         if (mesh->mNormals)
         {
             auto normals = vsg::vec3Array::create(mesh->mNumVertices);
             std::memcpy(normals->dataPointer(), mesh->mNormals, mesh->mNumVertices * 12);
-            config.assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_VERTEX, normals);
+            config->assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_VERTEX, normals);
         }
         else
         {
             auto normal = vsg::vec3Value::create(vsg::vec3(0.0f, 0.0f, 1.0f));
-            config.assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_INSTANCE, normal);
+            config->assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_INSTANCE, normal);
         }
 
         if (mesh->mTextureCoords[0])
@@ -882,24 +911,24 @@ struct assimp::Implementation::SceneConverter
                 auto& tc = src_texcoords[i];
                 dest_texcoords->at(i).set(tc[0], tc[1]);
             }
-            config.assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_VERTEX, dest_texcoords);
+            config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_VERTEX, dest_texcoords);
         }
         else
         {
             auto texcoord = vsg::vec2Value::create(vsg::vec2(0.0f, 0.0f));
-            config.assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
+            config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
         }
 
         if (mesh->mColors[0])
         {
             auto colors = vsg::vec4Array::create(mesh->mNumVertices);
             std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
-            config.assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
+            config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
         }
         else
         {
             auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-            config.assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
+            config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
         }
 
 
@@ -923,7 +952,7 @@ struct assimp::Implementation::SceneConverter
         {
             //config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             //config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            config.inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
             auto vid = vsg::VertexIndexDraw::create();
             vid->assignArrays(vertexArrays);
@@ -962,15 +991,30 @@ struct assimp::Implementation::SceneConverter
                 vid->instanceCount = 1;
             }
 
-            config.init();
+            if (material.blending)
+            {
+                config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
+                    {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
+            }
 
-            auto descriptorSet = vsg::DescriptorSet::create(config.descriptorSetLayout, descriptors);
-            auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config.layout, 0, descriptorSet);
+            // pass DescriptorSetLaout to config
+            if (material.descriptorSet)
+            {
+                config->descriptorSetLayout = material.descriptorSet->setLayout;
+            }
+
+            config->init();
+
 
             // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
             auto stateGroup = vsg::StateGroup::create();
-            stateGroup->add(config.bindGraphicsPipeline);
-            stateGroup->add(bindDescriptorSet);
+            stateGroup->add(config->bindGraphicsPipeline);
+
+            if (material.descriptorSet)
+            {
+                auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
+                stateGroup->add(bindDescriptorSet);
+            }
 
             // auto bindViewDescriptorSets = BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, cofig.layout, 1);
             // stateGroup->add(bindViewDescriptorSets);
@@ -1299,7 +1343,7 @@ assimp::Implementation::BindState assimp::Implementation::processMaterials(const
         const auto material = scene->mMaterials[i];
 
         auto shaderHints = vsg::ShaderCompileSettings::create();
-        std::vector<std::string>& defines = shaderHints->defines;
+        auto& defines = shaderHints->defines;
 
         vsg::PbrMaterial pbr;
         bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
