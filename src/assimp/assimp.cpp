@@ -542,6 +542,7 @@ struct assimp::Implementation::SceneConverter
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
+    vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
     std::vector<vsg::ref_ptr<vsg::DescriptorConfig>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
@@ -617,6 +618,12 @@ struct assimp::Implementation::SceneConverter
                 // Calculate maximum lod level
                 auto maxDim = std::max(samplerImage.data->width(), samplerImage.data->height());
                 samplerImage.sampler->maxLod = std::floor(std::log2f(static_cast<float>(maxDim)));
+            }
+
+            if (sharedObjects)
+            {
+                sharedObjects->share(samplerImage.data);
+                sharedObjects->share(samplerImage.sampler);
             }
 
             return samplerImage;
@@ -793,9 +800,17 @@ struct assimp::Implementation::SceneConverter
             convertedMaterial.assignUniform("material", vsg::PhongMaterialValue::create(mat));
         }
 
+        if (sharedObjects)
+        {
+            sharedObjects->share(convertedMaterial.descriptors);
+        }
 
         auto descriptorSetLayout = vsg::DescriptorSetLayout::create(convertedMaterial.descriptorBindings);
         convertedMaterial.descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, convertedMaterial.descriptors);
+        if (sharedObjects)
+        {
+            sharedObjects->share(convertedMaterial.descriptorSet);
+        }
 
         std::cout<<"   descriptors.size() = "<<convertedMaterial.descriptors.size()<<std::endl;
         for(auto& descriptor : convertedMaterial.descriptors) std::cout<<"     "<<descriptor<<std::endl;
@@ -951,9 +966,11 @@ struct assimp::Implementation::SceneConverter
             if (material.descriptorSet)
             {
                 config->descriptorSetLayout = material.descriptorSet->setLayout;
+                config->descriptorBindings = material.descriptorBindings;
             }
 
-            config->init();
+            if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
+            else config->init();
 
 
             // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
@@ -963,6 +980,8 @@ struct assimp::Implementation::SceneConverter
             if (material.descriptorSet)
             {
                 auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
+                if (sharedObjects) sharedObjects->share(bindDescriptorSet);
+
                 stateGroup->add(bindDescriptorSet);
             }
 
@@ -1017,8 +1036,11 @@ struct assimp::Implementation::SceneConverter
             convert(scene->mMeshes[i], convertedMeshes[i]);
         }
 
+
         auto vsg_scene = visit(scene->mRootNode, 0);
         if (!vsg_scene) return {};
+
+        if (sharedObjects) sharedObjects->report(std::cout);
 
         if (auto transform = processCoordinateFrame(scene, options, ext))
         {
@@ -1106,6 +1128,10 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     if (!vsg::value<bool>(false, assimp::original_converter, options))
     {
         SceneConverter converter;
+
+        converter.sharedObjects = options->sharedObjects;
+        if (!converter.sharedObjects) converter.sharedObjects = vsg::SharedObjects::create();
+
         return converter.visit(scene, options, ext);
     }
 
