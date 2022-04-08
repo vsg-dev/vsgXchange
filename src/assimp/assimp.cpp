@@ -1028,6 +1028,9 @@ struct assimp::Implementation::SceneConverter
         scene = in_scene;
         options = in_options;
 
+        if (options) sharedObjects = options->sharedObjects;
+        if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
+
         cameraMap = processCameras(scene);
         lightMap = processLights(scene);
 
@@ -1138,10 +1141,6 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::processScene(const aiScene* sc
     if (!vsg::value<bool>(false, assimp::original_converter, options))
     {
         SceneConverter converter;
-
-        converter.sharedObjects = options->sharedObjects;
-        if (!converter.sharedObjects) converter.sharedObjects = vsg::SharedObjects::create();
-
         return converter.visit(scene, options, ext);
     }
 
