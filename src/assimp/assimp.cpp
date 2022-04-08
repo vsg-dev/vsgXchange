@@ -879,6 +879,62 @@ struct assimp::Implementation::SceneConverter
         }
 
         auto& material = *convertedMaterials[mesh->mMaterialIndex];
+
+        // count the number of indices of each type
+        uint32_t numTriangleIndices = 0;
+        uint32_t numLineIndices = 0;
+        uint32_t numPointIndices = 0;
+        for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
+        {
+            const auto& face = mesh->mFaces[j];
+            if (face.mNumIndices == 3) numTriangleIndices += 3;
+            else if (face.mNumIndices == 2) numLineIndices += 2;
+            else if (face.mNumIndices == 1) numPointIndices += 1;
+            else
+            {
+                std::cout<<"Warning: unsupported number of indices on face "<<face.mNumIndices<<std::endl;
+            }
+        }
+
+        int numPrimtiveTypes = 0;
+        if (numTriangleIndices>0) ++numPrimtiveTypes;
+        if (numLineIndices>0) ++numPrimtiveTypes;
+        if (numPointIndices>0) ++numPrimtiveTypes;
+
+        if (numPrimtiveTypes>1)
+        {
+            std::cout<<"Warning: more than one primitive type required, numTriangleIndices = "<<numTriangleIndices<<
+                       ", numLineIndices = "<<numLineIndices<<
+                       ", numPointIndices = "<<numPointIndices<<std::endl;
+        }
+
+        unsigned int numIndicesPerFace = 0;
+        uint32_t numIndices = 0;
+        VkPrimitiveTopology topology{};
+        if (numTriangleIndices > 0)
+        {
+            topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            numIndicesPerFace = 3;
+            numIndices = numTriangleIndices;
+        }
+        else if (numLineIndices > 0)
+        {
+            topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            numIndicesPerFace = 2;
+            numIndices = numLineIndices;
+        }
+        else if (numPointIndices > 0)
+        {
+            topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            numIndicesPerFace = 1;
+            numIndices = numPointIndices;
+        }
+        else
+        {
+            std::cout<<"Warning: no primitive indices "<<std::endl;
+            return;
+        }
+
         auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
         /*auto& defines =*/ config->shaderHints->defines = material.defines;
 
@@ -887,8 +943,10 @@ struct assimp::Implementation::SceneConverter
         std::cout<<"    mesh->mColors[0] = " <<mesh->mColors[0]<<std::endl;
         std::cout<<"    mesh->mTextureCoords[0] = "<<mesh->mTextureCoords[0]<<std::endl;
 
-        vsg::DataList vertexArrays;
+        config->inputAssemblyState->topology = topology;
+        auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
 
+        vsg::DataList vertexArrays;
         auto vertices = vsg::vec3Array::create(mesh->mNumVertices);
         std::memcpy(vertices->dataPointer(), mesh->mVertices, mesh->mNumVertices * 12);
         config->assignArray(vertexArrays, "vsg_Vertex", VK_VERTEX_INPUT_RATE_VERTEX, vertices);
@@ -935,95 +993,70 @@ struct assimp::Implementation::SceneConverter
         }
 
 
-        // count the number of indices of each type
-        uint32_t numTriangleIndices = 0;
-        uint32_t numLineIndices = 0;
-        uint32_t numPointIndices = 0;
-        for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
+        auto vid = vsg::VertexIndexDraw::create();
+        vid->assignArrays(vertexArrays);
+        vid->assignIndices(indices);
+        vid->indexCount = indices->valueCount();
+        vid->instanceCount = 1;
+
+        if (material.blending)
         {
-            const auto& face = mesh->mFaces[j];
-            if (face.mNumIndices == 3) numTriangleIndices += 3;
-            else if (face.mNumIndices == 2) numLineIndices += 2;
-            else if (face.mNumIndices == 1) numPointIndices += 1;
-            else
-            {
-                std::cout<<"Warning: unsupported number of indices on face "<<face.mNumIndices<<std::endl;
-            }
+            config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
+                {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
+
+            if (sharedObjects) sharedObjects->share(config->colorBlendState);
         }
 
-        if (numTriangleIndices > 0)
+        // pass DescriptorSetLaout to config
+        if (material.descriptorSet)
         {
-            //config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-            //config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-            auto indices = createIndices(mesh, 3, numTriangleIndices);
-
-            auto vid = vsg::VertexIndexDraw::create();
-            vid->assignArrays(vertexArrays);
-            vid->assignIndices(indices);
-            vid->indexCount = indices->valueCount();
-            vid->instanceCount = 1;
-
-            if (material.blending)
-            {
-                config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
-                    {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
-
-                if (sharedObjects) sharedObjects->share(config->colorBlendState);
-            }
-
-            // pass DescriptorSetLaout to config
-            if (material.descriptorSet)
-            {
-                config->descriptorSetLayout = material.descriptorSet->setLayout;
-                config->descriptorBindings = material.descriptorBindings;
-            }
-
-            if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
-            else config->init();
-
-            if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
-
-
-            // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
-            auto stateGroup = vsg::StateGroup::create();
-            stateGroup->add(config->bindGraphicsPipeline);
-
-            if (material.descriptorSet)
-            {
-                auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
-                if (sharedObjects) sharedObjects->share(bindDescriptorSet);
-
-                stateGroup->add(bindDescriptorSet);
-            }
-
-            // auto bindViewDescriptorSets = BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, cofig.layout, 1);
-            // stateGroup->add(bindViewDescriptorSets);
-
-            stateGroup->addChild(vid);
-
-            if (material.blending)
-            {
-                vsg::ComputeBounds computeBounds;
-                vid->accept(computeBounds);
-                vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
-                double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
-
-                auto depthSorted = vsg::DepthSorted::create();
-                depthSorted->binNumber = 10;
-                depthSorted->bound.set(center[0], center[1], center[2], radius);
-                depthSorted->child = stateGroup;
-
-                node = depthSorted;
-            }
-            else
-            {
-                node = stateGroup;
-            }
+            config->descriptorSetLayout = material.descriptorSet->setLayout;
+            config->descriptorBindings = material.descriptorBindings;
         }
 
+        if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
+        else config->init();
 
+        if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
+
+
+        // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
+        auto stateGroup = vsg::StateGroup::create();
+        stateGroup->add(config->bindGraphicsPipeline);
+
+        if (material.descriptorSet)
+        {
+            auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
+            if (sharedObjects) sharedObjects->share(bindDescriptorSet);
+
+            stateGroup->add(bindDescriptorSet);
+        }
+
+        // auto bindViewDescriptorSets = BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, cofig.layout, 1);
+        // stateGroup->add(bindViewDescriptorSets);
+
+        stateGroup->addChild(vid);
+
+        if (material.blending)
+        {
+            vsg::ComputeBounds computeBounds;
+            vid->accept(computeBounds);
+            vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
+            double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
+
+            auto depthSorted = vsg::DepthSorted::create();
+            depthSorted->binNumber = 10;
+            depthSorted->bound.set(center[0], center[1], center[2], radius);
+            depthSorted->child = stateGroup;
+
+            node = depthSorted;
+        }
+        else
+        {
+            node = stateGroup;
+        }
+
+        std::cout<<"Setting mesh node "<<node<<std::endl;
     }
 
     vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
@@ -1054,7 +1087,23 @@ struct assimp::Implementation::SceneConverter
 
 
         auto vsg_scene = visit(scene->mRootNode, 0);
-        if (!vsg_scene) return {};
+        if (!vsg_scene)
+        {
+            if (scene->mNumMeshes==1)
+            {
+                vsg_scene = convertedMeshes[0];
+            }
+            else if (scene->mNumMeshes>1)
+            {
+                auto group = vsg::Group::create();
+                for(auto& node : convertedMeshes)
+                {
+                    if (node) group->addChild(node);
+                }
+            }
+
+            if (!vsg_scene) return {};
+        }
 
         if (sharedObjects) sharedObjects->report(std::cout);
 
