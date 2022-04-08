@@ -549,15 +549,21 @@ struct assimp::Implementation::SceneConverter
 
     vsg::ref_ptr<vsg::ShaderSet> getOrCreatePhrShaderSet()
     {
-        if (!pbrShaderSet) pbrShaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
-        std::cout<<"getOrCreatePhrShaderSet() = "<<pbrShaderSet<<std::endl;
+        if (!pbrShaderSet)
+        {
+            pbrShaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
+            if (sharedObjects) sharedObjects->share(pbrShaderSet);
+        }
         return pbrShaderSet;
     }
 
     vsg::ref_ptr<vsg::ShaderSet> getOrCreatePhongShaderSet()
     {
-        if (!phongShaderSet) phongShaderSet = vsg::createPhongShaderSet(options);
-        std::cout<<"getOrCreatePhongShaderSet() = "<<phongShaderSet<<std::endl;
+        if (!phongShaderSet)
+        {
+            phongShaderSet = vsg::createPhongShaderSet(options);
+            if (sharedObjects) sharedObjects->share(phongShaderSet);
+        }
         return phongShaderSet;
     }
 
@@ -647,7 +653,7 @@ struct assimp::Implementation::SceneConverter
         if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
         {
             // PBR path
-            convertedMaterial.shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
+            convertedMaterial.shaderSet = getOrCreatePhrShaderSet();
 
             if (convertedMaterial.blending)
                 pbr.alphaMask = 0.0f;
@@ -680,10 +686,9 @@ struct assimp::Implementation::SceneConverter
             {
                 convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
             }
-
             if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE); samplerImage.data.valid())
             {
-                convertedMaterial.assignTexture("emuisseMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("emissiveMap", samplerImage.data, samplerImage.sampler);
             }
 
             if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP); samplerImage.data.valid())
@@ -695,15 +700,16 @@ struct assimp::Implementation::SceneConverter
             {
                 convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
             }
-#if 0
+
             if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
             {
-                convertedMaterial.assignTexture(descriptors, "", samplerImage.data, samplerImage.sampler);// ??
+                // maps to metal roughness.
+                convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
             }
-#endif
+
             if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
             {
-                convertedMaterial.assignTexture("specularlMap", samplerImage.data, samplerImage.sampler);
+                convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
             }
 
             convertedMaterial.assignUniform("material", vsg::PbrMaterialValue::create(pbr));
@@ -711,7 +717,7 @@ struct assimp::Implementation::SceneConverter
         else
         {
             // Phong shading
-            convertedMaterial.shaderSet = vsg::createPhongShaderSet(options);
+            convertedMaterial.shaderSet = getOrCreatePhongShaderSet();
 
             vsg::PhongMaterial mat;
 
@@ -960,6 +966,8 @@ struct assimp::Implementation::SceneConverter
             {
                 config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
                     {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
+
+                if (sharedObjects) sharedObjects->share(config->colorBlendState);
             }
 
             // pass DescriptorSetLaout to config
@@ -971,6 +979,8 @@ struct assimp::Implementation::SceneConverter
 
             if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
             else config->init();
+
+            if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
 
 
             // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
