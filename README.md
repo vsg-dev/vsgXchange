@@ -74,6 +74,9 @@ C++ additions:
     // read file and cast to vsg::Node if possible, returns vsg::ref_ptr<vsg::Node>
     auto model = vsg::read_cast<vsg::Node>("mymodel.gltf", options);
 
+    // write file
+    vsg::write(model, "mymodel.vsgb", options);
+
 ## How to use vsgconv utility that is built as part of vsgXchange
 
 To convert shaders to SPIRV, native VSG format or source file:
