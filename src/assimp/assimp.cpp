@@ -825,6 +825,38 @@ struct assimp::Implementation::SceneConverter
         for(auto& define : defines) std::cout<<"     "<<define<<std::endl;
     }
 
+    vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndidices)
+    {
+        if (mesh->mNumVertices > 16384)
+        {
+            auto indices = vsg::uintArray::create(numIndidices);
+            auto itr = indices->begin();
+            for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
+            {
+                const auto& face = mesh->mFaces[j];
+                if (face.mNumIndices == numIndicesPerFace)
+                {
+                    for(unsigned int i=0; i<numIndicesPerFace; ++i) (*itr++) = static_cast<uint32_t>(face.mIndices[i]);
+                }
+            }
+            return indices;
+        }
+        else
+        {
+            auto indices = vsg::ushortArray::create(numIndidices);
+            auto itr = indices->begin();
+            for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
+            {
+                const auto& face = mesh->mFaces[j];
+                if (face.mNumIndices == numIndicesPerFace)
+                {
+                    for(unsigned int i=0; i<numIndicesPerFace; ++i) (*itr++) = static_cast<uint16_t>(face.mIndices[i]);
+                }
+            }
+            return indices;
+        }
+    }
+
     void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         std::cout<<"process(mesh = "<<mesh<<") mesh->mMaterialIndex = "<<mesh->mMaterialIndex<<std::endl;
@@ -912,10 +944,10 @@ struct assimp::Implementation::SceneConverter
             const auto& face = mesh->mFaces[j];
             if (face.mNumIndices == 3) numTriangleIndices += 3;
             else if (face.mNumIndices == 2) numLineIndices += 2;
-            else if (face.mNumIndices == 1) numPointIndices += 2;
+            else if (face.mNumIndices == 1) numPointIndices += 1;
             else
             {
-                std::cout<<"Warning unsupported number of indices on face "<<face.mNumIndices<<std::endl;
+                std::cout<<"Warning: unsupported number of indices on face "<<face.mNumIndices<<std::endl;
             }
         }
 
@@ -925,42 +957,13 @@ struct assimp::Implementation::SceneConverter
             //config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
             config->inputAssemblyState->topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
+            auto indices = createIndices(mesh, 3, numTriangleIndices);
+
             auto vid = vsg::VertexIndexDraw::create();
             vid->assignArrays(vertexArrays);
-
-            if (mesh->mNumVertices > 16384)
-            {
-
-                auto indices = vsg::uintArray::create(numTriangleIndices);
-                auto itr = indices->begin();
-                for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
-                {
-                    const auto& face = mesh->mFaces[j];
-                    if (face.mNumIndices == 3)
-                    {
-                        for(unsigned int i=0; i<3; ++i) (*itr++) = static_cast<uint32_t>(face.mIndices[i]);
-                    }
-                }
-                vid->assignIndices(indices);
-                vid->indexCount = indices->size();
-                vid->instanceCount = 1;
-            }
-            else
-            {
-                auto indices = vsg::ushortArray::create(numTriangleIndices);
-                auto itr = indices->begin();
-                for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
-                {
-                    const auto& face = mesh->mFaces[j];
-                    if (face.mNumIndices == 3)
-                    {
-                        for(unsigned int i=0; i<3; ++i) (*itr++) = static_cast<uint16_t>(face.mIndices[i]);
-                    }
-                }
-                vid->assignIndices(indices);
-                vid->indexCount = indices->size();
-                vid->instanceCount = 1;
-            }
+            vid->assignIndices(indices);
+            vid->indexCount = indices->valueCount();
+            vid->instanceCount = 1;
 
             if (material.blending)
             {
