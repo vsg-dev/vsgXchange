@@ -539,6 +539,8 @@ struct assimp::Implementation::SceneConverter
     assimp::Implementation::CameraMap cameraMap;
     assimp::Implementation::LightMap lightMap;
 
+    bool useViewDependentState = true;
+
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
@@ -936,7 +938,7 @@ struct assimp::Implementation::SceneConverter
         }
 
         auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
-        /*auto& defines =*/ config->shaderHints->defines = material.defines;
+        auto& defines = config->shaderHints->defines = material.defines;
 
         std::cout<<"    numVertices = "<<mesh->mNumVertices<<std::endl;
         std::cout<<"    mesh->mNormals = "<<mesh->mNormals<<std::endl;
@@ -1014,11 +1016,20 @@ struct assimp::Implementation::SceneConverter
             config->descriptorBindings = material.descriptorBindings;
         }
 
+        // set up ViewDependentState
+        if (useViewDependentState)
+        {
+            defines.push_back("VSG_VIEW_LIGHT_DATA");
+            vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
+            if (sharedObjects) vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
+            else vdsl = vsg::ViewDescriptorSetLayout::create();
+            config->additionalDescrptorSetLayout = vdsl;
+        }
+
         if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
         else config->init();
 
         if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
-
 
         // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
         auto stateGroup = vsg::StateGroup::create();
@@ -1032,8 +1043,12 @@ struct assimp::Implementation::SceneConverter
             stateGroup->add(bindDescriptorSet);
         }
 
-        // auto bindViewDescriptorSets = BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, cofig.layout, 1);
-        // stateGroup->add(bindViewDescriptorSets);
+        if (useViewDependentState)
+        {
+            auto bindViewDescriptorSets = vsg::BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 1);
+            if (sharedObjects) sharedObjects->share(bindViewDescriptorSets);
+            stateGroup->add(bindViewDescriptorSets);
+        }
 
         stateGroup->addChild(vid);
 

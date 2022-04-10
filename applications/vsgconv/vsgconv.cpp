@@ -5,7 +5,6 @@
 #include <ostream>
 #include <thread>
 
-#include <vsg/vk/ShaderCompiler.h>
 #include <vsgXchange/Version.h>
 #include <vsgXchange/all.h>
 
