@@ -210,12 +210,6 @@ struct SceneConverter
         return phongShaderSet;
     }
 
-    std::ostream& indent(std::ostream& out, int depth)
-    {
-        for(int i=0; i<depth; ++i) out.put(' ');
-        return out;
-    }
-
     SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
 
     void convert(const aiMaterial* material, vsg::DescriptorConfig& convertedMaterial);
@@ -241,9 +235,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         {
             const auto texIndex = std::atoi(texPath.C_Str() + 1);
             const auto texture = scene->mTextures[texIndex];
-
-            //qCDebug(lc) << "Handle embedded texture" << texPath.C_Str() << texIndex << texture->achFormatHint << texture->mWidth << texture->mHeight;
-
             if (texture->mWidth > 0 && texture->mHeight == 0)
             {
                 auto imageOptions = vsg::Options::create(*options);
@@ -273,9 +264,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
         if (samplerImage.sampler->maxLod <= 1.0)
         {
-            //                if (texPath.length > 0)
-            //                    std::cout << "Auto generating mipmaps for texture: " << scene.GetShortFilename(texPath.C_Str()) << std::endl;;
-
             // Calculate maximum lod level
             auto maxDim = std::max(samplerImage.data->width(), samplerImage.data->height());
             samplerImage.sampler->maxLod = std::floor(std::log2f(static_cast<float>(maxDim)));
@@ -297,7 +285,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
 void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& convertedMaterial)
 {
-    std::cout<<"process(material = "<<material<<")"<<std::endl;
     auto& defines = convertedMaterial.defines;
 
     vsg::PbrMaterial pbr;
@@ -472,12 +459,6 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
     {
         sharedObjects->share(convertedMaterial.descriptorSet);
     }
-
-    std::cout<<"   descriptors.size() = "<<convertedMaterial.descriptors.size()<<std::endl;
-    for(auto& descriptor : convertedMaterial.descriptors) std::cout<<"     "<<descriptor<<std::endl;
-
-    std::cout<<"   defines.size() = "<<defines.size()<<std::endl;
-    for(auto& define : defines) std::cout<<"     "<<define<<std::endl;
 }
 
 vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndidices)
@@ -514,7 +495,6 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
 
 void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
-    std::cout<<"process(mesh = "<<mesh<<") mesh->mMaterialIndex = "<<mesh->mMaterialIndex<<std::endl;
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
         std::cout<<"Warning:  mesh"<<mesh<<") mesh->mMaterialIndex = "<<mesh->mMaterialIndex<<" exceedes available meterails.size()= "<<convertedMaterials.size()<<std::endl;
@@ -592,11 +572,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
     auto& defines = config->shaderHints->defines = material.defines;
-
-    std::cout<<"    numVertices = "<<mesh->mNumVertices<<std::endl;
-    std::cout<<"    mesh->mNormals = "<<mesh->mNormals<<std::endl;
-    std::cout<<"    mesh->mColors[0] = " <<mesh->mColors[0]<<std::endl;
-    std::cout<<"    mesh->mTextureCoords[0] = "<<mesh->mTextureCoords[0]<<std::endl;
 
     config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
@@ -723,8 +698,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         node = stateGroup;
     }
-
-    std::cout<<"Setting mesh node "<<node<<std::endl;
 }
 
 vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
@@ -773,7 +746,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         if (!vsg_scene) return {};
     }
 
-    if (sharedObjects) sharedObjects->report(std::cout);
+    // if (sharedObjects) sharedObjects->report(std::cout);
 
     if (auto transform = processCoordinateFrame(ext))
     {
@@ -792,8 +765,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 
 vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 {
-    indent(std::cout, depth)<<"visit(node = "<<node<<") node->mNumMeshes = "<<node->mNumMeshes<<std::endl;
-
     vsg::Group::Children children;
 
     std::string name = node->mName.C_Str();
@@ -883,17 +854,13 @@ void SceneConverter::processLights()
 {
     if (scene->mNumLights > 0)
     {
-        std::cout<<"scene->mNumLights = "<<scene->mNumLights<<std::endl;
         for(unsigned int li = 0; li < scene->mNumLights; ++li)
         {
             auto* light = scene->mLights[li];
-
-            std::cout<<"light "<<light->mName.C_Str()<<std::endl;
             switch(light->mType)
             {
                 case(aiLightSource_UNDEFINED):
                 {
-                    std::cout<<"    light->mType = aiLightSource_UNDEFINED"<<std::endl;
                     auto vsg_light = vsg::Light::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -903,7 +870,6 @@ void SceneConverter::processLights()
                 }
                 case(aiLightSource_DIRECTIONAL):
                 {
-                    std::cout<<"    light->mType = aiLightSource_DIRECTIONAL"<<std::endl;
                     auto vsg_light = vsg::DirectionalLight::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -913,7 +879,6 @@ void SceneConverter::processLights()
                 }
                 case(aiLightSource_POINT):
                 {
-                    std::cout<<"    light->mType = aiLightSource_POINT"<<std::endl;
                     auto vsg_light = vsg::PointLight::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -923,7 +888,6 @@ void SceneConverter::processLights()
                 }
                 case(aiLightSource_SPOT):
                 {
-                    std::cout<<"    light->mType = aiLightSource_SPOT"<<std::endl;
                     auto vsg_light = vsg::SpotLight::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -936,7 +900,6 @@ void SceneConverter::processLights()
                 }
                 case(aiLightSource_AMBIENT):
                 {
-                    std::cout<<"    light->mType = aiLightSource_AMBIENT"<<std::endl;
                     auto vsg_light = vsg::AmbientLight::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -945,7 +908,6 @@ void SceneConverter::processLights()
                 }
                 case(aiLightSource_AREA):
                 {
-                    std::cout<<"    light->mType = aiLightSource_AREA"<<std::endl;
                     auto vsg_light = vsg::Light::create();
                     vsg_light->name = light->mName.C_Str();
                     vsg_light->color = convert(light->mColorDiffuse);
@@ -954,7 +916,6 @@ void SceneConverter::processLights()
                     break;
                 }
                 default:
-                    std::cout<<"    light->mType = "<<light->mType<<std::endl;
                     break;
             }
         }
@@ -1004,8 +965,6 @@ assimp::Implementation::Implementation() :
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    std::cout<<"\n--------------------------------------------\nassimp::Implementation::read("<<filename<<")"<<std::endl;
-
     Assimp::Importer importer;
 
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
