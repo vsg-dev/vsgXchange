@@ -678,7 +678,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         stateGroup->add(bindViewDescriptorSets);
     }
 
-    // assign any cutom ArrayState that may be required.
+    // assign any custom ArrayState that may be required.
     stateGroup->prototypeArrayState = config->shaderSet->getSuitableArrayState(config->shaderHints->defines);
 
     stateGroup->addChild(vid);
