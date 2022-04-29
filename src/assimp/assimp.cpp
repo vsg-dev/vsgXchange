@@ -294,7 +294,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
     if ((options->getValue(assimp::two_sided, convertedMaterial.twoSided) || (material->Get(AI_MATKEY_TWOSIDED, convertedMaterial.twoSided) == AI_SUCCESS)) && convertedMaterial.twoSided)
     {
-        defines.push_back("VSG_TWOSIDED");
+        defines.push_back("VSG_TWO_SIDED_LIGHTING");
     }
 
     if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
