@@ -292,7 +292,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
     convertedMaterial.blending = hasAlphaBlend(material);
 
-    if ((options->getValue(assimp::two_sided, convertedMaterial.twoSided) || (material->Get(AI_MATKEY_TWOSIDED, convertedMaterial.twoSided) == AI_SUCCESS)) && convertedMaterial.twoSided)
+    if ((options->getValue(assimp::two_sided, convertedMaterial.two_sided) || (material->Get(AI_MATKEY_TWOSIDED, convertedMaterial.two_sided) == AI_SUCCESS)) && convertedMaterial.two_sided)
     {
         defines.push_back("VSG_TWO_SIDED_LIGHTING");
     }
@@ -629,7 +629,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         if (sharedObjects) sharedObjects->share(config->colorBlendState);
     }
 
-    if (material.twoSided)
+    if (material.two_sided)
     {
         config->rasterizationState->cullMode = VK_CULL_MODE_NONE;
     }
