@@ -292,8 +292,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
     convertedMaterial.blending = hasAlphaBlend(material);
 
-    bool twoSided = false;
-    if ((options->getValue(assimp::two_sided, twoSided) || (material->Get(AI_MATKEY_TWOSIDED, twoSided) == AI_SUCCESS)) && twoSided)
+    if ((options->getValue(assimp::two_sided, convertedMaterial.twoSided) || (material->Get(AI_MATKEY_TWOSIDED, convertedMaterial.twoSided) == AI_SUCCESS)) && convertedMaterial.twoSided)
     {
         defines.push_back("VSG_TWOSIDED");
     }
@@ -628,6 +627,11 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
             {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
 
         if (sharedObjects) sharedObjects->share(config->colorBlendState);
+    }
+
+    if (material.twoSided)
+    {
+        config->rasterizationState->cullMode = VK_CULL_MODE_NONE;
     }
 
     // pass DescriptorSetLaout to config
