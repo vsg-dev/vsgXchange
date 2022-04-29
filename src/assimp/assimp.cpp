@@ -53,8 +53,6 @@ namespace
 
 using namespace vsgXchange;
 
-class SceneConverer;
-
 class assimp::Implementation
 {
 public:
@@ -136,7 +134,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// assimp ReaderWriter SceneConverer
+// assimp ReaderWriter SceneConverter
 //
 struct SceneConverter
 {
