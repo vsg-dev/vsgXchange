@@ -292,6 +292,12 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
     convertedMaterial.blending = hasAlphaBlend(material);
 
+    bool twoSided = false;
+    if ((options->getValue(assimp::two_sided, twoSided) || (material->Get(AI_MATKEY_TWOSIDED, twoSided) == AI_SUCCESS)) && twoSided)
+    {
+        defines.push_back("VSG_TWOSIDED");
+    }
+
     if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
     {
         // PBR path
@@ -319,9 +325,6 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
         material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
-
-        bool isTwoSided = vsg::value<bool>(false, assimp::two_sided, options) || (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS);
-        if (isTwoSided) defines.push_back("VSG_TWOSIDED");
 
         SamplerData samplerImage;
         if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
@@ -374,16 +377,6 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
         aiShadingMode shadingModel = aiShadingMode_Phong;
         material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
-
-        bool isTwoSided{false};
-        bool optionFlag{false};
-        if(options->getValue(assimp::two_sided, optionFlag) && optionFlag)
-        {
-            isTwoSided = true;
-            defines.push_back("VSG_TWOSIDED");
-        }
-        else if (material->Get(AI_MATKEY_TWOSIDED, isTwoSided) == AI_SUCCESS && isTwoSided)
-            defines.push_back("VSG_TWOSIDED");
 
         unsigned int maxValue = 1;
         float strength = 1.0f;
