@@ -30,7 +30,7 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
     std::cout << "cpp::write(" << object->className() << ", " << filename << ")" << std::endl;
 
-    std::string funcname = vsg::simpleFilename(filename);
+    auto funcname = vsg::simpleFilename(filename);
 
     std::ostringstream str;
 

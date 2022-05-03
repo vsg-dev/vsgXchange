@@ -33,17 +33,17 @@ namespace vsgXchange
 
     std::pair<vsg::Path, vsg::Path> getServerPathAndFilename(const vsg::Path& filename)
     {
-        std::string::size_type pos = filename.find("://");
-        if (pos != std::string::npos)
+        auto pos = filename.find("://");
+        if (pos != vsg::Path::npos)
         {
-            std::string::size_type pos_slash = filename.find_first_of('/', pos + 3);
-            if (pos_slash != std::string::npos)
+            auto pos_slash = filename.find_first_of('/', pos + 3);
+            if (pos_slash != vsg::Path::npos)
             {
-                return {filename.substr(pos + 3, pos_slash - pos - 3), filename.substr(pos_slash + 1, std::string::npos)};
+                return {filename.substr(pos + 3, pos_slash - pos - 3), filename.substr(pos_slash + 1, vsg::Path::npos)};
             }
             else
             {
-                return {filename.substr(pos + 3, std::string::npos), ""};
+                return {filename.substr(pos + 3, vsg::Path::npos), ""};
             }
         }
         return {};
@@ -51,10 +51,10 @@ namespace vsgXchange
 
     vsg::Path getFileCachePath(const vsg::Path& fileCache, const vsg::Path& filename)
     {
-        std::string::size_type pos = filename.find("://");
-        if (pos != std::string::npos)
+        auto pos = filename.find("://");
+        if (pos != vsg::Path::npos)
         {
-            return vsg::concatPaths(fileCache, filename.substr(pos + 3, std::string::npos));
+            return vsg::concatPaths(fileCache, filename.substr(pos + 3, vsg::Path::npos));
         }
         return {};
     }

@@ -36,7 +36,7 @@ glsl::glsl()
     add(".hlsl", VK_SHADER_STAGE_ALL);
 }
 
-void glsl::add(const std::string& ext, VkShaderStageFlagBits stage)
+void glsl::add(const vsg::Path& ext, VkShaderStageFlagBits stage)
 {
     extensionToStage[ext] = stage;
     stageToExtension[stage] = ext;

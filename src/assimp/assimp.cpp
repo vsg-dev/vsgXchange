@@ -243,7 +243,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         }
         else
         {
-            const std::string filename = vsg::findFile(texPath.C_Str(), options);
+            auto filename = vsg::findFile(texPath.C_Str(), options);
 
             if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
             {

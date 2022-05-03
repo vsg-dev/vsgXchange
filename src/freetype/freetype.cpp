@@ -78,7 +78,7 @@ namespace vsgXchange
         float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
         bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
 
-        std::map<std::string, std::string> _supportedFormats;
+        std::map<vsg::Path, std::string> _supportedFormats;
         mutable std::mutex _mutex;
         mutable FT_Library _library = nullptr;
     };
