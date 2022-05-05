@@ -84,7 +84,14 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (filenameToUse.empty()) return {};
 
     int width, height, channels;
-    const auto pixels = stbi_load(filenameToUse.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+
+    auto file = vsg::fopen(filenameToUse, "rb");
+    if (!file) return {};
+
+    const auto pixels = stbi_load_from_file(file, &width, &height, &channels, STBI_rgb_alpha);
+
+    fclose(file);
+
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});

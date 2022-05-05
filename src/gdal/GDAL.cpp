@@ -121,7 +121,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
 
     vsgGIS::initGDAL();
 
-    auto dataset = vsgGIS::openSharedDataSet(filenameToUse.c_str(), GA_ReadOnly);
+    auto dataset = vsgGIS::openSharedDataSet(filenameToUse, GA_ReadOnly);
     if (!dataset)
     {
         return {};

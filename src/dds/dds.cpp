@@ -242,7 +242,8 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
 
     tinyddsloader::DDSFile ddsFile;
 
-    if (const auto result = ddsFile.Load(filenameToUse.c_str()); result == tinyddsloader::Success)
+    std::ifstream ifs(filenameToUse, std::ios_base::binary);
+    if (const auto result = ddsFile.Load(ifs); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }

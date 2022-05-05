@@ -204,7 +204,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
     std::stringstream sstr;
 
-    curl_easy_setopt(_curl, CURLOPT_URL, filename.c_str());
+    curl_easy_setopt(_curl, CURLOPT_URL, filename.string().c_str());
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void*)&sstr);
 
     vsg::ref_ptr<vsg::Object> object;

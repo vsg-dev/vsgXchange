@@ -251,7 +251,8 @@ namespace vsgconv
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [protocol, featureMask] : features.protocolFeatureMap)
                 {
-                    out << indent{indentation} << pad{protocol.c_str(), padding};
+                    auto protocol_string = protocol.string();
+                    out << indent{indentation} << pad{protocol_string.c_str(), padding};
 
                     if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
                     if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
@@ -273,7 +274,8 @@ namespace vsgconv
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [ext, featureMask] : features.extensionFeatureMap)
                 {
-                    out << indent{indentation} << pad{ext.c_str(), padding};
+                    auto ext_string = ext.string();
+                    out << indent{indentation} << pad{ext_string.c_str(), padding};
 
                     if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
                     if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
