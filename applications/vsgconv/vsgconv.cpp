@@ -33,77 +33,6 @@ namespace vsgconv
         vsg::write(object, filename, options);
     }
 
-    class LeafDataCollection : public vsg::Visitor
-    {
-    public:
-        vsg::ref_ptr<vsg::Objects> objects;
-
-        LeafDataCollection()
-        {
-            objects = new vsg::Objects;
-        }
-
-        void apply(vsg::Object& object) override
-        {
-            object.traverse(*this);
-        }
-
-        void apply(vsg::DescriptorSet& descriptorSet) override
-        {
-            objects->addChild(vsg::ref_ptr<Object>(&descriptorSet));
-        }
-
-        void apply(vsg::Geometry& geometry) override
-        {
-            for (auto& array : geometry.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-            if (geometry.indices && geometry.indices->data)
-            {
-                objects->addChild(geometry.indices->data);
-            }
-        }
-
-        void apply(vsg::VertexIndexDraw& vid) override
-        {
-            for (auto& array : vid.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-            if (vid.indices && vid.indices->data)
-            {
-                objects->addChild(vid.indices->data);
-            }
-        }
-
-        void apply(vsg::BindVertexBuffers& bvb) override
-        {
-            for (auto& array : bvb.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-        }
-
-        void apply(vsg::BindIndexBuffer& bib) override
-        {
-            if (bib.indices && bib.indices->data)
-            {
-                objects->addChild(bib.indices->data);
-            }
-        }
-
-        void apply(vsg::StateGroup& stategroup) override
-        {
-            for (auto& command : stategroup.stateCommands)
-            {
-                command->accept(*this);
-            }
-
-            stategroup.traverse(*this);
-        }
-    };
-
     struct ReadRequest
     {
         vsg::ref_ptr<const vsg::Options> options;
@@ -396,7 +325,6 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
     bool compileShaders = !arguments.read({"--no-compile", "--nc"});
@@ -539,13 +467,6 @@ int main(int argc, char** argv)
 
         auto shaderCompiler = vsg::ShaderCompiler::create();
         vsg_scene->accept(*shaderCompiler);
-
-        if (batchLeafData)
-        {
-            vsgconv::LeafDataCollection leafDataCollection;
-            vsg_scene->accept(leafDataCollection);
-            vsg_scene->setObject("batch", leafDataCollection.objects);
-        }
 
         vsgconv::CollectReadRequests collectReadRequests;
 
