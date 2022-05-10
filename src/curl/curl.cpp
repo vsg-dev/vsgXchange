@@ -54,7 +54,7 @@ namespace vsgXchange
         auto pos = filename.find("://");
         if (pos != vsg::Path::npos)
         {
-            return vsg::concatPaths(fileCache, filename.substr(pos + 3, vsg::Path::npos));
+            return fileCache / filename.substr(pos + 3, vsg::Path::npos);
         }
         return {};
     }
@@ -97,7 +97,7 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
             contains_serverAddress = containsServerAddress(options->paths.front());
             if (contains_serverAddress)
             {
-                serverFilename = vsg::concatPaths(options->paths.front(), filename);
+                serverFilename = options->paths.front() / filename;
             }
         }
 

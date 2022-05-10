@@ -138,8 +138,8 @@ namespace vsgconv
                 if (readRequests.count(plod.filename) == 0)
                 {
                     auto src_filename = plod.filename;
-                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + dest_extension;
-                    auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
+                    auto dest_base_filename = vsg::filePath(src_filename) / vsg::simpleFilename(src_filename) + dest_extension;
+                    auto dest_filename = dest_path / dest_base_filename;
 
                     readRequests[plod.filename] = {plod.options, src_filename, dest_filename};
                     plod.filename = dest_base_filename;
