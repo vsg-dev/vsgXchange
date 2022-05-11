@@ -49,7 +49,7 @@ vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (stage_itr != extensionToStage.end())
     {
         vsg::Path found_filename = vsg::findFile(filename, options);
-        if (found_filename.empty()) return {};
+        if (!found_filename) return {};
 
         std::string source;
 

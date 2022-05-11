@@ -101,7 +101,7 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
             }
         }
 
-        if (contains_serverAddress && !options->fileCache.empty())
+        if (contains_serverAddress && options->fileCache)
         {
             auto fileCachePath = getFileCachePath(options->fileCache, serverFilename);
             if (vsg::fileExists(fileCachePath))
@@ -219,10 +219,10 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
         object = vsg::read(sstr, local_options);
 
-        if (object && !options->fileCache.empty())
+        if (object && options->fileCache)
         {
             auto fileCachePath = getFileCachePath(options->fileCache, filename);
-            if (!fileCachePath.empty())
+            if (fileCachePath)
             {
                 vsg::makeDirectory(vsg::filePath(fileCachePath));
 

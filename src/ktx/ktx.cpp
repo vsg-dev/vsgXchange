@@ -243,8 +243,8 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
 
-    vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    vsg::Path filenameToUse = vsg::findFile(filename, options);
+    if (!filenameToUse) return {};
 
     auto file = vsg::fopen(filenameToUse, "rb");
     if (!file) return {};

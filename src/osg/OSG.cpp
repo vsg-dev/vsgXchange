@@ -146,7 +146,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
     if (ext==".path")
     {
         auto foundPath = vsg::findFile(filename, options);
-        if (!foundPath.empty())
+        if (foundPath)
         {
             std::ifstream fin(foundPath);
             if (!fin) return {};

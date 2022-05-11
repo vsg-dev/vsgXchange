@@ -536,7 +536,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     }
 
     vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    if (!filenameToUse) return {};
 
     std::scoped_lock<std::mutex> lock(_mutex);
 

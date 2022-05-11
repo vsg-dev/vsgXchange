@@ -968,7 +968,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
     if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
     {
         vsg::Path filenameToUse = vsg::findFile(filename, options);
-        if (filenameToUse.empty()) return {};
+        if (!filenameToUse) return {};
 
         uint32_t flags = _importFlags;
         if (vsg::value<bool>(false, assimp::generate_smooth_normals, options))

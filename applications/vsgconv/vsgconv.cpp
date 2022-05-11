@@ -22,7 +22,7 @@ namespace vsgconv
     void writeAndMakeDirectoryIfRequired(vsg::ref_ptr<vsg::Object> object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options)
     {
         vsg::Path path = vsg::filePath(filename);
-        if (!path.empty() && !vsg::fileExists(path))
+        if (path && !vsg::fileExists(path))
         {
             if (!vsg::makeDirectory(path))
             {
@@ -62,7 +62,7 @@ namespace vsgconv
 
         void apply(vsg::PagedLOD& plod) override
         {
-            if (!plod.filename.empty())
+            if (plod.filename)
             {
                 if (readRequests.count(plod.filename) == 0)
                 {
@@ -393,7 +393,7 @@ int main(int argc, char** argv)
             }
         }
 
-        if (!outputFilename.empty())
+        if (outputFilename)
         {
             if (numImages == 1)
             {
@@ -436,7 +436,7 @@ int main(int argc, char** argv)
                 shaderCompiler->compile(stagesToCompile);
             }
 
-            if (!outputFilename.empty() && !stagesToCompile.empty())
+            if (outputFilename && !stagesToCompile.empty())
             {
                 // TODO work out how to handle multiple input shaders when we only have one output filename.
                 vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
@@ -499,7 +499,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        if (!outputFilename.empty())
+        if (outputFilename)
         {
             if (vsgObjects.size() == 1)
             {

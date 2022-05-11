@@ -238,7 +238,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
         return {};
 
     vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    if (!filenameToUse) return {};
 
     tinyddsloader::DDSFile ddsFile;
 

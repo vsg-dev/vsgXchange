@@ -516,13 +516,11 @@ void ConvertToVsg::apply(osg::PagedLOD& plod)
 
     auto vsg_lod = vsg::PagedLOD::create();
 
+    auto options = (buildOptions && buildOptions->options) ? vsg::Options::create(*(buildOptions->options)) : vsg::Options::create();
+    vsg_lod->options = options;
     if (!plod.getDatabasePath().empty())
     {
-        auto options = (buildOptions && buildOptions->options) ? vsg::Options::create(*(buildOptions->options)) : vsg::Options::create();
-
         options->paths.push_back(plod.getDatabasePath());
-
-        vsg_lod->options = options;
     }
 
     const osg::BoundingSphere& bs = plod.getBound();
