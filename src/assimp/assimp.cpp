@@ -965,7 +965,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 {
     Assimp::Importer importer;
 
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext.string()))
     {
         vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (!filenameToUse) return {};
@@ -1014,7 +1014,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
     if (!options) return {};
 
     Assimp::Importer importer;
-    if (importer.IsExtensionSupported(options->extensionHint))
+    if (importer.IsExtensionSupported(options->extensionHint.string()))
     {
         std::string buffer(1 << 16, 0); // 64kB
         std::string input;
@@ -1045,7 +1045,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
     if (!options) return {};
 
     Assimp::Importer importer;
-    if (importer.IsExtensionSupported(options->extensionHint))
+    if (importer.IsExtensionSupported(options->extensionHint.string()))
     {
         if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
         {
