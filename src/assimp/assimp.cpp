@@ -981,7 +981,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             flags |= aiProcess_GenNormals;
         }
 
-        if (auto scene = importer.ReadFile(filenameToUse, flags); scene)
+        if (auto scene = importer.ReadFile(filenameToUse.string(), flags); scene)
         {
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
