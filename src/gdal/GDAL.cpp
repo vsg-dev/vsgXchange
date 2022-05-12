@@ -117,11 +117,11 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     if (ext == ".vsgb" || ext == ".vsgt" || ext == ".osgb" || ext == ".osgt" || ext == ".osg") return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    if (!filenameToUse) return {};
 
     vsgGIS::initGDAL();
 
-    auto dataset = vsgGIS::openSharedDataSet(filenameToUse.c_str(), GA_ReadOnly);
+    auto dataset = vsgGIS::openSharedDataSet(filenameToUse, GA_ReadOnly);
     if (!dataset)
     {
         return {};

@@ -52,7 +52,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     private:
-        std::unordered_set<std::string> _supportedExtensions;
+        std::set<vsg::Path> _supportedExtensions;
     };
 
     /// add dds support using local build of tinydds.
@@ -68,7 +68,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     private:
-        std::unordered_set<std::string> _supportedExtensions;
+        std::set<vsg::Path> _supportedExtensions;
     };
 
     /// add ktx using using local build of libktx
@@ -84,7 +84,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     private:
-        std::unordered_set<std::string> _supportedExtensions;
+        std::set<vsg::Path> _supportedExtensions;
     };
 
     /// optional GDAL ReaderWriter

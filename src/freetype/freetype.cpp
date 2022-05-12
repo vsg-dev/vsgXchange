@@ -78,7 +78,7 @@ namespace vsgXchange
         float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
         bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
 
-        std::map<std::string, std::string> _supportedFormats;
+        std::map<vsg::Path, std::string> _supportedFormats;
         mutable std::mutex _mutex;
         mutable FT_Library _library = nullptr;
     };
@@ -536,7 +536,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     }
 
     vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    if (!filenameToUse) return {};
 
     std::scoped_lock<std::mutex> lock(_mutex);
 
@@ -545,7 +545,10 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
 
     FT_Face face;
     FT_Long face_index = 0;
-    int error = FT_New_Face(_library, filenameToUse.c_str(), face_index, &face);
+
+    // Windows workaround for no wchar_t support in Freetype convert vsg::Path's std::wstring to UTF8 std::string
+    std::string filenameToUse_string = filenameToUse.string();
+    int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face);
     if (error == FT_Err_Unknown_File_Format)
     {
         std::cout << "Warning: FreeType unable to read font file : " << filenameToUse << ", error = " << FT_Err_Unknown_File_Format << std::endl;

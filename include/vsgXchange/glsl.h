@@ -40,13 +40,13 @@ namespace vsgXchange
 
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
-        void add(const std::string& ext, VkShaderStageFlagBits stage);
+        void add(const vsg::Path& ext, VkShaderStageFlagBits stage);
 
         bool getFeatures(Features& features) const override;
 
     protected:
-        std::map<std::string, VkShaderStageFlagBits> extensionToStage;
-        std::map<VkShaderStageFlagBits, std::string> stageToExtension;
+        std::map<vsg::Path, VkShaderStageFlagBits> extensionToStage;
+        std::map<VkShaderStageFlagBits, vsg::Path> stageToExtension;
     };
 
 } // namespace vsgXchange

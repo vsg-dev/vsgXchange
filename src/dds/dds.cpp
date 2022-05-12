@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsg/io/FileSystem.h>
+#include <vsg/io/stream.h>
 
 #include <cstring>
 
@@ -238,11 +239,12 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
         return {};
 
     vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    if (!filenameToUse) return {};
 
     tinyddsloader::DDSFile ddsFile;
 
-    if (const auto result = ddsFile.Load(filenameToUse.c_str()); result == tinyddsloader::Success)
+    std::ifstream ifs(filenameToUse, std::ios_base::binary);
+    if (const auto result = ddsFile.Load(ifs); result == tinyddsloader::Success)
     {
         return readDds(ddsFile);
     }

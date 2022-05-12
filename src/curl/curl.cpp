@@ -33,17 +33,17 @@ namespace vsgXchange
 
     std::pair<vsg::Path, vsg::Path> getServerPathAndFilename(const vsg::Path& filename)
     {
-        std::string::size_type pos = filename.find("://");
-        if (pos != std::string::npos)
+        auto pos = filename.find("://");
+        if (pos != vsg::Path::npos)
         {
-            std::string::size_type pos_slash = filename.find_first_of('/', pos + 3);
-            if (pos_slash != std::string::npos)
+            auto pos_slash = filename.find_first_of('/', pos + 3);
+            if (pos_slash != vsg::Path::npos)
             {
-                return {filename.substr(pos + 3, pos_slash - pos - 3), filename.substr(pos_slash + 1, std::string::npos)};
+                return {filename.substr(pos + 3, pos_slash - pos - 3), filename.substr(pos_slash + 1, vsg::Path::npos)};
             }
             else
             {
-                return {filename.substr(pos + 3, std::string::npos), ""};
+                return {filename.substr(pos + 3, vsg::Path::npos), ""};
             }
         }
         return {};
@@ -51,10 +51,10 @@ namespace vsgXchange
 
     vsg::Path getFileCachePath(const vsg::Path& fileCache, const vsg::Path& filename)
     {
-        std::string::size_type pos = filename.find("://");
-        if (pos != std::string::npos)
+        auto pos = filename.find("://");
+        if (pos != vsg::Path::npos)
         {
-            return vsg::concatPaths(fileCache, filename.substr(pos + 3, std::string::npos));
+            return fileCache / filename.substr(pos + 3, vsg::Path::npos);
         }
         return {};
     }
@@ -97,11 +97,11 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
             contains_serverAddress = containsServerAddress(options->paths.front());
             if (contains_serverAddress)
             {
-                serverFilename = vsg::concatPaths(options->paths.front(), filename);
+                serverFilename = options->paths.front() / filename;
             }
         }
 
-        if (contains_serverAddress && !options->fileCache.empty())
+        if (contains_serverAddress && options->fileCache)
         {
             auto fileCachePath = getFileCachePath(options->fileCache, serverFilename);
             if (vsg::fileExists(fileCachePath))
@@ -204,7 +204,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
     std::stringstream sstr;
 
-    curl_easy_setopt(_curl, CURLOPT_URL, filename.c_str());
+    curl_easy_setopt(_curl, CURLOPT_URL, filename.string().c_str());
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void*)&sstr);
 
     vsg::ref_ptr<vsg::Object> object;
@@ -219,10 +219,10 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
         object = vsg::read(sstr, local_options);
 
-        if (object && !options->fileCache.empty())
+        if (object && options->fileCache)
         {
             auto fileCachePath = getFileCachePath(options->fileCache, filename);
-            if (!fileCachePath.empty())
+            if (fileCachePath)
             {
                 vsg::makeDirectory(vsg::filePath(fileCachePath));
 

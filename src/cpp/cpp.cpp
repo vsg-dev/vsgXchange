@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/AsciiOutput.h>
 #include <vsg/io/VSG.h>
+#include <vsg/io/stream.h>
 
 #include <iostream>
 
@@ -30,7 +31,7 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
     std::cout << "cpp::write(" << object->className() << ", " << filename << ")" << std::endl;
 
-    std::string funcname = vsg::simpleFilename(filename);
+    auto funcname = vsg::simpleFilename(filename);
 
     std::ostringstream str;
 

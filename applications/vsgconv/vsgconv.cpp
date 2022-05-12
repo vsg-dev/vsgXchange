@@ -22,7 +22,7 @@ namespace vsgconv
     void writeAndMakeDirectoryIfRequired(vsg::ref_ptr<vsg::Object> object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options)
     {
         vsg::Path path = vsg::filePath(filename);
-        if (!path.empty() && !vsg::fileExists(path))
+        if (path && !vsg::fileExists(path))
         {
             if (!vsg::makeDirectory(path))
             {
@@ -32,77 +32,6 @@ namespace vsgconv
         }
         vsg::write(object, filename, options);
     }
-
-    class LeafDataCollection : public vsg::Visitor
-    {
-    public:
-        vsg::ref_ptr<vsg::Objects> objects;
-
-        LeafDataCollection()
-        {
-            objects = new vsg::Objects;
-        }
-
-        void apply(vsg::Object& object) override
-        {
-            object.traverse(*this);
-        }
-
-        void apply(vsg::DescriptorSet& descriptorSet) override
-        {
-            objects->addChild(vsg::ref_ptr<Object>(&descriptorSet));
-        }
-
-        void apply(vsg::Geometry& geometry) override
-        {
-            for (auto& array : geometry.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-            if (geometry.indices && geometry.indices->data)
-            {
-                objects->addChild(geometry.indices->data);
-            }
-        }
-
-        void apply(vsg::VertexIndexDraw& vid) override
-        {
-            for (auto& array : vid.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-            if (vid.indices && vid.indices->data)
-            {
-                objects->addChild(vid.indices->data);
-            }
-        }
-
-        void apply(vsg::BindVertexBuffers& bvb) override
-        {
-            for (auto& array : bvb.arrays)
-            {
-                if (array->data) objects->addChild(array->data);
-            }
-        }
-
-        void apply(vsg::BindIndexBuffer& bib) override
-        {
-            if (bib.indices && bib.indices->data)
-            {
-                objects->addChild(bib.indices->data);
-            }
-        }
-
-        void apply(vsg::StateGroup& stategroup) override
-        {
-            for (auto& command : stategroup.stateCommands)
-            {
-                command->accept(*this);
-            }
-
-            stategroup.traverse(*this);
-        }
-    };
 
     struct ReadRequest
     {
@@ -133,13 +62,13 @@ namespace vsgconv
 
         void apply(vsg::PagedLOD& plod) override
         {
-            if (!plod.filename.empty())
+            if (plod.filename)
             {
                 if (readRequests.count(plod.filename) == 0)
                 {
                     auto src_filename = plod.filename;
-                    auto dest_base_filename = vsg::concatPaths(vsg::filePath(src_filename), vsg::simpleFilename(src_filename)) + dest_extension;
-                    auto dest_filename = vsg::concatPaths(dest_path, dest_base_filename);
+                    auto dest_base_filename = vsg::filePath(src_filename) / vsg::simpleFilename(src_filename) + dest_extension;
+                    auto dest_filename = dest_path / dest_base_filename;
 
                     readRequests[plod.filename] = {plod.options, src_filename, dest_filename};
                     plod.filename = dest_base_filename;
@@ -251,7 +180,8 @@ namespace vsgconv
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [protocol, featureMask] : features.protocolFeatureMap)
                 {
-                    out << indent{indentation} << pad{protocol.c_str(), padding};
+                    auto protocol_string = protocol.string();
+                    out << indent{indentation} << pad{protocol_string.c_str(), padding};
 
                     if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
                     if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
@@ -273,7 +203,8 @@ namespace vsgconv
                 out << indent{indentation} << pad{"----------", padding} << "------------------------------" << std::endl;
                 for (auto& [ext, featureMask] : features.extensionFeatureMap)
                 {
-                    out << indent{indentation} << pad{ext.c_str(), padding};
+                    auto ext_string = ext.string();
+                    out << indent{indentation} << pad{ext_string.c_str(), padding};
 
                     if (featureMask & vsg::ReaderWriter::READ_FILENAME) out << "read(vsg::Path, ..) ";
                     if (featureMask & vsg::ReaderWriter::READ_ISTREAM) out << "read(std::istream, ..) ";
@@ -394,7 +325,6 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    auto batchLeafData = arguments.read("--batch");
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
     bool compileShaders = !arguments.read({"--no-compile", "--nc"});
@@ -463,7 +393,7 @@ int main(int argc, char** argv)
             }
         }
 
-        if (!outputFilename.empty())
+        if (outputFilename)
         {
             if (numImages == 1)
             {
@@ -506,7 +436,7 @@ int main(int argc, char** argv)
                 shaderCompiler->compile(stagesToCompile);
             }
 
-            if (!outputFilename.empty() && !stagesToCompile.empty())
+            if (outputFilename && !stagesToCompile.empty())
             {
                 // TODO work out how to handle multiple input shaders when we only have one output filename.
                 vsgconv::writeAndMakeDirectoryIfRequired(stagesToCompile.front(), outputFilename, options);
@@ -537,13 +467,6 @@ int main(int argc, char** argv)
 
         auto shaderCompiler = vsg::ShaderCompiler::create();
         vsg_scene->accept(*shaderCompiler);
-
-        if (batchLeafData)
-        {
-            vsgconv::LeafDataCollection leafDataCollection;
-            vsg_scene->accept(leafDataCollection);
-            vsg_scene->setObject("batch", leafDataCollection.objects);
-        }
 
         vsgconv::CollectReadRequests collectReadRequests;
 
@@ -576,7 +499,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        if (!outputFilename.empty())
+        if (outputFilename)
         {
             if (vsgObjects.size() == 1)
             {

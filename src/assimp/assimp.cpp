@@ -243,7 +243,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         }
         else
         {
-            const std::string filename = vsg::findFile(texPath.C_Str(), options);
+            auto filename = vsg::findFile(texPath.C_Str(), options);
 
             if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
             {
@@ -965,10 +965,10 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 {
     Assimp::Importer importer;
 
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext))
+    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext.string()))
     {
         vsg::Path filenameToUse = vsg::findFile(filename, options);
-        if (filenameToUse.empty()) return {};
+        if (!filenameToUse) return {};
 
         uint32_t flags = _importFlags;
         if (vsg::value<bool>(false, assimp::generate_smooth_normals, options))
@@ -981,7 +981,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             flags |= aiProcess_GenNormals;
         }
 
-        if (auto scene = importer.ReadFile(filenameToUse, flags); scene)
+        if (auto scene = importer.ReadFile(filenameToUse.string(), flags); scene)
         {
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
@@ -1014,7 +1014,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
     if (!options) return {};
 
     Assimp::Importer importer;
-    if (importer.IsExtensionSupported(options->extensionHint))
+    if (importer.IsExtensionSupported(options->extensionHint.string()))
     {
         std::string buffer(1 << 16, 0); // 64kB
         std::string input;
@@ -1045,7 +1045,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
     if (!options) return {};
 
     Assimp::Importer importer;
-    if (importer.IsExtensionSupported(options->extensionHint))
+    if (importer.IsExtensionSupported(options->extensionHint.string()))
     {
         if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
         {

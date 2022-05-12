@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/core/Exception.h>
 #include <vsg/state/DescriptorImage.h>
+#include <vsg/io/stream.h>
 
 #include <ktx.h>
 #include <ktxvulkan.h>
@@ -243,10 +244,18 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
     if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
         return {};
 
-    vsg::Path filenameToUse = findFile(filename, options);
-    if (filenameToUse.empty()) return {};
+    vsg::Path filenameToUse = vsg::findFile(filename, options);
+    if (!filenameToUse) return {};
 
-    if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromNamedFile(filenameToUse.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    auto file = vsg::fopen(filenameToUse, "rb");
+    if (!file) return {};
+
+    ktxTexture* texture = nullptr;
+    auto result = ktxTexture_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+
+    fclose(file);
+
+    if (result == KTX_SUCCESS)
     {
         vsg::ref_ptr<vsg::Data> data;
         try
