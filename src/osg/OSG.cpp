@@ -139,7 +139,8 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
             osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
         else
             osg_options = new osgDB::Options();
-        osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), options->paths.begin(), options->paths.end());
+        for( auto itr = options->paths.begin(); itr != options->paths.end(); ++itr)
+            osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), (*itr).string());
     }
 
     auto ext = vsg::lowerCaseFileExtension(filename);
@@ -183,7 +184,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
         return {};
     }
 
-    osgDB::ReaderWriter::ReadResult rr = osgDB::Registry::instance()->readObject(filename, osg_options.get());
+    osgDB::ReaderWriter::ReadResult rr = osgDB::Registry::instance()->readObject(filename.string(), osg_options.get());
     // if (!rr.success()) OSG_WARN << "Error reading file " << filename << ": " << rr.statusMessage() << std::endl;
     if (!rr.validObject()) return {};
 
