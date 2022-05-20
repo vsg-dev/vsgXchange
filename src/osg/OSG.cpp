@@ -236,7 +236,7 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
             {
                 uint32_t maxLevel = 20;
                 uint32_t estimatedNumOfTilesBelow = 0;
-                uint32_t maxNumTilesBelow = 40000;
+                uint32_t maxNumTilesBelow = 1024;
 
                 uint32_t level = 0;
                 for (uint32_t i = level; i < maxLevel; ++i)
