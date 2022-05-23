@@ -358,6 +358,11 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    if (options->sharedObjects && options->sharedObjects->contains(outputFilename, options))
+    {
+        options->sharedObjects->remove(outputFilename, options);
+    }
+
     unsigned int numImages = 0;
     unsigned int numShaders = 0;
     unsigned int numNodes = 0;
