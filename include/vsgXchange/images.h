@@ -103,7 +103,7 @@ namespace vsgXchange
         Implementation* _implementation;
     };
 
-    /// add openexr support using openexr library
+    /// optional .exr support using OpenEXR library
     class openexr : public vsg::Inherit<vsg::ReaderWriter, openexr>
     {
     public:
