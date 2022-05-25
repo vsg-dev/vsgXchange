@@ -13,8 +13,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsg/core/Exception.h>
-#include <vsg/state/DescriptorImage.h>
 #include <vsg/io/stream.h>
+#include <vsg/state/DescriptorImage.h>
 
 #include <ktx.h>
 #include <ktxvulkan.h>
@@ -338,7 +338,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_pt
 
 bool ktx::getFeatures(Features& features) const
 {
-    for(auto& ext : _supportedExtensions)
+    for (auto& ext : _supportedExtensions)
     {
         features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     }

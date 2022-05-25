@@ -12,8 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/models.h>
 
-#include <osg/TransferFunction>
 #include <osg/AnimationPath>
+#include <osg/TransferFunction>
 #include <osg/io_utils>
 #include <osgDB/PluginQuery>
 #include <osgDB/ReadFile>
@@ -139,12 +139,12 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
             osg_options = osgDB::Registry::instance()->getOptions()->cloneOptions();
         else
             osg_options = new osgDB::Options();
-        for( auto itr = options->paths.begin(); itr != options->paths.end(); ++itr)
+        for (auto itr = options->paths.begin(); itr != options->paths.end(); ++itr)
             osg_options->getDatabasePathList().insert(osg_options->getDatabasePathList().end(), (*itr).string());
     }
 
     auto ext = vsg::lowerCaseFileExtension(filename);
-    if (ext==".path")
+    if (ext == ".path")
     {
         auto foundPath = vsg::findFile(filename, options);
         if (foundPath)
@@ -157,20 +157,20 @@ vsg::ref_ptr<vsg::Object> OSG::Implementation::read(const vsg::Path& filename, v
 
             auto vsg_animationPath = vsg::AnimationPath::create();
 
-            switch(osg_animationPath->getLoopMode())
+            switch (osg_animationPath->getLoopMode())
             {
-                case(osg::AnimationPath::SWING):
-                    vsg_animationPath->mode = vsg::AnimationPath::FORWARD_AND_BACK;
-                    break;
-                case(osg::AnimationPath::LOOP):
-                    vsg_animationPath->mode = vsg::AnimationPath::REPEAT;
-                    break;
-                case(osg::AnimationPath::NO_LOOPING):
-                    vsg_animationPath->mode = vsg::AnimationPath::ONCE;
-                    break;
+            case (osg::AnimationPath::SWING):
+                vsg_animationPath->mode = vsg::AnimationPath::FORWARD_AND_BACK;
+                break;
+            case (osg::AnimationPath::LOOP):
+                vsg_animationPath->mode = vsg::AnimationPath::REPEAT;
+                break;
+            case (osg::AnimationPath::NO_LOOPING):
+                vsg_animationPath->mode = vsg::AnimationPath::ONCE;
+                break;
             }
 
-            for(auto& [time, cp] : osg_animationPath->getTimeControlPointMap())
+            for (auto& [time, cp] : osg_animationPath->getTimeControlPointMap())
             {
                 const auto& position = cp.getPosition();
                 const auto& rotation = cp.getRotation();

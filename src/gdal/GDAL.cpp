@@ -12,8 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/images.h>
 
-#include <vsgGIS/gdal_utils.h>
 #include <vsgGIS/TileDatabase.h>
+#include <vsgGIS/gdal_utils.h>
 
 #include <cstring>
 #include <iostream>

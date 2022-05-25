@@ -173,7 +173,7 @@ namespace vsgconv
 
             if (!features.protocolFeatureMap.empty())
             {
-                if (precedingNewline) out<<std::endl;
+                if (precedingNewline) out << std::endl;
 
                 size_t padding = 16;
                 out << indent{indentation} << pad{"Protocols", padding} << "Supported ReaderWriter methods" << std::endl;
@@ -196,7 +196,7 @@ namespace vsgconv
 
             if (!features.extensionFeatureMap.empty())
             {
-                if (precedingNewline) out<<std::endl;
+                if (precedingNewline) out << std::endl;
 
                 size_t padding = 16;
                 out << indent{indentation} << pad{"Extensions", padding} << "Supported ReaderWriter methods" << std::endl;
@@ -219,7 +219,7 @@ namespace vsgconv
 
             if (!features.optionNameTypeMap.empty())
             {
-                if (precedingNewline) out<<std::endl;
+                if (precedingNewline) out << std::endl;
 
                 // expand the padding to encompass any long value strings
                 size_t maxValueWidth = 19;
@@ -228,14 +228,14 @@ namespace vsgconv
                     if (vt.first.length() > maxValueWidth) maxValueWidth = vt.first.length();
                 }
 
-                size_t padding = maxValueWidth+2;
+                size_t padding = maxValueWidth + 2;
 
                 // print out the options
                 out << indent{indentation} << pad{"vsg::Options::Value", padding} << "type" << std::endl;
                 out << indent{indentation} << pad{"-------------------", padding} << "----" << std::endl;
                 for (auto& [value, type] : features.optionNameTypeMap)
                 {
-                    out << indent{indentation} << pad{value.c_str(), padding}<<type<< std::endl;
+                    out << indent{indentation} << pad{value.c_str(), padding} << type << std::endl;
                 }
                 precedingNewline = true;
             }

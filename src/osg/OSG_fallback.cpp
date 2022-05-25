@@ -25,9 +25,7 @@ OSG::OSG() :
     _implementation(nullptr)
 {
 }
-OSG::~OSG()
-{
-};
+OSG::~OSG(){};
 bool OSG::readOptions(vsg::Options&, vsg::CommandLine&) const
 {
     return false;

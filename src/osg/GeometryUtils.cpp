@@ -266,22 +266,22 @@ namespace osg2vsg
         std::vector<uint32_t> triangles;
         std::vector<uint32_t> quads;
 
-        void operator() (unsigned int i0)
+        void operator()(unsigned int i0)
         {
             points.push_back(i0);
         }
-        void operator() (unsigned int i0, unsigned int i1)
+        void operator()(unsigned int i0, unsigned int i1)
         {
             lines.push_back(i0);
             lines.push_back(i1);
         }
-        void operator() (unsigned int i0, unsigned int i1, unsigned int i2)
+        void operator()(unsigned int i0, unsigned int i1, unsigned int i2)
         {
             triangles.push_back(i0);
             triangles.push_back(i1);
             triangles.push_back(i2);
         }
-        void operator() (unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3)
+        void operator()(unsigned int i0, unsigned int i1, unsigned int i2, unsigned int i3)
         {
             quads.push_back(i0);
             quads.push_back(i1);
@@ -378,15 +378,15 @@ namespace osg2vsg
         auto& triangles = collectPrimitives.triangles;
         auto& quads = collectPrimitives.quads;
 
-        for(size_t i=0; i<quads.size(); i+=4)
+        for (size_t i = 0; i < quads.size(); i += 4)
         {
-            triangles.push_back(quads[i+0]);
-            triangles.push_back(quads[i+1]);
-            triangles.push_back(quads[i+2]);
+            triangles.push_back(quads[i + 0]);
+            triangles.push_back(quads[i + 1]);
+            triangles.push_back(quads[i + 2]);
 
-            triangles.push_back(quads[i+0]);
-            triangles.push_back(quads[i+2]);
-            triangles.push_back(quads[i+3]);
+            triangles.push_back(quads[i + 0]);
+            triangles.push_back(quads[i + 2]);
+            triangles.push_back(quads[i + 3]);
         }
 
         // nothing to draw so return a null ref_ptr<>
@@ -396,7 +396,7 @@ namespace osg2vsg
         if (vertices->valueCount() > 16384)
         {
             auto indices = vsg::uintArray::create(triangles.size());
-            for(size_t i=0; i<triangles.size(); ++i)
+            for (size_t i = 0; i < triangles.size(); ++i)
             {
                 indices->set(i, triangles[i]);
             }
@@ -405,7 +405,7 @@ namespace osg2vsg
         else
         {
             auto indices = vsg::ushortArray::create(triangles.size());
-            for(size_t i=0; i<triangles.size(); ++i)
+            for (size_t i = 0; i < triangles.size(); ++i)
             {
                 indices->set(i, triangles[i]);
             }

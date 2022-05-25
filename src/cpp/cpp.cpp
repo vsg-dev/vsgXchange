@@ -59,22 +59,22 @@ void cpp::write(std::ostream& out, const std::string& str) const
     if (str.length() > max_string_literal_length)
     {
         std::size_t n = 0;
-        while( (n+max_string_literal_length) < str.length() )
+        while ((n + max_string_literal_length) < str.length())
         {
             auto pos_previous_end_of_line = str.find_last_of("\n", n + max_string_literal_length);
-            if (pos_previous_end_of_line  > n)
+            if (pos_previous_end_of_line > n)
             {
-                out << "R\"(" << str.substr(n, pos_previous_end_of_line+1 - n)  << ")\"\n";
-                n = pos_previous_end_of_line+1;
+                out << "R\"(" << str.substr(n, pos_previous_end_of_line + 1 - n) << ")\"\n";
+                n = pos_previous_end_of_line + 1;
             }
             else
             {
-                out << "R\"(" << str.substr(n, max_string_literal_length)  << ")\" ";
+                out << "R\"(" << str.substr(n, max_string_literal_length) << ")\" ";
                 n += max_string_literal_length;
             }
         }
 
-        if (n<str.length())
+        if (n < str.length())
         {
             out << "R\"(" << str.substr(n, std::string::npos) << ")\"";
         }
