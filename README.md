@@ -13,11 +13,11 @@ vsgXchange contains source code that can directly read a [range of shader and im
 
 cmake automatically finds which depedencies are available and builds the appropriate components:
 
-* [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. supported by FreeType as vsg::Font.
-* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) GeoTiff etc. suported by vsgGIS/GDAL vsg::Data.
-* [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  i.e GLTF, OBJ, 3DS, LWO etc. supported by Assimp as vsg::Node.
-* [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl)  i.e reading image and model files from http:// and https://
-* [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) i.e OpenSceneGraph, OpenFlight etc. supported by OpenSceneGraph.
+* [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. using [Freetype](https://www.freetype.org/) as vsg::Font.
+* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [vsgGIS](https://github.com/vsg-dev/vsgGIS)/GDAL vsg::Data.
+* [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  GLTF, OBJ, 3DS, LWO etc. use Assimp as vsg::Node.
+* [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl) reading image and model files from http:// and https:// using [libcurl](https://curl.se/libcurl/)
+* [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) OpenSceneGraph, OpenFlight etc. using [OpenSceneGraph](http://www.openscenegraph.org/).
 
 ## Required dependencies:
 
