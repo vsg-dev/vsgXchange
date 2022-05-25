@@ -11,8 +11,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #include <vsgXchange/images.h>
-
-#include <cstring>
+#include <vsg/io/stream.h>
 #include <vsg/io/FileSystem.h>
 
 #include <OpenEXR/ImfChannelList.h>
@@ -113,141 +112,179 @@ namespace
         size_t curPlace;
     };
 
+
     static vsg::ref_ptr<vsg::Object> parseOpenExr(Imf::InputFile& file)
     {
         Imath::Box2i dw = file.header().dataWindow();
         int width = dw.max.x - dw.min.x + 1;
         int height = dw.max.y - dw.min.y + 1;
-        auto begin = file.header().channels().begin();
+
         int channelCount = 0;
-        while (begin != file.header().channels().end())
+        auto type = file.header().channels().begin().channel().type;
+        for(auto itr = file.header().channels().begin(); itr != file.header().channels().end(); ++itr)
         {
-            ++begin;
-            channelCount++;
-        }
-        if (channelCount > 4) return {};
-
-        //single element half precision float
-        if (channelCount == 1 && file.header().channels().begin().channel().type == Imf::HALF)
-        {
-            uint16_t* pixels = new uint16_t[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert(file.header().channels().begin().name(),
-                               Imf::Slice(Imf::HALF, (char*)(pixels - dw.min.x - dw.min.y * width),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::ushortArray2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R16_SFLOAT});
+            ++channelCount;
+            if (type != itr.channel().type)
+            {
+                // types not consistent, only consistent type channels are supported so return a null ref_ptr<>.
+                return {};
+            }
         }
 
-        //single element single precision float
-        if (channelCount == 1 && file.header().channels().begin().channel().type == Imf::FLOAT)
+        if (channelCount == 1)
         {
-            float* pixels = new float[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert(file.header().channels().begin().name(),
-                               Imf::Slice(Imf::FLOAT, (char*)(pixels - dw.min.x - dw.min.y * width),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::floatArray2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R32_SFLOAT});
-        }
+            vsg::ref_ptr<vsg::Data> image;
+            if (type == Imf::HALF)
+            {
+                // single element half precision float
+                image = vsg::ushortArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16_SFLOAT});
+            }
+            else if (type == Imf::FLOAT)
+            {
+                // single element single precision float
+                image = vsg::floatArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32_SFLOAT});
+            }
+            else if (type == Imf::UINT)
+            {
+                // single element single precision uint
+                image = vsg::uintArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32_UINT});
+            }
 
-        //single element single precision uint
-        if (channelCount == 1 && file.header().channels().begin().channel().type == Imf::UINT)
+            if (image)
+            {
+                auto valueSize = image->valueSize();
+                auto name = file.header().channels().begin().name();
+
+                Imf::FrameBuffer frameBuffer;
+                frameBuffer.insert(name, Imf::Slice(type, reinterpret_cast<char*>(image->dataPointer()) - valueSize * (dw.min.x + dw.min.y * width), valueSize, valueSize * width));
+
+                file.setFrameBuffer(frameBuffer);
+                file.readPixels(dw.min.y, dw.max.y);
+
+                return image;
+            }
+        }
+        else if (channelCount == 2)
         {
-            uint32_t* pixels = new uint32_t[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert(file.header().channels().begin().name(),
-                               Imf::Slice(Imf::UINT, (char*)(pixels - dw.min.x - dw.min.y * width),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::uintArray2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R32_UINT});
-        }
+            vsg::ref_ptr<vsg::Data> image;
+            size_t componentSize = 0;
+            if (type == Imf::HALF)
+            {
+                // single element half precision float
+                image = vsg::usvec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16_SFLOAT});
+                componentSize = 2;
+            }
+            else if (type == Imf::FLOAT)
+            {
+                // single element single precision float
+                image = vsg::vec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32_SFLOAT});
+                componentSize = 4;
+            }
+            else if (type == Imf::UINT)
+            {
+                // single element single precision uint
+                image = vsg::uivec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32_UINT});
+                componentSize = 4;
+            }
 
-        //4 elements half precision float
-        if (file.header().channels().begin().channel().type == Imf::HALF)
+            if (image)
+            {
+                auto valueSize = image->valueSize();
+                char* ptr = reinterpret_cast<char*>(image->dataPointer()) - valueSize * (dw.min.x + dw.min.y * width);
+
+                Imf::FrameBuffer frameBuffer;
+                frameBuffer.insert("R", Imf::Slice(type, ptr + 0 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("G", Imf::Slice(type, ptr + 1 * componentSize, valueSize, valueSize * width));
+
+                file.setFrameBuffer(frameBuffer);
+                file.readPixels(dw.min.y, dw.max.y);
+
+                return image;
+            }
+        }
+        else if (channelCount == 3)
         {
-            vsg::usvec4* pixels = new vsg::usvec4[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert("R",
-                               Imf::Slice(Imf::HALF, (char*)(&(pixels - dw.min.x - dw.min.y * width)->r),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("G",
-                               Imf::Slice(Imf::HALF, (char*)(&(pixels - dw.min.x - dw.min.y * width)->g),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("B",
-                               Imf::Slice(Imf::HALF, (char*)(&(pixels - dw.min.x - dw.min.y * width)->b),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("A",
-                               Imf::Slice(Imf::HALF, (char*)(&(pixels - dw.min.x - dw.min.y * width)->a),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::usvec4Array2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R16G16B16A16_SFLOAT});
-        }
+            vsg::ref_ptr<vsg::Data> image;
+            size_t componentSize = 0;
+            if (type == Imf::HALF)
+            {
+                // single element half precision float
+                image = vsg::usvec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16B16_SFLOAT});
+                componentSize = 2;
+            }
+            else if (type == Imf::FLOAT)
+            {
+                // single element single precision float
+                image = vsg::vec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32_SFLOAT});
+                componentSize = 4;
+            }
+            else if (type == Imf::UINT)
+            {
+                // single element single precision uint
+                image = vsg::uivec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32_UINT});
+                componentSize = 4;
+            }
 
-        //4 elements single precision float
-        if (file.header().channels().begin().channel().type == Imf::FLOAT)
+            if (image)
+            {
+                auto valueSize = image->valueSize();
+                char* ptr = reinterpret_cast<char*>(image->dataPointer()) - valueSize * (dw.min.x + dw.min.y * width);
+
+                Imf::FrameBuffer frameBuffer;
+                frameBuffer.insert("R", Imf::Slice(type, ptr + 0 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("G", Imf::Slice(type, ptr + 1 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("B", Imf::Slice(type, ptr + 2 * componentSize, valueSize, valueSize * width));
+
+                file.setFrameBuffer(frameBuffer);
+                file.readPixels(dw.min.y, dw.max.y);
+
+                return image;
+            }
+        }
+        else if (channelCount == 4)
         {
-            vsg::vec4* pixels = new vsg::vec4[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert("R",
-                               Imf::Slice(Imf::FLOAT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->r),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
+            vsg::ref_ptr<vsg::Data> image;
+            size_t componentSize = 0;
+            if (type == Imf::HALF)
+            {
+                // single element half precision float
+                image = vsg::usvec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16B16A16_SFLOAT});
+                componentSize = 2;
+            }
+            else if (type == Imf::FLOAT)
+            {
+                // single element single precision float
+                image = vsg::vec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
+                componentSize = 4;
+            }
+            else if (type == Imf::UINT)
+            {
+                // single element single precision uint
+                image = vsg::uivec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_UINT});
+                componentSize = 4;
+            }
 
-            frameBuffer.insert("G",
-                               Imf::Slice(Imf::FLOAT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->g),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("B",
-                               Imf::Slice(Imf::FLOAT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->b),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("A",
-                               Imf::Slice(Imf::FLOAT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->a),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::vec4Array2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
+            if (image)
+            {
+                auto valueSize = image->valueSize();
+                char* ptr = reinterpret_cast<char*>(image->dataPointer()) - valueSize * (dw.min.x + dw.min.y * width);
+
+                Imf::FrameBuffer frameBuffer;
+                frameBuffer.insert("R", Imf::Slice(type, ptr + 0 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("G", Imf::Slice(type, ptr + 1 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("B", Imf::Slice(type, ptr + 2 * componentSize, valueSize, valueSize * width));
+                frameBuffer.insert("A", Imf::Slice(type, ptr + 3 * componentSize, valueSize, valueSize * width));
+
+                file.setFrameBuffer(frameBuffer);
+                file.readPixels(dw.min.y, dw.max.y);
+
+                return image;
+            }
         }
-
-        //4 elements single precision uint
-        if (file.header().channels().begin().channel().type == Imf::UINT)
+        else
         {
-            vsg::uivec4* pixels = new vsg::uivec4[width * height];
-            Imf::FrameBuffer frameBuffer;
-            frameBuffer.insert("R",
-                               Imf::Slice(Imf::UINT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->r),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("G",
-                               Imf::Slice(Imf::UINT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->g),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("B",
-                               Imf::Slice(Imf::UINT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->b),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            frameBuffer.insert("A",
-                               Imf::Slice(Imf::UINT, (char*)(&(pixels - dw.min.x - dw.min.y * width)->a),
-                                          sizeof(pixels[0]),
-                                          sizeof(pixels[0]) * width));
-            file.setFrameBuffer(frameBuffer);
-            file.readPixels(dw.min.y, dw.max.y);
-            return vsg::uivec4Array2D::create(width, height, pixels, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_UINT});
+            std::cout<<"Unsupported channelCount = "<<channelCount<<std::endl;
         }
-
         return {};
     }
 
