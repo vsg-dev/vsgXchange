@@ -21,7 +21,8 @@ using namespace vsgXchange;
 class GDAL::Implementation
 {
 };
-GDAL::GDAL() : _implementation(nullptr)
+GDAL::GDAL() :
+    _implementation(nullptr)
 {
 }
 GDAL::~GDAL()

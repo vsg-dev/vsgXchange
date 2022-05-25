@@ -22,23 +22,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#if (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==0)
-    #include <assimp/pbrmaterial.h>
-    #define AI_MATKEY_BASE_COLOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR
-    #define AI_MATKEY_GLOSSINESS_FACTOR AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR
-    #define AI_MATKEY_METALLIC_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR
-    #define AI_MATKEY_ROUGHNESS_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR
+#if (ASSIMP_VERSION_MAJOR == 5 && ASSIMP_VERSION_MINOR == 0)
+#    include <assimp/pbrmaterial.h>
+#    define AI_MATKEY_BASE_COLOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR
+#    define AI_MATKEY_GLOSSINESS_FACTOR AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR
+#    define AI_MATKEY_METALLIC_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR
+#    define AI_MATKEY_ROUGHNESS_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR
 #else
-    #include <assimp/material.h>
+#    include <assimp/material.h>
 
-    #if (ASSIMP_VERSION_MAJOR==5 && ASSIMP_VERSION_MINOR==1 && ASSIMP_VERSION_PATCH==0)
-        #define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
-        #define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0
-    #else
-        #include <assimp/GltfMaterial.h>
-    #endif
+#    if (ASSIMP_VERSION_MAJOR == 5 && ASSIMP_VERSION_MINOR == 1 && ASSIMP_VERSION_PATCH == 0)
+#        define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
+#        define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0
+#    else
+#        include <assimp/GltfMaterial.h>
+#    endif
 #endif
-
 
 namespace
 {
@@ -47,7 +46,6 @@ namespace
         vsg::ref_ptr<vsg::Sampler> sampler;
         vsg::ref_ptr<vsg::Data> data;
     };
-
 
 } // namespace
 
@@ -131,7 +129,6 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     return result;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // assimp ReaderWriter SceneConverter
@@ -182,8 +179,7 @@ struct SceneConverter
     {
         aiString alphaMode;
         float opacity = 1.0;
-        if ((material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("BLEND"))
-             || (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0))
+        if ((material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("BLEND")) || (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0))
             return true;
         return false;
     }
@@ -218,7 +214,6 @@ struct SceneConverter
     vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
     vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
 };
-
 
 SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTextureType type) const
 {
@@ -462,7 +457,7 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
             const auto& face = mesh->mFaces[j];
             if (face.mNumIndices == numIndicesPerFace)
             {
-                for(unsigned int i=0; i<numIndicesPerFace; ++i) (*itr++) = static_cast<uint32_t>(face.mIndices[i]);
+                for (unsigned int i = 0; i < numIndicesPerFace; ++i) (*itr++) = static_cast<uint32_t>(face.mIndices[i]);
             }
         }
         return indices;
@@ -476,7 +471,7 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
             const auto& face = mesh->mFaces[j];
             if (face.mNumIndices == numIndicesPerFace)
             {
-                for(unsigned int i=0; i<numIndicesPerFace; ++i) (*itr++) = static_cast<uint16_t>(face.mIndices[i]);
+                for (unsigned int i = 0; i < numIndicesPerFace; ++i) (*itr++) = static_cast<uint16_t>(face.mIndices[i]);
             }
         }
         return indices;
@@ -487,19 +482,19 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
-        std::cout<<"Warning:  mesh"<<mesh<<") mesh->mMaterialIndex = "<<mesh->mMaterialIndex<<" exceedes available meterails.size()= "<<convertedMaterials.size()<<std::endl;
+        std::cout << "Warning:  mesh" << mesh << ") mesh->mMaterialIndex = " << mesh->mMaterialIndex << " exceedes available meterails.size()= " << convertedMaterials.size() << std::endl;
         return;
     }
 
     if (mesh->mNumVertices == 0 || mesh->mVertices == nullptr)
     {
-        std::cout<<"Warning:  mesh"<<mesh<<") no verticex data, mesh->mNumVertices = "<<mesh->mNumVertices<<" mesh->mVertices = "<<mesh->mVertices<<std::endl;
+        std::cout << "Warning:  mesh" << mesh << ") no verticex data, mesh->mNumVertices = " << mesh->mNumVertices << " mesh->mVertices = " << mesh->mVertices << std::endl;
         return;
     }
 
     if (mesh->mNumFaces == 0 || mesh->mFaces == nullptr)
     {
-        std::cout<<"Warning:  mesh"<<mesh<<") no mesh data, mesh->mNumFaces = "<<mesh->mNumFaces<<std::endl;
+        std::cout << "Warning:  mesh" << mesh << ") no mesh data, mesh->mNumFaces = " << mesh->mNumFaces << std::endl;
         return;
     }
 
@@ -512,25 +507,26 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
     {
         const auto& face = mesh->mFaces[j];
-        if (face.mNumIndices == 3) numTriangleIndices += 3;
-        else if (face.mNumIndices == 2) numLineIndices += 2;
-        else if (face.mNumIndices == 1) numPointIndices += 1;
+        if (face.mNumIndices == 3)
+            numTriangleIndices += 3;
+        else if (face.mNumIndices == 2)
+            numLineIndices += 2;
+        else if (face.mNumIndices == 1)
+            numPointIndices += 1;
         else
         {
-            std::cout<<"Warning: unsupported number of indices on face "<<face.mNumIndices<<std::endl;
+            std::cout << "Warning: unsupported number of indices on face " << face.mNumIndices << std::endl;
         }
     }
 
     int numPrimtiveTypes = 0;
-    if (numTriangleIndices>0) ++numPrimtiveTypes;
-    if (numLineIndices>0) ++numPrimtiveTypes;
-    if (numPointIndices>0) ++numPrimtiveTypes;
+    if (numTriangleIndices > 0) ++numPrimtiveTypes;
+    if (numLineIndices > 0) ++numPrimtiveTypes;
+    if (numPointIndices > 0) ++numPrimtiveTypes;
 
-    if (numPrimtiveTypes>1)
+    if (numPrimtiveTypes > 1)
     {
-        std::cout<<"Warning: more than one primitive type required, numTriangleIndices = "<<numTriangleIndices<<
-                    ", numLineIndices = "<<numLineIndices<<
-                    ", numPointIndices = "<<numPointIndices<<std::endl;
+        std::cout << "Warning: more than one primitive type required, numTriangleIndices = " << numTriangleIndices << ", numLineIndices = " << numLineIndices << ", numPointIndices = " << numPointIndices << std::endl;
     }
 
     unsigned int numIndicesPerFace = 0;
@@ -556,7 +552,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
     else
     {
-        std::cout<<"Warning: no primitive indices "<<std::endl;
+        std::cout << "Warning: no primitive indices " << std::endl;
         return;
     }
 
@@ -587,7 +583,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         auto dest_texcoords = vsg::vec2Array::create(mesh->mNumVertices);
         auto src_texcoords = mesh->mTextureCoords[0];
-        for(unsigned int i=0; i<mesh->mNumVertices; ++i)
+        for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
         {
             auto& tc = src_texcoords[i];
             dest_texcoords->at(i).set(tc[0], tc[1]);
@@ -611,7 +607,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
     }
-
 
     auto vid = vsg::VertexIndexDraw::create();
     vid->assignArrays(vertexArrays);
@@ -644,13 +639,17 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         defines.push_back("VSG_VIEW_LIGHT_DATA");
         vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
-        if (sharedObjects) vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
-        else vdsl = vsg::ViewDescriptorSetLayout::create();
+        if (sharedObjects)
+            vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
+        else
+            vdsl = vsg::ViewDescriptorSetLayout::create();
         config->additionalDescrptorSetLayout = vdsl;
     }
 
-    if (sharedObjects) sharedObjects->share(config, [](auto gpc) { gpc->init(); });
-    else config->init();
+    if (sharedObjects)
+        sharedObjects->share(config, [](auto gpc) { gpc->init(); });
+    else
+        config->init();
 
     if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
 
@@ -724,18 +723,17 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         convert(scene->mMeshes[i], convertedMeshes[i]);
     }
 
-
     auto vsg_scene = visit(scene->mRootNode, 0);
     if (!vsg_scene)
     {
-        if (scene->mNumMeshes==1)
+        if (scene->mNumMeshes == 1)
         {
             vsg_scene = convertedMeshes[0];
         }
-        else if (scene->mNumMeshes>1)
+        else if (scene->mNumMeshes > 1)
         {
             auto group = vsg::Group::create();
-            for(auto& node : convertedMeshes)
+            for (auto& node : convertedMeshes)
             {
                 if (node) group->addChild(node);
             }
@@ -792,7 +790,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     // visit the children
     for (unsigned int i = 0; i < node->mNumChildren; ++i)
     {
-        if (auto child = visit(node->mChildren[i], depth+1))
+        if (auto child = visit(node->mChildren[i], depth + 1))
         {
             children.push_back(child);
         }
@@ -802,7 +800,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
     if (node->mTransformation.IsIdentity())
     {
-        if (children.size()==1) return children[0];
+        if (children.size() == 1) return children[0];
 
         auto group = vsg::Group::create();
         group->children = children;
@@ -827,7 +825,7 @@ void SceneConverter::processCameras()
 {
     if (scene->mNumCameras > 0)
     {
-        for(unsigned int li = 0; li<scene->mNumCameras; ++li)
+        for (unsigned int li = 0; li < scene->mNumCameras; ++li)
         {
             auto* camera = scene->mCameras[li];
             auto vsg_camera = vsg::Camera::create();
@@ -835,11 +833,11 @@ void SceneConverter::processCameras()
 
             vsg_camera->viewMatrix = vsg::LookAt::create(
                 vsg::dvec3(camera->mPosition[0], camera->mPosition[1], camera->mPosition[2]), // eye
-                vsg::dvec3(camera->mLookAt[0], camera->mLookAt[1], camera->mLookAt[2]), // center
-                vsg::dvec3(camera->mUp[0], camera->mUp[1], camera->mUp[2]) // up
+                vsg::dvec3(camera->mLookAt[0], camera->mLookAt[1], camera->mLookAt[2]),       // center
+                vsg::dvec3(camera->mUp[0], camera->mUp[1], camera->mUp[2])                    // up
             );
 
-            double verticalFOV = vsg::degrees( atan(tan(static_cast<double>(camera->mHorizontalFOV) * 0.5) / camera->mAspect) * 2.0);
+            double verticalFOV = vsg::degrees(atan(tan(static_cast<double>(camera->mHorizontalFOV) * 0.5) / camera->mAspect) * 2.0);
             vsg_camera->projectionMatrix = vsg::Perspective::create(verticalFOV, camera->mAspect, camera->mClipPlaneNear, camera->mClipPlaneFar);
 
             // the aiNodes in the scene with the same name as the camera will provide a place to add the camera, this is added in the node handling in the for loop below.
@@ -852,69 +850,63 @@ void SceneConverter::processLights()
 {
     if (scene->mNumLights > 0)
     {
-        for(unsigned int li = 0; li < scene->mNumLights; ++li)
+        for (unsigned int li = 0; li < scene->mNumLights; ++li)
         {
             auto* light = scene->mLights[li];
-            switch(light->mType)
+            switch (light->mType)
             {
-                case(aiLightSource_UNDEFINED):
-                {
-                    auto vsg_light = vsg::Light::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    vsg_light->setValue("light_type", "UNDEFINED");
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                case(aiLightSource_DIRECTIONAL):
-                {
-                    auto vsg_light = vsg::DirectionalLight::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    vsg_light->direction = dconvert(light->mDirection);
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                case(aiLightSource_POINT):
-                {
-                    auto vsg_light = vsg::PointLight::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    vsg_light->position = dconvert(light->mDirection);
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                case(aiLightSource_SPOT):
-                {
-                    auto vsg_light = vsg::SpotLight::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    vsg_light->position = dconvert(light->mDirection);
-                    vsg_light->direction = dconvert(light->mDirection);
-                    vsg_light->innerAngle = light->mAngleInnerCone;
-                    vsg_light->outerAngle = light->mAngleOuterCone;
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                case(aiLightSource_AMBIENT):
-                {
-                    auto vsg_light = vsg::AmbientLight::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                case(aiLightSource_AREA):
-                {
-                    auto vsg_light = vsg::Light::create();
-                    vsg_light->name = light->mName.C_Str();
-                    vsg_light->color = convert(light->mColorDiffuse);
-                    vsg_light->setValue("light_type", "AREA");
-                    lightMap[vsg_light->name] = vsg_light;
-                    break;
-                }
-                default:
-                    break;
+            case (aiLightSource_UNDEFINED): {
+                auto vsg_light = vsg::Light::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                vsg_light->setValue("light_type", "UNDEFINED");
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            case (aiLightSource_DIRECTIONAL): {
+                auto vsg_light = vsg::DirectionalLight::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                vsg_light->direction = dconvert(light->mDirection);
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            case (aiLightSource_POINT): {
+                auto vsg_light = vsg::PointLight::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                vsg_light->position = dconvert(light->mDirection);
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            case (aiLightSource_SPOT): {
+                auto vsg_light = vsg::SpotLight::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                vsg_light->position = dconvert(light->mDirection);
+                vsg_light->direction = dconvert(light->mDirection);
+                vsg_light->innerAngle = light->mAngleInnerCone;
+                vsg_light->outerAngle = light->mAngleOuterCone;
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            case (aiLightSource_AMBIENT): {
+                auto vsg_light = vsg::AmbientLight::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            case (aiLightSource_AREA): {
+                auto vsg_light = vsg::Light::create();
+                vsg_light->name = light->mName.C_Str();
+                vsg_light->color = convert(light->mColorDiffuse);
+                vsg_light->setValue("light_type", "AREA");
+                lightMap[vsg_light->name] = vsg_light;
+                break;
+            }
+            default:
+                break;
             }
         }
     }
@@ -930,9 +922,12 @@ vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const 
         int upAxis = 1;
         if (scene->mMetaData->Get("UpAxis", upAxis))
         {
-            if (upAxis==1) source_coordianteConvention = vsg::CoordinateConvention::X_UP;
-            else if (upAxis==2) source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
-            else source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
+            if (upAxis == 1)
+                source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+            else if (upAxis == 2)
+                source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+            else
+                source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
 
             // unclear on how to intepret the UpAxisSign so will leave it unused for now.
             // int upAxisSign = 1;
@@ -950,7 +945,6 @@ vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const 
         return {};
     }
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //

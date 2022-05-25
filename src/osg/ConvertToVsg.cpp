@@ -75,9 +75,9 @@ void ConvertToVsg::optimize(osg::Node* osg_scene)
 {
 #if 0
     osgUtil::IndexMeshVisitor imv;
-#if OSG_MIN_VERSION_REQUIRED(3, 6, 4)
+#    if OSG_MIN_VERSION_REQUIRED(3, 6, 4)
     imv.setGenerateNewIndicesOnAllGeometries(true);
-#endif
+#    endif
     osg_scene->accept(imv);
     imv.makeMesh();
 
@@ -219,7 +219,6 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
         }
     }
 
-
     if (!statestack.empty())
     {
         auto stateset = getStatePair().second;
@@ -239,7 +238,7 @@ void ConvertToVsg::apply(osg::Geometry& geometry)
 
     stategroup->addChild(vsg_geometry);
 
-    if (requiredBlending &&  buildOptions->useDepthSorted)
+    if (requiredBlending && buildOptions->useDepthSorted)
     {
         auto center = geometry.getBound().center();
         auto radius = geometry.getBound().radius();
@@ -581,7 +580,7 @@ void ConvertToVsg::apply(osg::Switch& sw)
 {
     auto vsg_sw = vsg::Switch::create();
 
-    for(unsigned int i=0; i<sw.getNumChildren(); ++i)
+    for (unsigned int i = 0; i < sw.getNumChildren(); ++i)
     {
         auto vsg_child = convert(sw.getChild(i));
         if (vsg_child)
