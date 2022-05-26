@@ -14,7 +14,7 @@ set(HEADERS
     ${HEADER_PATH}/glsl.h
     ${HEADER_PATH}/images.h
     ${HEADER_PATH}/models.h
- )
+)
 
 set(SOURCES
     all/Version.cpp
@@ -43,6 +43,9 @@ include(gdal/build_vars.cmake)
 
 # add optional CURL component
 include(curl/build_vars.cmake)
+
+# add optional OpenEXR component
+include(openexr/build_vars.cmake)
 
 # create the version header
 set(VSGXCHANGE_VERSION_HEADER "${PROJECT_BINARY_DIR}/include/vsgXchange/Version.h")

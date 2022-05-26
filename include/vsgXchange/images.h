@@ -103,6 +103,25 @@ namespace vsgXchange
         Implementation* _implementation;
     };
 
+    /// optional .exr support using OpenEXR library
+    class openexr : public vsg::Inherit<vsg::ReaderWriter, openexr>
+    {
+    public:
+        openexr();
+
+        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+        vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+        vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const override;
+
+        bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> = {}) const override;
+        bool write(const vsg::Object* object, std::ostream& fout, vsg::ref_ptr<const vsg::Options> = {}) const override;
+
+        bool getFeatures(Features& features) const override;
+
+    private:
+        std::set<vsg::Path> _supportedExtensions;
+    };
+
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::images);
@@ -110,3 +129,4 @@ EVSG_type_name(vsgXchange::stbi);
 EVSG_type_name(vsgXchange::dds);
 EVSG_type_name(vsgXchange::ktx);
 EVSG_type_name(vsgXchange::GDAL);
+EVSG_type_name(vsgXchange::openexr);

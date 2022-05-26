@@ -39,6 +39,10 @@ all::all()
     add(dds::create());
     add(ktx::create());
 
+#ifdef vsgXchange_OpenEXR
+    add(openexr::create());
+#endif
+
 #ifdef vsgXchange_freetype
     add(freetype::create());
 #endif
