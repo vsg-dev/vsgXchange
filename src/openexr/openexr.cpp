@@ -583,7 +583,6 @@ bool openexr::write(const vsg::Object* object, std::ostream& fout, vsg::ref_ptr<
         std::cout << "Caught OpenEXR exception." << std::endl;
     }
     return false;
-    return false;
 }
 
 bool openexr::getFeatures(Features& features) const
