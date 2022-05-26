@@ -102,7 +102,7 @@ namespace
         };
         virtual void seekg(Imf::Int64 pos)
         {
-            curPlace = 0;
+            curPlace = pos;
         };
         virtual void clear(){};
 
