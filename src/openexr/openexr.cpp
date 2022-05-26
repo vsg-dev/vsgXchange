@@ -10,9 +10,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/images.h>
-#include <vsg/io/stream.h>
 #include <vsg/io/FileSystem.h>
+#include <vsg/io/stream.h>
+#include <vsgXchange/images.h>
 
 #include <OpenEXR/ImfChannelList.h>
 #include <OpenEXR/ImfFrameBuffer.h>
@@ -112,16 +112,21 @@ namespace
         size_t curPlace;
     };
 
-
     static vsg::ref_ptr<vsg::Object> parseOpenExr(Imf::InputFile& file)
     {
         Imath::Box2i dw = file.header().dataWindow();
+
+        int max_valid_value = 32768;
         int width = dw.max.x - dw.min.x + 1;
         int height = dw.max.y - dw.min.y + 1;
+        if (std::abs(dw.max.x) > max_valid_value || std::abs(dw.max.x) > max_valid_value || std::abs(width) > max_valid_value || std::abs(height) > max_valid_value)
+        {
+            return vsg::ReadError::create("OpenEXR dataWindow out of bounds");
+        }
 
         int channelCount = 0;
         auto type = file.header().channels().begin().channel().type;
-        for(auto itr = file.header().channels().begin(); itr != file.header().channels().end(); ++itr)
+        for (auto itr = file.header().channels().begin(); itr != file.header().channels().end(); ++itr)
         {
             ++channelCount;
             if (type != itr.channel().type)
@@ -276,6 +281,7 @@ namespace
                 frameBuffer.insert("A", Imf::Slice(type, ptr + 3 * componentSize, valueSize, valueSize * width));
 
                 file.setFrameBuffer(frameBuffer);
+
                 file.readPixels(dw.min.y, dw.max.y);
 
                 return image;
@@ -283,7 +289,7 @@ namespace
         }
         else
         {
-            std::cout<<"Unsupported channelCount = "<<channelCount<<std::endl;
+            std::cout << "Unsupported channelCount = " << channelCount << std::endl;
         }
         return {};
     }
@@ -451,12 +457,23 @@ vsg::ref_ptr<vsg::Object> openexr::read(const vsg::Path& filename, vsg::ref_ptr<
         return {};
     }
 
-    vsg::Path filenameToUse = findFile(filename, options);
-    if (!filenameToUse) return {};
+    try
+    {
+        vsg::Path filenameToUse = findFile(filename, options);
+        if (!filenameToUse) return {};
 
-    Imf::InputFile file(filenameToUse.c_str());
+        Imf::InputFile file(filenameToUse.c_str());
 
-    return parseOpenExr(file);
+        return parseOpenExr(file);
+    }
+    catch (Iex::BaseExc& e)
+    {
+        return vsg::ReadError::create(e.what());
+    }
+    catch (...)
+    {
+        return vsg::ReadError::create("Caught OpenEXR exception.");
+    }
 }
 
 vsg::ref_ptr<vsg::Object> openexr::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
@@ -466,10 +483,21 @@ vsg::ref_ptr<vsg::Object> openexr::read(std::istream& fin, vsg::ref_ptr<const vs
         return {};
     }
 
-    CPP_IStream stream(fin, "");
-    Imf::InputFile file(stream);
+    try
+    {
+        CPP_IStream stream(fin, "");
+        Imf::InputFile file(stream);
 
-    return parseOpenExr(file);
+        return parseOpenExr(file);
+    }
+    catch (Iex::BaseExc& e)
+    {
+        return vsg::ReadError::create(e.what());
+    }
+    catch (...)
+    {
+        return vsg::ReadError::create("Caught OpenEXR exception.");
+    }
 }
 
 vsg::ref_ptr<vsg::Object> openexr::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
@@ -479,10 +507,21 @@ vsg::ref_ptr<vsg::Object> openexr::read(const uint8_t* ptr, size_t size, vsg::re
         return {};
     }
 
-    Array_IStream stream(ptr, size, "");
-    Imf::InputFile file(stream);
+    try
+    {
+        Array_IStream stream(ptr, size, "");
+        Imf::InputFile file(stream);
 
-    return parseOpenExr(file);
+        return parseOpenExr(file);
+    }
+    catch (Iex::BaseExc& e)
+    {
+        return vsg::ReadError::create(e.what());
+    }
+    catch (...)
+    {
+        return vsg::ReadError::create("Caught OpenEXR exception.");
+    }
 }
 
 bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>) const
@@ -492,14 +531,25 @@ bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::r
         return false;
     }
 
-    auto v = vsg::visit<InitializeHeader>(object);
-    if (v.header)
+    try
     {
-        Imf::OutputFile file(filename.c_str(), *v.header);
-        file.setFrameBuffer(vsg::visit<InitializeFrameBuffer>(object).frameBuffer);
-        file.writePixels(v.numScanLines);
+        auto v = vsg::visit<InitializeHeader>(object);
+        if (v.header)
+        {
+            Imf::OutputFile file(filename.c_str(), *v.header);
+            file.setFrameBuffer(vsg::visit<InitializeFrameBuffer>(object).frameBuffer);
+            file.writePixels(v.numScanLines);
 
-        return true;
+            return true;
+        }
+    }
+    catch (Iex::BaseExc& e)
+    {
+        std::cout << "Caught OpenEXR exception: " << e.what() << std::endl;
+    }
+    catch (...)
+    {
+        std::cout << "Caught OpenEXR exception." << std::endl;
     }
     return false;
 }
@@ -511,16 +561,28 @@ bool openexr::write(const vsg::Object* object, std::ostream& fout, vsg::ref_ptr<
         return false;
     }
 
-    auto v = vsg::visit<InitializeHeader>(object);
-    if (v.header)
+    try
     {
-        CPP_OStream stream(fout, "");
-        Imf::OutputFile file(stream, *v.header);
-        file.setFrameBuffer(vsg::visit<InitializeFrameBuffer>(object).frameBuffer);
-        file.writePixels(v.numScanLines);
+        auto v = vsg::visit<InitializeHeader>(object);
+        if (v.header)
+        {
+            CPP_OStream stream(fout, "");
+            Imf::OutputFile file(stream, *v.header);
+            file.setFrameBuffer(vsg::visit<InitializeFrameBuffer>(object).frameBuffer);
+            file.writePixels(v.numScanLines);
 
-        return true;
+            return true;
+        }
     }
+    catch (Iex::BaseExc& e)
+    {
+        std::cout << "Caught OpenEXR exception: " << e.what() << std::endl;
+    }
+    catch (...)
+    {
+        std::cout << "Caught OpenEXR exception." << std::endl;
+    }
+    return false;
     return false;
 }
 
