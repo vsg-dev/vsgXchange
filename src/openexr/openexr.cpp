@@ -314,6 +314,33 @@ namespace
             numScanLines = obj.height();
         }
 
+        void apply(const vsg::usvec3Array2D& obj) override
+        { //single precision short
+            header.reset(new Imf::Header(obj.width(), obj.height()));
+            header->channels().insert("R", Imf::Channel(Imf::HALF));
+            header->channels().insert("G", Imf::Channel(Imf::HALF));
+            header->channels().insert("B", Imf::Channel(Imf::HALF));
+            numScanLines = obj.height();
+        }
+
+        void apply(const vsg::vec3Array2D& obj) override
+        { //single precision float
+            header.reset(new Imf::Header(obj.width(), obj.height()));
+            header->channels().insert("R", Imf::Channel(Imf::FLOAT));
+            header->channels().insert("G", Imf::Channel(Imf::FLOAT));
+            header->channels().insert("B", Imf::Channel(Imf::FLOAT));
+            numScanLines = obj.height();
+        }
+
+        void apply(const vsg::uivec3Array2D& obj) override
+        { //single precision uint
+            header.reset(new Imf::Header(obj.width(), obj.height()));
+            header->channels().insert("R", Imf::Channel(Imf::UINT));
+            header->channels().insert("G", Imf::Channel(Imf::UINT));
+            header->channels().insert("B", Imf::Channel(Imf::UINT));
+            numScanLines = obj.height();
+        }
+
         void apply(const vsg::usvec4Array2D& obj) override
         { //single precision short
             header.reset(new Imf::Header(obj.width(), obj.height()));
@@ -351,86 +378,62 @@ namespace
 
         void apply(const vsg::ushortArray2D& obj)
         { //single precision half float
-            frameBuffer.insert("Y", Imf::Slice(Imf::HALF,
-                                               (char*)obj.data(),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("Y", Imf::Slice(Imf::HALF, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
         }
 
         void apply(const vsg::floatArray2D& obj) override
         { //single precision float
-            frameBuffer.insert("Y", Imf::Slice(Imf::FLOAT,
-                                               (char*)obj.data(),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("Y", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
         }
 
         void apply(const vsg::uintArray2D& obj) override
         { //single precision uint
-            frameBuffer.insert("Y", Imf::Slice(Imf::UINT,
-                                               (char*)obj.data(),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("Y", Imf::Slice(Imf::UINT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+        }
+
+        void apply(const vsg::usvec3Array2D& obj) override
+        { //single precision short
+            frameBuffer.insert("R", Imf::Slice(Imf::HALF, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::HALF, (char*)obj.dataPointer() + 2, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::HALF, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+        }
+
+        void apply(const vsg::vec3Array2D& obj) override
+        { //single precision float
+            frameBuffer.insert("R", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer() + 8, obj.valueSize(), obj.valueSize() * obj.width()));
+        }
+
+        void apply(const vsg::uivec3Array2D& obj) override
+        { //single precision uint
+            frameBuffer.insert("R", Imf::Slice(Imf::UINT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::UINT, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::UINT, (char*)obj.dataPointer() + 8, obj.valueSize(), obj.valueSize() * obj.width()));
         }
 
         void apply(const vsg::usvec4Array2D& obj) override
         { //single precision short
-            frameBuffer.insert("R", Imf::Slice(Imf::HALF,
-                                               (char*)(&obj.data()->r),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("G", Imf::Slice(Imf::HALF,
-                                               (char*)(&obj.data()->g),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("B", Imf::Slice(Imf::HALF,
-                                               (char*)(&obj.data()->b),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("A", Imf::Slice(Imf::HALF,
-                                               (char*)(&obj.data()->a),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("R", Imf::Slice(Imf::HALF, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::HALF, (char*)obj.dataPointer() + 2, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::HALF, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("A", Imf::Slice(Imf::HALF, (char*)obj.dataPointer() + 6, obj.valueSize(), obj.valueSize() * obj.width()));
         }
 
         void apply(const vsg::vec4Array2D& obj) override
         { //single precision float
-            frameBuffer.insert("R", Imf::Slice(Imf::FLOAT,
-                                               (char*)(&obj.data()->r),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("G", Imf::Slice(Imf::FLOAT,
-                                               (char*)(&obj.data()->g),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("B", Imf::Slice(Imf::FLOAT,
-                                               (char*)(&obj.data()->b),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("A", Imf::Slice(Imf::FLOAT,
-                                               (char*)(&obj.data()->a),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("R", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer() + 8, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("A", Imf::Slice(Imf::FLOAT, (char*)obj.dataPointer() + 12, obj.valueSize(), obj.valueSize() * obj.width()));
         }
 
         void apply(const vsg::uivec4Array2D& obj) override
         { //single precision uint
-            frameBuffer.insert("R", Imf::Slice(Imf::UINT,
-                                               (char*)(&obj.data()->r),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("G", Imf::Slice(Imf::UINT,
-                                               (char*)(&obj.data()->g),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("B", Imf::Slice(Imf::UINT,
-                                               (char*)(&obj.data()->b),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
-            frameBuffer.insert("A", Imf::Slice(Imf::UINT,
-                                               (char*)(&obj.data()->a),
-                                               sizeof(*obj.data()),
-                                               sizeof(*obj.data()) * obj.width()));
+            frameBuffer.insert("R", Imf::Slice(Imf::UINT, (char*)obj.dataPointer(), obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("G", Imf::Slice(Imf::UINT, (char*)obj.dataPointer() + 4, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("B", Imf::Slice(Imf::UINT, (char*)obj.dataPointer() + 8, obj.valueSize(), obj.valueSize() * obj.width()));
+            frameBuffer.insert("A", Imf::Slice(Imf::UINT, (char*)obj.dataPointer() + 12, obj.valueSize(), obj.valueSize() * obj.width()));
         }
     };
 
