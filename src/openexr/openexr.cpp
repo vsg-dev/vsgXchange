@@ -42,11 +42,11 @@ namespace
             _file.read(c, n);
             return !_file.eof();
         };
-        virtual Imf::Int64 tellg()
+        virtual uint64_t tellg()
         {
             return _file.tellg();
         };
-        virtual void seekg(Imf::Int64 pos)
+        virtual void seekg(uint64_t pos)
         {
             _file.seekg(pos);
         };
@@ -67,11 +67,11 @@ namespace
         {
             _file.write(c, n);
         };
-        virtual Imf::Int64 tellp()
+        virtual uint64_t tellp()
         {
             return _file.tellp();
         };
-        virtual void seekp(Imf::Int64 pos)
+        virtual void seekp(uint64_t pos)
         {
             _file.seekp(pos);
         };
@@ -96,11 +96,11 @@ namespace
             curPlace += n;
             return curPlace != size;
         };
-        virtual Imf::Int64 tellg()
+        virtual uint64_t tellg()
         {
             return curPlace;
         };
-        virtual void seekg(Imf::Int64 pos)
+        virtual void seekg(uint64_t pos)
         {
             curPlace = pos;
         };
@@ -462,7 +462,7 @@ vsg::ref_ptr<vsg::Object> openexr::read(const vsg::Path& filename, vsg::ref_ptr<
         vsg::Path filenameToUse = findFile(filename, options);
         if (!filenameToUse) return {};
 
-        Imf::InputFile file(filenameToUse.c_str());
+        Imf::InputFile file(filenameToUse.string().c_str());
 
         return parseOpenExr(file);
     }
@@ -536,7 +536,7 @@ bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::r
         auto v = vsg::visit<InitializeHeader>(object);
         if (v.header)
         {
-            Imf::OutputFile file(filename.c_str(), *v.header);
+            Imf::OutputFile file(filename.string().c_str(), *v.header);
             file.setFrameBuffer(vsg::visit<InitializeFrameBuffer>(object).frameBuffer);
             file.writePixels(v.numScanLines);
 
