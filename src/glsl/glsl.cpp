@@ -26,12 +26,12 @@ glsl::glsl()
     add(".comp", VK_SHADER_STAGE_COMPUTE_BIT);
     add(".mesh", VK_SHADER_STAGE_MESH_BIT_NV);
     add(".task", VK_SHADER_STAGE_TASK_BIT_NV);
-    add(".rgen", VK_SHADER_STAGE_RAYGEN_BIT_NV);
-    add(".rint", VK_SHADER_STAGE_INTERSECTION_BIT_NV);
-    add(".rahit", VK_SHADER_STAGE_ANY_HIT_BIT_NV);
-    add(".rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV);
-    add(".rmiss", VK_SHADER_STAGE_MISS_BIT_NV);
-    add(".rcall", VK_SHADER_STAGE_CALLABLE_BIT_NV);
+    add(".rgen", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+    add(".rint", VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
+    add(".rahit", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
+    add(".rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+    add(".rmiss", VK_SHADER_STAGE_MISS_BIT_KHR);
+    add(".rcall", VK_SHADER_STAGE_CALLABLE_BIT_KHR);
     add(".glsl", VK_SHADER_STAGE_ALL);
     add(".hlsl", VK_SHADER_STAGE_ALL);
 }
