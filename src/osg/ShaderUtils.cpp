@@ -18,14 +18,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace osg2vsg;
 
-#if 1
-#    define DEBUG_OUTPUT std::cout
-#else
-#    define DEBUG_OUTPUT \
-        if (false) std::cout
-#endif
-#define INFO_OUTPUT std::cout
-
 uint32_t osg2vsg::calculateShaderModeMask(const osg::StateSet* stateSet)
 {
     uint32_t stateMask = 0;
@@ -211,7 +203,7 @@ std::string osg2vsg::readGLSLShader(const std::string& filename, const uint32_t&
     std::string sourceBuffer;
     if (!vsg::readFile(sourceBuffer, filename))
     {
-        DEBUG_OUTPUT << "readGLSLShader: Failed to read file '" << filename << std::endl;
+        vsg::debug("readGLSLShader: Failed to read file '", filename);
         return std::string();
     }
 
