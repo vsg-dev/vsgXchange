@@ -70,9 +70,9 @@ public:
 assimp::assimp() :
     _implementation(new assimp::Implementation())
 {
-    // std::cout<<"ASSIMP_VERSION_MAJOR "<<ASSIMP_VERSION_MAJOR<<std::endl;
-    // std::cout<<"ASSIMP_VERSION_MINOR "<<ASSIMP_VERSION_MINOR<<std::endl;
-    // std::cout<<"ASSIMP_VERSION_PATCH "<<ASSIMP_VERSION_PATCH<<std::endl;
+    vsg::debug("ASSIMP_VERSION_MAJOR ", ASSIMP_VERSION_MAJOR);
+    vsg::debug("ASSIMP_VERSION_MINOR ", ASSIMP_VERSION_MINOR);
+    vsg::debug("ASSIMP_VERSION_PATCH ", ASSIMP_VERSION_PATCH);
 }
 assimp::~assimp()
 {
@@ -242,7 +242,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
             if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
             {
-                std::cerr << "Failed to load texture: " << filename << " texPath = " << texPath.C_Str() << std::endl;
+                vsg::warn("Failed to load texture: ", filename, " texPath = ", texPath.C_Str());
                 return {};
             }
         }
@@ -482,19 +482,19 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
-        std::cout << "Warning:  mesh" << mesh << ") mesh->mMaterialIndex = " << mesh->mMaterialIndex << " exceedes available meterails.size()= " << convertedMaterials.size() << std::endl;
+        vsg::warn("Warning:  mesh ", mesh, ") mesh->mMaterialIndex = ", mesh->mMaterialIndex, " exceedes available meterails.size()= ", convertedMaterials.size());
         return;
     }
 
     if (mesh->mNumVertices == 0 || mesh->mVertices == nullptr)
     {
-        std::cout << "Warning:  mesh" << mesh << ") no verticex data, mesh->mNumVertices = " << mesh->mNumVertices << " mesh->mVertices = " << mesh->mVertices << std::endl;
+        vsg::warn("Warning:  mesh", mesh, ") no verticex data, mesh->mNumVertices = ", mesh->mNumVertices, " mesh->mVertices = ", mesh->mVertices);
         return;
     }
 
     if (mesh->mNumFaces == 0 || mesh->mFaces == nullptr)
     {
-        std::cout << "Warning:  mesh" << mesh << ") no mesh data, mesh->mNumFaces = " << mesh->mNumFaces << std::endl;
+        vsg::warn("Warning:  mesh", mesh, ") no mesh data, mesh->mNumFaces = ", mesh->mNumFaces);
         return;
     }
 
@@ -515,7 +515,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
             numPointIndices += 1;
         else
         {
-            std::cout << "Warning: unsupported number of indices on face " << face.mNumIndices << std::endl;
+            vsg::warn("Warning: unsupported number of indices on face ", face.mNumIndices);
         }
     }
 
@@ -526,7 +526,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     if (numPrimtiveTypes > 1)
     {
-        std::cout << "Warning: more than one primitive type required, numTriangleIndices = " << numTriangleIndices << ", numLineIndices = " << numLineIndices << ", numPointIndices = " << numPointIndices << std::endl;
+        vsg::warn("Warning: more than one primitive type required, numTriangleIndices = ", numTriangleIndices, ", numLineIndices = ", numLineIndices, ", numPointIndices = ", numPointIndices);
     }
 
     unsigned int numIndicesPerFace = 0;
@@ -552,7 +552,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
     else
     {
-        std::cout << "Warning: no primitive indices " << std::endl;
+        vsg::warn("Warning: no primitive indices ");
         return;
     }
 
@@ -741,8 +741,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 
         if (!vsg_scene) return {};
     }
-
-    // if (sharedObjects) sharedObjects->report(std::cout);
 
     if (auto transform = processCoordinateFrame(ext))
     {
@@ -985,8 +983,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
         }
         else
         {
-            std::cerr << "Failed to load file: " << filename << std::endl
-                      << importer.GetErrorString() << std::endl;
+            vsg::warn("Failed to load file: ", filename, '\n', importer.GetErrorString());
         }
     }
 
@@ -1027,7 +1024,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
         }
         else
         {
-            std::cerr << "Failed to load file from stream: " << importer.GetErrorString() << std::endl;
+            vsg::warn("Failed to load file from stream: ", importer.GetErrorString());
         }
     }
 
@@ -1048,7 +1045,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
         }
         else
         {
-            std::cerr << "Failed to load file from memory: " << importer.GetErrorString() << std::endl;
+            vsg::warn("Failed to load file from memory: ", importer.GetErrorString());
         }
     }
     return {};
