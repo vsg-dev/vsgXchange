@@ -87,22 +87,6 @@ namespace vsgXchange
         std::set<vsg::Path> _supportedExtensions;
     };
 
-    /// optional GDAL ReaderWriter
-    class VSGXCHANGE_DECLSPEC GDAL : public vsg::Inherit<vsg::ReaderWriter, GDAL>
-    {
-    public:
-        GDAL();
-        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const override;
-
-        bool getFeatures(Features& features) const override;
-
-    protected:
-        ~GDAL();
-
-        class Implementation;
-        Implementation* _implementation;
-    };
-
     /// optional .exr support using OpenEXR library
     class openexr : public vsg::Inherit<vsg::ReaderWriter, openexr>
     {
@@ -128,5 +112,4 @@ EVSG_type_name(vsgXchange::images);
 EVSG_type_name(vsgXchange::stbi);
 EVSG_type_name(vsgXchange::dds);
 EVSG_type_name(vsgXchange::ktx);
-EVSG_type_name(vsgXchange::GDAL);
 EVSG_type_name(vsgXchange::openexr);

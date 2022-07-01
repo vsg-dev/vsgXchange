@@ -14,7 +14,7 @@ vsgXchange contains source code that can directly read a [range of shader and im
 cmake automatically finds which depedencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. using [Freetype](https://www.freetype.org/) as vsg::Font.
-* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [vsgGIS](https://github.com/vsg-dev/vsgGIS)/GDAL vsg::Data.
+* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [GDAL](https://gdal.org/) as vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  GLTF, OBJ, 3DS, LWO etc. use Assimp as vsg::Node.
 * [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl) reading image and model files from http:// and https:// using [libcurl](https://curl.se/libcurl/)
 * [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) OpenSceneGraph, OpenFlight etc. using [OpenSceneGraph](http://www.openscenegraph.org/).
@@ -29,7 +29,7 @@ cmake automatically finds which depedencies are available and builds the appropr
 ## Optional depdendencies:
 
 * [Freetype](https://www.freetype.org/)
-* [vsgGIS](https://github.com/vsg-dev/vsgGIS) & [GDAL](https://gdal.org/)
+* [GDAL](https://gdal.org/)
 * [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
 * [libcurl](https://curl.se/libcurl/)
 * [OpenEXP](https://www.openexr.com/)

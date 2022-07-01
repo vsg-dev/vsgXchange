@@ -38,7 +38,7 @@ include(ktx/build_vars.cmake)
 # add OpenSceneGraph support if available
 include(osg/build_vars.cmake)
 
-# add optional vsgGIS/GDAL component
+# add optional GDAL component
 include(gdal/build_vars.cmake)
 
 # add optional CURL component
