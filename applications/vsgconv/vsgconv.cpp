@@ -117,7 +117,7 @@ namespace vsgconv
                 log("   failed to read ", readRequest.src_filename);
             }
 
-            // we have finsihed this read operation so decrement the latch, which will release and threads waiting on it.
+            // we have finished this read operation so decrement the latch, which will release and threads waiting on it.
             latch->count_down();
         }
 
@@ -289,7 +289,7 @@ int main(int argc, char** argv)
 
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
 
-    // read any commmand line options that the ReaderWrite support
+    // read any command line options that the ReaderWrite support
     arguments.read(options);
     if (argc <= 1) return 0;
 

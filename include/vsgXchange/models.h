@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
     /// Composite ReaderWriter that holds the uses load 3rd party images formats.
-    /// By defalt utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
+    /// By default utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
     class VSGXCHANGE_DECLSPEC models : public vsg::Inherit<vsg::CompositeReaderWriter, models>
     {
     public:
@@ -75,7 +75,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
         // vsg::Options::setValue(str, value) suppoorted options:
-        static constexpr const char* original_converter = "original_converter";   // select early osg2vsg impementation
+        static constexpr const char* original_converter = "original_converter";   // select early osg2vsg implementation
         static constexpr const char* read_build_options = "read_build_options";   // read build options from specified file
         static constexpr const char* write_build_options = "write_build_options"; // write build options to specified file
 

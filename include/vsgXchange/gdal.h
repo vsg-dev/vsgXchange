@@ -69,21 +69,21 @@ namespace vsgXchange
     /// call GDALAllRegister() etc. if it hasn't already been called. Return true if this call to initGDAL() invoked GDAL setup, or false if it has previously been done.
     extern VSGXCHANGE_DECLSPEC bool initGDAL();
 
-    /// Call GDALOpen(..) to open sepcified file returning a std::shared_ptr<GDALDataset> to reboustly manage the lifetime of the GDALDataSet, automatiically call GDALClose.
+    /// Call GDALOpen(..) to open specified file returning a std::shared_ptr<GDALDataset> to reboustly manage the lifetime of the GDALDataSet, automatiically call GDALClose.
     inline std::shared_ptr<GDALDataset> openDataSet(const vsg::Path& filename, GDALAccess access)
     {
         // GDAL doesn't support wide string filenames so convert vsg::Path to std::string and then pass to GDALOpen
         return std::shared_ptr<GDALDataset>(static_cast<GDALDataset*>(GDALOpen(filename.string().c_str(), access)), [](GDALDataset* dataset) { GDALClose(dataset); });
     }
 
-    /// Call GDALOpenShared(..) to open sepcified file returning a std::shared_ptr<GDALDataset> to reboustly manage the lifetime of the GDALDataSet, automatiically call GDALClose.
+    /// Call GDALOpenShared(..) to open specified file returning a std::shared_ptr<GDALDataset> to reboustly manage the lifetime of the GDALDataSet, automatiically call GDALClose.
     inline std::shared_ptr<GDALDataset> openSharedDataSet(const vsg::Path& filename, GDALAccess access)
     {
         // GDAL doesn't support wide string filenames so convert vsg::Path to std::string and then pass to GDALOpenShared
         return std::shared_ptr<GDALDataset>(static_cast<GDALDataset*>(GDALOpenShared(filename.string().c_str(), access)), [](GDALDataset* dataset) { GDALClose(dataset); });
     }
 
-    /// return true if two GDALDataset has the same projection referecne string/
+    /// return true if two GDALDataset has the same projection reference string/
     extern VSGXCHANGE_DECLSPEC bool compatibleDatasetProjections(const GDALDataset& lhs, const GDALDataset& rhs);
 
     /// return true if two GDALDataset has the same projection, geo transform and dimensions indicating they are perfectly pixel aliged and matched in size.
@@ -98,7 +98,7 @@ namespace vsgXchange
     /// assign GDAL MetaData mapping the "key=value" entries to vsg::Object as setValue(key, std::string(value)).
     extern VSGXCHANGE_DECLSPEC bool assignMetaData(GDALDataset& dataset, vsg::Object& object);
 
-    /// call binary comparison opeators on dereferenced items in specified range.
+    /// call binary comparison operators on dereferenced items in specified range.
     template<class Iterator, class BinaryPredicate>
     bool all_equal(Iterator first, Iterator last, BinaryPredicate compare)
     {
@@ -203,7 +203,7 @@ namespace vsgXchange
         return input;
     }
 
-    /// helper class for reading decimal degree in the form of (degress) (minutes) (seconds) as used wiht EXIF_GPSLatitude and EXIF_GPSLongitude tags.
+    /// helper class for reading decimal degree in the form of (degrees) (minutes) (seconds) as used with EXIF_GPSLatitude and EXIF_GPSLongitude tags.
     /// usage:
     ///    std::stringstream str(EXIF_GPSLatitude_String);
     ///    double latitude;

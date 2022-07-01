@@ -208,7 +208,7 @@ namespace
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
-                    std::cerr << "dds::readDds() Num of dimnension (" << (uint32_t)dim << ")  is supported." << std::endl;
+                    std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  is supported." << std::endl;
                     break;
                 }
 

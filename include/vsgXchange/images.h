@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
     /// Composite ReaderWriter that holds the uses load 3rd party images formats.
-    /// By defalt utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
+    /// By default utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
     class VSGXCHANGE_DECLSPEC images : public vsg::Inherit<vsg::CompositeReaderWriter, images>
     {
     public:

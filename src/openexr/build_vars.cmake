@@ -1,4 +1,4 @@
-# add openexr if vailable
+# add openexr if available
 find_package(OpenEXR QUIET)
 
 if(OpenEXR_FOUND)
