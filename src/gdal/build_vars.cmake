@@ -1,4 +1,4 @@
-# add vsgGIS/GDAL if available
+# add GDAL if available
 find_package(GDAL QUIET)
 
 if(GDAL_FOUND)
