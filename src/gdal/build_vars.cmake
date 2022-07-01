@@ -1,18 +1,22 @@
 # add vsgGIS/GDAL if available
-find_package(vsgGIS QUIET)
+find_package(GDAL QUIET)
 
-if(vsgGIS_FOUND)
-    OPTION(vsgXchange_GDAL "vsgGIS/GDAL support provided" ON)
+if(GDAL_FOUND)
+    OPTION(vsgXchange_GDAL "GDAL support provided" ON)
 endif()
 
 if(${vsgXchange_GDAL})
     set(SOURCES ${SOURCES}
+        gdal/gdal_utils.cpp
+        gdal/meta_utils.cpp
         gdal/GDAL.cpp
     )
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} vsgGIS::vsgGIS)
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
+
+    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${GDAL_INCLUDE_DIR})
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${GDAL_LIBRARY})
+    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_GDAL)
     if(NOT BUILD_SHARED_LIBS)
-        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsgGIS)")
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(GDAL)")
     endif()
 else()
     set(SOURCES ${SOURCES}

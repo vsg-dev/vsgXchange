@@ -10,10 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/images.h>
-
-#include <vsgGIS/TileDatabase.h>
-#include <vsgGIS/gdal_utils.h>
+#include <vsgXchange/gdal.h>
+#include <vsg/io/Logger.h>
 
 #include <cstring>
 #include <iostream>
@@ -42,8 +40,8 @@ namespace vsgXchange
 GDAL::GDAL() :
     _implementation(new GDAL::Implementation())
 {
-    vsgGIS::init();
 }
+
 GDAL::~GDAL()
 {
     delete _implementation;
@@ -55,7 +53,7 @@ vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 bool GDAL::getFeatures(Features& features) const
 {
-    vsgGIS::initGDAL();
+    vsgXchange::initGDAL();
 
     auto driverManager = GetGDALDriverManager();
     int driverCount = driverManager->GetDriverCount();
@@ -119,15 +117,17 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse) return {};
 
-    vsgGIS::initGDAL();
+    vsgXchange::initGDAL();
 
-    auto dataset = vsgGIS::openSharedDataSet(filenameToUse, GA_ReadOnly);
+    vsg::info(__PRETTY_FUNCTION__, "so here we are reading ", filename);
+
+    auto dataset = vsgXchange::openSharedDataSet(filenameToUse, GA_ReadOnly);
     if (!dataset)
     {
         return {};
     }
 
-    auto types = vsgGIS::dataTypes(*dataset);
+    auto types = vsgXchange::dataTypes(*dataset);
     if (types.size() > 1)
     {
         std::cout << "GDAL::read(" << filename << ") multiple input data types not suported." << std::endl;
@@ -186,15 +186,15 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     int width = dataset->GetRasterXSize();
     int height = dataset->GetRasterYSize();
 
-    auto image = vsgGIS::createImage2D(width, height, numComponents, dataType, vsg::dvec4(0.0, 0.0, 0.0, 1.0));
+    auto image = vsgXchange::createImage2D(width, height, numComponents, dataType, vsg::dvec4(0.0, 0.0, 0.0, 1.0));
     if (!image) return {};
 
     for (int component = 0; component < static_cast<int>(rasterBands.size()); ++component)
     {
-        vsgGIS::copyRasterBandToImage(*rasterBands[component], *image, component);
+        vsgXchange::copyRasterBandToImage(*rasterBands[component], *image, component);
     }
 
-    vsgGIS::assignMetaData(*dataset, *image);
+    vsgXchange::assignMetaData(*dataset, *image);
 
     if (dataset->GetProjectionRef() && std::strlen(dataset->GetProjectionRef()) > 0)
     {
@@ -206,6 +206,8 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     {
         image->setObject("GeoTransform", transform);
     }
+
+    vsg::info(" loaded image ", image, " ",transform);
 
     return image;
 }
