@@ -81,7 +81,7 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
     // add material first if any (for now material is hardcoded to binding MATERIAL_BINDING)
     if (shaderModeMask & MATERIAL) descriptorBindings.push_back({MATERIAL_BINDING, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}); // { binding, descriptorTpe, descriptorCount, stageFlags, pImmutableSamplers}
 
-    // these need to go in incremental order by texture unit value as that how they will have been added to the desctiptor set
+    // these need to go in incremental order by texture unit value as that how they will have been added to the descriptor set
     // VkDescriptorSetLayoutBinding { binding, descriptorTpe, descriptorCount, stageFlags, pImmutableSamplers}
     if (shaderModeMask & DIFFUSE_MAP) descriptorBindings.push_back({DIFFUSE_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}); // { binding, descriptorTpe, descriptorCount, stageFlags, pImmutableSamplers}
     if (shaderModeMask & OPACITY_MAP) descriptorBindings.push_back({OPACITY_TEXTURE_UNIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
@@ -119,13 +119,13 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
     {
         VkVertexInputRate trate = geometryAttributesMask & TANGENT_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
         vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), trate});
-        vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{TANGENT_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32A32_SFLOAT, 0}); // tanget as vec4
+        vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{TANGENT_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32A32_SFLOAT, 0}); // tangent as vec4
         vertexBindingIndex++;
     }
     if (geometryAttributesMask & COLOR)
     {
-        VkVertexInputRate crate = geometryAttributesMask & COLOR_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), crate});
+        VkVertexInputRate create = geometryAttributesMask & COLOR_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), create});
         vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{COLOR_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32A32_SFLOAT, 0}); // color as vec4
         vertexBindingIndex++;
     }
@@ -139,7 +139,7 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
     {
         VkVertexInputRate trate = geometryAttributesMask & TRANSLATE_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
         vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec3), trate});
-        vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{TRANSLATE_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32_SFLOAT, 0}); // tanget as vec4
+        vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{TRANSLATE_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32_SFLOAT, 0}); // tangent as vec4
         vertexBindingIndex++;
     }
 
@@ -181,7 +181,7 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
     vsg::ref_ptr<vsg::GraphicsPipeline> graphicsPipeline = vsg::GraphicsPipeline::create(pipelineLayout, shaders, pipelineStates);
     auto bindGraphicsPipeline = vsg::BindGraphicsPipeline::create(graphicsPipeline);
 
-    // assigne the pipeline to cache.
+    // assign the pipeline to cache.
     std::lock_guard<std::mutex> guard(mutex);
     pipelineMap[key] = bindGraphicsPipeline;
 

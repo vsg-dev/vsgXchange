@@ -101,7 +101,7 @@ static std::string processGLSLShaderSource(const std::string& source, const std:
         }
     };
 
-    // sanitise line by triming leading and trailing characters
+    // sanitise line by trimming leading and trailing characters
     auto sanitise = [&trimLeading, &trimTrailing](std::string& str) {
         trimLeading(str);
         trimTrailing(str);
@@ -125,12 +125,12 @@ static std::string processGLSLShaderSource(const std::string& source, const std:
         return str.substr(start + 1, (end - start) - 1);
     };
 
-    auto split = [](const std::string& str, const char& seperator) {
+    auto split = [](const std::string& str, const char& separator) {
         std::vector<std::string> elements;
 
         std::string::size_type prev_pos = 0, pos = 0;
 
-        while ((pos = str.find(seperator, pos)) != std::string::npos)
+        while ((pos = str.find(separator, pos)) != std::string::npos)
         {
             auto substring = str.substr(prev_pos, pos - prev_pos);
             elements.push_back(substring);

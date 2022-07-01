@@ -162,7 +162,7 @@ namespace osg2vsg
         case osg::Texture::WrapMode::REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
         case osg::Texture::WrapMode::MIRROR:
             return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            //VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE no osg equivelent for this
+            //VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE no osg equivalent for this
         default: return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM; // unknown
         }
     }
@@ -198,7 +198,7 @@ namespace osg2vsg
         sampler->addressModeV = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_T));
         sampler->addressModeW = covertToSamplerAddressMode(texture->getWrap(osg::Texture::WrapParameter::WRAP_R));
 
-        // requres Logical device to have deviceFeatures.samplerAnisotropy = VK_TRUE; set when creating the vsg::Deivce
+        // requires Logical device to have deviceFeatures.samplerAnisotropy = VK_TRUE; set when creating the vsg::Device
         sampler->anisotropyEnable = texture->getMaxAnisotropy() > 1.0f ? VK_TRUE : VK_FALSE;
         sampler->maxAnisotropy = texture->getMaxAnisotropy();
 
@@ -347,16 +347,16 @@ namespace osg2vsg
         vsg::ref_ptr<vsg::Data> translations(osg2vsg::convertToVsg(ingeometry->getVertexAttribArray(7), bindOverallPaddingCount));
 
         // fill arrays data list THE ORDER HERE IS IMPORTANT
-        auto attributeArrays = vsg::DataList{vertices}; // always have verticies
+        auto attributeArrays = vsg::DataList{vertices}; // always have vertices
         if (normals.valid() && normals->valueCount() > 0) attributeArrays.push_back(normals);
         if (tangents.valid() && tangents->valueCount() > 0) attributeArrays.push_back(tangents);
         if (colors.valid() && colors->valueCount() > 0) attributeArrays.push_back(colors);
         if (texcoord0.valid() && texcoord0->valueCount() > 0) attributeArrays.push_back(texcoord0);
         if (translations.valid() && translations->valueCount() > 0) attributeArrays.push_back(translations);
 
-        // convert indicies
+        // convert indices
 
-        // asume all the draw elements use the same primitive mode, copy all drawelements indicies into one indicie array and use in single drawindexed command
+        // assume all the draw elements use the same primitive mode, copy all drawelements indices into one indicie array and use in single drawindexed command
         // create a draw command per drawarrays primitive set
 
         vsg::Geometry::DrawCommands drawCommands;

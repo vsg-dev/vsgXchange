@@ -93,7 +93,7 @@ namespace osg2vsg
             *reinterpret_cast<double*>(component_default) = 1.0;
             break;
         default: {
-            std::cout << "Warning: formateImage() DataType " << image->getDataType() << " not supprted." << std::endl;
+            std::cout << "Warning: formateImage() DataType " << image->getDataType() << " not supported." << std::endl;
             return {};
         }
         }
@@ -110,7 +110,7 @@ namespace osg2vsg
         case (GL_RGBA): numComponents = 4; break;
         case (GL_BGRA): numComponents = 4; break;
         default: {
-            std::cout << "Warning: formateImage() targetPixelFormat " << targetPixelFormat << " not supprted." << std::endl;
+            std::cout << "Warning: formateImage() targetPixelFormat " << targetPixelFormat << " not supported." << std::endl;
             return {};
         }
         }
@@ -143,7 +143,7 @@ namespace osg2vsg
             componentOffset = {numBytesPerComponent * 2, numBytesPerComponent, 0, numBytesPerComponent * 3};
             break;
         default: {
-            std::cout << "Warning: formateImage() source PixelFormat " << image->getPixelFormat() << " not supprted." << std::endl;
+            std::cout << "Warning: formateImage() source PixelFormat " << image->getPixelFormat() << " not supported." << std::endl;
             return {};
         }
         }

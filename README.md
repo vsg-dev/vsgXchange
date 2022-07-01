@@ -11,7 +11,7 @@ vsgXchange contains source code that can directly read a [range of shader and im
 
 ## Optional support:
 
-cmake automatically finds which depedencies are available and builds the appropriate components:
+cmake automatically finds which dependencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. using [Freetype](https://www.freetype.org/) as vsg::Font.
 * [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [GDAL](https://gdal.org/) as vsg::Data.
@@ -26,7 +26,7 @@ cmake automatically finds which depedencies are available and builds the appropr
 * [CMake](https://cmake.org/) minimum version 3.7
 * C++17 capable compiler
 
-## Optional depdendencies:
+## Optional dependencies:
 
 * [Freetype](https://www.freetype.org/)
 * [GDAL](https://gdal.org/)
@@ -86,12 +86,12 @@ To convert shaders to SPIRV, native VSG format or source file:
     vsgconv myshader.frag myshader.spv
     vsgconv myshader.comp myshader_comp.cpp
 
-To convet 3rd part image formats to native VSG format or source file:
+To convert 3rd part image formats to native VSG format or source file:
 
     vsgconv image.jpg image.vsgb
     vsgconv image.jpg image.cpp
 
-To convet 3rd part model formats to native VSG format or source file:
+To convert 3rd part model formats to native VSG format or source file:
 
     vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assimp)
     vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assimp)

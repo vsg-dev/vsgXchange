@@ -738,7 +738,7 @@ vsg::ref_ptr<vsg::Node> SceneBuilder::createVSG(vsg::Paths& searchPaths)
 
         uint32_t geometrymask = (masks.second | buildOptions->overrideGeomAttributes) & buildOptions->supportedGeometryAttributes;
         uint32_t shaderModeMask = (masks.first | buildOptions->overrideShaderModeMask) & buildOptions->supportedShaderModeMask;
-        if (shaderModeMask & NORMAL_MAP) geometrymask |= TANGENT; // mesh propably won't have tangets so force them on if we want Normal mapping
+        if (shaderModeMask & NORMAL_MAP) geometrymask |= TANGENT; // mesh probably won't have tangents so force them on if we want Normal mapping
 
         DEBUG_OUTPUT << "  about to call createStateSetWithGraphicsPipeline(" << shaderModeMask << ", " << geometrymask << ", " << maxNumDescriptors << ")" << std::endl;
 

@@ -127,7 +127,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     auto types = vsgXchange::dataTypes(*dataset);
     if (types.size() > 1)
     {
-        vsg::info("GDAL::read(", filename, ") multiple input data types not suported.");
+        vsg::info("GDAL::read(", filename, ") multiple input data types not supported.");
         for (auto& type : types)
         {
             vsg::info("   GDALDataType ", GDALGetDataTypeName(type));
