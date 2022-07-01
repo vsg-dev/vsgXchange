@@ -14,7 +14,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/Logger.h>
 
 #include <cstring>
-#include <iostream>
 
 using namespace vsgXchange;
 
@@ -119,8 +118,6 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
 
     vsgXchange::initGDAL();
 
-    vsg::info(__PRETTY_FUNCTION__, "so here we are reading ", filename);
-
     auto dataset = vsgXchange::openSharedDataSet(filenameToUse, GA_ReadOnly);
     if (!dataset)
     {
@@ -130,17 +127,17 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     auto types = vsgXchange::dataTypes(*dataset);
     if (types.size() > 1)
     {
-        std::cout << "GDAL::read(" << filename << ") multiple input data types not suported." << std::endl;
+        vsg::info("GDAL::read(", filename, ") multiple input data types not suported.");
         for (auto& type : types)
         {
-            std::cout << "   GDALDataType " << GDALGetDataTypeName(type) << std::endl;
+            vsg::info("   GDALDataType ", GDALGetDataTypeName(type));
         }
         return {};
     }
 
     if (types.empty())
     {
-        std::cout << "GDAL::read(" << filename << ") types set empty." << std::endl;
+        vsg::info("GDAL::read(", filename, ") types set empty.");
 
         return {};
     }
@@ -159,14 +156,14 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
         }
         else
         {
-            std::cout << "GDAL::read(" << filename << ") Undefined classification on raster band " << i << std::endl;
+            vsg::info("GDAL::read(", filename, ") Undefined classification on raster band ", i);
         }
     }
 
     int numComponents = rasterBands.size();
     if (numComponents == 0)
     {
-        std::cout << "GDAL::read(" << filename << ") failed numComponents = " << numComponents << std::endl;
+        vsg::info("GDAL::read(", filename, ") failed numComponents = ", numComponents);
         return {};
     }
 
@@ -179,7 +176,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
 
     if (numComponents > 4)
     {
-        std::cout << "GDAL::read(" << filename << ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported." << std::endl;
+        vsg::info("GDAL::read(", filename, ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported.");
         return {};
     }
 
