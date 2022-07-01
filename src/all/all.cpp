@@ -21,6 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/VSG.h>
 #include <vsg/io/spirv.h>
+#include <vsg/io/tile.h>
 
 using namespace vsgXchange;
 
@@ -32,6 +33,7 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
+    add(vsg::tile::create());
 
     add(glsl::create());
     add(cpp::create());
