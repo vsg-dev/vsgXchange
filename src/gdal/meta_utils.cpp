@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/core/Value.h>
 #include <vsg/io/Logger.h>
 
-#include <vsgXchange/GDAL.h>
+#include <vsgXchange/gdal.h>
 
 #include <cstring>
 
