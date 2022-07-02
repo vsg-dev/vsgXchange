@@ -110,22 +110,22 @@ vsg::ref_ptr<vsg::BindGraphicsPipeline> PipelineCache::getOrCreateBindGraphicsPi
 
     if (geometryAttributesMask & NORMAL)
     {
-        VkVertexInputRate nrate = geometryAttributesMask & NORMAL_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec3), nrate});
+        VkVertexInputRate normal_rate = geometryAttributesMask & NORMAL_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec3), normal_rate});
         vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{NORMAL_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32_SFLOAT, 0}); // normal as vec3
         vertexBindingIndex++;
     }
     if (geometryAttributesMask & TANGENT)
     {
-        VkVertexInputRate trate = geometryAttributesMask & TANGENT_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), trate});
+        VkVertexInputRate tangent_rate = geometryAttributesMask & TANGENT_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), tangent_rate});
         vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{TANGENT_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32A32_SFLOAT, 0}); // tangent as vec4
         vertexBindingIndex++;
     }
     if (geometryAttributesMask & COLOR)
     {
-        VkVertexInputRate create = geometryAttributesMask & COLOR_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
-        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), create});
+        VkVertexInputRate color_rate = geometryAttributesMask & COLOR_OVERALL ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        vertexBindingsDescriptions.push_back(VkVertexInputBindingDescription{vertexBindingIndex, sizeof(vsg::vec4), color_rate});
         vertexAttributeDescriptions.push_back(VkVertexInputAttributeDescription{COLOR_CHANNEL, vertexBindingIndex, VK_FORMAT_R32G32B32A32_SFLOAT, 0}); // color as vec4
         vertexBindingIndex++;
     }
