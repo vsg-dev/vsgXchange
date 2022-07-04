@@ -61,6 +61,7 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
 #define STBI_FREE(p) cpp_free(p)
 
 #include "stb_image.h"
+#include "stb_image_write.h"
 
 #if defined(__GNUC__)
 #    pragma GCC diagnostic pop
