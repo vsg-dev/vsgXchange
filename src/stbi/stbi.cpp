@@ -184,15 +184,11 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     auto data = object->cast<vsg::Data>();
     if (!data) return false;
 
-    const auto& layout = data->getLayout();
-
-    vsg::info("stb::write(object = ", object, ", data = ", data, ", filename = ",filename, ", format = ", layout.format);
-    vsg::info("  width  = ", data->width(), ", height = ", data->height(), ", depth = ",data->depth(), ", stride = ", layout.stride);
-
+    // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
     vsg::ref_ptr<vsg::Data> local_data;
 
     int num_components = 0;
-    switch(layout.format)
+    switch(data->getLayout().format)
     {
         case(VK_FORMAT_R8_UNORM):
             num_components = 1;
@@ -206,8 +202,38 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
         case(VK_FORMAT_R8G8B8A8_UNORM):
             num_components = 4;
             break;
+        case(VK_FORMAT_B8G8R8_UNORM):
+        {
+            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8_UNORM});
+            auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
+            for(auto& dest : *dest_data)
+            {
+                auto& src = *(src_ptr++);
+                dest.set(src[2], src[1], src[0]);
+            }
+
+            num_components = 3;
+            local_data = dest_data;
+            data = local_data.get();
+            break;
+        }
+        case(VK_FORMAT_B8G8R8A8_UNORM):
+        {
+            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+            auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
+            for(auto& dest : *dest_data)
+            {
+                auto& src = *(src_ptr++);
+                dest.set(src[2], src[1], src[0], src[3]);
+            }
+
+            num_components = 4;
+            local_data = dest_data;
+            data = local_data.get();
+            break;
+        }
         default:
-            vsg::debug("stbi::write(", data->className(),", ", filename,") data format (", layout.format, " not supported ");
+            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->getLayout().format, ") not supported.");
             return false;
     }
 
@@ -216,7 +242,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     int result = 0;
     if (ext == ".png")
     {
-        result = stbi_write_png(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), layout.stride * data->width());
+        result = stbi_write_png(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), data->getLayout().stride * data->width());
     }
     else if (ext == ".bmp")
     {
