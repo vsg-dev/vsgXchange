@@ -13,6 +13,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsg/io/FileSystem.h>
+#include <vsg/io/Logger.h>
+#include <vsg/utils/CommandLine.h>
 
 #include <cstring>
 
@@ -20,6 +22,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #if defined(__GNUC__)
 #    pragma GCC diagnostic push
@@ -72,6 +75,31 @@ using namespace vsgXchange;
 stbi::stbi() :
     _supportedExtensions{".jpg", ".jpeg", ".jpe", ".png", ".gif", ".bmp", ".tga", ".psd", ".pgm", ".ppm"}
 {
+}
+
+bool stbi::getFeatures(Features& features) const
+{
+    vsg::ReaderWriter::FeatureMask read_mask = static_cast<vsg::ReaderWriter::FeatureMask>(READ_FILENAME | READ_ISTREAM | READ_MEMORY);
+    vsg::ReaderWriter::FeatureMask read_write_mask = static_cast<vsg::ReaderWriter::FeatureMask>(WRITE_FILENAME | READ_FILENAME | READ_ISTREAM | READ_MEMORY);
+
+    features.extensionFeatureMap[".png"] = read_write_mask;
+    features.extensionFeatureMap[".bmp"] = read_write_mask;
+    features.extensionFeatureMap[".tga"] = read_write_mask;
+    features.extensionFeatureMap[".jpg"] = features.extensionFeatureMap[".jpeg"] = features.extensionFeatureMap[".jpe"] =  read_write_mask;
+
+    features.extensionFeatureMap[".psd"] = read_mask;
+    features.extensionFeatureMap[".pgm"] = read_mask;
+    features.extensionFeatureMap[".ppm"] = read_mask;
+
+    features.optionNameTypeMap[stbi::jpeg_quality] = vsg::type_name<int>();
+
+    return true;
+}
+
+bool stbi::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+{
+    bool result = arguments.readAndAssign<int>(stbi::jpeg_quality, &options);
+    return result;
 }
 
 vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -145,11 +173,68 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     return {};
 }
 
-bool stbi::getFeatures(Features& features) const
+bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    for (auto& ext : _supportedExtensions)
+    const auto ext = vsg::lowerCaseFileExtension(filename);
+    if (_supportedExtensions.count(ext) == 0)
     {
-        features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
+        return false;
     }
-    return true;
+
+    auto data = object->cast<vsg::Data>();
+    if (!data) return false;
+
+    const auto& layout = data->getLayout();
+
+    vsg::info("stb::write(object = ", object, ", data = ", data, ", filename = ",filename, ", format = ", layout.format);
+    vsg::info("  width  = ", data->width(), ", height = ", data->height(), ", depth = ",data->depth(), ", stride = ", layout.stride);
+
+    vsg::ref_ptr<vsg::Data> local_data;
+
+    int num_components = 0;
+    switch(layout.format)
+    {
+        case(VK_FORMAT_R8_UNORM):
+            num_components = 1;
+            break;
+        case(VK_FORMAT_R8G8_UNORM):
+            num_components = 2;
+            break;
+        case(VK_FORMAT_R8G8B8_UNORM):
+            num_components = 3;
+            break;
+        case(VK_FORMAT_R8G8B8A8_UNORM):
+            num_components = 4;
+            break;
+        default:
+            vsg::debug("stbi::write(", data->className(),", ", filename,") data format (", layout.format, " not supported ");
+            return false;
+    }
+
+    // convert utf8 std::string;
+    std::string filename_str = filename.string();
+    int result = 0;
+    if (ext == ".png")
+    {
+        result = stbi_write_png(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), layout.stride * data->width());
+    }
+    else if (ext == ".bmp")
+    {
+        result = stbi_write_bmp(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer());
+    }
+    else if (ext == ".tga")
+    {
+        result = stbi_write_tga(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer());
+    }
+    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe" )
+    {
+        int quality = 100;
+        if (options)
+        {
+            options->getValue("jpeg_quality", quality);
+        }
+        result = stbi_write_jpg(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), quality);
+    }
+
+    return result==1;
 }
