@@ -28,8 +28,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsgXchange/gdal.h>
 
 #include <cstring>
-#include <iostream>
 #include <functional>
+#include <iostream>
 
 using namespace vsgXchange;
 

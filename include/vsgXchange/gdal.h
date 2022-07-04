@@ -26,8 +26,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Version.h>
 
-#include <memory>
 #include <istream>
+#include <memory>
 #include <unordered_set>
 
 namespace vsgXchange
@@ -54,15 +54,15 @@ EVSG_type_name(vsgXchange::GDAL);
 
 #ifdef vsgXchange_GDAL
 
-#include "gdal_priv.h"
-#include "ogr_spatialref.h"
+#    include "gdal_priv.h"
+#    include "ogr_spatialref.h"
 
-#include <vsg/core/Data.h>
-#include <vsg/maths/vec4.h>
-#include <vsg/io/Path.h>
+#    include <vsg/core/Data.h>
+#    include <vsg/io/Path.h>
+#    include <vsg/maths/vec4.h>
 
-#include <memory>
-#include <set>
+#    include <memory>
+#    include <set>
 
 namespace vsgXchange
 {
@@ -143,7 +143,6 @@ namespace vsgXchange
         }
         return types;
     }
-
 
     /// get the latitude, longitude and altitude values from the GDALDataSet's EXIF_GPSLatitude, EXIF_GPSLongitude and EXIF_GPSAltitude meta data fields, return true on success,
     extern VSGXCHANGE_DECLSPEC bool getEXIF_LatitudeLongitudeAlititude(GDALDataset& dataset, double& latitude, double& longitude, double& altitude);

@@ -10,8 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/gdal.h>
 #include <vsg/io/Logger.h>
+#include <vsgXchange/gdal.h>
 
 #include <cstring>
 
@@ -204,7 +204,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
         image->setObject("GeoTransform", transform);
     }
 
-    vsg::info(" loaded image ", image, " ",transform);
+    vsg::info(" loaded image ", image, " ", transform);
 
     return image;
 }

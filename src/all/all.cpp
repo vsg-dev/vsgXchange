@@ -14,10 +14,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/cpp.h>
 #include <vsgXchange/curl.h>
 #include <vsgXchange/freetype.h>
+#include <vsgXchange/gdal.h>
 #include <vsgXchange/glsl.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
-#include <vsgXchange/gdal.h>
 
 #include <vsg/io/VSG.h>
 #include <vsg/io/spirv.h>
