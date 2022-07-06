@@ -22,11 +22,40 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/VSG.h>
 #include <vsg/io/spirv.h>
 #include <vsg/io/tile.h>
+#include <vsg/io/Logger.h>
 
 using namespace vsgXchange;
 
+void vsgXchange::init()
+{
+    static bool s_vsgXchange_initialized = false;
+    if (s_vsgXchange_initialized) return;
+    s_vsgXchange_initialized = true;
+
+    vsg::debug("vsgXchange::init()");
+
+    vsg::ObjectFactory::instance()->add<vsgXchange::all>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::curl>();
+
+    vsg::ObjectFactory::instance()->add<vsgXchange::glsl>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::cpp>();
+
+    vsg::ObjectFactory::instance()->add<vsgXchange::stbi>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::dds>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::ktx>();
+
+    vsg::ObjectFactory::instance()->add<vsgXchange::openexr>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::GDAL>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
+}
+
 all::all()
 {
+    // for convinience make sure the init() method is called
+    vsgXchange::init();
+
 #ifdef vsgXchange_CURL
     add(curl::create());
 #endif
