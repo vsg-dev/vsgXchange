@@ -28,7 +28,6 @@ endif()
 
 if (vsgXchange_OSG)
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} osg2vsg::osg2vsg)
-    set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_vsgGIS)
     if(NOT BUILD_SHARED_LIBS)
         set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(osg2vsg)")
     endif()
