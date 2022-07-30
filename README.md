@@ -33,7 +33,7 @@ cmake automatically finds which dependencies are available and builds the approp
 * [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
 * [libcurl](https://curl.se/libcurl/)
 * [OpenEXP](https://www.openexr.com/)
-* [OpenSceneGraph](http://www.openscenegraph.org/), [OpenSceneGraph on github](https://github.com/openscenegraph/OpenSceneGraph)
+* [osg2vsg](https://github.com/vsg-dev/osg2vsg)
 
 ## Building vsgXchange:
 
@@ -95,11 +95,11 @@ To convert 3rd part model formats to native VSG format or source file:
 
     vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assimp)
     vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assimp)
-    vsgconv mymodel.osgb mymodel.vsgb # convert OSG binary format to VSG binary format (requires OpenSceneGraph)
-    vsgconv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires OpenSceneGraph)
+    vsgconv mymodel.osgb mymodel.vsgb # convert OSG binary format to VSG binary format (requires osg2vsg/OpenSceneGraph)
+    vsgconv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires osg2vsg/OpenSceneGraph)
     vsgconv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
 
-To convert a OpenSceneGraph Paged database:
+To convert a OpenSceneGraph Paged database (requires osg2vsg/OpenSceneGraph):
 
     vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 # convert up to level 30
 
