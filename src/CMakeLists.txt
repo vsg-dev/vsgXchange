@@ -35,9 +35,6 @@ include(assimp/build_vars.cmake)
 # add ktx
 include(ktx/build_vars.cmake)
 
-# add OpenSceneGraph support if available
-include(osg/build_vars.cmake)
-
 # add optional GDAL component
 include(gdal/build_vars.cmake)
 

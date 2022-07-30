@@ -64,32 +64,7 @@ namespace vsgXchange
         Implementation* _implementation;
     };
 
-    /// optional OSG ReaderWriter
-    class VSGXCHANGE_DECLSPEC OSG : public vsg::Inherit<vsg::ReaderWriter, OSG>
-    {
-    public:
-        OSG();
-
-        vsg::ref_ptr<vsg::Object> read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const override;
-
-        bool getFeatures(Features& features) const override;
-
-        // vsg::Options::setValue(str, value) suppoorted options:
-        static constexpr const char* original_converter = "original_converter";   // select early osg2vsg implementation
-        static constexpr const char* read_build_options = "read_build_options";   // read build options from specified file
-        static constexpr const char* write_build_options = "write_build_options"; // write build options to specified file
-
-        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
-
-    protected:
-        ~OSG();
-
-        class Implementation;
-        Implementation* _implementation;
-    };
-
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::models);
 EVSG_type_name(vsgXchange::assimp);
-EVSG_type_name(vsgXchange::OSG);

@@ -24,6 +24,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/tile.h>
 #include <vsg/io/Logger.h>
 
+#ifdef vsgXchange_OSG
+#include <osg2vsg/OSG.h>
+#endif
+
 using namespace vsgXchange;
 
 void vsgXchange::init()
@@ -48,7 +52,7 @@ void vsgXchange::init()
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
     vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
     vsg::ObjectFactory::instance()->add<vsgXchange::GDAL>();
-    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
+//    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
 }
 
 all::all()
@@ -88,6 +92,6 @@ all::all()
 #endif
 
 #ifdef vsgXchange_OSG
-    add(OSG::create());
+    add(osg2vsg::OSG::create());
 #endif
 }
