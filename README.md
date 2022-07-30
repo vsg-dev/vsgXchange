@@ -17,7 +17,7 @@ cmake automatically finds which dependencies are available and builds the approp
 * [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [GDAL](https://gdal.org/) as vsg::Data.
 * [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  GLTF, OBJ, 3DS, LWO etc. use Assimp as vsg::Node.
 * [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl) reading image and model files from http:// and https:// using [libcurl](https://curl.se/libcurl/)
-* [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) OpenSceneGraph, OpenFlight etc. using [OpenSceneGraph](http://www.openscenegraph.org/).
+* [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) OpenSceneGraph, OpenFlight etc. using [osg2vsg](https://github.com/vsg-dev/osg2vsg)/[OpenSceneGraph](http://www.openscenegraph.org/).
 
 ## Required dependencies:
 
