@@ -32,6 +32,19 @@ endif()
 set(VSG_MIN_VERSION 0.5.2)
 find_package(vsg ${VSG_MIN_VERSION} REQUIRED)
 
+# find optional osg2vsg package for loading image/nodes using OpenSceneGraph
+find_package(osg2vsg)
+if(osg2vsg_FOUND)
+    OPTION(vsgXchange_OSG "OSG support provided" ON)
+endif()
+
+if (vsgXchange_OSG)
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} osg2vsg::osg2vsg)
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(osg2vsg)")
+    endif()
+endif()
+
 # for generated cmake support files
 set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsg ${VSG_MIN_VERSION} REQUIRED)")
 
