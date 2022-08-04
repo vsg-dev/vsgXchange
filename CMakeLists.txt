@@ -8,6 +8,9 @@ project(vsgXchange
 set(VSGXCHANGE_SOVERSION 0)
 SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(vsgMacros)
+
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 17)
 
