@@ -8,7 +8,16 @@ project(vsgXchange
 set(VSGXCHANGE_SOVERSION 0)
 SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
+set(VSGXCHANGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "Root binary directory of vsgXchange.")
+
+if (${VSGXCHANGE_BINARY_DIR} STREQUAL ${VSGXCHANGE_SOURCE_DIR})
+    message(">>>>>>>>> vsgXchange build direct")
+else()
+    message(">>>>>>>>> vsgXchange build submodule")
+endif()
+
+list(APPEND CMAKE_MODULE_PATH ${VSGXCHANGE_SOURCE_DIR}/cmake)
 include(vsgMacros)
 
 # set the use of C++17 globally as all examples require it
@@ -31,19 +40,19 @@ vsg_setup_dir_vars()
 
 vsg_add_target_clang_format(
     FILES
-        ${CMAKE_SOURCE_DIR}/include/*/*.h
-        ${CMAKE_SOURCE_DIR}/src/*/*.h
-        ${CMAKE_SOURCE_DIR}/src/*/*.cpp
-        ${CMAKE_SOURCE_DIR}/applications/*/*.h
-        ${CMAKE_SOURCE_DIR}/applications/*/*.cpp
+        ${VSGXCHANGE_SOURCE_DIR}/include/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.cpp
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.cpp
     EXCLUDES
-        ${CMAKE_SOURCE_DIR}/src/stbi/stb_image.h
-        ${CMAKE_SOURCE_DIR}/src/dds/tinyddsloader.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/stbi/stb_image.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/dds/tinyddsloader.h
 )
 vsg_add_target_clobber()
 vsg_add_target_docs(
     FILES
-        ${CMAKE_SOURCE_DIR}/include
+        ${VSGXCHANGE_SOURCE_DIR}/include
 )
 vsg_add_target_uninstall()
 
