@@ -49,6 +49,7 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const override;
         vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const override;
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> = {}) const override;
+        bool write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<const vsg::Options> = {}) const override;
 
         bool getFeatures(Features& features) const override;
 
