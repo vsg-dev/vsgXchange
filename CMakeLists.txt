@@ -21,6 +21,9 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${VSGXCHANGE_SOURCE_DIR}/cmake)
 include(vsgMacros)
 
+vsg_setup_build_vars()
+vsg_setup_dir_vars()
+
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 17)
 
@@ -48,9 +51,6 @@ endif()
 
 # for generated cmake support files
 set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsg ${VSG_MIN_VERSION} REQUIRED)")
-
-vsg_setup_build_vars()
-vsg_setup_dir_vars()
 
 if (VSGXCHANGE_PROVIDE_CUSTOM_TARGETS)
 
