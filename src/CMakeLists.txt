@@ -52,7 +52,7 @@ configure_file("${VSGXCHANGE_SOURCE_DIR}/src/all/Version.h.in" "${VSGXCHANGE_VER
 # create the vsgXchange library
 add_library(vsgXchange ${HEADERS} ${SOURCES})
 add_library(vsgXchange::vsgXchange ALIAS vsgXchange)
-set(vsgXchange_FOUND TRUE)
+set(vsgXchange_FOUND TRUE CACHE INTERNAL "vsgXchange found.")
 
 
 set_property(TARGET vsgXchange PROPERTY VERSION ${VSGXCHANGE_VERSION_MAJOR}.${VSGXCHANGE_VERSION_MINOR}.${VSGXCHANGE_VERSION_PATCH})
