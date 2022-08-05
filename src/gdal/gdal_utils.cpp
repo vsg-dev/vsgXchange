@@ -133,7 +133,7 @@ vsg::t_vec3<T> default_vec3(const vsg::dvec4& value)
 template<typename T>
 vsg::t_vec4<T> default_vec4(const vsg::dvec4& value)
 {
-    return vsg::t_vec4<T>(default_value<T>(value[0]), default_value<T>(value[1]), default_value<T>(value[2]), default_value<T>(value[4]));
+    return vsg::t_vec4<T>(default_value<T>(value[0]), default_value<T>(value[1]), default_value<T>(value[2]), default_value<T>(value[3]));
 }
 
 vsg::ref_ptr<vsg::Data> vsgXchange::createImage2D(int width, int height, int numComponents, GDALDataType dataType, vsg::dvec4 def)
