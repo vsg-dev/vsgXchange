@@ -21,7 +21,7 @@ set(VSG_MIN_VERSION 0.5.2)
 find_package(vsg ${VSG_MIN_VERSION} REQUIRED)
 
 # find optional osg2vsg package for loading image/nodes using OpenSceneGraph
-find_package(osg2vsg)
+find_package(osg2vsg QUIET)
 if(osg2vsg_FOUND)
     OPTION(vsgXchange_OSG "OSG support provided" ON)
 endif()
