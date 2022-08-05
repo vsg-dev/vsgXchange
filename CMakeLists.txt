@@ -11,22 +11,14 @@ SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
 set(VSGXCHANGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "Root binary directory of vsgXchange.")
 
-if (${VSGXCHANGE_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-    set(VSGXCHANGE_PROVIDE_CUSTOM_TARGETS TRUE)
-    message(">>>>>>>>> vsgXhange Provide custom targets")
-else()
-    message(">>>>>>>>> vsgXhange build submodule, no custom targets")
-endif()
-
-list(APPEND CMAKE_MODULE_PATH ${VSGXCHANGE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(vsgMacros)
 
-vsg_setup_build_vars()
 vsg_setup_dir_vars()
+vsg_setup_build_vars()
 
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 17)
-
 
 # Find Vulkan and the VSG
 if (VULKAN_SDK)
@@ -52,7 +44,8 @@ endif()
 # for generated cmake support files
 set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsg ${VSG_MIN_VERSION} REQUIRED)")
 
-if (VSGXCHANGE_PROVIDE_CUSTOM_TARGETS)
+# only provide custom targets if not building as a submodule/FetchContent
+if (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
 
     vsg_add_target_clang_format(
         FILES
