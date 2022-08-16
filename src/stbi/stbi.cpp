@@ -72,6 +72,65 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
 
 using namespace vsgXchange;
 
+static void writeToStream(void* context, void* data, int size)
+{
+    reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
+}
+
+// if the data is in BGR or BGRA form create a copy that is reformated into RGB or RGBA redpectively
+static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vsg::Data* data, const vsg::Path& filename)
+{
+    int num_components = 0;
+    vsg::ref_ptr<const vsg::Data> local_data;
+    switch(data->getLayout().format)
+    {
+        case(VK_FORMAT_R8_UNORM):
+            num_components = 1;
+            break;
+        case(VK_FORMAT_R8G8_UNORM):
+            num_components = 2;
+            break;
+        case(VK_FORMAT_R8G8B8_UNORM):
+            num_components = 3;
+            break;
+        case(VK_FORMAT_R8G8B8A8_UNORM):
+            num_components = 4;
+            break;
+        case(VK_FORMAT_B8G8R8_UNORM):
+        {
+            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8_UNORM});
+            auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
+            for(auto& dest : *dest_data)
+            {
+                auto& src = *(src_ptr++);
+                dest.set(src[2], src[1], src[0]);
+            }
+
+            num_components = 3;
+            local_data = dest_data;
+            break;
+        }
+        case(VK_FORMAT_B8G8R8A8_UNORM):
+        {
+            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+            auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
+            for(auto& dest : *dest_data)
+            {
+                auto& src = *(src_ptr++);
+                dest.set(src[2], src[1], src[0], src[3]);
+            }
+
+            num_components = 4;
+            local_data = dest_data;
+            break;
+        }
+        default:
+            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->getLayout().format, ") not supported.");
+            return {0,{}};
+    }
+    return {num_components, local_data};
+}
+
 stbi::stbi() :
     _supportedExtensions{".jpg", ".jpeg", ".jpe", ".png", ".gif", ".bmp", ".tga", ".psd", ".pgm", ".ppm"}
 {
@@ -80,7 +139,7 @@ stbi::stbi() :
 bool stbi::getFeatures(Features& features) const
 {
     vsg::ReaderWriter::FeatureMask read_mask = static_cast<vsg::ReaderWriter::FeatureMask>(READ_FILENAME | READ_ISTREAM | READ_MEMORY);
-    vsg::ReaderWriter::FeatureMask read_write_mask = static_cast<vsg::ReaderWriter::FeatureMask>(WRITE_FILENAME | READ_FILENAME | READ_ISTREAM | READ_MEMORY);
+    vsg::ReaderWriter::FeatureMask read_write_mask = static_cast<vsg::ReaderWriter::FeatureMask>(WRITE_FILENAME | WRITE_OSTREAM | READ_FILENAME | READ_ISTREAM | READ_MEMORY);
 
     features.extensionFeatureMap[".png"] = read_write_mask;
     features.extensionFeatureMap[".bmp"] = read_write_mask;
@@ -173,6 +232,47 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     return {};
 }
 
+bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<const vsg::Options> options) const
+{
+    const auto ext = options->extensionHint;
+    if (_supportedExtensions.count(ext) == 0)
+    {
+        return false;
+    }
+
+    auto data = object->cast<vsg::Data>();
+    if (!data) return false;
+
+    // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
+    auto [num_components, local_data] = reformatForWriting(data, {});
+    if (num_components==0) return false;
+    if (local_data) data = local_data.get();
+
+    int result = 0;
+    if (ext == ".png")
+    {
+        result = stbi_write_png_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), data->getLayout().stride * data->width());
+    }
+    else if (ext == ".bmp")
+    {
+        result = stbi_write_bmp_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer());
+    }
+    else if (ext == ".tga")
+    {
+        result = stbi_write_tga_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer());
+    }
+    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe" )
+    {
+        int quality = 100;
+        if (options)
+        {
+            options->getValue("jpeg_quality", quality);
+        }
+        result = stbi_write_jpg_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), quality);
+    }
+    return result==1;
+}
+
 bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     const auto ext = vsg::lowerCaseFileExtension(filename);
@@ -185,57 +285,9 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     if (!data) return false;
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
-    vsg::ref_ptr<vsg::Data> local_data;
-
-    int num_components = 0;
-    switch(data->getLayout().format)
-    {
-        case(VK_FORMAT_R8_UNORM):
-            num_components = 1;
-            break;
-        case(VK_FORMAT_R8G8_UNORM):
-            num_components = 2;
-            break;
-        case(VK_FORMAT_R8G8B8_UNORM):
-            num_components = 3;
-            break;
-        case(VK_FORMAT_R8G8B8A8_UNORM):
-            num_components = 4;
-            break;
-        case(VK_FORMAT_B8G8R8_UNORM):
-        {
-            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8_UNORM});
-            auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
-            for(auto& dest : *dest_data)
-            {
-                auto& src = *(src_ptr++);
-                dest.set(src[2], src[1], src[0]);
-            }
-
-            num_components = 3;
-            local_data = dest_data;
-            data = local_data.get();
-            break;
-        }
-        case(VK_FORMAT_B8G8R8A8_UNORM):
-        {
-            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
-            auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
-            for(auto& dest : *dest_data)
-            {
-                auto& src = *(src_ptr++);
-                dest.set(src[2], src[1], src[0], src[3]);
-            }
-
-            num_components = 4;
-            local_data = dest_data;
-            data = local_data.get();
-            break;
-        }
-        default:
-            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->getLayout().format, ") not supported.");
-            return false;
-    }
+    auto [num_components, local_data] = reformatForWriting(data, filename);
+    if (num_components==0) return false;
+    if (local_data) data = local_data.get();
 
     // convert utf8 std::string;
     std::string filename_str = filename.string();
