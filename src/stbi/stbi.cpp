@@ -77,7 +77,8 @@ static void writeToStream(void* context, void* data, int size)
     reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
 }
 
-static std::pair<int, vsg::ref_ptr<const vsg::Data>> prepareForWriting(const vsg::Data* data, const vsg::Path& filename)
+// if the data is in BGR or BGRA form create a copy that is reformated into RGB or RGBA redpectively
+static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vsg::Data* data, const vsg::Path& filename)
 {
     int num_components = 0;
     vsg::ref_ptr<const vsg::Data> local_data;
@@ -243,7 +244,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
     if (!data) return false;
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
-    auto [num_components, local_data] = prepareForWriting(data, {});
+    auto [num_components, local_data] = reformatForWriting(data, {});
     if (num_components==0) return false;
     if (local_data) data = local_data.get();
 
@@ -284,7 +285,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     if (!data) return false;
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
-    auto [num_components, local_data] = prepareForWriting(data, filename);
+    auto [num_components, local_data] = reformatForWriting(data, filename);
     if (num_components==0) return false;
     if (local_data) data = local_data.get();
 
