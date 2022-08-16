@@ -72,14 +72,15 @@ void* cpp_realloc_sized(void* old_ptr, size_t old_size, size_t new_size)
 
 using namespace vsgXchange;
 
-void writeToStream(void* context, void* data, int size)
+static void writeToStream(void* context, void* data, int size)
 {
     reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
 }
 
-int/*num_components*/ prepareForWriting(const vsg::Data*& data, vsg::ref_ptr<vsg::Data>& local_data, const vsg::Path& filename)
+static std::pair<int, vsg::ref_ptr<const vsg::Data>> prepareForWriting(const vsg::Data* data, const vsg::Path& filename)
 {
     int num_components = 0;
+    vsg::ref_ptr<const vsg::Data> local_data;
     switch(data->getLayout().format)
     {
         case(VK_FORMAT_R8_UNORM):
@@ -106,7 +107,6 @@ int/*num_components*/ prepareForWriting(const vsg::Data*& data, vsg::ref_ptr<vsg
 
             num_components = 3;
             local_data = dest_data;
-            data = local_data.get();
             break;
         }
         case(VK_FORMAT_B8G8R8A8_UNORM):
@@ -121,14 +121,13 @@ int/*num_components*/ prepareForWriting(const vsg::Data*& data, vsg::ref_ptr<vsg
 
             num_components = 4;
             local_data = dest_data;
-            data = local_data;
             break;
         }
         default:
             vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->getLayout().format, ") not supported.");
-            return false;
+            return {0,{}};
     }
-    return num_components;
+    return {num_components, local_data};
 }
 
 stbi::stbi() :
@@ -244,8 +243,9 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
     if (!data) return false;
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
-    vsg::ref_ptr<vsg::Data> local_data;
-    auto num_components = prepareForWriting(data, local_data, {});
+    auto [num_components, local_data] = prepareForWriting(data, {});
+    if (num_components==0) return false;
+    if (local_data) data = local_data.get();
 
     int result = 0;
     if (ext == ".png")
@@ -284,8 +284,9 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     if (!data) return false;
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
-    vsg::ref_ptr<vsg::Data> local_data;
-    auto num_components = prepareForWriting(data, local_data, filename);
+    auto [num_components, local_data] = prepareForWriting(data, filename);
+    if (num_components==0) return false;
+    if (local_data) data = local_data.get();
 
     // convert utf8 std::string;
     std::string filename_str = filename.string();
