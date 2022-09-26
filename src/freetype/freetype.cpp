@@ -922,7 +922,5 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     font->glyphMetrics = glyphMetrics;
     font->charmap = charmap;
 
-    font->options = const_cast<vsg::Options*>(options.get());
-
     return font;
 }
