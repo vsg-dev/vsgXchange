@@ -231,7 +231,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             if (texture->mWidth > 0 && texture->mHeight == 0)
             {
                 auto imageOptions = vsg::Options::create(*options);
-                imageOptions->extensionHint = texture->achFormatHint;
+                imageOptions->extensionHint = vsg::Path(".") + texture->achFormatHint;
                 if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
                     return {};
             }
