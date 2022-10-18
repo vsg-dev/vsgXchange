@@ -156,6 +156,28 @@ struct SceneConverter
     static vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
     static vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
     static vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
+    static vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
+
+    static bool getColor(const aiMaterial* material, const char *pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
+    {
+        aiColor3D color;
+        if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
+        {
+            value = convert(color);
+            return true;
+        }
+        return false;
+    }
+    static bool getColor(const aiMaterial* material, const char *pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
+    {
+        aiColor4D color;
+        if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
+        {
+            value = convert(color);
+            return true;
+        }
+        return false;
+    }
 
     void processCameras();
     void processLights();
@@ -290,7 +312,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
         defines.push_back("VSG_TWO_SIDED_LIGHTING");
     }
 
-    if (material->Get(AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) == AI_SUCCESS || hasPbrSpecularGlossiness)
+    if (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness)
     {
         // PBR path
         convertedMaterial.shaderSet = getOrCreatePhrShaderSet();
@@ -301,7 +323,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
         if (hasPbrSpecularGlossiness)
         {
             defines.push_back("VSG_WORKFLOW_SPECGLOSS");
-            material->Get(AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
+            getColor(material, AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
 
             if (material->Get(AI_MATKEY_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
             {
@@ -315,7 +337,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
             material->Get(AI_MATKEY_ROUGHNESS_FACTOR, pbr.roughnessFactor);
         }
 
-        material->Get(AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
+        getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
         SamplerData samplerImage;
@@ -362,10 +384,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
             mat.alphaMask = 0.0f;
 
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, mat.alphaMaskCutoff);
-        material->Get(AI_MATKEY_COLOR_AMBIENT, mat.ambient);
-        const auto diffuseResult = material->Get(AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
-        const auto emissiveResult = material->Get(AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
-        const auto specularResult = material->Get(AI_MATKEY_COLOR_SPECULAR, mat.specular);
+        getColor(material, AI_MATKEY_COLOR_AMBIENT, mat.ambient);
+        const auto diffuseResult = getColor(material, AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
+        const auto emissiveResult = getColor(material, AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
+        const auto specularResult = getColor(material, AI_MATKEY_COLOR_SPECULAR, mat.specular);
 
         aiShadingMode shadingModel = aiShadingMode_Phong;
         material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
