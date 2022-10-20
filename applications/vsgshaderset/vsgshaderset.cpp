@@ -184,6 +184,13 @@ int main(int argc, char** argv)
     std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> permuations;
     permuations.push_back(vsg::ShaderCompileSettings::create());
 
+    for(auto& define : defines)
+    {
+        auto scs = vsg::ShaderCompileSettings::create();
+        scs->defines.push_back(define);
+        permuations.push_back(scs);
+    }
+
     auto shaderCompiler = vsg::ShaderCompiler::create();
     std::cout<<"\nshaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
 
@@ -194,6 +201,10 @@ int main(int argc, char** argv)
         std::cout<<"    "<<shdaderCompileSetting<<std::endl;
         auto stagesToCompile = shaderSet->getShaderStages(shdaderCompileSetting);
         shaderCompiler->compile(stagesToCompile, shdaderCompileSetting->defines, options);
+        for(auto& stage : stagesToCompile)
+        {
+            stage->module->source.clear();
+        }
     }
     std::cout<<"}"<<std::endl;
 
