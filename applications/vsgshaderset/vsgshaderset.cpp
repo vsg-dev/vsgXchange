@@ -140,6 +140,30 @@ int main(int argc, char** argv)
     auto outputFilename = arguments.value<vsg::Path>("", "-o");
     std::cout<<"outputFilename = "<<outputFilename<<std::endl;
 
+    std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> variants;
+    std::string str;
+    while(arguments.read({"-v", "--variant"}, str))
+    {
+        std::cout<<"varient : "<<str<<std::endl;
+        auto scs = vsg::ShaderCompileSettings::create();
+
+        std::cout<<"   ";
+        std::stringstream sstr(str);
+        while(sstr)
+        {
+            std::string s;
+            sstr >> s;
+            if (!s.empty())
+            {
+                std::cout<<s<<", ";
+                scs->defines.push_back(s);
+            }
+        }
+        variants.push_back(scs);
+
+        std::cout<<std::endl;
+    }
+
     vsg::ref_ptr<vsg::ShaderSet> shaderSet;
     if (inputFilename)
     {
@@ -175,36 +199,47 @@ int main(int argc, char** argv)
 
     auto defines = supportedDefines(*shaderSet);
 
+
+
     std::cout<<"\nSupported defines.size() = "<<defines.size()<<std::endl;
     for(auto& define : defines)
     {
         std::cout<<"   "<<define<<std::endl;
     }
 
-    std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> permuations;
-    permuations.push_back(vsg::ShaderCompileSettings::create());
-
-    for(auto& define : defines)
+    // validate
+    for(auto& shdaderCompileSetting : variants)
     {
-        auto scs = vsg::ShaderCompileSettings::create();
-        scs->defines.push_back(define);
-        permuations.push_back(scs);
+        for(auto itr = shdaderCompileSetting->defines.begin(); itr != shdaderCompileSetting->defines.end();)
+        {
+            if (defines.count(*itr)==0)
+            {
+                std::cout<<"variant define [ "<<*itr<<" ] not supported"<<std::endl;
+                return 1;
+            }
+            else
+            {
+                ++itr;
+            }
+        }
     }
 
     auto shaderCompiler = vsg::ShaderCompiler::create();
     std::cout<<"\nshaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
 
-    std::cout<<"\npermuations.size() = "<<permuations.size()<<std::endl;
+    std::cout<<"\variants.size() = "<<variants.size()<<std::endl;
     std::cout<<"{"<<std::endl;
-    for(auto& shdaderCompileSetting : permuations)
+    for(auto& shdaderCompileSetting : variants)
     {
-        std::cout<<"    "<<shdaderCompileSetting<<std::endl;
+        std::cout<<"    "<<shdaderCompileSetting<<" : ";
+        for(auto& define : shdaderCompileSetting->defines) std::cout<<define<<" ";
         auto stagesToCompile = shaderSet->getShaderStages(shdaderCompileSetting);
         shaderCompiler->compile(stagesToCompile, shdaderCompileSetting->defines, options);
         for(auto& stage : stagesToCompile)
         {
             stage->module->source.clear();
         }
+        std::cout<<std::endl;
     }
     std::cout<<"}"<<std::endl;
 
