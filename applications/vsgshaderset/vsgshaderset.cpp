@@ -137,6 +137,9 @@ int main(int argc, char** argv)
     auto inputFilename = arguments.value<vsg::Path>("", "-i");
     std::cout<<"inputFilename = "<<inputFilename<<std::endl;
 
+    auto outputFilename = arguments.value<vsg::Path>("", "-o");
+    std::cout<<"outputFilename = "<<outputFilename<<std::endl;
+
     vsg::ref_ptr<vsg::ShaderSet> shaderSet;
     if (inputFilename)
     {
@@ -178,8 +181,23 @@ int main(int argc, char** argv)
         std::cout<<"   "<<define<<std::endl;
     }
 
+    std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> permuations;
+    permuations.push_back(vsg::ShaderCompileSettings::create());
+
     auto shaderCompiler = vsg::ShaderCompiler::create();
-    std::cout<<"shaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
+    std::cout<<"\nshaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
+
+    std::cout<<"\npermuations.size() = "<<permuations.size()<<std::endl;
+    std::cout<<"{"<<std::endl;
+    for(auto& shdaderCompileSetting : permuations)
+    {
+        std::cout<<"    "<<shdaderCompileSetting<<std::endl;
+        auto stagesToCompile = shaderSet->getShaderStages(shdaderCompileSetting);
+        shaderCompiler->compile(stagesToCompile, shdaderCompileSetting->defines, options);
+    }
+    std::cout<<"}"<<std::endl;
+
+    if (outputFilename) vsg::write(shaderSet, outputFilename, options);
 
     return 0;
 }
