@@ -83,7 +83,11 @@ void print(const vsg::ShaderSet& shaderSet, std::ostream& out)
     for(auto& [shaderCompileSettings, shaderStages] : shaderSet.variants)
     {
         out<<"  Varient {"<<std::endl;
-        out<<"    shaderCompileSettings = "<<shaderCompileSettings<<std::endl;
+
+        out<<"    shaderCompileSettings = "<<shaderCompileSettings<<" : defines ";
+        for(auto& define : shaderCompileSettings->defines) out<<define<<" ";
+        out<<std::endl;
+
         out<<"    shaderStages = "<<shaderStages.size()<<std::endl;
         out<<"  }"<<std::endl;
     }
@@ -140,31 +144,12 @@ int main(int argc, char** argv)
     auto outputFilename = arguments.value<vsg::Path>("", "-o");
     std::cout<<"outputFilename = "<<outputFilename<<std::endl;
 
-    std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> variants;
-    std::string str;
-    while(arguments.read({"-v", "--variant"}, str))
-    {
-        std::cout<<"varient : "<<str<<std::endl;
-        auto scs = vsg::ShaderCompileSettings::create();
-
-        std::cout<<"   ";
-        std::stringstream sstr(str);
-        while(sstr)
-        {
-            std::string s;
-            sstr >> s;
-            if (!s.empty())
-            {
-                std::cout<<s<<", ";
-                scs->defines.push_back(s);
-            }
-        }
-        variants.push_back(scs);
-
-        std::cout<<std::endl;
-    }
-
     vsg::ref_ptr<vsg::ShaderSet> shaderSet;
+    if (arguments.read("--text")) { options->shaderSets["text"] = shaderSet = vsg::createTextShaderSet(options); }
+    if (arguments.read("--flat")) { options->shaderSets["flat"] = shaderSet = vsg::createFlatShadedShaderSet(options); }
+    if (arguments.read("--phong")) { options->shaderSets["phong"] = shaderSet = vsg::createPhongShaderSet(options); }
+    if (arguments.read("--pbr")) { options->shaderSets["pbr"] = shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options); }
+
     if (inputFilename)
     {
         auto object = vsg::read(inputFilename, options);
@@ -182,11 +167,6 @@ int main(int argc, char** argv)
         }
     }
 
-    if (arguments.read("--text")) shaderSet = vsg::createTextShaderSet(options);
-    if (arguments.read("--flat")) shaderSet = vsg::createFlatShadedShaderSet(options);
-    if (arguments.read("--phong")) shaderSet = vsg::createPhongShaderSet(options);
-    if (arguments.read("--pbr")) shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
-
     std::cout<<"shaderSet = "<<shaderSet<<std::endl;
 
     if (!shaderSet)
@@ -195,11 +175,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    print(*shaderSet, std::cout);
-
+    // get the defines supported by the ShaderSet
     auto defines = supportedDefines(*shaderSet);
-
-
 
     std::cout<<"\nSupported defines.size() = "<<defines.size()<<std::endl;
     for(auto& define : defines)
@@ -207,34 +184,60 @@ int main(int argc, char** argv)
         std::cout<<"   "<<define<<std::endl;
     }
 
-    // validate
-    for(auto& shdaderCompileSetting : variants)
+    vsg::Path filename;
+    while(arguments.read({"-m", "--model"}, filename))
     {
-        for(auto itr = shdaderCompileSetting->defines.begin(); itr != shdaderCompileSetting->defines.end();)
+        if (auto model = vsg::read(filename, options))
         {
-            if (defines.count(*itr)==0)
-            {
-                std::cout<<"variant define [ "<<*itr<<" ] not supported"<<std::endl;
-                return 1;
-            }
-            else
-            {
-                ++itr;
-            }
+            std::cout<<"Loaded model : "<<model<<std::endl;
         }
     }
+    std::vector<vsg::ref_ptr<vsg::ShaderCompileSettings>> variants;
+    std::string str;
+    while(arguments.read({"-v", "--variant"}, str))
+    {
+        std::cout<<"varient : "<<str<<std::endl;
+        auto scs = vsg::ShaderCompileSettings::create();
+
+        std::cout<<"   ";
+        std::stringstream sstr(str);
+        while(sstr)
+        {
+            std::string s;
+            sstr >> s;
+            if (!s.empty())
+            {
+                if (defines.count(s)==0)
+                {
+                    std::cout<<"variant define [ "<<s<<" ] not supported"<<std::endl;
+                    return 1;
+                }
+
+                std::cout<<s<<", ";
+                scs->defines.push_back(s);
+            }
+        }
+
+        // assign the variant
+        shaderSet->getShaderStages(scs);
+
+        std::cout<<std::endl;
+    }
+
+
+    // print out details of the ShaderSet
+    print(*shaderSet, std::cout);
 
     auto shaderCompiler = vsg::ShaderCompiler::create();
     std::cout<<"\nshaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
 
     std::cout<<"\variants.size() = "<<variants.size()<<std::endl;
     std::cout<<"{"<<std::endl;
-    for(auto& shdaderCompileSetting : variants)
+    for(auto& [shaderCompileSetting, stagesToCompile] : shaderSet->variants)
     {
-        std::cout<<"    "<<shdaderCompileSetting<<" : ";
-        for(auto& define : shdaderCompileSetting->defines) std::cout<<define<<" ";
-        auto stagesToCompile = shaderSet->getShaderStages(shdaderCompileSetting);
-        shaderCompiler->compile(stagesToCompile, shdaderCompileSetting->defines, options);
+        std::cout<<"    "<<shaderCompileSetting<<" : ";
+        for(auto& define : shaderCompileSetting->defines) std::cout<<define<<" ";
+        shaderCompiler->compile(stagesToCompile, shaderCompileSetting->defines, options);
         for(auto& stage : stagesToCompile)
         {
             stage->module->source.clear();
