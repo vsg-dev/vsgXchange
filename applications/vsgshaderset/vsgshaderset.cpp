@@ -180,12 +180,6 @@ int main(int argc, char** argv)
     // get the defines supported by the ShaderSet
     auto defines = supportedDefines(*shaderSet);
 
-    std::cout<<"\nSupported defines.size() = "<<defines.size()<<std::endl;
-    for(auto& define : defines)
-    {
-        std::cout<<"   "<<define<<std::endl;
-    }
-
     std::string str;
     while(arguments.read({"-v", "--variant"}, str))
     {
@@ -229,6 +223,12 @@ int main(int argc, char** argv)
 
     // print out details of the ShaderSet
     print(*shaderSet, std::cout);
+
+    std::cout<<"\nSupported defines.size() = "<<defines.size()<<std::endl;
+    for(auto& define : defines)
+    {
+        std::cout<<"   "<<define<<std::endl;
+    }
 
     // keep track of the all the ShaderStages and share any that are the same
     std::vector<vsg::ref_ptr<vsg::ShaderStage>> existing_stages;
