@@ -214,7 +214,7 @@ int main(int argc, char** argv)
                 }
 
                 std::cout<<s<<", ";
-                scs->defines.push_back(s);
+                scs->defines.insert(s);
             }
         }
 
@@ -231,13 +231,13 @@ int main(int argc, char** argv)
     auto shaderCompiler = vsg::ShaderCompiler::create();
     std::cout<<"\nshaderCompiler->supported() = "<<shaderCompiler->supported()<<std::endl;
 
-    std::cout<<"\variants.size() = "<<variants.size()<<std::endl;
+    std::cout<<"\nvariants.size() = "<<variants.size()<<std::endl;
     std::cout<<"{"<<std::endl;
     for(auto& [shaderCompileSetting, stagesToCompile] : shaderSet->variants)
     {
         std::cout<<"    "<<shaderCompileSetting<<" : ";
         for(auto& define : shaderCompileSetting->defines) std::cout<<define<<" ";
-        shaderCompiler->compile(stagesToCompile, shaderCompileSetting->defines, options);
+        shaderCompiler->compile(stagesToCompile, {}, options);
         for(auto& stage : stagesToCompile)
         {
             stage->module->source.clear();

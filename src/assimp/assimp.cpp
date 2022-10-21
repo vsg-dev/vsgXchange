@@ -309,7 +309,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
     if ((options->getValue(assimp::two_sided, convertedMaterial.two_sided) || (material->Get(AI_MATKEY_TWOSIDED, convertedMaterial.two_sided) == AI_SUCCESS)) && convertedMaterial.two_sided)
     {
-        defines.push_back("VSG_TWO_SIDED_LIGHTING");
+        defines.insert("VSG_TWO_SIDED_LIGHTING");
     }
 
     if (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness)
@@ -322,7 +322,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& 
 
         if (hasPbrSpecularGlossiness)
         {
-            defines.push_back("VSG_WORKFLOW_SPECGLOSS");
+            defines.insert("VSG_WORKFLOW_SPECGLOSS");
             getColor(material, AI_MATKEY_COLOR_DIFFUSE, pbr.diffuseFactor);
 
             if (material->Get(AI_MATKEY_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
@@ -659,7 +659,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     // set up ViewDependentState
     if (useViewDependentState)
     {
-        defines.push_back("VSG_VIEW_LIGHT_DATA");
+        defines.insert("VSG_VIEW_LIGHT_DATA");
         vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
         if (sharedObjects)
             vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
