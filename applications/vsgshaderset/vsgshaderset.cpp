@@ -144,6 +144,8 @@ int main(int argc, char** argv)
     auto outputFilename = arguments.value<vsg::Path>("", "-o");
     std::cout<<"outputFilename = "<<outputFilename<<std::endl;
 
+    bool stripShaderSetBeforeWrite = arguments.read({"-s", "--strip"});
+
     vsg::ref_ptr<vsg::ShaderSet> shaderSet;
     if (arguments.read("--text")) { options->shaderSets["text"] = shaderSet = vsg::createTextShaderSet(options); }
     if (arguments.read("--flat")) { options->shaderSets["flat"] = shaderSet = vsg::createFlatShadedShaderSet(options); }
@@ -228,6 +230,9 @@ int main(int argc, char** argv)
     // print out details of the ShaderSet
     print(*shaderSet, std::cout);
 
+    // keep track of the all the ShaderStages and share any that are the same
+    std::vector<vsg::ref_ptr<vsg::ShaderStage>> existing_stages;
+
     auto shaderCompiler = vsg::ShaderCompiler::create();
     if (shaderCompiler->supported())
     {
@@ -237,14 +242,62 @@ int main(int argc, char** argv)
         {
             std::cout<<"    "<<shaderCompileSetting<<" : ";
             for(auto& define : shaderCompileSetting->defines) std::cout<<define<<" ";
+
             shaderCompiler->compile(stagesToCompile, {}, options);
             for(auto& stage : stagesToCompile)
             {
                 stage->module->source.clear();
             }
+
+            for(auto& stage : stagesToCompile)
+            {
+                vsg::ref_ptr<vsg::ShaderStage> match;
+                for(auto& existing_stage : existing_stages)
+                {
+                    bool module_matched = stage->module->code == existing_stage->module->code;
+                    if (module_matched)
+                    {
+                        // share the matched ShaderModule
+                        stage->module = existing_stage->module;
+
+                        if (vsg::compare_pointer(stage, existing_stage)==0)
+                        {
+                            match = existing_stage;
+                        }
+                        break;
+                    }
+                }
+                if (match)
+                {
+                    // share the whole ShaderStage
+                    stage = match;
+                }
+                else
+                {
+                    existing_stages.push_back(stage);
+                }
+            }
+
             std::cout<<std::endl;
         }
         std::cout<<"}"<<std::endl;
+    }
+
+    std::cout<<"stages.size() = "<<existing_stages.size()<<std::endl;
+    for(auto& stage : existing_stages)
+    {
+        std::cout<<"   "<<stage<<" "<<stage->module<<" "<<stage->module->code.size()<<std::endl;
+    }
+
+    if (stripShaderSetBeforeWrite)
+    {
+        shaderSet->stages.clear();
+        shaderSet->attributeBindings.clear();
+        shaderSet->uniformBindings.clear();
+        shaderSet->pushConstantRanges.clear();
+        shaderSet->definesArrayStates.clear();
+        shaderSet->optionalDefines.clear();
+        shaderSet->defaultGraphicsPipelineStates.clear();
     }
 
     if (outputFilename) vsg::write(shaderSet, outputFilename, options);
