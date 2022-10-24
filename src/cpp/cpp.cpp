@@ -24,7 +24,7 @@ cpp::cpp()
 {
 }
 
-bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
+bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
     if (ext != ".cpp") return false;
@@ -33,20 +33,44 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
     auto funcname = vsg::simpleFilename(filename);
 
-    std::ostringstream str;
+    bool binary = options ? (options->extensionHint == ".vsgb") : false;
 
+    // serialize object(s) to string
+    std::ostringstream str;
     vsg::VSG io;
-    io.write(object, str);
+    io.write(object, str, options);
+    std::string s = str.str();
 
     std::ofstream fout(filename);
     fout << "#include <vsg/io/VSG.h>\n";
-    fout << "static auto " << funcname << " = []() {";
-    fout << "std::istringstream str(\n";
-    write(fout, str.str());
-    fout << ");\n";
+    fout << "#include <vsg/io/mem_stream.h>\n";
+    fout << "static auto " << funcname << " = []() {\n";
 
-    fout << "vsg::VSG io;\n";
-    fout << "return io.read_cast<" << object->className() << ">(str);\n";
+    if (binary || s.size() > 65535)
+    {
+        // long string has to be handled as a byte array as VisualStudio can't handle long strings.
+        fout << "uint8_t data[] = {\n";
+        fout << static_cast<uint32_t>(s[0]);
+        for(size_t i = 1; i < s.size(); ++i)
+        {
+            if ((i % 32)==0) fout << ",\n";
+            else fout << ", ";
+            fout << uint32_t(uint8_t(s[i]));
+        }
+        fout << " };\n";
+        //fout<<"vsg::mem_stream str(data, sizeof(data));\n";
+        fout << "vsg::VSG io;\n";
+        fout << "return io.read_cast<" << object->className() << ">(data, sizeof(data));\n";
+    }
+    else
+    {
+        fout << "std::istringstream str(\n";
+        write(fout, str.str());
+        fout << ");\n";
+        fout << "vsg::VSG io;\n";
+        fout << "return io.read_cast<" << object->className() << ">(str);\n";
+    }
+
     fout << "};\n";
     fout.close();
 
@@ -56,10 +80,10 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 void cpp::write(std::ostream& out, const std::string& str) const
 {
     std::size_t max_string_literal_length = 16360;
-    if (str.length() > max_string_literal_length)
+    if (str.size() > max_string_literal_length)
     {
         std::size_t n = 0;
-        while ((n + max_string_literal_length) < str.length())
+        while ((n + max_string_literal_length) < str.size())
         {
             auto pos_previous_end_of_line = str.find_last_of("\n", n + max_string_literal_length);
             if (pos_previous_end_of_line > n)
@@ -74,7 +98,7 @@ void cpp::write(std::ostream& out, const std::string& str) const
             }
         }
 
-        if (n < str.length())
+        if (n < str.size())
         {
             out << "R\"(" << str.substr(n, std::string::npos) << ")\"";
         }
