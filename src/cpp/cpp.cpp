@@ -33,17 +33,35 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
     auto funcname = vsg::simpleFilename(filename);
 
+    // serialize object(s) to string
     std::ostringstream str;
-
     vsg::VSG io;
     io.write(object, str);
+    std::string s = str.str();
 
     std::ofstream fout(filename);
     fout << "#include <vsg/io/VSG.h>\n";
+    fout << "#include <vsg/io/mem_stream.h>\n";
     fout << "static auto " << funcname << " = []() {";
-    fout << "std::istringstream str(\n";
-    write(fout, str.str());
-    fout << ");\n";
+
+    if (s.size() > 65535)
+    {
+        // long string has to be handled as a byte array as VisualStudio can't handle long strings.
+        fout << "uint8_t data[] = {\n";
+        for(size_t i = 0; i < s.size(); ++i)
+        {
+            fout << static_cast<uint32_t>(s[i])<<", ";
+            if (((i+1) % 16)==0) fout << '\n';
+        }
+        fout << " };\n";
+        fout<<"vsg::mem_stream str(data, sizeof(data));\n";
+    }
+    else
+    {
+        fout << "std::istringstream str(\n";
+        write(fout, str.str());
+        fout << ");\n";
+    }
 
     fout << "vsg::VSG io;\n";
     fout << "return io.read_cast<" << object->className() << ">(str);\n";
@@ -56,10 +74,10 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 void cpp::write(std::ostream& out, const std::string& str) const
 {
     std::size_t max_string_literal_length = 16360;
-    if (str.length() > max_string_literal_length)
+    if (str.size() > max_string_literal_length)
     {
         std::size_t n = 0;
-        while ((n + max_string_literal_length) < str.length())
+        while ((n + max_string_literal_length) < str.size())
         {
             auto pos_previous_end_of_line = str.find_last_of("\n", n + max_string_literal_length);
             if (pos_previous_end_of_line > n)
@@ -74,7 +92,7 @@ void cpp::write(std::ostream& out, const std::string& str) const
             }
         }
 
-        if (n < str.length())
+        if (n < str.size())
         {
             out << "R\"(" << str.substr(n, std::string::npos) << ")\"";
         }
