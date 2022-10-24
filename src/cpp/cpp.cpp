@@ -48,10 +48,12 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
     {
         // long string has to be handled as a byte array as VisualStudio can't handle long strings.
         fout << "uint8_t data[] = {\n";
-        for(size_t i = 0; i < s.size(); ++i)
+        fout << static_cast<uint32_t>(s[0]);
+        for(size_t i = 1; i < s.size(); ++i)
         {
-            fout << static_cast<uint32_t>(s[i])<<", ";
-            if (((i+1) % 16)==0) fout << '\n';
+            if ((i % 16)==0) fout << ",\n";
+            else fout << ", ";
+            fout << static_cast<uint32_t>(s[i]);
         }
         fout << " };\n";
         fout<<"vsg::mem_stream str(data, sizeof(data));\n";

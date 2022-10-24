@@ -75,6 +75,6 @@ endif()
 # source directory for main vsgXchange library
 add_subdirectory(src)
 add_subdirectory(applications/vsgconv)
-add_subdirectory(applications/vsgshaderset)
+#add_subdirectory(applications/vsgshaderset)
 
 vsg_add_feature_summary()
