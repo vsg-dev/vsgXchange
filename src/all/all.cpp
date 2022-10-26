@@ -66,7 +66,6 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
-    add(vsg::tile::create());
 
     add(glsl::create());
     add(cpp::create());
