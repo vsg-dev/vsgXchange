@@ -16,37 +16,41 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsgXchange;
 
+
 glsl::glsl()
 {
-    add(".vert", VK_SHADER_STAGE_VERTEX_BIT);
-    add(".tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    add(".tese", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    add(".geom", VK_SHADER_STAGE_GEOMETRY_BIT);
-    add(".frag", VK_SHADER_STAGE_FRAGMENT_BIT);
-    add(".comp", VK_SHADER_STAGE_COMPUTE_BIT);
-    add(".mesh", VK_SHADER_STAGE_MESH_BIT_NV);
-    add(".task", VK_SHADER_STAGE_TASK_BIT_NV);
-    add(".rgen", VK_SHADER_STAGE_RAYGEN_BIT_KHR);
-    add(".rint", VK_SHADER_STAGE_INTERSECTION_BIT_KHR);
-    add(".rahit", VK_SHADER_STAGE_ANY_HIT_BIT_KHR);
-    add(".rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
-    add(".rmiss", VK_SHADER_STAGE_MISS_BIT_KHR);
-    add(".rcall", VK_SHADER_STAGE_CALLABLE_BIT_KHR);
-    add(".glsl", VK_SHADER_STAGE_ALL);
-    add(".hlsl", VK_SHADER_STAGE_ALL);
 }
 
-void glsl::add(const vsg::Path& ext, VkShaderStageFlagBits stage)
+// set up the static s_extensionToStage so that it can be used for extension/feature checks
+std::map<vsg::Path, VkShaderStageFlagBits>  glsl::s_extensionToStage{
+    {".vert", VK_SHADER_STAGE_VERTEX_BIT},
+    {".tesc", VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
+    {".tese", VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT},
+    {".geom", VK_SHADER_STAGE_GEOMETRY_BIT},
+    {".frag", VK_SHADER_STAGE_FRAGMENT_BIT},
+    {".comp", VK_SHADER_STAGE_COMPUTE_BIT},
+    {".mesh", VK_SHADER_STAGE_MESH_BIT_NV},
+    {".task", VK_SHADER_STAGE_TASK_BIT_NV},
+    {".rgen", VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+    {".rint", VK_SHADER_STAGE_INTERSECTION_BIT_KHR},
+    {".rahit", VK_SHADER_STAGE_ANY_HIT_BIT_KHR},
+    {".rchit", VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR},
+    {".rmiss", VK_SHADER_STAGE_MISS_BIT_KHR},
+    {".rcall", VK_SHADER_STAGE_CALLABLE_BIT_KHR},
+    {".glsl", VK_SHADER_STAGE_ALL},
+    {".hlsl", VK_SHADER_STAGE_ALL}
+};
+
+bool glsl::extensionSupported(const vsg::Path& ext)
 {
-    extensionToStage[ext] = stage;
-    stageToExtension[stage] = ext;
+    return s_extensionToStage.find(ext) != s_extensionToStage.end();
 }
 
 vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
-    auto stage_itr = extensionToStage.find(ext);
-    if (stage_itr != extensionToStage.end())
+    auto stage_itr = s_extensionToStage.find(ext);
+    if (stage_itr != s_extensionToStage.end())
     {
         vsg::Path found_filename = vsg::findFile(filename, options);
         if (!found_filename) return {};
@@ -87,8 +91,8 @@ vsg::ref_ptr<vsg::Object> glsl::read(const vsg::Path& filename, vsg::ref_ptr<con
 bool glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> /*options*/) const
 {
     auto ext = vsg::lowerCaseFileExtension(filename);
-    auto stage_itr = extensionToStage.find(ext);
-    if (stage_itr != extensionToStage.end())
+    auto stage_itr = s_extensionToStage.find(ext);
+    if (stage_itr != s_extensionToStage.end())
     {
         const vsg::ShaderStage* ss = dynamic_cast<const vsg::ShaderStage*>(object);
         const vsg::ShaderModule* sm = ss ? ss->module.get() : dynamic_cast<const vsg::ShaderModule*>(object);
@@ -108,7 +112,7 @@ bool glsl::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
 
 bool glsl::getFeatures(Features& features) const
 {
-    for (auto& ext : extensionToStage)
+    for (auto& ext : s_extensionToStage)
     {
         features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::WRITE_FILENAME);
     }

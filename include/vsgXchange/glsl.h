@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
 
+    /// glsl ReaderWriter supports reading and writing GLSL shader files.
     class VSGXCHANGE_DECLSPEC glsl : public vsg::Inherit<vsg::ReaderWriter, glsl>
     {
     public:
@@ -40,13 +41,13 @@ namespace vsgXchange
 
         bool write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const override;
 
-        void add(const vsg::Path& ext, VkShaderStageFlagBits stage);
-
         bool getFeatures(Features& features) const override;
 
+        /// return true if .ext is supported
+        static bool extensionSupported(const vsg::Path& path);
+
     protected:
-        std::map<vsg::Path, VkShaderStageFlagBits> extensionToStage;
-        std::map<VkShaderStageFlagBits, vsg::Path> stageToExtension;
+        static std::map<vsg::Path, VkShaderStageFlagBits> s_extensionToStage;
     };
 
 } // namespace vsgXchange
