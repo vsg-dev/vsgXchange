@@ -11,7 +11,6 @@ set(HEADERS
     ${HEADER_PATH}/all.h
     ${HEADER_PATH}/cpp.h
     ${HEADER_PATH}/freetype.h
-    ${HEADER_PATH}/glsl.h
     ${HEADER_PATH}/images.h
     ${HEADER_PATH}/models.h
 )
@@ -20,7 +19,6 @@ set(SOURCES
     all/Version.cpp
     all/all.cpp
     cpp/cpp.cpp
-    glsl/glsl.cpp
     stbi/stbi.cpp
     dds/dds.cpp
     images/images.cpp
