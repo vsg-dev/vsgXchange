@@ -43,7 +43,6 @@ extern "C"
     #define vsgXchange_stbi
     #define vsgXchange_dds
     #define vsgXchange_ktx
-    #define vsgXchange_glsl
     #define vsgXchange_spv
     #define vsgXchange_cpp
 

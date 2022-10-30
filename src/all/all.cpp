@@ -15,13 +15,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/curl.h>
 #include <vsgXchange/freetype.h>
 #include <vsgXchange/gdal.h>
-#include <vsgXchange/glsl.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
 
 #include <vsg/io/VSG.h>
 #include <vsg/io/spirv.h>
 #include <vsg/io/tile.h>
+#include <vsg/io/glsl.h>
 #include <vsg/io/Logger.h>
 
 #ifdef vsgXchange_OSG
@@ -41,7 +41,6 @@ void vsgXchange::init()
     vsg::ObjectFactory::instance()->add<vsgXchange::all>();
     vsg::ObjectFactory::instance()->add<vsgXchange::curl>();
 
-    vsg::ObjectFactory::instance()->add<vsgXchange::glsl>();
     vsg::ObjectFactory::instance()->add<vsgXchange::cpp>();
 
     vsg::ObjectFactory::instance()->add<vsgXchange::stbi>();
@@ -66,8 +65,8 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
+    add(vsg::glsl::create());
 
-    add(glsl::create());
     add(cpp::create());
 
     add(stbi::create());
