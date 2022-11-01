@@ -121,7 +121,7 @@ namespace
 
         vsg::ref_ptr<vsg::Data> vsg_data;
 
-        vsg::Data::Layout layout;
+        vsg::Data::Properties layout;
         layout.format = targetFormat;
         layout.maxNumMipmaps = numMipMaps;
         layout.blockWidth = 4;
@@ -190,7 +190,7 @@ namespace
 
                 vsg::ref_ptr<vsg::Data> vsg_data;
 
-                vsg::Data::Layout layout;
+                vsg::Data::Properties layout;
                 layout.format = it->second;
                 layout.maxNumMipmaps = numMipMaps;
                 layout.imageViewType = computeImageViewType(ddsFile);
