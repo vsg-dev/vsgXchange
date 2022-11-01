@@ -665,7 +665,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
             vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
         else
             vdsl = vsg::ViewDescriptorSetLayout::create();
-        config->additionalDescrptorSetLayout = vdsl;
+        config->additionalDescriptorSetLayout = vdsl;
     }
 
     if (sharedObjects)
