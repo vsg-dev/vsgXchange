@@ -142,17 +142,17 @@ namespace
             if (type == Imf::HALF)
             {
                 // single element half precision float
-                image = vsg::ushortArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16_SFLOAT});
+                image = vsg::ushortArray2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R16_SFLOAT});
             }
             else if (type == Imf::FLOAT)
             {
                 // single element single precision float
-                image = vsg::floatArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32_SFLOAT});
+                image = vsg::floatArray2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32_SFLOAT});
             }
             else if (type == Imf::UINT)
             {
                 // single element single precision uint
-                image = vsg::uintArray2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32_UINT});
+                image = vsg::uintArray2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32_UINT});
             }
 
             if (image)
@@ -176,19 +176,19 @@ namespace
             if (type == Imf::HALF)
             {
                 // single element half precision float
-                image = vsg::usvec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16_SFLOAT});
+                image = vsg::usvec2Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R16G16_SFLOAT});
                 componentSize = 2;
             }
             else if (type == Imf::FLOAT)
             {
                 // single element single precision float
-                image = vsg::vec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32_SFLOAT});
+                image = vsg::vec2Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32_SFLOAT});
                 componentSize = 4;
             }
             else if (type == Imf::UINT)
             {
                 // single element single precision uint
-                image = vsg::uivec2Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32_UINT});
+                image = vsg::uivec2Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32_UINT});
                 componentSize = 4;
             }
 
@@ -214,19 +214,19 @@ namespace
             if (type == Imf::HALF)
             {
                 // single element half precision float
-                image = vsg::usvec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16B16_SFLOAT});
+                image = vsg::usvec3Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R16G16B16_SFLOAT});
                 componentSize = 2;
             }
             else if (type == Imf::FLOAT)
             {
                 // single element single precision float
-                image = vsg::vec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32_SFLOAT});
+                image = vsg::vec3Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32B32_SFLOAT});
                 componentSize = 4;
             }
             else if (type == Imf::UINT)
             {
                 // single element single precision uint
-                image = vsg::uivec3Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32_UINT});
+                image = vsg::uivec3Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32B32_UINT});
                 componentSize = 4;
             }
 
@@ -253,19 +253,19 @@ namespace
             if (type == Imf::HALF)
             {
                 // single element half precision float
-                image = vsg::usvec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R16G16B16A16_SFLOAT});
+                image = vsg::usvec4Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R16G16B16A16_SFLOAT});
                 componentSize = 2;
             }
             else if (type == Imf::FLOAT)
             {
                 // single element single precision float
-                image = vsg::vec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_SFLOAT});
+                image = vsg::vec4Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32B32A32_SFLOAT});
                 componentSize = 4;
             }
             else if (type == Imf::UINT)
             {
                 // single element single precision uint
-                image = vsg::uivec4Array2D::create(width, height, vsg::Data::Layout{VK_FORMAT_R32G32B32A32_UINT});
+                image = vsg::uivec4Array2D::create(width, height, vsg::Data::Properties{VK_FORMAT_R32G32B32A32_UINT});
                 componentSize = 4;
             }
 

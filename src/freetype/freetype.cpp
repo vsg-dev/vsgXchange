@@ -687,7 +687,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     float max_value = std::numeric_limits<sdf_type>::max();
     float mid_value = 0.0f;
 #else
-    auto atlas = vsg::shortArray2D::create(xtop, ytop, vsg::Data::Layout{VK_FORMAT_R16_SNORM});
+    auto atlas = vsg::shortArray2D::create(xtop, ytop, vsg::Data::Properties{VK_FORMAT_R16_SNORM});
     using sdf_type = vsg::shortArray2D::value_type;
     float min_value = std::numeric_limits<sdf_type>::lowest();
     float max_value = std::numeric_limits<sdf_type>::max();

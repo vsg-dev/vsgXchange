@@ -29,13 +29,13 @@ namespace
 {
 
     template<typename T>
-    vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Layout layout)
+    vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties)
     {
         switch (arrayDimensions)
         {
-        case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), layout);
-        case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), layout);
-        case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), layout);
+        case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), properties);
+        case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), properties);
+        case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), properties);
         default: return {};
         }
     }
@@ -69,7 +69,7 @@ namespace
 
         auto valueSize = ktxTexture_GetElementSize(texture);
 
-        vsg::Data::Layout layout;
+        vsg::Data::Properties layout;
         layout.format = format;
         layout.blockWidth = texture->_protected->_formatSize.blockWidth;
         layout.blockHeight = texture->_protected->_formatSize.blockHeight;

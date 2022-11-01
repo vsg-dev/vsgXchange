@@ -82,7 +82,7 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
 {
     int num_components = 0;
     vsg::ref_ptr<const vsg::Data> local_data;
-    switch(data->getLayout().format)
+    switch(data->properties.format)
     {
         case(VK_FORMAT_R8_UNORM):
             num_components = 1;
@@ -98,7 +98,7 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
             break;
         case(VK_FORMAT_B8G8R8_UNORM):
         {
-            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8_UNORM});
+            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8_UNORM});
             auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
             for(auto& dest : *dest_data)
             {
@@ -112,7 +112,7 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
         }
         case(VK_FORMAT_B8G8R8A8_UNORM):
         {
-            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
             auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
             for(auto& dest : *dest_data)
             {
@@ -125,7 +125,7 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
             break;
         }
         default:
-            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->getLayout().format, ") not supported.");
+            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->properties.format, ") not supported.");
             return {0,{}};
     }
     return {num_components, local_data};
@@ -182,7 +182,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
 
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
 
         return vsg_data;
     }
@@ -209,7 +209,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
     const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()), &width, &height, &channels, STBI_rgb_alpha);
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
         return vsg_data;
     }
 
@@ -225,7 +225,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     const auto pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(ptr), static_cast<int>(size), &width, &height, &channels, STBI_rgb_alpha);
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Layout{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
         return vsg_data;
     }
 
@@ -251,7 +251,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
     int result = 0;
     if (ext == ".png")
     {
-        result = stbi_write_png_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), data->getLayout().stride * data->width());
+        result = stbi_write_png_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), data->properties.stride * data->width());
     }
     else if (ext == ".bmp")
     {
@@ -294,7 +294,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     int result = 0;
     if (ext == ".png")
     {
-        result = stbi_write_png(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), data->getLayout().stride * data->width());
+        result = stbi_write_png(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), data->properties.stride * data->width());
     }
     else if (ext == ".bmp")
     {
