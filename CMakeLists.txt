@@ -25,7 +25,7 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-set(VSG_MIN_VERSION 0.5.2)
+set(VSG_MIN_VERSION 0.7.0)
 find_package(vsg ${VSG_MIN_VERSION})
 
 # find optional osg2vsg package for loading image/nodes using OpenSceneGraph
