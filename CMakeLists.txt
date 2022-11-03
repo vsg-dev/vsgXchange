@@ -11,11 +11,6 @@ SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
 set(VSGXCHANGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "Root binary directory of vsgXchange.")
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-include(vsgMacros)
-
-vsg_setup_dir_vars()
-vsg_setup_build_vars()
 
 # set the use of C++17 globally as all examples require it
 set(CMAKE_CXX_STANDARD 17)
@@ -27,6 +22,9 @@ endif()
 
 set(VSG_MIN_VERSION 1.0.0)
 find_package(vsg ${VSG_MIN_VERSION})
+
+vsg_setup_dir_vars()
+vsg_setup_build_vars()
 
 # find optional osg2vsg package for loading image/nodes using OpenSceneGraph
 find_package(osg2vsg QUIET)
