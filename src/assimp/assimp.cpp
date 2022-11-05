@@ -150,7 +150,7 @@ struct SceneConverter
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
     vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
-    std::vector<vsg::ref_ptr<vsg::DescriptorConfig>> convertedMaterials;
+    std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
 
     static vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
@@ -228,7 +228,7 @@ struct SceneConverter
 
     SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
 
-    void convert(const aiMaterial* material, vsg::DescriptorConfig& convertedMaterial);
+    void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
     vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndidices);
     void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
@@ -298,7 +298,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     }
 }
 
-void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfig& convertedMaterial)
+void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial)
 {
     auto& defines = convertedMaterial.defines;
 
@@ -578,7 +578,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         return;
     }
 
-    auto config = vsg::GraphicsPipelineConfig::create(material.shaderSet);
+    auto config = vsg::GraphicsPipelineConfigurator::create(material.shaderSet);
     auto& defines = config->shaderHints->defines = material.defines;
 
     config->inputAssemblyState->topology = topology;
@@ -734,7 +734,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     convertedMaterials.resize(scene->mNumMaterials);
     for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
-        convertedMaterials[i] = vsg::DescriptorConfig::create();
+        convertedMaterials[i] = vsg::DescriptorConfigurator::create();
         convert(scene->mMaterials[i], *convertedMaterials[i]);
     }
 
