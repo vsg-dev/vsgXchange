@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(vsgXchange
-    VERSION 0.1.0
+    VERSION 1.0.0
     DESCRIPTION "VulkanSceneGraph 3rd party data integration library"
     LANGUAGES CXX C
 )
@@ -25,7 +25,7 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-set(VSG_MIN_VERSION 0.7.2)
+set(VSG_MIN_VERSION 1.0.0)
 find_package(vsg ${VSG_MIN_VERSION})
 
 # find optional osg2vsg package for loading image/nodes using OpenSceneGraph
