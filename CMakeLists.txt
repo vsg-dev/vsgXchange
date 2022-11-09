@@ -42,26 +42,26 @@ endif()
 # for generated cmake support files
 set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(vsg ${VSG_MIN_VERSION} REQUIRED)")
 
+vsg_add_target_clang_format(
+    FILES
+        ${VSGXCHANGE_SOURCE_DIR}/include/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.cpp
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.cpp
+    EXCLUDES
+        ${VSGXCHANGE_SOURCE_DIR}/src/stbi/stb_image.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/dds/tinyddsloader.h
+)
+vsg_add_target_clobber()
+vsg_add_target_docs(
+    FILES
+        ${VSGXCHANGE_SOURCE_DIR}/include
+)
+vsg_add_target_uninstall()
+
 # only provide custom targets if not building as a submodule/FetchContent
 if (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
-
-    vsg_add_target_clang_format(
-        FILES
-            ${VSGXCHANGE_SOURCE_DIR}/include/*/*.h
-            ${VSGXCHANGE_SOURCE_DIR}/src/*/*.h
-            ${VSGXCHANGE_SOURCE_DIR}/src/*/*.cpp
-            ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.h
-            ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.cpp
-        EXCLUDES
-            ${VSGXCHANGE_SOURCE_DIR}/src/stbi/stb_image.h
-            ${VSGXCHANGE_SOURCE_DIR}/src/dds/tinyddsloader.h
-    )
-    vsg_add_target_clobber()
-    vsg_add_target_docs(
-        FILES
-            ${VSGXCHANGE_SOURCE_DIR}/include
-    )
-    vsg_add_target_uninstall()
 
     vsg_add_option_maintainer(
         PREFIX ${PROJECT_NAME}
