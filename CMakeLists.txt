@@ -54,6 +54,14 @@ vsg_add_target_clang_format(
         ${VSGXCHANGE_SOURCE_DIR}/src/dds/tinyddsloader.h
 )
 vsg_add_target_clobber()
+vsg_add_target_cppcheck(
+    FILES
+        ${VSGXCHANGE_SOURCE_DIR}/include/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/*/*.cpp
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.h
+        ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.cpp
+)
 vsg_add_target_docs(
     FILES
         ${VSGXCHANGE_SOURCE_DIR}/include
