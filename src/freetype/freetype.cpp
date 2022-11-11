@@ -238,7 +238,7 @@ vsg::ref_ptr<vsg::Group> freetype::Implementation::createOutlineGeometry(const C
         auto& points = contour.points;
 
         auto geometry = vsg::Geometry::create();
-        auto vertices = vsg::vec3Array::create(points.size());
+        auto vertices = vsg::vec3Array::create(static_cast<uint32_t>(points.size()));
         geometry->assignArrays({vertices});
 
         for (size_t i = 0; i < points.size(); ++i)
@@ -246,7 +246,7 @@ vsg::ref_ptr<vsg::Group> freetype::Implementation::createOutlineGeometry(const C
             vertices->set(i, vsg::vec3(points[i].x, points[i].y, 0.0f));
         }
 
-        geometry->commands.push_back(vsg::Draw::create(points.size(), 0, 0, 0));
+        geometry->commands.push_back(vsg::Draw::create(static_cast<uint32_t>(points.size()), 0, 0, 0));
 
         group->addChild(geometry);
     }
@@ -295,7 +295,7 @@ bool freetype::Implementation::generateOutlines(FT_Outline& outline, Contours& i
 
         int numSteps = 10;
 
-        float dt = 1.0 / float(numSteps);
+        float dt = 1.0f / float(numSteps);
         float u = dt;
         for (int i = 1; i < numSteps; ++i)
         {
@@ -644,7 +644,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         total_height += double(glyph.height);
     }
 
-    double average_width = total_width / double(sortedGlyphQuads.size());
+    unsigned int average_width = static_cast<unsigned int>(ceil(total_width / double(sortedGlyphQuads.size())));
 
     unsigned int texel_margin = pixel_size / 4;
     int quad_margin = texel_margin / 2;

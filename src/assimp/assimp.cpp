@@ -633,7 +633,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     auto vid = vsg::VertexIndexDraw::create();
     vid->assignArrays(vertexArrays);
     vid->assignIndices(indices);
-    vid->indexCount = indices->valueCount();
+    vid->indexCount = static_cast<uint32_t>(indices->valueCount());
     vid->instanceCount = 1;
 
     if (material.blending)
