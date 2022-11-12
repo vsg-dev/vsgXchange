@@ -160,7 +160,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
         }
     }
 
-    int numComponents = rasterBands.size();
+    int numComponents = static_cast<int>(rasterBands.size());
     if (numComponents == 0)
     {
         vsg::info("GDAL::read(", filename, ") failed numComponents = ", numComponents);
