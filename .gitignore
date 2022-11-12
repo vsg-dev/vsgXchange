@@ -21,6 +21,7 @@ CMakeDoxygenDefaults.cmake
 Doxyfile.docs
 vsgXchangeConfig.cmake
 vsgXchangeConfigVersion.cmake
+Doxyfile.docs-vsgXchange
 
 
 # Compiled Object files
