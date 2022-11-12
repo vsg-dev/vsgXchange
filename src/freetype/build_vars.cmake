@@ -12,6 +12,10 @@ if(${vsgXchange_freetype})
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
+
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(Freetype)")
+    endif()
 else()
     set(SOURCES ${SOURCES}
         freetype/freetype_fallback.cpp
