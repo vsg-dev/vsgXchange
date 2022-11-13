@@ -20,7 +20,7 @@ if(${vsgXchange_freetype})
 
     if (freetype_FOUND)
         # new freetype config usage
-        set(EXTRA_LIBRARIES Freetype::Freetype)
+        set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} Freetype::Freetype)
         if(NOT BUILD_SHARED_LIBS)
             set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(freetype)")
         endif()
