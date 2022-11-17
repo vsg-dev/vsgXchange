@@ -138,7 +138,7 @@ bool curl::getFeatures(Features& features) const
 {
     features.protocolFeatureMap["http"] = vsg::ReaderWriter::READ_FILENAME;
     features.protocolFeatureMap["https"] = vsg::ReaderWriter::READ_FILENAME;
-
+    features.optionNameTypeMap[curl::SSL_OPTIONS] = "uint32_t";
     return true;
 }
 
@@ -204,6 +204,13 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
     curl_easy_setopt(_curl, CURLOPT_URL, filename.string().c_str());
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void*)&sstr);
+
+    uint32_t sslOptions = 0;
+#if defined(_WIN32) && defined(CURLSSLOPT_NATIVE_CA)
+    sslOptions |= CURLSSLOPT_NATIVE_CA;
+#endif
+    if (options) options->getValue(curl::SSL_OPTIONS, sslOptions);
+    if (sslOptions != 0) curl_easy_setopt(_curl, CURLOPT_SSL_OPTIONS, sslOptions);
 
     vsg::ref_ptr<vsg::Object> object;
 
