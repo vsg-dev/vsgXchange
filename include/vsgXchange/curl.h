@@ -41,6 +41,9 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
+        // vsg::Options::setValue(str, value) suppoorted options:
+        static constexpr const char* SSL_OPTIONS = "CURLOPT_SSL_OPTIONS"; ///  uint32_t
+
         /// specify whether libcurl should be initialized and cleaned up by vsgXchange::curl.
         static bool s_do_curl_global_init_and_cleanup; // defaults to true
 
