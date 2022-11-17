@@ -520,6 +520,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         return;
     }
 
+    std::string name = mesh->mName.C_Str();
     auto& material = *convertedMaterials[mesh->mMaterialIndex];
 
     // count the number of indices of each type
@@ -635,6 +636,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->assignIndices(indices);
     vid->indexCount = static_cast<uint32_t>(indices->valueCount());
     vid->instanceCount = 1;
+    if (!name.empty()) vid->setValue("name", name);
 
     if (material.blending)
     {
@@ -724,6 +726,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     scene = in_scene;
     options = in_options;
 
+    std::string name = scene->mName.C_Str();
+
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
@@ -764,9 +768,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         if (!vsg_scene) return {};
     }
 
+
     if (auto transform = processCoordinateFrame(ext))
     {
         transform->addChild(vsg_scene);
+        if (!name.empty()) transform->setValue("name", name);
 
         // TODO check if subgraph requires culling
         // transform->subgraphRequiresLocalFrustum = false;
@@ -775,6 +781,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     }
     else
     {
+        if (!name.empty()) vsg_scene->setValue("name", name);
         return vsg_scene;
     }
 }
@@ -820,10 +827,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
     if (node->mTransformation.IsIdentity())
     {
-        if (children.size() == 1) return children[0];
+        if (children.size() == 1 && name.empty()) return children[0];
 
         auto group = vsg::Group::create();
         group->children = children;
+        if (!name.empty()) group->setValue("name", name);
 
         return group;
     }
@@ -834,6 +842,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
         auto transform = vsg::MatrixTransform::create(vsg::dmat4(vsg::mat4((float*)&m)));
         transform->children = children;
+        if (!name.empty()) transform->setValue("name", name);
 
         // TODO check if subgraph requires culling
         //transform->subgraphRequiresLocalFrustum = false;
