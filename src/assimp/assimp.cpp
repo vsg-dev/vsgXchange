@@ -580,7 +580,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 
     auto config = vsg::GraphicsPipelineConfigurator::create(material.shaderSet);
-    auto& defines = config->shaderHints->defines = material.defines;
 
     config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
@@ -661,7 +660,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     // set up ViewDependentState
     if (useViewDependentState)
     {
-        defines.insert("VSG_VIEW_LIGHT_DATA");
         vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
         if (sharedObjects)
             vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
