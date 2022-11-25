@@ -303,8 +303,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     auto& defines = convertedMaterial.defines;
 
     vsg::PbrMaterial pbr;
-    bool hasPbrSpecularGlossiness
-        = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor) == AI_SUCCESS;
+    bool hasPbrSpecularGlossiness = getColor(material, AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
     convertedMaterial.blending = hasAlphaBlend(material);
 
