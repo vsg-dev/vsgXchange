@@ -580,6 +580,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 
     auto config = vsg::GraphicsPipelineConfigurator::create(material.shaderSet);
+    config->shaderHints->defines = material.defines;
 
     config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
