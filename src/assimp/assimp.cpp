@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 André Normann & Robert Osfield
+Copyright(c) 2021 AndrÃ© Normann & Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -327,7 +327,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
             if (material->Get(AI_MATKEY_GLOSSINESS_FACTOR, pbr.specularFactor.a) != AI_SUCCESS)
             {
-                if (float shininess; material->Get(AI_MATKEY_SHININESS, shininess))
+                if (float shininess; material->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
                     pbr.specularFactor.a = shininess / 1000;
             }
         }
@@ -943,16 +943,20 @@ void SceneConverter::processLights()
 vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const vsg::Path& ext)
 {
     vsg::CoordinateConvention source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
-    if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end()) source_coordianteConvention = itr->second;
+
+    if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end())
+    {
+        source_coordianteConvention = itr->second;
+    }
 
     if (scene->mMetaData)
     {
         int upAxis = 1;
-        if (scene->mMetaData->Get("UpAxis", upAxis))
+        if (scene->mMetaData->Get("UpAxis", upAxis) == AI_SUCCESS)
         {
-            if (upAxis == 1)
+            if (upAxis == 0)
                 source_coordianteConvention = vsg::CoordinateConvention::X_UP;
-            else if (upAxis == 2)
+            else if (upAxis == 1)
                 source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
             else
                 source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
