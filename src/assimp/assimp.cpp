@@ -1,6 +1,6 @@
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 André Normann & Robert Osfield
+Copyright(c) 2021 AndrÃ© Normann & Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -303,7 +303,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     auto& defines = convertedMaterial.defines;
 
     vsg::PbrMaterial pbr;
-    bool hasPbrSpecularGlossiness = material->Get(AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor) == AI_SUCCESS;
+    bool hasPbrSpecularGlossiness = getColor(material, AI_MATKEY_COLOR_SPECULAR, pbr.specularFactor);
 
     convertedMaterial.blending = hasAlphaBlend(material);
 
