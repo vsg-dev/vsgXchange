@@ -206,7 +206,7 @@ struct SceneConverter
         return false;
     }
 
-    vsg::ref_ptr<vsg::ShaderSet> getOrCreatePhrShaderSet()
+    vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet()
     {
         if (!pbrShaderSet)
         {
@@ -315,7 +315,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     if (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness)
     {
         // PBR path
-        convertedMaterial.shaderSet = getOrCreatePhrShaderSet();
+        convertedMaterial.shaderSet = getOrCreatePbrShaderSet();
 
         if (convertedMaterial.blending)
             pbr.alphaMask = 0.0f;
