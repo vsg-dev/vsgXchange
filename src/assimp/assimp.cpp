@@ -122,10 +122,10 @@ bool assimp::getFeatures(Features& features) const
 
 bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
-    bool result = arguments.readAndAssign<void>(assimp::generate_smooth_normals, &options);
-    result = arguments.readAndAssign<void>(assimp::generate_sharp_normals, &options) || result;
+    bool result = arguments.readAndAssign<bool>(assimp::generate_smooth_normals, &options);
+    result = arguments.readAndAssign<bool>(assimp::generate_sharp_normals, &options) || result;
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
-    result = arguments.readAndAssign<void>(assimp::two_sided, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
     return result;
 }
 
