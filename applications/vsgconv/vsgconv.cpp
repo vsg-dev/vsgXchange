@@ -278,7 +278,6 @@ int main(int argc, char** argv)
         std::cout << "    vsgconv input_filename output_filefilename\n";
         std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
         std::cout << "Options:\n";
-        std::cout << "    --batch             # batch all vertex and texture data \n";
         std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
         std::cout << "    --features rw_name  # list formats sipportred \n";
         std::cout << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
