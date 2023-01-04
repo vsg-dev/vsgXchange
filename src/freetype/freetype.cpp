@@ -29,7 +29,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 namespace vsgXchange
 {
 
-    inline bool between(float a, float b, float c)
+    inline bool between_or_equal(float a, float b, float c)
     {
         if (a < c)
             return (a <= b) && (b <= c);
@@ -37,20 +37,13 @@ namespace vsgXchange
             return (c <= b) && (b <= a);
     }
 
-#if 1
-    inline bool between2(float a, float b, float c)
+    inline bool betwern_not_equalfloat a, float b, float c)
     {
         if (a < c)
             return (a <= b) && (b < c);
         else
             return (c <= b) && (b < a);
     }
-#else
-    inline bool between2(float a, float b, float c)
-    {
-        return between(a, b, c);
-    }
-#endif
 
     class freetype::Implementation
     {
@@ -481,7 +474,7 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
                 if (p0.y == v.y)
                 {
                     // v same height as segment
-                    if (between(p0.x, v.x, p1.x))
+                    if (between_or_equal(p0.x, v.x, p1.x))
                     {
                         // std::cout<<"Right on horizontal line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
                         return false;
@@ -490,7 +483,7 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
             }
             else if (p0.x == p1.x) // vertical
             {
-                if (between2(p0.y, v.y, p1.y))
+                if (betwern_not_equalp0.y, v.y, p1.y))
                 {
                     if (v.x == p0.x)
                     {
@@ -505,14 +498,14 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
             }
             else // diagonal
             {
-                if (between2(p0.y, v.y, p1.y))
+                if (betwern_not_equalp0.y, v.y, p1.y))
                 {
                     if (v.x > p0.x && v.x > p1.x)
                     {
                         // segment wholly left of v
                         ++numLeft;
                     }
-                    else if (between(p0.x, v.x, p1.x))
+                    else if (between_or_equal(p0.x, v.x, p1.x))
                     {
                         // segment wholly right of v
                         // need to intersection test
