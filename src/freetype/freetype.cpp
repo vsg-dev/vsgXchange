@@ -17,6 +17,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/nodes/Group.h>
 #include <vsg/state/ShaderStage.h>
 #include <vsg/text/Font.h>
+#include <vsg/utils/CommandLine.h>
+#include <vsg/io/Logger.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -103,7 +105,19 @@ bool freetype::getFeatures(Features& features) const
     {
         features.extensionFeatureMap[ext.first] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME);
     }
+
+    // enumerate the supported vsg::Options::setValue(str, value) options
+    features.optionNameTypeMap[freetype::texel_margin_ratio] = vsg::type_name<float>();
+    features.optionNameTypeMap[freetype::quad_margin_ratio] = vsg::type_name<float>();
+
     return true;
+}
+
+bool freetype::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+{
+    bool result = arguments.readAndAssign<float>(freetype::texel_margin_ratio, &options);
+    result = arguments.readAndAssign<float>(freetype::quad_margin_ratio, &options) || result;
+    return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -639,8 +653,11 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
 
     unsigned int average_width = static_cast<unsigned int>(ceil(total_width / double(sortedGlyphQuads.size())));
 
-    unsigned int texel_margin = pixel_size / 4;
-    int quad_margin = texel_margin / 2;
+    auto texel_margin = static_cast<unsigned int>(static_cast<float>(pixel_size) *  vsg::value<float>(0.25f, freetype::texel_margin_ratio, options));
+    auto quad_margin = static_cast<unsigned int>(static_cast<float>(pixel_size) *  vsg::value<float>(0.125f, freetype::quad_margin_ratio, options));
+
+    vsg::info("texel_margin = ", texel_margin);
+    vsg::info("quad_margin = ", quad_margin);
 
     unsigned int provisional_cells_across = static_cast<unsigned int>(ceil(sqrt(double(face->num_glyphs))));
     unsigned int provisional_width = provisional_cells_across * (average_width + texel_margin);
