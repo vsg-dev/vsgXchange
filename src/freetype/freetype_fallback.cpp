@@ -34,3 +34,7 @@ bool freetype::getFeatures(Features&) const
 {
     return false;
 }
+bool freetype::readOptions(vsg::Options&, vsg::CommandLine&) const
+{
+    return false;
+}
