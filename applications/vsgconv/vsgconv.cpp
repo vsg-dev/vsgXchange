@@ -289,7 +289,7 @@ int main(int argc, char** argv)
 
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
 
-	options->setValue("honour-empty-nodes", arguments.read("--honour-empty-nodes"));
+    options->setValue("honour-empty-nodes", arguments.read("--honour-empty-nodes"));
 
     // read any command line options that the ReaderWrite support
     arguments.read(options);

@@ -159,14 +159,14 @@ struct SceneConverter
     static vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
     static vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
     
-	static vsg::ref_ptr<vsg::MatrixTransform> nodeToTransform(const aiNode* node)
+    static vsg::ref_ptr<vsg::MatrixTransform> nodeToTransform(const aiNode* node)
     {
         std::string name = node->mName.C_Str();
         aiMatrix4x4 m = node->mTransformation;
         m.Transpose();
         auto transform = vsg::MatrixTransform::create(vsg::dmat4(vsg::mat4((float*)&m)));
         if (!name.empty()) transform->setValue("name", name);        
-		return transform;
+        return transform;
     }
 
     static bool getColor(const aiMaterial* material, const char *pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
