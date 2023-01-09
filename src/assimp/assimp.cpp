@@ -735,7 +735,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 {
     scene = in_scene;
     options = in_options;
-	if (!options->getValue("honour-empty-nodes", honourEmptyNodes)) honourEmptyNodes = false;
+    if (!options->getValue("honour-empty-nodes", honourEmptyNodes)) honourEmptyNodes = false;
 
     std::string name = scene->mName.C_Str();
 
