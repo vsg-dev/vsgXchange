@@ -128,7 +128,6 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::honour_empty_nodes, &options) || result;
-
     return result;
 }
 
@@ -737,7 +736,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
 {
     scene = in_scene;
-    options = in_options;    
+    options = in_options;
     honourEmptyNodes = false;
 
     std::string name = scene->mName.C_Str();
