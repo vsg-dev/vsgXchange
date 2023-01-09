@@ -278,19 +278,16 @@ int main(int argc, char** argv)
         std::cout << "    vsgconv input_filename output_filefilename\n";
         std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
         std::cout << "Options:\n";
-        std::cout << "    --features             # list all ReaderWriters and the formats supported\n";
-        std::cout << "    --features rw_name     # list formats sipportred \n";
-        std::cout << "    --nc --no-compile      # do not compile shaders to SPIRV\n";
-        std::cout << "    --rgb                  # leave RGB source data in it's original form rather than converting to RGBA \n";
-        std::cout << "    --honour-empty-nodes   # leave empty nodes in scene graph \n";
-        std::cout << "    -v --version           # report version \n";
+        std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
+        std::cout << "    --features rw_name  # list formats sipportred \n";
+        std::cout << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
+        std::cout << "    --rgb               # leave RGB source data in it's original form rather than converting to RGBA \n";
+        std::cout << "    -v --version        # report version \n";
         return 1;
     }
 
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
-
-    options->setValue("honour-empty-nodes", arguments.read("--honour-empty-nodes"));
-
+    
     // read any command line options that the ReaderWrite support
     arguments.read(options);
     if (argc <= 1) return 0;

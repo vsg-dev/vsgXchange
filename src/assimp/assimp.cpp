@@ -116,6 +116,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::generate_sharp_normals] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::crease_angle] = vsg::type_name<float>();
     features.optionNameTypeMap[assimp::two_sided] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::honour_empty_nodes] = vsg::type_name<bool>();
 
     return true;
 }
@@ -126,6 +127,8 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::generate_sharp_normals, &options) || result;
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::honour_empty_nodes, &options) || result;
+
     return result;
 }
 
@@ -734,12 +737,17 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
 {
     scene = in_scene;
-    options = in_options;
-    if (!options->getValue("honour-empty-nodes", honourEmptyNodes)) honourEmptyNodes = false;
+    options = in_options;    
+    honourEmptyNodes = false;
 
     std::string name = scene->mName.C_Str();
 
-    if (options) sharedObjects = options->sharedObjects;
+    if (options)
+    {
+        sharedObjects = options->sharedObjects;
+        honourEmptyNodes = vsg::value<bool>(false, assimp::honour_empty_nodes, options);
+    }
+
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
     processCameras();
