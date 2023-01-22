@@ -220,7 +220,10 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
         // success
         auto local_options = vsg::Options::create(*options);
         local_options->paths.insert(local_options->paths.begin(), vsg::filePath(filename));
-        local_options->extensionHint = vsg::fileExtension(filename);
+        if (!local_options->extensionHint)
+        {
+            local_options->extensionHint = vsg::lowerCaseFileExtension(filename);
+        }
 
         object = vsg::read(sstr, local_options);
 
