@@ -94,5 +94,4 @@ all::all()
 #ifdef vsgXchange_OSG
     add(osg2vsg::OSG::create());
 #endif
-
 }
