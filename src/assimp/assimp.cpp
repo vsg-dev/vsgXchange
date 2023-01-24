@@ -994,8 +994,9 @@ assimp::Implementation::Implementation() :
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     Assimp::Importer importer;
+    vsg::Path ext = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
 
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext.string()))
+    if (importer.IsExtensionSupported(ext.string()))
     {
         vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (!filenameToUse) return {};
@@ -1040,7 +1041,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options) return {};
+    if (!options || !options->extensionHint) return {};
 
     Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint.string()))
@@ -1071,7 +1072,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options) return {};
+    if (!options || !options->extensionHint) return {};
 
     Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint.string()))
