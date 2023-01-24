@@ -536,11 +536,8 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
 
 vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    auto ext = vsg::lowerCaseFileExtension(filename);
-    if (_supportedFormats.find(ext) == _supportedFormats.end())
-    {
-        return {};
-    }
+    vsg::Path ext = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
+    if (_supportedFormats.find(ext) == _supportedFormats.end()) return {};
 
     vsg::Path filenameToUse = findFile(filename, options);
     if (!filenameToUse) return {};

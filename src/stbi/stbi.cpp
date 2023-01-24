@@ -163,10 +163,7 @@ bool stbi::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 
 vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
-    {
-        return {};
-    }
+    if (!vsg::compatibleExtension(filename, options, _supportedExtensions)) return {};
 
     vsg::Path filenameToUse = findFile(filename, options);
     if (!filenameToUse) return {};
@@ -192,8 +189,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     std::string buffer(1 << 16, 0); // 64kB
     std::string input;
@@ -218,8 +214,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
 
 vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     int width, height, channels;
     const auto pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(ptr), static_cast<int>(size), &width, &height, &channels, STBI_rgb_alpha);

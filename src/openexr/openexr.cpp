@@ -478,10 +478,7 @@ vsg::ref_ptr<vsg::Object> openexr::read(const vsg::Path& filename, vsg::ref_ptr<
 
 vsg::ref_ptr<vsg::Object> openexr::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-    {
-        return {};
-    }
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     try
     {
@@ -502,10 +499,7 @@ vsg::ref_ptr<vsg::Object> openexr::read(std::istream& fin, vsg::ref_ptr<const vs
 
 vsg::ref_ptr<vsg::Object> openexr::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-    {
-        return {};
-    }
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     try
     {
@@ -524,12 +518,9 @@ vsg::ref_ptr<vsg::Object> openexr::read(const uint8_t* ptr, size_t size, vsg::re
     }
 }
 
-bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options>) const
+bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
-    {
-        return false;
-    }
+    if (!compatibleExtension(filename, options, _supportedExtensions)) return {};
 
     try
     {
@@ -556,10 +547,7 @@ bool openexr::write(const vsg::Object* object, const vsg::Path& filename, vsg::r
 
 bool openexr::write(const vsg::Object* object, std::ostream& fout, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-    {
-        return false;
-    }
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     try
     {

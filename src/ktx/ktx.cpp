@@ -241,8 +241,7 @@ ktx::ktx() :
 
 vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
-        return {};
+    if (!vsg::compatibleExtension(filename, options, _supportedExtensions)) return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse) return {};
@@ -277,8 +276,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
 
 vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     std::string buffer(1 << 16, 0); // 64kB
     std::string input;
@@ -312,8 +310,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
 
 vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     ktxTexture* texture = nullptr;
     if (ktxTexture_CreateFromMemory(ptr, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
