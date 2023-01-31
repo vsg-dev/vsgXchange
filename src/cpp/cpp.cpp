@@ -35,10 +35,13 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
 
     bool binary = options ? (options->extensionHint == ".vsgb") : false;
 
+    auto local_options = vsg::Options::create();
+    local_options->extensionHint = binary ? ".vsgb" : ".vsgt";
+
     // serialize object(s) to string
     std::ostringstream str;
     vsg::VSG io;
-    io.write(object, str, options);
+    io.write(object, str, local_options);
     std::string s = str.str();
 
     std::ofstream fout(filename);
