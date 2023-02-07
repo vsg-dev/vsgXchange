@@ -52,7 +52,7 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
     if (binary || s.size() > 65535)
     {
         // long string has to be handled as a byte array as VisualStudio can't handle long strings.
-        fout << "uint8_t data[] = {\n";
+        fout << "static const uint8_t data[] = {\n";
         fout << uint32_t(uint8_t(s[0]));
         for(size_t i = 1; i < s.size(); ++i)
         {
@@ -67,11 +67,11 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
     }
     else
     {
-        fout << "std::istringstream str(\n";
+        fout << "static const char str[] = \n";
         write(fout, str.str());
-        fout << ");\n";
+        fout << ";\n";
         fout << "vsg::VSG io;\n";
-        fout << "return io.read_cast<" << object->className() << ">(str);\n";
+        fout << "return io.read_cast<" << object->className() << ">(reinterpret_cast<const uint8_t*>(str), sizeof(str));\n";
     }
 
     fout << "};\n";
