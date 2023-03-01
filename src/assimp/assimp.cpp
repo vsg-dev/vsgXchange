@@ -116,6 +116,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::generate_sharp_normals] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::crease_angle] = vsg::type_name<float>();
     features.optionNameTypeMap[assimp::two_sided] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
 
     return true;
 }
@@ -126,6 +127,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::generate_sharp_normals, &options) || result;
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
     return result;
 }
 
@@ -144,6 +146,7 @@ struct SceneConverter
     LightMap lightMap;
 
     bool useViewDependentState = true;
+    bool discardEmptyNodes = true;
 
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
@@ -724,6 +727,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 {
     scene = in_scene;
     options = in_options;
+    discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
 
     std::string name = scene->mName.C_Str();
 
@@ -822,9 +826,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         }
     }
 
-    if (children.empty()) return {};
+    if (children.empty() && discardEmptyNodes) return {};
 
-    if (node->mTransformation.IsIdentity())
+    if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
         if (children.size() == 1 && name.empty()) return children[0];
 
@@ -990,8 +994,9 @@ assimp::Implementation::Implementation() :
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     Assimp::Importer importer;
+    vsg::Path ext = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
 
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); importer.IsExtensionSupported(ext.string()))
+    if (importer.IsExtensionSupported(ext.string()))
     {
         vsg::Path filenameToUse = vsg::findFile(filename, options);
         if (!filenameToUse) return {};
@@ -1036,7 +1041,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options) return {};
+    if (!options || !options->extensionHint) return {};
 
     Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint.string()))
@@ -1067,7 +1072,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
 
 vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options) return {};
+    if (!options || !options->extensionHint) return {};
 
     Assimp::Importer importer;
     if (importer.IsExtensionSupported(options->extensionHint.string()))

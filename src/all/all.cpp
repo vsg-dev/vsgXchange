@@ -22,6 +22,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/spirv.h>
 #include <vsg/io/tile.h>
 #include <vsg/io/glsl.h>
+#include <vsg/io/txt.h>
 #include <vsg/io/Logger.h>
 
 #ifdef vsgXchange_OSG
@@ -66,6 +67,7 @@ all::all()
     add(vsg::VSG::create());
     add(vsg::spirv::create());
     add(vsg::glsl::create());
+    add(vsg::txt::create());
 
     add(cpp::create());
 

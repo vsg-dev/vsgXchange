@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(vsgXchange
-    VERSION 1.0.1
+    VERSION 1.0.2
     DESCRIPTION "VulkanSceneGraph 3rd party data integration library"
     LANGUAGES CXX C
 )
 set(VSGXCHANGE_SOVERSION 0)
-SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
+SET(VSGXCHANGE_RELEASE_CANDIDATE 1)
 
 set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
 set(VSGXCHANGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "Root binary directory of vsgXchange.")
@@ -20,7 +20,7 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-set(VSG_MIN_VERSION 1.0.0)
+set(VSG_MIN_VERSION 1.0.3)
 find_package(vsg ${VSG_MIN_VERSION})
 
 vsg_setup_dir_vars()

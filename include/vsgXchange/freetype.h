@@ -39,6 +39,12 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
+        // vsg::Options::setValue(str, value) suppoorted options:
+        static constexpr const char* texel_margin_ratio = "texel_margin_ratio";
+        static constexpr const char* quad_margin_ratio = "quad_margin_ratio";
+
+        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
+
     protected:
         ~freetype();
 

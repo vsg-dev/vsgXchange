@@ -241,8 +241,7 @@ dds::dds() :
 
 vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (const auto ext = vsg::lowerCaseFileExtension(filename); _supportedExtensions.count(ext) == 0)
-        return {};
+    if (!vsg::compatibleExtension(filename, options, _supportedExtensions)) return {};
 
     vsg::Path filenameToUse = findFile(filename, options);
     if (!filenameToUse) return {};
@@ -272,8 +271,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
 
 vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(fin); result == tinyddsloader::Success)
@@ -298,8 +296,7 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
 
 vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (!options || _supportedExtensions.count(options->extensionHint) == 0)
-        return {};
+     if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)
