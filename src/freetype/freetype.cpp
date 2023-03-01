@@ -39,7 +39,7 @@ namespace vsgXchange
             return (c <= b) && (b <= a);
     }
 
-    inline bool betwern_not_equal(float a, float b, float c)
+    inline bool between_not_equal(float a, float b, float c)
     {
         if (a < c)
             return (a <= b) && (b < c);
@@ -497,7 +497,7 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
             }
             else if (p0.x == p1.x) // vertical
             {
-                if (betwern_not_equal(p0.y, v.y, p1.y))
+                if (between_not_equal(p0.y, v.y, p1.y))
                 {
                     if (v.x == p0.x)
                     {
@@ -512,7 +512,7 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
             }
             else // diagonal
             {
-                if (betwern_not_equal(p0.y, v.y, p1.y))
+                if (between_not_equal(p0.y, v.y, p1.y))
                 {
                     if (v.x > p0.x && v.x > p1.x)
                     {
