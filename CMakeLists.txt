@@ -5,8 +5,8 @@ project(vsgXchange
     DESCRIPTION "VulkanSceneGraph 3rd party data integration library"
     LANGUAGES CXX C
 )
-set(VSGXCHANGE_SOVERSION 0)
-SET(VSGXCHANGE_RELEASE_CANDIDATE 1)
+set(VSGXCHANGE_SOVERSION 1)
+SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 
 set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
 set(VSGXCHANGE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "Root binary directory of vsgXchange.")
