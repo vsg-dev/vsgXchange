@@ -47,12 +47,12 @@ extern "C"
     #define vsgXchange_cpp
 
     /// optional Features
+    #cmakedefine vsgXchange_curl
+    #cmakedefine vsgXchange_openexr
     #cmakedefine vsgXchange_freetype
     #cmakedefine vsgXchange_assimp
-    #cmakedefine vsgXchange_OSG
     #cmakedefine vsgXchange_GDAL
-    #cmakedefine vsgXchange_CURL
-    #cmakedefine vsgXchange_OpenEXR
+    #cmakedefine vsgXchange_OSG
 
 #ifdef __cplusplus
 }

@@ -2,10 +2,10 @@
 find_package(CURL)
 
 if(CURL_FOUND)
-    OPTION(vsgXchange_CURL "Optional CURL support provided" ON)
+    OPTION(vsgXchange_curl "Optional CURL support provided" ON)
 endif()
 
-if(${vsgXchange_CURL})
+if(${vsgXchange_curl})
     set(SOURCES ${SOURCES}
         curl/curl.cpp
     )
