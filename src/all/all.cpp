@@ -60,7 +60,7 @@ all::all()
     // for convinience make sure the init() method is called
     vsgXchange::init();
 
-#ifdef vsgXchange_CURL
+#ifdef vsgXchange_curl
     add(curl::create());
 #endif
 
@@ -75,7 +75,7 @@ all::all()
     add(dds::create());
     add(ktx::create());
 
-#ifdef vsgXchange_OpenEXR
+#ifdef vsgXchange_openexr
     add(openexr::create());
 #endif
 

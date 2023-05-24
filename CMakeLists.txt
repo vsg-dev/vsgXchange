@@ -72,7 +72,7 @@ vsg_add_target_uninstall()
 if (${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
 
     vsg_add_option_maintainer(
-        PREFIX ${PROJECT_NAME}
+        PREFIX v
         RCLEVEL ${VSGXCHANGE_RELEASE_CANDIDATE}
     )
 

@@ -2,10 +2,10 @@
 find_package(OpenEXR QUIET)
 
 if(OpenEXR_FOUND)
-    OPTION(vsgXchange_OpenEXR "Optional OpenEXR support provided" ON)
+    OPTION(vsgXchange_openexr "Optional OpenEXR support provided" ON)
 endif()
 
-if (${vsgXchange_OpenEXR})
+if (${vsgXchange_openexr})
     set(SOURCES ${SOURCES}
         openexr/openexr.cpp
     )
@@ -16,7 +16,7 @@ if (${vsgXchange_OpenEXR})
         set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} OpenEXR::OpenEXR)
     endif()
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${OpenEXR_INCLUDE_DIRS})
-    
+
     if(NOT BUILD_SHARED_LIBS)
         set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(OpenEXR)")
     endif()
