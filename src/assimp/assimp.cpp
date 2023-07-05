@@ -249,10 +249,8 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     {
         SamplerData samplerImage;
 
-        if (texPath.data[0] == '*')
+        if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
-            const auto texIndex = std::atoi(texPath.C_Str() + 1);
-            const auto texture = scene->mTextures[texIndex];
             if (texture->mWidth > 0 && texture->mHeight == 0)
             {
                 auto imageOptions = vsg::Options::create(*options);
