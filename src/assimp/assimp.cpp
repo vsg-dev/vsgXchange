@@ -251,12 +251,40 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
         if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
-            if (texture->mWidth > 0 && texture->mHeight == 0)
+            // check embedded texture has no width so must be invalid
+            if (texture->mWidth == 0) return {};
+
+            if (texture->mHeight == 0)
             {
+                // texture is a compressed format, defer to the VSG's vsg::read() to convert the block of data to vsg::Data image.
                 auto imageOptions = vsg::Options::create(*options);
                 imageOptions->extensionHint = vsg::Path(".") + texture->achFormatHint;
-                if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
+                samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions);
+
+                // if no data assigned return null
+                if (!samplerImage.data) return {};
+            }
+            else
+            {
+                // assimp's texture.h comments suggest format is always ARGB8888, which would imply texture->achFormatHint = "argb8888"
+                // so check the achFormatHint matches what is expected.
+                if (std::strncmp(texture->achFormatHint, "argb8888", 8) != 0)
+                {
+                    vsg::warn("Embedded texture format not supported, texture->achFormatHint = ", texture->achFormatHint);
                     return {};
+                }
+
+                // Vulkan doesn't support this format we have to reorder it to RGBA
+                auto image = vsg::ubvec4Array2D::create(texture->mWidth, texture->mHeight, vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+                auto src = reinterpret_cast<const uint8_t*>(texture->pcData);
+                for(auto& c : *image)
+                {
+                    c.a = *(src++);
+                    c.r = *(src++);
+                    c.g = *(src++);
+                    c.b = *(src++);
+                }
+                samplerImage.data = image;
             }
         }
         else
