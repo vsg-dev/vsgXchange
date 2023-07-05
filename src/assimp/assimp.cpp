@@ -140,6 +140,8 @@ struct SceneConverter
     using CameraMap = std::map<std::string, vsg::ref_ptr<vsg::Camera>>;
     using LightMap = std::map<std::string, vsg::ref_ptr<vsg::Light>>;
 
+    vsg::Path filename;
+
     vsg::ref_ptr<const vsg::Options> options;
     const aiScene* scene = nullptr;
     CameraMap cameraMap;
@@ -256,6 +258,8 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
             if (texture->mHeight == 0)
             {
+                vsg::debug("filename = ", filename, " : Embedded compressed format texture->achFormatHint = ", texture->achFormatHint);
+
                 // texture is a compressed format, defer to the VSG's vsg::read() to convert the block of data to vsg::Data image.
                 auto imageOptions = vsg::Options::create(*options);
                 imageOptions->extensionHint = vsg::Path(".") + texture->achFormatHint;
@@ -266,34 +270,28 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
             else
             {
-                // assimp's texture.h comments suggest format is always ARGB8888, which would imply texture->achFormatHint = "argb8888"
-                // so check the achFormatHint matches what is expected.
-                if (std::strncmp(texture->achFormatHint, "argb8888", 8) != 0)
-                {
-                    vsg::warn("Embedded texture format not supported, texture->achFormatHint = ", texture->achFormatHint);
-                    return {};
-                }
+                vsg::debug("filename = ", filename, " : Embedded raw format texture->achFormatHint = ", texture->achFormatHint);
 
                 // Vulkan doesn't support this format we have to reorder it to RGBA
                 auto image = vsg::ubvec4Array2D::create(texture->mWidth, texture->mHeight, vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
-                auto src = reinterpret_cast<const uint8_t*>(texture->pcData);
-                for(auto& c : *image)
+                auto src = texture->pcData;
+                for(auto& dest_c : *image)
                 {
-                    c.a = *(src++);
-                    c.r = *(src++);
-                    c.g = *(src++);
-                    c.b = *(src++);
+                    auto& src_c = *(src++);
+                    dest_c.r = src_c.r;
+                    dest_c.g = src_c.g;
+                    dest_c.b = src_c.b;
+                    dest_c.a = src_c.a;
                 }
                 samplerImage.data = image;
             }
         }
         else
         {
-            auto filename = vsg::findFile(texPath.C_Str(), options);
-
-            if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
+            auto textureFilename = vsg::findFile(texPath.C_Str(), options);
+            if (samplerImage.data = vsg::read_cast<vsg::Data>(textureFilename, options); !samplerImage.data.valid())
             {
-                vsg::warn("Failed to load texture: ", filename, " texPath = ", texPath.C_Str());
+                vsg::warn("Failed to load texture: ", textureFilename, " texPath = ", texPath.C_Str());
                 return {};
             }
         }
@@ -1044,6 +1042,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
             SceneConverter converter;
+            converter.filename = filename;
             return converter.visit(scene, opt, ext);
         }
         else
