@@ -484,14 +484,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
     if (sharedObjects)
     {
-        sharedObjects->share(convertedMaterial.descriptors);
-    }
-
-    auto descriptorSetLayout = vsg::DescriptorSetLayout::create(convertedMaterial.descriptorBindings);
-    convertedMaterial.descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, convertedMaterial.descriptors);
-    if (sharedObjects)
-    {
-        sharedObjects->share(convertedMaterial.descriptorSet);
+        for(auto& ds : convertedMaterial.descriptorSets)
+        {
+            if (ds) sharedObjects->share(ds);
+        }
     }
 }
 
@@ -679,10 +675,10 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 
     // pass DescriptorSetLaout to config
-    if (material.descriptorSet)
+    for(auto& ds : material.descriptorSets)
     {
-        config->descriptorSetLayout = material.descriptorSet->setLayout;
-        config->descriptorBindings = material.descriptorBindings;
+        config->descriptorSetLayout = ds->setLayout;
+        config->descriptorBindings = ds->setLayout->bindings;
     }
 
     // set up ViewDependentState
@@ -707,12 +703,14 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     auto stateGroup = vsg::StateGroup::create();
     stateGroup->add(config->bindGraphicsPipeline);
 
-    if (material.descriptorSet)
+    for(uint32_t set = 0; set < static_cast<uint32_t>(material.descriptorSets.size()); ++set)
     {
-        auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
-        if (sharedObjects) sharedObjects->share(bindDescriptorSet);
-
-        stateGroup->add(bindDescriptorSet);
+        if (auto& ds = material.descriptorSets[set])
+        {
+            auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, set, ds);
+            if (sharedObjects) sharedObjects->share(bindDescriptorSet);
+            stateGroup->add(bindDescriptorSet);
+        }
     }
 
     if (useViewDependentState)
