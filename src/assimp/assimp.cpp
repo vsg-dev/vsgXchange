@@ -486,7 +486,11 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     {
         for(auto& ds : convertedMaterial.descriptorSets)
         {
-            if (ds) sharedObjects->share(ds);
+            if (ds)
+            {
+                sharedObjects->share(ds->descriptors);
+                sharedObjects->share(ds);
+            }
         }
     }
 }
