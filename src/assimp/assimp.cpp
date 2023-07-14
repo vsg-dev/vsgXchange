@@ -548,7 +548,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 
     std::string name = mesh->mName.C_Str();
-    auto& material = *convertedMaterials[mesh->mMaterialIndex];
+    auto material = convertedMaterials[mesh->mMaterialIndex];
 
     // count the number of indices of each type
     uint32_t numTriangleIndices = 0;
@@ -606,8 +606,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         return;
     }
 
-    auto config = vsg::GraphicsPipelineConfigurator::create(material.shaderSet);
-    config->shaderHints->defines = material.defines;
+    auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
+    config->descriptorConfigurator = material;
 
     config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
@@ -665,7 +665,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
 
-    if (material.blending)
+    if (material->blending)
     {
         config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
             {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
@@ -673,27 +673,9 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         if (sharedObjects) sharedObjects->share(config->colorBlendState);
     }
 
-    if (material.two_sided)
+    if (material->two_sided)
     {
         config->rasterizationState->cullMode = VK_CULL_MODE_NONE;
-    }
-
-    // pass DescriptorSetLaout to config
-    for(auto& ds : material.descriptorSets)
-    {
-        config->descriptorSetLayout = ds->setLayout;
-        config->descriptorBindings = ds->setLayout->bindings;
-    }
-
-    // set up ViewDependentState
-    if (useViewDependentState)
-    {
-        vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
-        if (sharedObjects)
-            vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
-        else
-            vdsl = vsg::ViewDescriptorSetLayout::create();
-        config->additionalDescriptorSetLayout = vdsl;
     }
 
     if (sharedObjects)
@@ -701,35 +683,14 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     else
         config->init();
 
-    if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
-
     // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
     auto stateGroup = vsg::StateGroup::create();
-    stateGroup->add(config->bindGraphicsPipeline);
 
-    for(uint32_t set = 0; set < static_cast<uint32_t>(material.descriptorSets.size()); ++set)
-    {
-        if (auto& ds = material.descriptorSets[set])
-        {
-            auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, set, ds);
-            if (sharedObjects) sharedObjects->share(bindDescriptorSet);
-            stateGroup->add(bindDescriptorSet);
-        }
-    }
-
-    if (useViewDependentState)
-    {
-        auto bindViewDescriptorSets = vsg::BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 1);
-        if (sharedObjects) sharedObjects->share(bindViewDescriptorSets);
-        stateGroup->add(bindViewDescriptorSets);
-    }
-
-    // assign any custom ArrayState that may be required.
-    stateGroup->prototypeArrayState = config->shaderSet->getSuitableArrayState(config->shaderHints->defines);
+    config->copyTo(stateGroup, sharedObjects);
 
     stateGroup->addChild(vid);
 
-    if (material.blending)
+    if (material->blending)
     {
         vsg::ComputeBounds computeBounds;
         vid->accept(computeBounds);
