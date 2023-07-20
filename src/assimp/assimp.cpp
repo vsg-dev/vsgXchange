@@ -140,6 +140,8 @@ struct SceneConverter
     using CameraMap = std::map<std::string, vsg::ref_ptr<vsg::Camera>>;
     using LightMap = std::map<std::string, vsg::ref_ptr<vsg::Light>>;
 
+    vsg::Path filename;
+
     vsg::ref_ptr<const vsg::Options> options;
     const aiScene* scene = nullptr;
     CameraMap cameraMap;
@@ -249,25 +251,47 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     {
         SamplerData samplerImage;
 
-        if (texPath.data[0] == '*')
+        if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
-            const auto texIndex = std::atoi(texPath.C_Str() + 1);
-            const auto texture = scene->mTextures[texIndex];
-            if (texture->mWidth > 0 && texture->mHeight == 0)
+            // check embedded texture has no width so must be invalid
+            if (texture->mWidth == 0) return {};
+
+            if (texture->mHeight == 0)
             {
+                vsg::debug("filename = ", filename, " : Embedded compressed format texture->achFormatHint = ", texture->achFormatHint);
+
+                // texture is a compressed format, defer to the VSG's vsg::read() to convert the block of data to vsg::Data image.
                 auto imageOptions = vsg::Options::create(*options);
                 imageOptions->extensionHint = vsg::Path(".") + texture->achFormatHint;
-                if (samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions); !samplerImage.data.valid())
-                    return {};
+                samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions);
+
+                // if no data assigned return null
+                if (!samplerImage.data) return {};
+            }
+            else
+            {
+                vsg::debug("filename = ", filename, " : Embedded raw format texture->achFormatHint = ", texture->achFormatHint);
+
+                // Vulkan doesn't support this format we have to reorder it to RGBA
+                auto image = vsg::ubvec4Array2D::create(texture->mWidth, texture->mHeight, vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+                auto src = texture->pcData;
+                for(auto& dest_c : *image)
+                {
+                    auto& src_c = *(src++);
+                    dest_c.r = src_c.r;
+                    dest_c.g = src_c.g;
+                    dest_c.b = src_c.b;
+                    dest_c.a = src_c.a;
+                }
+                samplerImage.data = image;
             }
         }
         else
         {
-            auto filename = vsg::findFile(texPath.C_Str(), options);
-
-            if (samplerImage.data = vsg::read_cast<vsg::Data>(filename, options); !samplerImage.data.valid())
+            auto textureFilename = vsg::findFile(texPath.C_Str(), options);
+            if (samplerImage.data = vsg::read_cast<vsg::Data>(textureFilename, options); !samplerImage.data.valid())
             {
-                vsg::warn("Failed to load texture: ", filename, " texPath = ", texPath.C_Str());
+                vsg::warn("Failed to load texture: ", textureFilename, " texPath = ", texPath.C_Str());
                 return {};
             }
         }
@@ -460,14 +484,14 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
     if (sharedObjects)
     {
-        sharedObjects->share(convertedMaterial.descriptors);
-    }
-
-    auto descriptorSetLayout = vsg::DescriptorSetLayout::create(convertedMaterial.descriptorBindings);
-    convertedMaterial.descriptorSet = vsg::DescriptorSet::create(descriptorSetLayout, convertedMaterial.descriptors);
-    if (sharedObjects)
-    {
-        sharedObjects->share(convertedMaterial.descriptorSet);
+        for(auto& ds : convertedMaterial.descriptorSets)
+        {
+            if (ds)
+            {
+                sharedObjects->share(ds->descriptors);
+                sharedObjects->share(ds);
+            }
+        }
     }
 }
 
@@ -524,7 +548,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 
     std::string name = mesh->mName.C_Str();
-    auto& material = *convertedMaterials[mesh->mMaterialIndex];
+    auto material = convertedMaterials[mesh->mMaterialIndex];
 
     // count the number of indices of each type
     uint32_t numTriangleIndices = 0;
@@ -582,8 +606,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         return;
     }
 
-    auto config = vsg::GraphicsPipelineConfigurator::create(material.shaderSet);
-    config->shaderHints->defines = material.defines;
+    auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
+    config->descriptorConfigurator = material;
 
     config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
@@ -641,7 +665,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
 
-    if (material.blending)
+    if (material->blending)
     {
         config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
             {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
@@ -649,27 +673,9 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         if (sharedObjects) sharedObjects->share(config->colorBlendState);
     }
 
-    if (material.two_sided)
+    if (material->two_sided)
     {
         config->rasterizationState->cullMode = VK_CULL_MODE_NONE;
-    }
-
-    // pass DescriptorSetLaout to config
-    if (material.descriptorSet)
-    {
-        config->descriptorSetLayout = material.descriptorSet->setLayout;
-        config->descriptorBindings = material.descriptorBindings;
-    }
-
-    // set up ViewDependentState
-    if (useViewDependentState)
-    {
-        vsg::ref_ptr<vsg::ViewDescriptorSetLayout> vdsl;
-        if (sharedObjects)
-            vdsl = sharedObjects->shared_default<vsg::ViewDescriptorSetLayout>();
-        else
-            vdsl = vsg::ViewDescriptorSetLayout::create();
-        config->additionalDescriptorSetLayout = vdsl;
     }
 
     if (sharedObjects)
@@ -677,33 +683,14 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     else
         config->init();
 
-    if (sharedObjects) sharedObjects->share(config->bindGraphicsPipeline);
-
     // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
     auto stateGroup = vsg::StateGroup::create();
-    stateGroup->add(config->bindGraphicsPipeline);
 
-    if (material.descriptorSet)
-    {
-        auto bindDescriptorSet = vsg::BindDescriptorSet::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 0, material.descriptorSet);
-        if (sharedObjects) sharedObjects->share(bindDescriptorSet);
-
-        stateGroup->add(bindDescriptorSet);
-    }
-
-    if (useViewDependentState)
-    {
-        auto bindViewDescriptorSets = vsg::BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, config->layout, 1);
-        if (sharedObjects) sharedObjects->share(bindViewDescriptorSets);
-        stateGroup->add(bindViewDescriptorSets);
-    }
-
-    // assign any custom ArrayState that may be required.
-    stateGroup->prototypeArrayState = config->shaderSet->getSuitableArrayState(config->shaderHints->defines);
+    config->copyTo(stateGroup, sharedObjects);
 
     stateGroup->addChild(vid);
 
-    if (material.blending)
+    if (material->blending)
     {
         vsg::ComputeBounds computeBounds;
         vid->accept(computeBounds);
@@ -1018,6 +1005,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
             SceneConverter converter;
+            converter.filename = filename;
             return converter.visit(scene, opt, ext);
         }
         else
