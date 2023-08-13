@@ -235,7 +235,7 @@ struct SceneConverter
 
     void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
-    vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndidices);
+    vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices);
     void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
 
     vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
@@ -253,7 +253,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
         if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
-            // check embedded texture has no width so must be invalid
+            // embedded texture has no width so must be invalid
             if (texture->mWidth == 0) return {};
 
             if (texture->mHeight == 0)
@@ -272,7 +272,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             {
                 vsg::debug("filename = ", filename, " : Embedded raw format texture->achFormatHint = ", texture->achFormatHint);
 
-                // Vulkan doesn't support this format we have to reorder it to RGBA
+                // Vulkan doesn't support this format, we have to reorder it to RGBA
                 auto image = vsg::ubvec4Array2D::create(texture->mWidth, texture->mHeight, vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
                 auto src = texture->pcData;
                 for(auto& dest_c : *image)
@@ -472,7 +472,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
         if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
         {
-            // TODO phong shader doesn't present have a specular texture maps
+            // TODO phong shader doesn't have a specular texture map at present
             convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
 
             if (specularResult != AI_SUCCESS)
@@ -495,11 +495,11 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     }
 }
 
-vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndidices)
+vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices)
 {
     if (mesh->mNumVertices > 16384)
     {
-        auto indices = vsg::uintArray::create(numIndidices);
+        auto indices = vsg::uintArray::create(numIndices);
         auto itr = indices->begin();
         for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
         {
@@ -513,7 +513,7 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
     }
     else
     {
-        auto indices = vsg::ushortArray::create(numIndidices);
+        auto indices = vsg::ushortArray::create(numIndices);
         auto itr = indices->begin();
         for (unsigned int j = 0; j < mesh->mNumFaces; ++j)
         {
@@ -531,19 +531,19 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
-        vsg::warn("Warning:  mesh ", mesh, ") mesh->mMaterialIndex = ", mesh->mMaterialIndex, " exceedes available meterails.size()= ", convertedMaterials.size());
+        vsg::warn("Warning:  mesh (", mesh, ") mesh->mMaterialIndex = ", mesh->mMaterialIndex, " exceeds available materials.size()= ", convertedMaterials.size());
         return;
     }
 
     if (mesh->mNumVertices == 0 || mesh->mVertices == nullptr)
     {
-        vsg::warn("Warning:  mesh", mesh, ") no verticex data, mesh->mNumVertices = ", mesh->mNumVertices, " mesh->mVertices = ", mesh->mVertices);
+        vsg::warn("Warning:  mesh (", mesh, ") no vertices data, mesh->mNumVertices = ", mesh->mNumVertices, " mesh->mVertices = ", mesh->mVertices);
         return;
     }
 
     if (mesh->mNumFaces == 0 || mesh->mFaces == nullptr)
     {
-        vsg::warn("Warning:  mesh", mesh, ") no mesh data, mesh->mNumFaces = ", mesh->mNumFaces);
+        vsg::warn("Warning:  mesh (", mesh, ") no mesh data, mesh->mNumFaces = ", mesh->mNumFaces);
         return;
     }
 
@@ -569,12 +569,12 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         }
     }
 
-    int numPrimtiveTypes = 0;
-    if (numTriangleIndices > 0) ++numPrimtiveTypes;
-    if (numLineIndices > 0) ++numPrimtiveTypes;
-    if (numPointIndices > 0) ++numPrimtiveTypes;
+    int numPrimitiveTypes = 0;
+    if (numTriangleIndices > 0) ++numPrimitiveTypes;
+    if (numLineIndices > 0) ++numPrimitiveTypes;
+    if (numPointIndices > 0) ++numPrimitiveTypes;
 
-    if (numPrimtiveTypes > 1)
+    if (numPrimitiveTypes > 1)
     {
         vsg::warn("Warning: more than one primitive type required, numTriangleIndices = ", numTriangleIndices, ", numLineIndices = ", numLineIndices, ", numPointIndices = ", numPointIndices);
     }
@@ -683,7 +683,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     else
         config->init();
 
-    // create StateGroup as the root of the scene/command graph to hold the GraphicsProgram, and binding of Descriptors to decorate the whole graph
+    // create StateGroup as the root of the scene/command graph to hold the GraphicsPipeline, and binding of Descriptors to decorate the whole graph
     auto stateGroup = vsg::StateGroup::create();
 
     config->copyTo(stateGroup, sharedObjects);
@@ -724,7 +724,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     processCameras();
     processLights();
 
-    // convet the materials
+    // convert the materials
     convertedMaterials.resize(scene->mNumMaterials);
     for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
@@ -732,7 +732,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         convert(scene->mMaterials[i], *convertedMaterials[i]);
     }
 
-    // convet the meshses
+    // convert the meshes
     convertedMeshes.resize(scene->mNumMeshes);
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
     {
@@ -782,7 +782,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
     std::string name = node->mName.C_Str();
 
-    // assign any lights
+    // assign any cameras
     if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
     {
         children.push_back(camera_itr->second);
@@ -933,11 +933,11 @@ void SceneConverter::processLights()
 
 vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const vsg::Path& ext)
 {
-    vsg::CoordinateConvention source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+    vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
 
     if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end())
     {
-        source_coordianteConvention = itr->second;
+        source_coordinateConvention = itr->second;
     }
 
     if (scene->mMetaData)
@@ -946,20 +946,20 @@ vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const 
         if (scene->mMetaData->Get("UpAxis", upAxis) == AI_SUCCESS)
         {
             if (upAxis == 0)
-                source_coordianteConvention = vsg::CoordinateConvention::X_UP;
+                source_coordinateConvention = vsg::CoordinateConvention::X_UP;
             else if (upAxis == 1)
-                source_coordianteConvention = vsg::CoordinateConvention::Y_UP;
+                source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
             else
-                source_coordianteConvention = vsg::CoordinateConvention::Z_UP;
+                source_coordinateConvention = vsg::CoordinateConvention::Z_UP;
 
-            // unclear on how to intepret the UpAxisSign so will leave it unused for now.
+            // unclear on how to interpret the UpAxisSign so will leave it unused for now.
             // int upAxisSign = 1;
             // scene->mMetaData->Get("UpAxisSign", upAxisSign);
         }
     }
 
     vsg::dmat4 matrix;
-    if (vsg::transform(source_coordianteConvention, options->sceneCoordinateConvention, matrix))
+    if (vsg::transform(source_coordinateConvention, options->sceneCoordinateConvention, matrix))
     {
         return vsg::MatrixTransform::create(matrix);
     }

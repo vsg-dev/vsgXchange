@@ -14,8 +14,8 @@ vsgXchange contains source code that can directly read a [range of shader and im
 cmake automatically finds which dependencies are available and builds the appropriate components:
 
 * [reading font formats](#font-file-formats-supported-by-optional-vsgxchangefreetype) TrueType etc. using [Freetype](https://www.freetype.org/) as vsg::Font.
-* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using by [OpenEXP](https://www.openexr.com/), and GeoTiff etc. using [GDAL](https://gdal.org/) as vsg::Data.
-* [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  GLTF, OBJ, 3DS, LWO etc. use Assimp as vsg::Node.
+* [reading image & DEM formats](#image-formats-supported-by-optional-vsgxchangegdal) .exr using [OpenEXR](https://www.openexr.com/), and GeoTiff etc. using [GDAL](https://gdal.org/) as vsg::Data.
+* [reading 3d model formats](#model-formats-supported-by-optional-vsgxchangeassimp)  GLTF, OBJ, 3DS, LWO etc. using Assimp as vsg::Node.
 * [reading data over the internet](#protocols-supported-by-optional-vsgxchangecurl) reading image and model files from http:// and https:// using [libcurl](https://curl.se/libcurl/)
 * [reading image and 3d model formats](#image-and-model-formats-supported-by-optional-vsgxchangeosg) OpenSceneGraph, OpenFlight etc. using [osg2vsg](https://github.com/vsg-dev/osg2vsg)/[OpenSceneGraph](http://www.openscenegraph.org/).
 
@@ -47,7 +47,7 @@ In source build:
 
 ### Windows:
 
-To be filled in by a kindly Window dev :-)
+To be filled in by a kindly Windows dev :-)
 
 ## How to use vsgXchange in your own applications
 
@@ -59,14 +59,14 @@ CMake additions:
 
 C++ additions:
 
-    #include <vsgXchange/ReaderWriter_all.h>
+    #include <vsgXchange/all.h>
 
     ...
 
     // assign a composite ReaderWriter that includes all supported formats
-    auto options = vsg::Options::create(vsgXchange::ReaderWriter_all::create());
+    auto options = vsg::Options::create(vsgXchange::all::create());
 
-    // pass in the options that provides the link to the ReaderWriter of interest.
+    // pass in the options that provide the link to the ReaderWriter of interest.
     auto object = vsg::read("myimage.dds", options);
 
     // read file and cast to vsg::Data if possible, returns vsg::ref_ptr<vsg::Data>
@@ -86,12 +86,12 @@ To convert shaders to SPIRV, native VSG format or source file:
     vsgconv myshader.frag myshader.spv
     vsgconv myshader.comp myshader_comp.cpp
 
-To convert 3rd part image formats to native VSG format or source file:
+To convert 3rd party image formats to native VSG format or source file:
 
     vsgconv image.jpg image.vsgb
     vsgconv image.jpg image.cpp
 
-To convert 3rd part model formats to native VSG format or source file:
+To convert 3rd party model formats to native VSG format or source file:
 
     vsgconv mymodel.obj mymodel.vsgt # convert OBJ model to VSG ascii text format (requires Assimp)
     vsgconv mymodel.gltif mymodel.vsgt # convert GLTF model to VSG ascii text format  (requires Assimp)
@@ -99,7 +99,7 @@ To convert 3rd part model formats to native VSG format or source file:
     vsgconv mymodel.flt mymodel.vsgb # convert OpenFlight format to VSG binary format (requires osg2vsg/OpenSceneGraph)
     vsgconv mymodel.vsgb mymodel.cpp # convert native VSG binary format to source file.
 
-To convert a OpenSceneGraph Paged database (requires osg2vsg/OpenSceneGraph):
+To convert an OpenSceneGraph Paged database (requires osg2vsg/OpenSceneGraph):
 
     vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 # convert up to level 30
 

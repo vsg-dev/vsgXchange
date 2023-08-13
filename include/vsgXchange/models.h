@@ -30,8 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
-    /// Composite ReaderWriter that holds the uses load 3rd party images formats.
-    /// By default utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
+    /// Composite ReaderWriter that holds the used 3rd party model format loaders.
     class VSGXCHANGE_DECLSPEC models : public vsg::Inherit<vsg::CompositeReaderWriter, models>
     {
     public:
@@ -49,7 +48,7 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        // vsg::Options::setValue(str, value) suppoorted options:
+        // vsg::Options::setValue(str, value) supported options:
         static constexpr const char* generate_smooth_normals = "generate_smooth_normals";
         static constexpr const char* generate_sharp_normals = "generate_sharp_normals";
         static constexpr const char* crease_angle = "crease_angle"; /// float

@@ -66,7 +66,7 @@ namespace vsgXchange
 
         using Contours = std::list<Contour>;
 
-        unsigned char nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
+        unsigned char nearest_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const;
         vsg::ref_ptr<vsg::Group> createOutlineGeometry(const Contours& contours) const;
         bool generateOutlines(FT_Outline& outline, Contours& contours) const;
         void checkForAndFixDegenerates(Contours& contours) const;
@@ -157,13 +157,13 @@ void freetype::Implementation::init() const
     {
         // std::cout<<"freetype::Implementation::init() failed."<<std::endl;
         return;
-        //throw vsg::Exception{"FreeType an error occurred during library initialization", error};
+        //throw vsg::Exception{"FreeType error occurred during library initialization", error};
     }
 
     // std::cout<<"freetype::Implementation() FT_Init_FreeType library = "<<_library<<std::endl;
 }
 
-unsigned char freetype::Implementation::nearerst_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const
+unsigned char freetype::Implementation::nearest_edge(const FT_Bitmap& glyph_bitmap, int c, int r, int delta) const
 {
     unsigned char value = 0;
     if (c >= 0 && c < static_cast<int>(glyph_bitmap.width) && r >= 0 && r < static_cast<int>(glyph_bitmap.rows))
@@ -295,7 +295,7 @@ bool freetype::Implementation::generateOutlines(FT_Outline& outline, Contours& i
 
         if (p0 == p1 && p1 == p2)
         {
-            // ignore degenate segment
+            // ignore degenerate segment
             //std::cout<<"conicTo error\n";
             return 0;
         }
@@ -329,7 +329,7 @@ bool freetype::Implementation::generateOutlines(FT_Outline& outline, Contours& i
 
         if (p0 == p1 && p1 == p2 && p2 == p3)
         {
-            // ignore degenate segment
+            // ignore degenerate segment
             // std::cout<<"cubic Error\n";
             return 0;
         }
@@ -370,7 +370,7 @@ bool freetype::Implementation::generateOutlines(FT_Outline& outline, Contours& i
     int error = FT_Outline_Decompose(&outline, &funcs, &in_contours);
     if (error != 0)
     {
-        std::cout << "Warning: could not decomposs outline." << error << std::endl;
+        std::cout << "Warning: could not decompose outline." << error << std::endl;
         return false;
     }
 
@@ -418,7 +418,7 @@ void freetype::Implementation::checkForAndFixDegenerates(Contours& contours) con
 
         if (clean_points.front() != clean_points.back())
         {
-            // make sure the the contour is closed (last point equals first point.)
+            // make sure the contour is closed (last point equals first point.)
             clean_points.back() = clean_points.front();
         }
 
@@ -522,10 +522,10 @@ bool freetype::Implementation::outside_contours(const Contours& local_contours, 
                     else if (between_or_equal(p0.x, v.x, p1.x))
                     {
                         // segment wholly right of v
-                        // need to intersection test
+                        // need to do intersection test
                         float r = (v.y - p0.y) / (p1.y - p0.y);
-                        float x_itersection = p0.x + (p1.x - p0.x) * r;
-                        if (x_itersection < v.x) ++numLeft;
+                        float x_intersection = p0.x + (p1.x - p0.x) * r;
+                        if (x_intersection < v.x) ++numLeft;
                     }
                 }
             }
@@ -550,7 +550,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     FT_Face face;
     FT_Long face_index = 0;
 
-    // Windows workaround for no wchar_t support in Freetype convert vsg::Path's std::wstring to UTF8 std::string
+    // Windows workaround for no wchar_t support in Freetype, convert vsg::Path's std::wstring to UTF8 std::string
     std::string filenameToUse_string = filenameToUse.string();
     int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face);
     if (error == FT_Err_Unknown_File_Format)
@@ -770,7 +770,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 }
             }
 
-            // fix any degernate segments
+            // fix any degenerate segments
             checkForAndFixDegenerates(contours);
 
             // font->setObject(vsg::make_string(glyphQuad.glyph_index), createOutlineGeometry(contours));
@@ -877,7 +877,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                     std::size_t index = atlas->index(xpos - delta, ypos + r);
                     for (int c = -delta; c < static_cast<int>(bitmap.width + delta); ++c)
                     {
-                        atlas->at(index++) = nearerst_edge(bitmap, c, r, quad_margin);
+                        atlas->at(index++) = nearest_edge(bitmap, c, r, quad_margin);
                     }
                 }
             }

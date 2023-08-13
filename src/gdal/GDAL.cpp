@@ -78,12 +78,12 @@ bool GDAL::getFeatures(Features& features) const
                 start_pos = extensions.find_first_not_of(" .", start_pos);
                 if (start_pos == std::string::npos) break;
 
-                std::string::size_type deliminator_pos = extensions.find_first_of(" /", start_pos);
-                if (deliminator_pos != std::string::npos)
+                std::string::size_type delimiter_pos = extensions.find_first_of(" /", start_pos);
+                if (delimiter_pos != std::string::npos)
                 {
-                    ext = extensions.substr(start_pos, deliminator_pos - start_pos);
+                    ext = extensions.substr(start_pos, delimiter_pos - start_pos);
                     features.extensionFeatureMap[dotPrefix + ext] = rasterFeatureMask;
-                    start_pos = deliminator_pos + 1;
+                    start_pos = delimiter_pos + 1;
                     if (start_pos == extensions.length()) break;
                 }
                 else
@@ -170,7 +170,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     bool mapRGBtoRGBAHint = !options || options->mapRGBtoRGBAHint;
     if (mapRGBtoRGBAHint && numComponents == 3)
     {
-        //std::cout<<"Reamppping RGB to RGBA "<<filename<<std::endl;
+        //std::cout<<"Remapping RGB to RGBA "<<filename<<std::endl;
         numComponents = 4;
     }
 
