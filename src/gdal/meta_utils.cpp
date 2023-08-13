@@ -90,7 +90,7 @@ bool vsgXchange::getEXIF_LatitudeLongitudeAlititude(const vsg::Object& object, d
         str.clear();
         str.str(value_str);
         str >> vsgXchange::dms_in_brackets(latitude);
-        vsg::info("vsgGA::getEXIF_..    EXIF_GPSLatitude = ", value_str, " degrees = ", latitude);
+        vsg::info("vsgXchange::getEXIF_..    EXIF_GPSLatitude = ", value_str, " degrees = ", latitude);
         success = true;
     }
     if (object.getValue("EXIF_GPSLongitude", value_str))
@@ -98,7 +98,7 @@ bool vsgXchange::getEXIF_LatitudeLongitudeAlititude(const vsg::Object& object, d
         str.clear();
         str.str(value_str);
         str >> vsgXchange::dms_in_brackets(longitude);
-        vsg::info("vsgGA::getEXIF_..    EXIF_GPSLongitude = ", value_str, " degrees = ", longitude);
+        vsg::info("vsgXchange::getEXIF_..    EXIF_GPSLongitude = ", value_str, " degrees = ", longitude);
         success = true;
     }
     if (object.getValue("EXIF_GPSAltitude", value_str))
@@ -106,7 +106,7 @@ bool vsgXchange::getEXIF_LatitudeLongitudeAlititude(const vsg::Object& object, d
         str.clear();
         str.str(value_str);
         str >> vsgXchange::in_brackets(altitude);
-        vsg::info("vsgGA::getEXIF_..    EXIF_GPSAltitude = ", value_str, " altitude = ", altitude);
+        vsg::info("vsgXchange::getEXIF_..    EXIF_GPSAltitude = ", value_str, " altitude = ", altitude);
         success = true;
     }
     return success;

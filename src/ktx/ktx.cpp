@@ -102,7 +102,7 @@ namespace
             textureSize *= (texture->numLayers * texture->numFaces);
         }
 
-        // copy the data and repack into ordered assumed by VSG
+        // copy the data and repack into ordering assumed by VSG
         uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
 
         size_t offset = 0;

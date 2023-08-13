@@ -32,8 +32,8 @@ extern "C"
     extern VSGXCHANGE_DECLSPEC const char* vsgXchangeGetVersionString();
     extern VSGXCHANGE_DECLSPEC const char* vsgXchangeGetSOVersionString();
 
-    /// return 0 if the linked vsgXchage was built as static library (default), 1 if the linked vsgXchange library was built as shared/dynamic library.
-    /// When building against a shared libraryTo ensure the correct selection of VSGXCHANGE_DECLSPEC (provided in vsgXchange/Export.h) one must compile with the define VSGXCHANGE_SHARED_LIBRARY
+    /// return 0 if the linked vsgXchange was built as static library (default), 1 if the linked vsgXchange library was built as shared/dynamic library.
+    /// When building against a shared library, to ensure the correct selection of VSGXCHANGE_DECLSPEC (provided in vsgXchange/Export.h) one must compile with the define VSGXCHANGE_SHARED_LIBRARY
     extern VSGXCHANGE_DECLSPEC int vsgXchangeBuiltAsSharedLibrary();
 
     /// standard Features
