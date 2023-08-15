@@ -275,14 +275,14 @@ int main(int argc, char** argv)
     if (argc <= 1 || arguments.read({"-h", "--help"}))
     {
         std::cout << "Usage:\n";
-        std::cout << "    vsgconv input_filename output_filefilename\n";
-        std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
+        std::cout << "    vsgconv input_filename output_filename\n";
+        std::cout << "    vsgconv input_filename_1 input_filename_2 output_filename\n";
         std::cout << "Options:\n";
         std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
-        std::cout << "    --features rw_name  # list formats supported \n";
+        std::cout << "    --features rw_name  # list formats supported by the specified ReaderWriter\n";
         std::cout << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
-        std::cout << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA \n";
-        std::cout << "    -v --version        # report version \n";
+        std::cout << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA\n";
+        std::cout << "    -v --version        # report version\n";
         return 1;
     }
 
