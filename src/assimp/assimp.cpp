@@ -664,6 +664,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
 
+    // set the GraphicsPipelineStates to the required values.
     struct SetPipelineStates : public vsg::Visitor
     {
         VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -675,15 +676,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         void apply(vsg::Object& object) { object.traverse(*this); }
         void apply(vsg::RasterizationState& rs) { if (two_sided) rs.cullMode = VK_CULL_MODE_NONE; }
         void apply(vsg::InputAssemblyState& ias) { ias.topology = topology; }
-        void apply(vsg::ColorBlendState& cbs)
-        {
-            if (blending)
-            {
-                cbs.attachments = vsg::ColorBlendState::ColorBlendAttachments{
-                    {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}
-                };
-            }
-        }
+        void apply(vsg::ColorBlendState& cbs) { cbs.configureAttachments(blending); }
     } sps(topology, material->blending, material->two_sided);
     config->accept(sps);
 
