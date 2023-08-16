@@ -609,7 +609,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
     config->descriptorConfigurator = material;
 
-    config->inputAssemblyState->topology = topology;
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
 
     vsg::DataList vertexArrays;
@@ -665,18 +664,28 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
 
-    if (material->blending)
+    struct SetPipelineStates : public vsg::Visitor
     {
-        config->colorBlendState->attachments = vsg::ColorBlendState::ColorBlendAttachments{
-            {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}};
+        VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        bool blending = false;
+        bool two_sided = false;
 
-        if (sharedObjects) sharedObjects->share(config->colorBlendState);
-    }
+        SetPipelineStates(VkPrimitiveTopology in_topology, bool in_blending, bool in_two_sided) : topology(in_topology), blending(in_blending), two_sided(in_two_sided) {}
 
-    if (material->two_sided)
-    {
-        config->rasterizationState->cullMode = VK_CULL_MODE_NONE;
-    }
+        void apply(vsg::Object& object) { object.traverse(*this); }
+        void apply(vsg::RasterizationState& rs) { if (two_sided) rs.cullMode = VK_CULL_MODE_NONE; }
+        void apply(vsg::InputAssemblyState& ias) { ias.topology = topology; }
+        void apply(vsg::ColorBlendState& cbs)
+        {
+            if (blending)
+            {
+                cbs.attachments = vsg::ColorBlendState::ColorBlendAttachments{
+                    {true, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_OP_SUBTRACT, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT}
+                };
+            }
+        }
+    } sps(topology, material->blending, material->two_sided);
+    config->accept(sps);
 
     if (sharedObjects)
         sharedObjects->share(config, [](auto gpc) { gpc->init(); });
