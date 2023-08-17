@@ -262,6 +262,19 @@ namespace vsgconv
 
 } // namespace vsgconv
 
+void printHelp(std::ostream& out)
+{
+    out << "Usage:\n";
+    out << "    vsgconv input_filename output_filename\n";
+    out << "    vsgconv input_filename_1 input_filename_2 output_filename\n";
+    out << "Options:\n";
+    out << "    --features          # list all ReaderWriters and the formats supported\n";
+    out << "    --features rw_name  # list formats supported by the specified ReaderWriter\n";
+    out << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
+    out << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA\n";
+    out << "    -v --version        # report version\n";
+}
+
 int main(int argc, char** argv)
 {
     // use the vsg::Options object to pass the vsgXchange::all ReaderWriter to use when reading files.
@@ -272,25 +285,16 @@ int main(int argc, char** argv)
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
-    if (argc <= 1 || arguments.read({"-h", "--help"}))
+    if (arguments.read({"-h", "--help"}))
     {
-        std::cout << "Usage:\n";
-        std::cout << "    vsgconv input_filename output_filename\n";
-        std::cout << "    vsgconv input_filename_1 input_filename_2 output_filename\n";
-        std::cout << "Options:\n";
-        std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
-        std::cout << "    --features rw_name  # list formats supported by the specified ReaderWriter\n";
-        std::cout << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
-        std::cout << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA\n";
-        std::cout << "    -v --version        # report version\n";
-        return 1;
+        printHelp(std::cout);
+        return 0;
     }
 
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
 
     // read any command line options that the ReaderWriter supports
     arguments.read(options);
-    if (argc <= 1) return 0;
 
     if (arguments.read({"-v", "--version"}))
     {
@@ -330,7 +334,9 @@ int main(int argc, char** argv)
 
     if (argc <= 2)
     {
-        std::cout << "No output file specified." << std::endl;
+        std::cout<<"Warning: vsgconv requires at last an input filenae and output filename.\n\n";
+
+        printHelp(std::cout);
         return 1;
     }
 
