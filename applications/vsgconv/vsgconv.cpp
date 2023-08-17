@@ -328,6 +328,12 @@ int main(int argc, char** argv)
     auto numThreads = arguments.value(16, "-t");
     bool compileShaders = !arguments.read({"--no-compile", "--nc"});
 
+    if (argc <= 2)
+    {
+        std::cout << "No output file specified." << std::endl;
+        return 1;
+    }
+
     vsg::Path outputFilename = arguments[argc - 1];
 
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
