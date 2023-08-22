@@ -796,7 +796,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         children.push_back(light_itr->second);
     }
 
-    // visit the meshes
+    // assign the meshes
     for (unsigned int i = 0; i < node->mNumMeshes; ++i)
     {
         auto mesh_index = node->mMeshes[i];
