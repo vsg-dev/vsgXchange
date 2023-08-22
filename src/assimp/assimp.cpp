@@ -871,6 +871,21 @@ void SceneConverter::processLights()
 {
     if (scene->mNumLights > 0)
     {
+        auto setColorAndIntensity = [](const aiLight& light, vsg::Light& vsg_light) -> void
+        {
+            vsg_light.color = convert(light.mColorDiffuse);
+            float maxValue = std::max(std::max(vsg_light.color.r, vsg_light.color.g),  vsg_light.color.b);
+            if (maxValue > 0.0)
+            {
+                vsg_light.color /= maxValue;
+                vsg_light.intensity = maxValue;
+            }
+            else
+            {
+                vsg_light.intensity = 0.0;
+            }
+        };
+
         for (unsigned int li = 0; li < scene->mNumLights; ++li)
         {
             auto* light = scene->mLights[li];
@@ -878,32 +893,32 @@ void SceneConverter::processLights()
             {
             case (aiLightSource_UNDEFINED): {
                 auto vsg_light = vsg::Light::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 vsg_light->setValue("light_type", "UNDEFINED");
                 lightMap[vsg_light->name] = vsg_light;
                 break;
             }
             case (aiLightSource_DIRECTIONAL): {
                 auto vsg_light = vsg::DirectionalLight::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 vsg_light->direction = dconvert(light->mDirection);
                 lightMap[vsg_light->name] = vsg_light;
                 break;
             }
             case (aiLightSource_POINT): {
                 auto vsg_light = vsg::PointLight::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 vsg_light->position = dconvert(light->mDirection);
                 lightMap[vsg_light->name] = vsg_light;
                 break;
             }
             case (aiLightSource_SPOT): {
                 auto vsg_light = vsg::SpotLight::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 vsg_light->position = dconvert(light->mDirection);
                 vsg_light->direction = dconvert(light->mDirection);
                 vsg_light->innerAngle = light->mAngleInnerCone;
@@ -913,15 +928,15 @@ void SceneConverter::processLights()
             }
             case (aiLightSource_AMBIENT): {
                 auto vsg_light = vsg::AmbientLight::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 lightMap[vsg_light->name] = vsg_light;
                 break;
             }
             case (aiLightSource_AREA): {
                 auto vsg_light = vsg::Light::create();
+                setColorAndIntensity(*light, *vsg_light);
                 vsg_light->name = light->mName.C_Str();
-                vsg_light->color = convert(light->mColorDiffuse);
                 vsg_light->setValue("light_type", "AREA");
                 lightMap[vsg_light->name] = vsg_light;
                 break;
