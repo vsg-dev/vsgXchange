@@ -77,7 +77,7 @@ static void writeToStream(void* context, void* data, int size)
     reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
 }
 
-// if the data is in BGR or BGRA form create a copy that is reformated into RGB or RGBA redpectively
+// if the data is in BGR or BGRA form create a copy that is reformated into RGB or RGBA respectively
 static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vsg::Data* data, const vsg::Path& filename)
 {
     int num_components = 0;
@@ -284,7 +284,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     if (num_components==0) return false;
     if (local_data) data = local_data.get();
 
-    // convert utf8 std::string;
+    // convert to utf8 std::string
     std::string filename_str = filename.string();
     int result = 0;
     if (ext == ".png")

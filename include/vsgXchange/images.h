@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
-    /// Composite ReaderWriter that holds the uses load 3rd party images formats.
+    /// Composite ReaderWriter that holds the used 3rd party image format loaders.
     /// By default utilizes the stbi, dds and ktx ReaderWriters so that users only need to create vsgXchange::images::create() to utilize them all.
     class VSGXCHANGE_DECLSPEC images : public vsg::Inherit<vsg::CompositeReaderWriter, images>
     {
@@ -53,7 +53,7 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        // vsg::Options::setValue(str, value) suppoorted options:
+        // vsg::Options::setValue(str, value) supported options:
         static constexpr const char* jpeg_quality = "jpeg_quality";
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;

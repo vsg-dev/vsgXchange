@@ -28,7 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
-    /// initialize any statics, such as registering all the ReaderWriter's with vsg::ObjectFactory::instance(),
+    /// initialize any statics, such as registering all the ReaderWriters with vsg::ObjectFactory::instance(),
     /// so that any serialization that includes vsgXchange ReaderWriters will be able to load them.
     extern VSGXCHANGE_DECLSPEC void init();
 

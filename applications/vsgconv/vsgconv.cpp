@@ -117,7 +117,7 @@ namespace vsgconv
                 log("   failed to read ", readRequest.src_filename);
             }
 
-            // we have finished this read operation so decrement the latch, which will release and threads waiting on it.
+            // we have finished this read operation so decrement the latch, which will release any threads waiting on it.
             latch->count_down();
         }
 
@@ -262,9 +262,22 @@ namespace vsgconv
 
 } // namespace vsgconv
 
+void printHelp(std::ostream& out)
+{
+    out << "Usage:\n";
+    out << "    vsgconv input_filename output_filename\n";
+    out << "    vsgconv input_filename_1 input_filename_2 output_filename\n";
+    out << "Options:\n";
+    out << "    --features          # list all ReaderWriters and the formats supported\n";
+    out << "    --features rw_name  # list formats supported by the specified ReaderWriter\n";
+    out << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
+    out << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA\n";
+    out << "    -v --version        # report version\n";
+}
+
 int main(int argc, char** argv)
 {
-    // use the vsg::Options object to pass the ReaderWriter_all to use when reading files.
+    // use the vsg::Options object to pass the vsgXchange::all ReaderWriter to use when reading files.
     auto options = vsg::Options::create(vsgXchange::all::create());
     options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
     options->sharedObjects = vsg::SharedObjects::create();
@@ -272,25 +285,16 @@ int main(int argc, char** argv)
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
-    if (argc <= 1 || arguments.read({"-h", "--help"}))
+    if (arguments.read({"-h", "--help"}))
     {
-        std::cout << "Usage:\n";
-        std::cout << "    vsgconv input_filename output_filefilename\n";
-        std::cout << "    vsgconv input_filename_1 input_filefilename_2 output_filefilename\n";
-        std::cout << "Options:\n";
-        std::cout << "    --features          # list all ReaderWriters and the formats supported\n";
-        std::cout << "    --features rw_name  # list formats sipportred \n";
-        std::cout << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
-        std::cout << "    --rgb               # leave RGB source data in it's original form rather than converting to RGBA \n";
-        std::cout << "    -v --version        # report version \n";
-        return 1;
+        printHelp(std::cout);
+        return 0;
     }
 
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
 
-    // read any command line options that the ReaderWrite support
+    // read any command line options that the ReaderWriter supports
     arguments.read(options);
-    if (argc <= 1) return 0;
 
     if (arguments.read({"-v", "--version"}))
     {
@@ -327,6 +331,14 @@ int main(int argc, char** argv)
     auto levels = arguments.value(0, "-l");
     auto numThreads = arguments.value(16, "-t");
     bool compileShaders = !arguments.read({"--no-compile", "--nc"});
+
+    if (argc <= 2)
+    {
+        std::cout<<"Warning: vsgconv requires at last an input filenae and output filename.\n\n";
+
+        printHelp(std::cout);
+        return 1;
+    }
 
     vsg::Path outputFilename = arguments[argc - 1];
 
@@ -490,7 +502,7 @@ int main(int argc, char** argv)
                 operationQueue->add(vsgconv::ReadOperation::create(obs_queue, latch, itr->second, 1, levels));
             }
 
-            // wait until the latch goes zero i.e. all read operations have completed
+            // wait until the latch goes to zero i.e. all read operations have completed
             latch->wait();
 
             // signal that we are finished and the thread should close

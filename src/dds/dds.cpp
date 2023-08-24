@@ -214,7 +214,7 @@ namespace
                     vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Unknown:
-                    std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  is supported." << std::endl;
+                    std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  not supported." << std::endl;
                     break;
                 }
 
@@ -311,7 +311,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_pt
             std::cerr << "dds::read(uint_8_t*, size_t) Error loading file: Feature not supported" << std::endl;
             break;
         default:
-            std::cerr << "dds::readuint_8_t*, size_t) Error loading file: " << result << std::endl;
+            std::cerr << "dds::read(uint_8_t*, size_t) Error loading file: " << result << std::endl;
             break;
         }
     }

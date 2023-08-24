@@ -57,7 +57,7 @@ void vsgXchange::init()
 
 all::all()
 {
-    // for convinience make sure the init() method is called
+    // for convenience make sure the init() method is called
     vsgXchange::init();
 
 #ifdef vsgXchange_curl
