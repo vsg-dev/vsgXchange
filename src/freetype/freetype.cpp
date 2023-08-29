@@ -717,7 +717,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     double total_nearest_edge = 0.0;
     double total_outside_edge = 0.0;
 
-    auto glyphMetrics = vsg::GlyphMetricsArray::create(static_cast<uint32_t>(sortedGlyphQuads.size()) + 1));
+    auto glyphMetrics = vsg::GlyphMetricsArray::create(static_cast<uint32_t>(sortedGlyphQuads.size() + 1));
     auto charmap = vsg::uintArray::create(max_charcode + 1);
     uint32_t destination_glyphindex = 0;
 
