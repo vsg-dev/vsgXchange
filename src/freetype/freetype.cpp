@@ -717,9 +717,9 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     double total_nearest_edge = 0.0;
     double total_outside_edge = 0.0;
 
-    auto glyphMetrics = vsg::GlyphMetricsArray::create(sortedGlyphQuads.size() + 1);
+    auto glyphMetrics = vsg::GlyphMetricsArray::create(static_cast<uint32_t>(sortedGlyphQuads.size() + 1));
     auto charmap = vsg::uintArray::create(max_charcode + 1);
-    uint32_t destation_glyphindex = 0;
+    uint32_t destination_glyphindex = 0;
 
     // first entry of glyphMetrics should be a null entry
     vsg::GlyphMetrics null_metrics;
@@ -732,7 +732,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     null_metrics.vertBearingX = 0.0f;
     null_metrics.vertBearingY = 0.0f;
     null_metrics.vertAdvance = 0.0f;
-    glyphMetrics->set(destation_glyphindex++, null_metrics);
+    glyphMetrics->set(destination_glyphindex++, null_metrics);
 
     // initialize charmap to zeros.
     for (auto& c : *charmap) c = 0;
@@ -911,10 +911,10 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         vsg_metrics.vertAdvance = (float(metrics.vertAdvance) * freetype_pixel_size_scale) / float(pixel_size);
 
         // assign the glyph metrics and charcode/glyph_index to the VSG glyphMetrics and charmap containers.
-        glyphMetrics->set(destation_glyphindex, vsg_metrics);
-        charmap->set(glyphQuad.charcode, destation_glyphindex);
+        glyphMetrics->set(destination_glyphindex, vsg_metrics);
+        charmap->set(glyphQuad.charcode, destination_glyphindex);
 
-        ++destation_glyphindex;
+        ++destination_glyphindex;
 
         unsigned int local_ytop = ypos + height + texel_margin;
         if (local_ytop > ytop) ytop = local_ytop;
