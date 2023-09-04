@@ -398,7 +398,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
             convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
         }
 
-        convertedMaterial.assignUniform("material", vsg::PbrMaterialValue::create(pbr));
+        convertedMaterial.assignBuffer("material", vsg::PbrMaterialValue::create(pbr));
     }
     else
     {
@@ -479,7 +479,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
                 mat.specular.set(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        convertedMaterial.assignUniform("material", vsg::PhongMaterialValue::create(mat));
+        convertedMaterial.assignBuffer("material", vsg::PhongMaterialValue::create(mat));
     }
 
     if (sharedObjects)
