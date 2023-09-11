@@ -18,7 +18,7 @@ using namespace vsgXchange;
 //
 // freetype ReaderWriter fallback
 //
-struct freetype::Implementation
+class freetype::Implementation
 {
 };
 freetype::freetype() :

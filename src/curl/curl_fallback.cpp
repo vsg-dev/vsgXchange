@@ -18,7 +18,7 @@ using namespace vsgXchange;
 //
 // curl ReaderWriter fallback
 //
-struct curl::Implementation
+class curl::Implementation
 {
 };
 curl::curl() :
