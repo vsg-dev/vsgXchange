@@ -334,7 +334,7 @@ int main(int argc, char** argv)
 
     if (argc <= 2)
     {
-        std::cout<<"Warning: vsgconv requires at last an input filenae and output filename.\n\n";
+        std::cout<<"Warning: vsgconv requires at last an input filename and output filename.\n\n";
 
         printHelp(std::cout);
         return 1;
