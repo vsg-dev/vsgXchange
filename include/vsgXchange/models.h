@@ -55,7 +55,7 @@ namespace vsgXchange
         static constexpr const char* two_sided = "two_sided";       ///  bool
         static constexpr const char* discard_empty_nodes = "discard_empty_nodes"; /// bool
         static constexpr const char* external_textures = "external_textures";   /// bool
-        static constexpr const char* external_texture_format = "external_texture_format";   // TextureFormat
+        static constexpr const char* external_texture_format = "external_texture_format";   /// TextureFormat enum
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
