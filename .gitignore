@@ -23,6 +23,8 @@ vsgXchangeConfig.cmake
 vsgXchangeConfigVersion.cmake
 Doxyfile.docs-vsgXchange
 
+html/
+
 
 # Compiled Object files
 *.slo
