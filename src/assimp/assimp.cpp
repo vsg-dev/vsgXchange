@@ -792,7 +792,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
-    if (!externalObjects) externalObjects = vsg::External::create();
+    if (externalTextures && !externalObjects) externalObjects = vsg::External::create();
 
     processCameras();
     processLights();
@@ -1095,13 +1095,14 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             SceneConverter converter;
             converter.filename = filename;
 
-            if (auto root = converter.visit(scene, opt, ext))
+            auto root = converter.visit(scene, opt, ext);
+            if (root)
             {
                 if (converter.externalTextures && converter.externalObjects && !converter.externalObjects->entries.empty())
                     root->setObject("external", converter.externalObjects);
-
-                return root;
             }
+
+            return root;
         }
         else
         {
