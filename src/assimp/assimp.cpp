@@ -357,7 +357,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             switch (externalTextureFormat)
             {
             case TextureFormat::native:
-                break;  /// nothing to do
+                break;  // nothing to do
             case TextureFormat::vsgt:
                 externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgt");
                 break;
@@ -372,7 +372,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
                 switch (externalTextureFormat)
                 {
                 case TextureFormat::native:
-                    break;  /// nothing to do
+                    break;  // nothing to do
                 case TextureFormat::vsgt:
                     vsg::write(samplerImage.data, externalTextureFilename, options);
                     break;
