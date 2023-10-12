@@ -204,7 +204,5 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
         image->setObject("GeoTransform", transform);
     }
 
-    vsg::info(" loaded image ", image, " ", transform);
-
     return image;
 }
