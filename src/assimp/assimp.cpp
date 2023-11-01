@@ -311,6 +311,11 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             case VK_FORMAT_R8G8_UNORM:
                 samplerImage.data->properties.format = VK_FORMAT_R8G8_SRGB;
                 break;
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_R8_SRGB:
+            case VK_FORMAT_R8G8_SRGB:
+                // Probably set by us already
+                break;
             default:
                 vsg::warn("Can't set format ", samplerImage.data->properties.format, "to sRGB.");
                 break;
