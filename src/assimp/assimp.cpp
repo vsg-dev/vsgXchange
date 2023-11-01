@@ -296,6 +296,31 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
+        bool sRGBTextures = false;
+        options->getValue("sRGBTextures", sRGBTextures);
+        if (sRGBTextures && (type == aiTextureType_DIFFUSE || type == aiTextureType_EMISSIVE))
+        {
+            switch (samplerImage.data->properties.format)
+            {
+            case VK_FORMAT_R8G8B8A8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8G8B8A8_SRGB;
+                break;
+            case VK_FORMAT_R8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8_SRGB;
+                break;
+            case VK_FORMAT_R8G8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8G8_SRGB;
+                break;
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_R8_SRGB:
+            case VK_FORMAT_R8G8_SRGB:
+                // Probably set by us already
+                break;
+            default:
+                vsg::warn("Can't set format ", samplerImage.data->properties.format, "to sRGB.");
+                break;
+            }
+        }
         samplerImage.sampler = vsg::Sampler::create();
         samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
         samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
@@ -368,6 +393,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
         SamplerData samplerImage;
+        // Note: in practice some of these textures may resolve to the same texture. For example,
+        // the glTF spec says that ambient occlusion, roughness, and metallic values are mapped
+        // respectively to red, green, and blue channels; the Blender glTF exporter can pack them
+        // into one texture. It's not clear if anything should be done about that at the VSG level.
         if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
@@ -387,7 +416,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
             convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_METALNESS); samplerImage.data.valid())
         {
             // maps to metal roughness.
             convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
