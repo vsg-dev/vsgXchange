@@ -154,6 +154,7 @@ struct SceneConverter
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
     vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
+    vsg::ref_ptr<const vsg::Object> inherited;
 
     std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
@@ -680,6 +681,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     } sps(topology, material->blending, material->two_sided);
     config->accept(sps);
 
+
+    if (inherited)
+    {
+        vsg::info("SceneConverter::visit() inherited = ", inherited, " ", inherited->className());
+        config->inheritedState(inherited);
+    }
+
     if (sharedObjects)
         sharedObjects->share(config, [](auto gpc) { gpc->init(); });
     else
@@ -718,6 +726,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
 
+
     std::string name = scene->mName.C_Str();
 
     if (options) sharedObjects = options->sharedObjects;
@@ -733,6 +742,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         convertedMaterials[i] = vsg::DescriptorConfigurator::create();
         convert(scene->mMaterials[i], *convertedMaterials[i]);
     }
+
+    // if there is inherited state create a convinient access to it for later use when using the GraphicsPipelineConfigurator
+    inherited = options->getObject("inherited");
 
     // convert the meshes
     convertedMeshes.resize(scene->mNumMeshes);
