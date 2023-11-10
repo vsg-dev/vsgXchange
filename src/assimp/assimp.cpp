@@ -608,6 +608,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
     config->descriptorConfigurator = material;
+    if (options) config->assignInheritedState(options->inheritedState);
 
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
 
@@ -679,12 +680,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         void apply(vsg::ColorBlendState& cbs) { cbs.configureAttachments(blending); }
     } sps(topology, material->blending, material->two_sided);
     config->accept(sps);
-
-
-    if (options && !options->inheritedState.empty())
-    {
-        config->inheritedState(options->inheritedState);
-    }
 
     if (sharedObjects)
         sharedObjects->share(config, [](auto gpc) { gpc->init(); });
