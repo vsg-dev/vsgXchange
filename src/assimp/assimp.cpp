@@ -608,6 +608,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
     config->descriptorConfigurator = material;
+    if (options) config->assignInheritedState(options->inheritedState);
 
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
 
@@ -717,6 +718,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     scene = in_scene;
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
+
 
     std::string name = scene->mName.C_Str();
 
