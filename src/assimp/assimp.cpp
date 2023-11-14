@@ -387,9 +387,13 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
             convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
+        // map either aiTextureType_METALNESS or aiTextureType_UNKNOWN to metal roughness.
+        if (samplerImage = convertTexture(*material, aiTextureType_METALNESS); samplerImage.data.valid())
         {
-            // maps to metal roughness.
+            convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
+        }
+        else if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
+        {
             convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
         }
 
