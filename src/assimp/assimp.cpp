@@ -535,6 +535,9 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (mesh->HasBones())
     {
+        // useful reference for GLTF animation support
+        // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
+
         vsg::info(filename, " SceneConverter::convert(aiMesh* ", mesh, ") HasBones()");
         vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
         vsg::info("    aiMesh::aiBone** ", mesh->mBones);
