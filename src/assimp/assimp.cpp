@@ -533,6 +533,45 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
 
 void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
+    if (mesh->HasBones())
+    {
+        vsg::info(filename, " SceneConverter::convert(aiMesh* ", mesh, ") HasBones()");
+        vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
+        vsg::info("    aiMesh::aiBone** ", mesh->mBones);
+
+        for(size_t i = 0; i < mesh->mNumBones; ++i)
+        {
+            auto bone = mesh->mBones[i];
+            vsg::info("    bone ", bone);
+            vsg::info("         bone->mName = ", bone->mName.C_Str());
+
+            #ifndef ASSIMP_BUILD_NO_ARMATUREPOPULATE_PROCESS
+            /// The bone armature node - used for skeleton conversion
+            /// you must enable aiProcess_PopulateArmatureData to populate this
+            vsg::info("         aiNode* mArmature = ", bone->mArmature);
+            vsg::info("         aiNode* mNode = ", bone->mNode);
+            #endif
+
+            vsg::mat4 m((float*)&(bone->mOffsetMatrix));
+            vsg::info("         aiMatrix4x4 mOffsetMatrix = ", m);
+
+            vsg::info("         mNumWeights = ", bone->mNumWeights);
+            for(size_t wi = 0; wi < bone->mNumWeights; ++wi)
+            {
+                auto& weight = bone->mWeights[wi];
+                vsg::info("             aiVertexWeight->mVertexId = ", weight.mVertexId);
+                vsg::info("             aiVertexWeight->mWeight = ", weight.mWeight);
+            }
+
+
+        }
+    }
+
+    if (mesh->mNumAnimMeshes != 0)
+    {
+        vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes); // NOT_IN_USE
+    }
+
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
         vsg::warn("Warning:  mesh (", mesh, ") mesh->mMaterialIndex = ", mesh->mMaterialIndex, " exceeds available materials.size()= ", convertedMaterials.size());
@@ -997,7 +1036,7 @@ vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const 
 // assimp ReaderWriter implementation
 //
 assimp::Implementation::Implementation() :
-    _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords}
+    _importFlags{aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_OptimizeMeshes | aiProcess_SortByPType | aiProcess_ImproveCacheLocality | aiProcess_GenUVCoords | aiProcess_PopulateArmatureData}
 {
 }
 
