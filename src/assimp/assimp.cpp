@@ -538,7 +538,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
-        vsg::info(filename, " SceneConverter::convert(aiMesh* ", mesh, ") HasBones()");
+        vsg::info("    model with Animation Bones filename = ", filename);
         vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
         vsg::info("    aiMesh::aiBone** ", mesh->mBones);
 
@@ -572,7 +572,15 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     if (mesh->mNumAnimMeshes != 0)
     {
-        vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes); // NOT_IN_USE
+        vsg::info("    model with Animation Meshes filename = ", filename);
+        vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes);
+
+        for(unsigned int ai = 0; ai < mesh->mNumAnimMeshes; ++ai)
+        {
+            auto* animationMesh = mesh->mAnimMeshes[ai];
+            vsg::info("         mesh->mAnimMeshes[", ai, "] = ", animationMesh, ", mName = ", animationMesh->mName.C_Str(), ", mWeight =  ", animationMesh->mWeight);
+        }
+
     }
 
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
@@ -831,6 +839,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     vsg::Group::Children children;
 
     std::string name = node->mName.C_Str();
+    vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name);
 
     // assign any cameras
     if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
