@@ -367,6 +367,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
+        aiString alphaMode;
+        if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("OPAQUE"))
+            pbr.alphaMaskCutoff = 0.0f;
+
         SamplerData samplerImage;
         if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
         {
