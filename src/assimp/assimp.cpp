@@ -16,6 +16,31 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <sstream>
 #include <stack>
 
+enum class TextureFormat
+{
+    native,
+    vsgt,
+    vsgb
+};
+
+// this needs to be defined before 'vsg/commandline.h' has been included
+std::istream& operator>> (std::istream& is, TextureFormat& textureFormat)
+{
+    std::string value;
+    is >> value;
+
+    if (value == "native")
+        textureFormat = TextureFormat::native;
+    else if (value == "vsgb")
+        textureFormat = TextureFormat::vsgb;
+    else if ((value == "vsgt")||(value == "vsga"))
+        textureFormat = TextureFormat::vsgt;
+    else
+        textureFormat = TextureFormat::native;
+
+    return is;
+}
+
 #include <vsg/all.h>
 
 #include <assimp/Importer.hpp>
@@ -117,6 +142,8 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::crease_angle] = vsg::type_name<float>();
     features.optionNameTypeMap[assimp::two_sided] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
 
     return true;
 }
@@ -128,6 +155,9 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
+    result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
+
     return result;
 }
 
@@ -149,11 +179,14 @@ struct SceneConverter
 
     bool useViewDependentState = true;
     bool discardEmptyNodes = true;
+    bool externalTextures = false;
+    TextureFormat externalTextureFormat = TextureFormat::native;
 
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
     vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
     vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
+    vsg::ref_ptr<vsg::External> externalObjects;
 
     std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
@@ -250,6 +283,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode) == AI_SUCCESS)
     {
         SamplerData samplerImage;
+        vsg::Path externalTextureFilename;
 
         if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
@@ -288,10 +322,10 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         }
         else
         {
-            auto textureFilename = vsg::findFile(texPath.C_Str(), options);
-            if (samplerImage.data = vsg::read_cast<vsg::Data>(textureFilename, options); !samplerImage.data.valid())
+            externalTextureFilename = vsg::findFile(texPath.C_Str(), options);
+            if (samplerImage.data = vsg::read_cast<vsg::Data>(externalTextureFilename, options); !samplerImage.data.valid())
             {
-                vsg::warn("Failed to load texture: ", textureFilename, " texPath = ", texPath.C_Str());
+                vsg::warn("Failed to load texture: ", externalTextureFilename, " texPath = ", texPath.C_Str());
                 return {};
             }
         }
@@ -340,6 +374,40 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         {
             sharedObjects->share(samplerImage.data);
             sharedObjects->share(samplerImage.sampler);
+        }
+
+        if (externalTextures && externalObjects)
+        {
+            // calculate the texture filename
+            switch (externalTextureFormat)
+            {
+            case TextureFormat::native:
+                break;  // nothing to do
+            case TextureFormat::vsgt:
+                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgt");
+                break;
+            case TextureFormat::vsgb:
+                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgb");
+                break;
+            }
+            
+            // actually write out the texture.. this need only be done once per texture!
+            if (externalObjects->entries.count(externalTextureFilename) == 0)
+            {
+                switch (externalTextureFormat)
+                {
+                case TextureFormat::native:
+                    break;  // nothing to do
+                case TextureFormat::vsgt:
+                    vsg::write(samplerImage.data, externalTextureFilename, options);
+                    break;
+                case TextureFormat::vsgb:
+                    vsg::write(samplerImage.data, externalTextureFilename, options);
+                    break;
+                }
+
+                externalObjects->add(externalTextureFilename, samplerImage.data);
+            }
         }
 
         return samplerImage;
@@ -392,6 +460,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
+        aiString alphaMode;
+        if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("OPAQUE"))
+            pbr.alphaMaskCutoff = 0.0f;
+
         SamplerData samplerImage;
         // Note: in practice some of these textures may resolve to the same texture. For example,
         // the glTF spec says that ambient occlusion, roughness, and metallic values are mapped
@@ -416,9 +488,13 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
             convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
         }
 
+        // map either aiTextureType_METALNESS or aiTextureType_UNKNOWN to metal roughness.
         if (samplerImage = convertTexture(*material, aiTextureType_METALNESS); samplerImage.data.valid())
         {
-            // maps to metal roughness.
+            convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
+        }
+        else if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
+        {
             convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
         }
 
@@ -637,6 +713,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     auto config = vsg::GraphicsPipelineConfigurator::create(material->shaderSet);
     config->descriptorConfigurator = material;
+    if (options) config->assignInheritedState(options->inheritedState);
 
     auto indices = createIndices(mesh, numIndicesPerFace, numIndices);
 
@@ -746,11 +823,15 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     scene = in_scene;
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
+    externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
+    externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
+
 
     std::string name = scene->mName.C_Str();
 
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
+    if (externalTextures && !externalObjects) externalObjects = vsg::External::create();
 
     processCameras();
     processLights();
@@ -1052,7 +1133,15 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
             SceneConverter converter;
             converter.filename = filename;
-            return converter.visit(scene, opt, ext);
+
+            auto root = converter.visit(scene, opt, ext);
+            if (root)
+            {
+                if (converter.externalTextures && converter.externalObjects && !converter.externalObjects->entries.empty())
+                    root->setObject("external", converter.externalObjects);
+            }
+
+            return root;
         }
         else
         {
@@ -1067,7 +1156,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
     opt->paths.push_back(vsg::filePath(filename));
     opt->extensionHint = vsg::lowerCaseFileExtension(filename);
 
-    return read(file, opt);
+    return vsg::read(file, opt);
 #endif
 
     return {};
