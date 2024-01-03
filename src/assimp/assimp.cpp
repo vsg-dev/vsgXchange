@@ -144,6 +144,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
+    features.optionNameTypeMap[assimp::sRGBTextures] = vsg::type_name<bool>();
 
     return true;
 }
@@ -157,6 +158,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
     result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::sRGBTextures, &options) || result;
 
     return result;
 }
@@ -181,6 +183,7 @@ struct SceneConverter
     bool discardEmptyNodes = true;
     bool externalTextures = false;
     TextureFormat externalTextureFormat = TextureFormat::native;
+    bool sRGBTextures = false;
 
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
@@ -330,8 +333,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
-        bool sRGBTextures = false;
-        options->getValue("sRGBTextures", sRGBTextures);
         if (sRGBTextures && (type == aiTextureType_DIFFUSE || type == aiTextureType_EMISSIVE))
         {
             switch (samplerImage.data->properties.format)
@@ -390,7 +391,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
                 externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgb");
                 break;
             }
-            
+
             // actually write out the texture.. this need only be done once per texture!
             if (externalObjects->entries.count(externalTextureFilename) == 0)
             {
@@ -825,7 +826,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
     externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
-
+    sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
 
     std::string name = scene->mName.C_Str();
 
