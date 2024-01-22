@@ -982,7 +982,7 @@ void SceneConverter::processLights()
 {
     if (scene->mNumLights > 0)
     {
-        auto setColorAndIntensity = [](const aiLight& light, vsg::Light& vsg_light) -> void
+        auto setColorAndIntensity = [&](const aiLight& light, vsg::Light& vsg_light) -> void
         {
             vsg_light.color = convert(light.mColorDiffuse);
             float maxValue = std::max(std::max(vsg_light.color.r, vsg_light.color.g),  vsg_light.color.b);
