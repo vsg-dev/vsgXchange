@@ -779,6 +779,69 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
+#if 0
+    /// aiScene
+
+    /** The number of animations in the scene. */
+    unsigned int mNumAnimations;
+
+    /** The array of animations.
+    *
+    * All animations imported from the given file are listed here.
+    * The array is mNumAnimations in size.
+    */
+    C_STRUCT aiAnimation** mAnimations;
+#endif
+    vsg::info("SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
+    for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
+    {
+        auto animation = scene->mAnimations[ai];
+        vsg::info("    mAnimations[",ai,"] = ", animation, ", mName = ", animation->mName.C_Str());
+        vsg::info("        mDuration = ", animation->mDuration, ", mTicksPerSecond = ", animation->mTicksPerSecond);
+        vsg::info("        mNumChannels = ", animation->mNumChannels);
+        vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
+        vsg::info("        mNumMorphMeshChannels = ", animation->mNumMorphMeshChannels);
+
+#if 0
+        /** The name of the animation. If the modeling package this data was
+        *  exported from does support only a single animation channel, this
+        *  name is usually empty (length is zero). */
+        C_STRUCT aiString mName;
+
+        /** Duration of the animation in ticks.  */
+        double mDuration;
+
+        /** Ticks per second. 0 if not specified in the imported file */
+        double mTicksPerSecond;
+
+        /** The number of bone animation channels. Each channel affects
+        *  a single node. */
+        unsigned int mNumChannels;
+
+        /** The node animation channels. Each channel affects a single node.
+        *  The array is mNumChannels in size. */
+        C_STRUCT aiNodeAnim **mChannels;
+
+        /** The number of mesh animation channels. Each channel affects
+        *  a single mesh and defines vertex-based animation. */
+        unsigned int mNumMeshChannels;
+
+        /** The mesh animation channels. Each channel affects a single mesh.
+        *  The array is mNumMeshChannels in size. */
+        C_STRUCT aiMeshAnim **mMeshChannels;
+
+        /** The number of mesh animation channels. Each channel affects
+        *  a single mesh and defines morphing animation. */
+        unsigned int mNumMorphMeshChannels;
+
+        /** The morph mesh animation channels. Each channel affects a single mesh.
+        *  The array is mNumMorphMeshChannels in size. */
+        C_STRUCT aiMeshMorphAnim **mMorphMeshChannels;
+#endif
+
+
+    }
+
     processCameras();
     processLights();
 
