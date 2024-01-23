@@ -39,6 +39,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #endif
 
+#define PRINT_ANIMATION 1
+
 namespace
 {
     struct SamplerData
@@ -540,8 +542,9 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
         vsg::info("    model with Animation Bones filename = ", filename);
         vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
-        vsg::info("    aiMesh::aiBone** ", mesh->mBones);
 
+#if PRINT_ANIMATION
+        vsg::info("    aiMesh::aiBone** ", mesh->mBones);
         for(size_t i = 0; i < mesh->mNumBones; ++i)
         {
             auto bone = mesh->mBones[i];
@@ -566,8 +569,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                 vsg::info("             aiVertexWeight->mWeight = ", weight.mWeight);
             }
 
-
         }
+#endif
     }
 
     if (mesh->mNumAnimMeshes != 0)
@@ -575,12 +578,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         vsg::info("    model with Animation Meshes filename = ", filename);
         vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes);
 
+#if PRINT_ANIMATION
         for(unsigned int ai = 0; ai < mesh->mNumAnimMeshes; ++ai)
         {
             auto* animationMesh = mesh->mAnimMeshes[ai];
             vsg::info("         mesh->mAnimMeshes[", ai, "] = ", animationMesh, ", mName = ", animationMesh->mName.C_Str(), ", mWeight =  ", animationMesh->mWeight);
         }
-
+#endif
     }
 
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
@@ -779,68 +783,115 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
-#if 0
-    /// aiScene
+    vsg::info("filename = ", filename, " SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
 
-    /** The number of animations in the scene. */
-    unsigned int mNumAnimations;
-
-    /** The array of animations.
-    *
-    * All animations imported from the given file are listed here.
-    * The array is mNumAnimations in size.
-    */
-    C_STRUCT aiAnimation** mAnimations;
-#endif
-    vsg::info("SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
+#if PRINT_ANIMATION
     for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
     {
         auto animation = scene->mAnimations[ai];
         vsg::info("    mAnimations[",ai,"] = ", animation, ", mName = ", animation->mName.C_Str());
         vsg::info("        mDuration = ", animation->mDuration, ", mTicksPerSecond = ", animation->mTicksPerSecond);
         vsg::info("        mNumChannels = ", animation->mNumChannels);
-        vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
-        vsg::info("        mNumMorphMeshChannels = ", animation->mNumMorphMeshChannels);
 
-#if 0
-        /** The name of the animation. If the modeling package this data was
-        *  exported from does support only a single animation channel, this
-        *  name is usually empty (length is zero). */
-        C_STRUCT aiString mName;
 
-        /** Duration of the animation in ticks.  */
-        double mDuration;
+        for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
+        {
+            auto nodeAnim = animation->mChannels[ci];
+            /** The name of the node affected by this animation. The node
+            *  must exist and it must be unique.*/
+            vsg::info("            nodeAnim->mNodeName = ", nodeAnim->mNodeName.C_Str());
 
-        /** Ticks per second. 0 if not specified in the imported file */
-        double mTicksPerSecond;
+            vsg::info("            nodeAnim->mNumPositionKeys = ", nodeAnim->mNumPositionKeys);
+            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+            {
+                auto& positionKey =  nodeAnim->mPositionKeys[pi];
+                vsg::info("               positionKey{ mTime = ", positionKey.mTime, ", mValue = (", positionKey.mValue.x, ", ", positionKey.mValue.y, ", ", positionKey.mValue.z, ") }");
+            }
 
-        /** The number of bone animation channels. Each channel affects
-        *  a single node. */
-        unsigned int mNumChannels;
+            vsg::info("            nodeAnim->mNumRotationKeys = ", nodeAnim->mNumRotationKeys);
+            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+            {
+                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
+                vsg::info("               rotationKey{ mTime = ", rotationKey.mTime, ", mValue = (", rotationKey.mValue.x, ", ", rotationKey.mValue.y, ", ", rotationKey.mValue.z, ", ", rotationKey.mValue.w, ") }");
+            }
 
-        /** The node animation channels. Each channel affects a single node.
-        *  The array is mNumChannels in size. */
-        C_STRUCT aiNodeAnim **mChannels;
+            vsg::info("            nodeAnim->mNumScalingKeys = ", nodeAnim->mNumScalingKeys);
+            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+            {
+                auto& scalingKey =  nodeAnim->mScalingKeys[si];
+                vsg::info("               scalingKey{ mTime = ", scalingKey.mTime, ", mValue = (", scalingKey.mValue.x, ", ", scalingKey.mValue.y, ", ", scalingKey.mValue.z,") }");
+            }
+
+            /** Defines how the animation behaves before the first //
+            *  key is encountered.
+            *
+            *  The default value is aiAnimBehaviour_DEFAULT (the original
+            *  transformation matrix of the affected node is used).*/
+            vsg::info("            aiAnimBehaviour mPreState = ", nodeAnim->mPreState); // aiAnimBehaviour_DEFAULT
+
+            /** Defines how the animation behaves after the last
+            *  key was processed.
+            *
+            *  The default value is aiAnimBehaviour_DEFAULT (the original
+            *  transformation matrix of the affected node is taken).*/
+            vsg::info("            aiAnimBehaviour mPostState = ", nodeAnim->mPostState);
+        }
 
         /** The number of mesh animation channels. Each channel affects
         *  a single mesh and defines vertex-based animation. */
-        unsigned int mNumMeshChannels;
+        vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
 
-        /** The mesh animation channels. Each channel affects a single mesh.
-        *  The array is mNumMeshChannels in size. */
-        C_STRUCT aiMeshAnim **mMeshChannels;
+        for(unsigned int mi = 0; ai < animation->mNumMeshChannels; ++ai)
+        {
+            /** The mesh animation channels. Each channel affects a single mesh.
+            *  The array is mNumMeshChannels in size. */
+            auto meshAnim = animation->mMeshChannels[mi];
+            /** Name of the mesh to be animated. An empty string is not allowed,
+            *  animated meshes need to be named (not necessarily uniquely,
+            *  the name can basically serve as wild-card to select a group
+            *  of meshes with similar animation setup)*/
+            vsg::info("            meshAnim->mName = ", meshAnim->mName.C_Str());
+            vsg::info("            meshAnim->mNumKeys = ", meshAnim->mNumKeys);
 
-        /** The number of mesh animation channels. Each channel affects
-        *  a single mesh and defines morphing animation. */
-        unsigned int mNumMorphMeshChannels;
+            /** Size of the #mKeys array. Must be 1, at least. */
+            for(unsigned int mki = 0; mki < meshAnim->mNumKeys; ++mki)
+            {
+                /** Key frames of the animation. May not be nullptr. */
+                auto& meshKey = meshAnim->mKeys[mki];
 
-        /** The morph mesh animation channels. Each channel affects a single mesh.
-        *  The array is mNumMorphMeshChannels in size. */
-        C_STRUCT aiMeshMorphAnim **mMorphMeshChannels;
-#endif
+                /** Index into the aiMesh::mAnimMeshes array of the
+                *  mesh corresponding to the #aiMeshAnim hosting this
+                *  key frame. The referenced anim mesh is evaluated
+                *  according to the rules defined in the docs for #aiAnimMesh.*/
+                vsg::info("                aiMeshKey[", mki, "] = { mTime = ", meshKey.mTime, ", mValue = ", meshKey.mValue, "}");
+            }
+        }
 
 
+        vsg::info("        mNumMorphMeshChannels = ", animation->mNumMorphMeshChannels);
+        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
+        {
+            auto meshMorphAnim = animation->mMorphMeshChannels[moi];
+
+            /** Name of the mesh to be animated. An empty string is not allowed,
+            *  animated meshes need to be named (not necessarily uniquely,
+            *  the name can basically serve as wildcard to select a group
+            *  of meshes with similar animation setup)*/
+            vsg::info("            meshMorphAnim->mName = ", meshMorphAnim->mName.C_Str());
+            vsg::info("            meshMorphAnim->mNumKeys = ", meshMorphAnim->mNumKeys);
+
+            for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
+            {
+                auto& morphKey = meshMorphAnim->mKeys[mki];
+                vsg::info("                morphKey[", mki, "] = { mTime = ", morphKey.mTime, ", mValues = ", morphKey.mValues, ", mWeights = ", morphKey.mWeights, ", mNumValuesAndWeights = ", morphKey.mNumValuesAndWeights,"}");
+                for(unsigned int vwi = 0; vwi < morphKey.mNumValuesAndWeights; ++vwi)
+                {
+                    vsg::info("                    { value = ", morphKey.mValues[vwi], ", weight = ",  morphKey.mWeights[vwi],"}");
+                }
+            }
+        }
     }
+#endif
 
     processCameras();
     processLights();
@@ -902,7 +953,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     vsg::Group::Children children;
 
     std::string name = node->mName.C_Str();
-    vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name);
 
     // assign any cameras
     if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
@@ -936,6 +986,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     }
 
     if (children.empty() && discardEmptyNodes) return {};
+
+    // vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name, ", node->mTransformation.IsIdentity() = ", node->mTransformation.IsIdentity());
 
     if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
