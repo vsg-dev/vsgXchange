@@ -39,7 +39,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #endif
 
-#define PRINT_ANIMATION 1
+#define PRINT_ANIMATION 2
 
 namespace
 {
@@ -540,10 +540,12 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
+#if PRINT_ANIMATION >= 1
+
         vsg::info("    model with Animation Bones filename = ", filename);
         vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
 
-#if PRINT_ANIMATION
+#if PRINT_ANIMATION >= 2
         vsg::info("    aiMesh::aiBone** ", mesh->mBones);
         for(size_t i = 0; i < mesh->mNumBones; ++i)
         {
@@ -572,18 +574,22 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         }
 #endif
     }
+#endif
 
     if (mesh->mNumAnimMeshes != 0)
     {
+#if PRINT_ANIMATION >= 1
+
         vsg::info("    model with Animation Meshes filename = ", filename);
         vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes);
 
-#if PRINT_ANIMATION
+#if PRINT_ANIMATION >= 2
         for(unsigned int ai = 0; ai < mesh->mNumAnimMeshes; ++ai)
         {
             auto* animationMesh = mesh->mAnimMeshes[ai];
             vsg::info("         mesh->mAnimMeshes[", ai, "] = ", animationMesh, ", mName = ", animationMesh->mName.C_Str(), ", mWeight =  ", animationMesh->mWeight);
         }
+#endif
 #endif
     }
 
@@ -783,9 +789,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
+#if PRINT_ANIMATION >= 1
     vsg::info("filename = ", filename, " SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
 
-#if PRINT_ANIMATION
     for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
     {
         auto animation = scene->mAnimations[ai];
@@ -793,6 +799,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         vsg::info("        mDuration = ", animation->mDuration, ", mTicksPerSecond = ", animation->mTicksPerSecond);
         vsg::info("        mNumChannels = ", animation->mNumChannels);
 
+#if PRINT_ANIMATION >= 2
 
         for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
         {
@@ -802,26 +809,31 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
             vsg::info("            nodeAnim->mNodeName = ", nodeAnim->mNodeName.C_Str());
 
             vsg::info("            nodeAnim->mNumPositionKeys = ", nodeAnim->mNumPositionKeys);
+#if PRINT_ANIMATION >= 3
             for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
             {
                 auto& positionKey =  nodeAnim->mPositionKeys[pi];
                 vsg::info("               positionKey{ mTime = ", positionKey.mTime, ", mValue = (", positionKey.mValue.x, ", ", positionKey.mValue.y, ", ", positionKey.mValue.z, ") }");
             }
+#endif
 
             vsg::info("            nodeAnim->mNumRotationKeys = ", nodeAnim->mNumRotationKeys);
+#if PRINT_ANIMATION >= 3
             for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
             {
                 auto& rotationKey =  nodeAnim->mRotationKeys[ri];
                 vsg::info("               rotationKey{ mTime = ", rotationKey.mTime, ", mValue = (", rotationKey.mValue.x, ", ", rotationKey.mValue.y, ", ", rotationKey.mValue.z, ", ", rotationKey.mValue.w, ") }");
             }
+#endif
 
             vsg::info("            nodeAnim->mNumScalingKeys = ", nodeAnim->mNumScalingKeys);
+#if PRINT_ANIMATION >= 3
             for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
             {
                 auto& scalingKey =  nodeAnim->mScalingKeys[si];
                 vsg::info("               scalingKey{ mTime = ", scalingKey.mTime, ", mValue = (", scalingKey.mValue.x, ", ", scalingKey.mValue.y, ", ", scalingKey.mValue.z,") }");
             }
-
+#endif
             /** Defines how the animation behaves before the first //
             *  key is encountered.
             *
@@ -841,6 +853,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         *  a single mesh and defines vertex-based animation. */
         vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
 
+#if PRINT_ANIMATION >= 2
         for(unsigned int mi = 0; ai < animation->mNumMeshChannels; ++ai)
         {
             /** The mesh animation channels. Each channel affects a single mesh.
@@ -853,6 +866,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
             vsg::info("            meshAnim->mName = ", meshAnim->mName.C_Str());
             vsg::info("            meshAnim->mNumKeys = ", meshAnim->mNumKeys);
 
+#if PRINT_ANIMATION >= 3
             /** Size of the #mKeys array. Must be 1, at least. */
             for(unsigned int mki = 0; mki < meshAnim->mNumKeys; ++mki)
             {
@@ -865,9 +879,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
                 *  according to the rules defined in the docs for #aiAnimMesh.*/
                 vsg::info("                aiMeshKey[", mki, "] = { mTime = ", meshKey.mTime, ", mValue = ", meshKey.mValue, "}");
             }
+#endif
         }
+#endif
 
-
+#if PRINT_ANIMATION >= 2
         vsg::info("        mNumMorphMeshChannels = ", animation->mNumMorphMeshChannels);
         for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
         {
@@ -880,6 +896,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
             vsg::info("            meshMorphAnim->mName = ", meshMorphAnim->mName.C_Str());
             vsg::info("            meshMorphAnim->mNumKeys = ", meshMorphAnim->mNumKeys);
 
+#if PRINT_ANIMATION >= 3
             for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
             {
                 auto& morphKey = meshMorphAnim->mKeys[mki];
@@ -889,7 +906,10 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
                     vsg::info("                    { value = ", morphKey.mValues[vwi], ", weight = ",  morphKey.mWeights[vwi],"}");
                 }
             }
+#endif
         }
+#endif
+#endif
     }
 #endif
 
@@ -987,7 +1007,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
     if (children.empty() && discardEmptyNodes) return {};
 
-    // vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name, ", node->mTransformation.IsIdentity() = ", node->mTransformation.IsIdentity());
+#if PRINT_ANIMATION >= 1
+    vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name, ", node->mTransformation.IsIdentity() = ", node->mTransformation.IsIdentity());
+#endif
 
     if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
