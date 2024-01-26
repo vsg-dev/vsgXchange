@@ -39,7 +39,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #endif
 
-#define PRINT_ANIMATION 2
+#define PRINT_ANIMATION 0
 
 namespace
 {
@@ -575,8 +575,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
         }
 #endif
-    }
 #endif
+    }
 
     if (mesh->mNumAnimMeshes != 0)
     {
@@ -923,12 +923,12 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 void SceneConverter::processAnimations()
 {
 
-#if PRINT_ANIMATION >= 1
-    vsg::info("filename = ", filename, " SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
-
     for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
     {
         auto animation = scene->mAnimations[ai];
+
+        // convert the time values the VSG uses to seconds.
+        double timeScale = 1.0/animation->mTicksPerSecond;
 
         auto vsg_animation = vsg::Animation::create();
         vsg_animation->name = animation->mName.C_Str();
@@ -941,13 +941,74 @@ void SceneConverter::processAnimations()
             auto vsg_transformAnim = vsg::TransformAnimation::create();
             vsg_transformAnim->name = nodeAnim->mNodeName.C_Str();
             vsg_animation->transformAnimations.push_back(vsg_transformAnim);
+
+            auto& positions = vsg_transformAnim->positions;
+            positions.resize(nodeAnim->mNumPositionKeys);
+            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+            {
+                auto& positionKey =  nodeAnim->mPositionKeys[pi];
+                positions[pi].time = positionKey.mTime * timeScale;
+                positions[pi].value.set(positionKey.mValue.x, positionKey.mValue.y, positionKey.mValue.z);
+            }
+
+            auto& rotations = vsg_transformAnim->rotations;
+            rotations.resize(nodeAnim->mNumRotationKeys);
+            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+            {
+                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
+                rotations[ri].time = rotationKey.mTime * timeScale;
+                rotations[ri].value.set(rotationKey.mValue.x, rotationKey.mValue.y, rotationKey.mValue.z, rotationKey.mValue.w);
+            }
+
+            auto& scales = vsg_transformAnim->scales;
+            scales.resize(nodeAnim->mNumScalingKeys);
+            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+            {
+                auto& scalingKey =  nodeAnim->mScalingKeys[si];
+                scales[si].time = scalingKey.mTime * timeScale;
+                scales[si].value.set(scalingKey.mValue.x, scalingKey.mValue.y, scalingKey.mValue.z);
+            }
+
         }
 
-        vsg::info("    mAnimations[",ai,"] = ", animation, ", mName = ", animation->mName.C_Str());
-        vsg::info("        mDuration = ", animation->mDuration, ", mTicksPerSecond = ", animation->mTicksPerSecond);
-        vsg::info("        mNumChannels = ", animation->mNumChannels);
+        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
+        {
+            auto meshMorphAnim = animation->mMorphMeshChannels[moi];
 
-#if PRINT_ANIMATION >= 2
+            auto vsg_morphAnim = vsg::MorphAnimation::create();
+            vsg_morphAnim->name = meshMorphAnim->mName.C_Str();
+            vsg_animation->morphAnimations.push_back(vsg_morphAnim);
+
+            auto& keyFrames = vsg_morphAnim->keyFrames;
+            keyFrames.resize(meshMorphAnim->mNumKeys);
+
+            for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
+            {
+                auto& morphKey = meshMorphAnim->mKeys[mki];
+                keyFrames[mki].time = morphKey.mTime * timeScale;
+
+                auto& values = keyFrames[mki].values;
+                auto& weights = keyFrames[mki].weights;
+                values.resize(morphKey.mNumValuesAndWeights);
+                weights.resize(morphKey.mNumValuesAndWeights);
+
+                for(unsigned int vi = 0; vi < morphKey.mNumValuesAndWeights; ++vi)
+                {
+                    values[vi] = morphKey.mValues[vi];
+                    weights[vi] = morphKey.mWeights[vi];
+                }
+            }
+        }
+    }
+
+#if PRINT_ANIMATION >= 1
+    vsg::info("filename = ", filename, " SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
+
+    for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
+    {
+        auto animation = scene->mAnimations[ai];
+
+    #if PRINT_ANIMATION >= 2
 
         for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
         {
@@ -997,56 +1058,10 @@ void SceneConverter::processAnimations()
             vsg::info("            aiAnimBehaviour mPostState = ", nodeAnim->mPostState);
         }
 
-        /** The number of mesh animation channels. Each channel affects
-        *  a single mesh and defines vertex-based animation. */
         vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
-
-        for(unsigned int ci = 0; ci < animation->mNumMeshChannels; ++ci)
+        if (animation->mNumMeshChannels != 0)
         {
-            auto meshAnim = animation->mMeshChannels[ci];
-
-            auto vsg_morphAnim = vsg::MorphAnimation::create();
-            vsg_morphAnim->name = meshAnim->mName.C_Str();
-            vsg_animation->morphAnimations.push_back(vsg_morphAnim);
-        }
-
-#if PRINT_ANIMATION >= 2
-        for(unsigned int mi = 0; ai < animation->mNumMeshChannels; ++ai)
-        {
-            /** The mesh animation channels. Each channel affects a single mesh.
-            *  The array is mNumMeshChannels in size. */
-            auto meshAnim = animation->mMeshChannels[mi];
-            /** Name of the mesh to be animated. An empty string is not allowed,
-            *  animated meshes need to be named (not necessarily uniquely,
-            *  the name can basically serve as wild-card to select a group
-            *  of meshes with similar animation setup)*/
-            vsg::info("            meshAnim->mName = ", meshAnim->mName.C_Str());
-            vsg::info("            meshAnim->mNumKeys = ", meshAnim->mNumKeys);
-
-#if PRINT_ANIMATION >= 3
-            /** Size of the #mKeys array. Must be 1, at least. */
-            for(unsigned int mki = 0; mki < meshAnim->mNumKeys; ++mki)
-            {
-                /** Key frames of the animation. May not be nullptr. */
-                auto& meshKey = meshAnim->mKeys[mki];
-
-                /** Index into the aiMesh::mAnimMeshes array of the
-                *  mesh corresponding to the #aiMeshAnim hosting this
-                *  key frame. The referenced anim mesh is evaluated
-                *  according to the rules defined in the docs for #aiAnimMesh.*/
-                vsg::info("                aiMeshKey[", mki, "] = { mTime = ", meshKey.mTime, ", mValue = ", meshKey.mValue, "}");
-            }
-#endif
-        }
-#endif
-
-        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
-        {
-            auto meshMorphAnim = animation->mMorphMeshChannels[moi];
-
-            auto vsg_morphAnim = vsg::MorphAnimation::create();
-            vsg_morphAnim->name = meshMorphAnim->mName.C_Str();
-            vsg_animation->morphAnimations.push_back(vsg_morphAnim);
+            vsg::warn("Assimp::aiMeshAnim not supported, animation->mNumMeshChannels = ", animation->mNumMeshChannels, " ignored.");
         }
 
 #if PRINT_ANIMATION >= 2
