@@ -39,7 +39,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #endif
 
-#define PRINT_ANIMATION 0
+#define PRINT_ANIMATION 2
 
 namespace
 {
@@ -894,6 +894,32 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name, ", node->mTransformation.IsIdentity() = ", node->mTransformation.IsIdentity());
 #endif
 
+    if (!name.empty() && !animations.empty())
+    {
+        for(auto& animation : animations)
+        {
+            for (auto transformKeyframes : animation->transformKeyframes)
+            {
+                if (transformKeyframes->name == name)
+                {
+                    auto transform = vsg::AnimationTransform::create();
+                    transform->name = name;
+                    transform->children = children;
+
+                    aiMatrix4x4 m = node->mTransformation;
+                    m.Transpose();
+
+                    transform->matrix = vsg::dmat4(vsg::mat4((float*)&m));
+
+#if PRINT_ANIMATION >= 1
+                    vsg::info("Matched transform to transformMKeyframes, name = ", name, " matrix = ", transform->matrix);
+#endif
+                    return transform;
+                }
+            }
+        }
+    }
+
     if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
         if (children.size() == 1 && name.empty()) return children[0];
@@ -938,11 +964,11 @@ void SceneConverter::processAnimations()
         {
             auto nodeAnim = animation->mChannels[ci];
 
-            auto vsg_transformAnim = vsg::TransformAnimation::create();
-            vsg_transformAnim->name = nodeAnim->mNodeName.C_Str();
-            vsg_animation->transformAnimations.push_back(vsg_transformAnim);
+            auto vsg_transformKeyframes = vsg::TransformKeyframes::create();
+            vsg_transformKeyframes->name = nodeAnim->mNodeName.C_Str();
+            vsg_animation->transformKeyframes.push_back(vsg_transformKeyframes);
 
-            auto& positions = vsg_transformAnim->positions;
+            auto& positions = vsg_transformKeyframes->positions;
             positions.resize(nodeAnim->mNumPositionKeys);
             for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
             {
@@ -951,7 +977,7 @@ void SceneConverter::processAnimations()
                 positions[pi].value.set(positionKey.mValue.x, positionKey.mValue.y, positionKey.mValue.z);
             }
 
-            auto& rotations = vsg_transformAnim->rotations;
+            auto& rotations = vsg_transformKeyframes->rotations;
             rotations.resize(nodeAnim->mNumRotationKeys);
             for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
             {
@@ -960,7 +986,7 @@ void SceneConverter::processAnimations()
                 rotations[ri].value.set(rotationKey.mValue.x, rotationKey.mValue.y, rotationKey.mValue.z, rotationKey.mValue.w);
             }
 
-            auto& scales = vsg_transformAnim->scales;
+            auto& scales = vsg_transformKeyframes->scales;
             scales.resize(nodeAnim->mNumScalingKeys);
             for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
             {
@@ -975,11 +1001,11 @@ void SceneConverter::processAnimations()
         {
             auto meshMorphAnim = animation->mMorphMeshChannels[moi];
 
-            auto vsg_morphAnim = vsg::MorphAnimation::create();
-            vsg_morphAnim->name = meshMorphAnim->mName.C_Str();
-            vsg_animation->morphAnimations.push_back(vsg_morphAnim);
+            auto vsg_morphKeyframes = vsg::MorphKeyframes::create();
+            vsg_morphKeyframes->name = meshMorphAnim->mName.C_Str();
+            vsg_animation->morphKeyframes.push_back(vsg_morphKeyframes);
 
-            auto& keyFrames = vsg_morphAnim->keyFrames;
+            auto& keyFrames = vsg_morphKeyframes->keyframes;
             keyFrames.resize(meshMorphAnim->mNumKeys);
 
             for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
