@@ -39,7 +39,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #    endif
 #endif
 
-#define PRINT_ANIMATION 2
+#include <iostream>
 
 namespace
 {
@@ -50,6 +50,27 @@ namespace
     };
 
 } // namespace
+
+namespace vsg
+{
+    struct indentation
+    {
+        indentation(int i) : indent(i) {}
+        int indent;
+
+        indentation& operator += (int delta) { indent += delta; return *this; }
+        indentation& operator -= (int delta) { indent -= delta; return *this; }
+    };
+
+    indentation operator+(const indentation& lhs, const int rhs) { return indentation(lhs.indent + rhs); }
+    indentation operator-(const indentation& lhs, const int rhs) { return indentation(lhs.indent - rhs); }
+
+    inline std::ostream& operator<<(std::ostream& output, const indentation& in)
+    {
+        for(int i = 0; i< in.indent; ++i) output.put(' ');
+        return output;
+    }
+}
 
 using namespace vsgXchange;
 
@@ -119,6 +140,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::crease_angle] = vsg::type_name<float>();
     features.optionNameTypeMap[assimp::two_sided] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::print_assimp] = vsg::type_name<int>();
 
     return true;
 }
@@ -130,8 +152,38 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<float>(assimp::crease_angle, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
+    result = arguments.readAndAssign<int>(assimp::print_assimp, &options) || result;
     return result;
 }
+
+
+struct SubgraphStats
+{
+    unsigned int numMesh = 0;
+    unsigned int numNodes = 0;
+    unsigned int numBones = 0;
+
+    SubgraphStats& operator += (const SubgraphStats& rhs)
+    {
+        numMesh += rhs.numMesh;
+        numNodes += rhs.numNodes;
+        numBones += rhs.numBones;
+        return *this;
+    }
+};
+
+inline std::ostream& operator<<(std::ostream& output, const SubgraphStats& stats)
+{
+    return output<<"SubgraphStats{ numMesh = "<<stats.numMesh<<", numNodes = "<< stats.numNodes<<", numBones = "<<stats.numBones<<" }";
+}
+
+inline std::ostream& operator<<(std::ostream& output, const aiMatrix4x4& m)
+{
+    if (m.IsIdentity()) return output<<"aiMatrix4x4{ Identity }";
+    else return output<<"aiMatrix4x4{ {"<<m.a1<<", "<<m.a2<<", "<<m.a3<<", "<<m.a4<< "} {"<<m.b1<<", "<<m.b2<<", "<<m.b3<<", "<<m.b4<< "} {"<<m.c1<<", "<<m.c2<<", "<<m.c3<<", "<<m.c4<< "} {"<<m.d1<<", "<<m.d2<<", "<<m.d3<<", "<<m.d4<< "} }";
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -141,6 +193,7 @@ struct SceneConverter
 {
     using CameraMap = std::map<std::string, vsg::ref_ptr<vsg::Camera>>;
     using LightMap = std::map<std::string, vsg::ref_ptr<vsg::Light>>;
+    using SubgraphStatsMap = std::map<const aiNode*, SubgraphStats>;
 
     vsg::Path filename;
 
@@ -149,9 +202,11 @@ struct SceneConverter
     vsg::Animations animations;
     CameraMap cameraMap;
     LightMap lightMap;
+    SubgraphStatsMap subgraphStats;
 
     bool useViewDependentState = true;
-    bool discardEmptyNodes = true;
+    bool discardEmptyNodes = false;
+    int printAssimp = 0;
 
     // TODO flatShadedShaderSet?
     vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
@@ -160,6 +215,17 @@ struct SceneConverter
 
     std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
+    std::set<const aiNode*> boneTransforms;
+    std::set<std::string> animationTransforms;
+
+
+    SubgraphStats collectSubgraphStats(aiNode* node);
+
+    SubgraphStats print(std::ostream& out, const aiAnimation* in_anim, vsg::indentation indent);
+    SubgraphStats print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent);
+    SubgraphStats print(std::ostream& out, const aiMesh* in_mesh, vsg::indentation indent);
+    SubgraphStats print(std::ostream& out, const aiNode* in_node, vsg::indentation indent);
+    SubgraphStats print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent);
 
     static vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
     static vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
@@ -245,6 +311,331 @@ struct SceneConverter
     vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
     vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
 };
+
+
+SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node)
+{
+    SubgraphStats stats;
+
+    ++stats.numNodes;
+
+    if (boneTransforms.count(in_node) != 0)
+    {
+        ++stats.numBones;
+    }
+
+    stats.numMesh += in_node->mNumMeshes;
+
+    for (unsigned int i = 0; i < in_node->mNumChildren; ++i)
+    {
+        stats += collectSubgraphStats(in_node->mChildren[i]);
+    }
+
+    subgraphStats[in_node] = stats;
+
+    return stats;
+}
+
+SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animation, vsg::indentation indent)
+{
+    out << indent << "aiAnimation "<< animation << " name = "<<animation->mName.C_Str()<<std::endl;
+    out << indent << "{"<<std::endl;
+
+    indent += 2;
+
+    out << indent << "animation->mNumChannels "<< animation->mNumChannels<<std::endl;
+    for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
+    {
+        auto nodeAnim = animation->mChannels[ci];
+        /** The name of the node affected by this animation. The node
+        *  must exist and it must be unique.*/
+        out << indent << "aiNodeAnim["<<ci<<"] = "<<nodeAnim<<" mNodeName = "<<nodeAnim->mNodeName.C_Str()<<std::endl;
+        out << indent << "{"<<std::endl;
+
+        indent += 2;
+
+        out << indent << "nodeAnim->mNumPositionKeys = "<<nodeAnim->mNumPositionKeys<<std::endl;
+
+        if (printAssimp >= 3)
+        {
+            out << indent << "{"<<std::endl;
+            indent += 2;
+            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+            {
+                auto& positionKey =  nodeAnim->mPositionKeys[pi];
+                out << indent << "positionKey{ mTime = "<<positionKey.mTime<<", mValue = ("<<positionKey.mValue.x<<", "<<positionKey.mValue.y<<", "<<positionKey.mValue.z<<") }"<<std::endl;
+            }
+            indent -= 2;
+            out << indent << "}"<<std::endl;
+        }
+
+        out << indent << "nodeAnim->mNumRotationKeys = "<<nodeAnim->mNumRotationKeys<<std::endl;
+        if (printAssimp >= 3)
+        {
+            out << indent << "{"<<std::endl;
+            indent += 2;
+            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+            {
+                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
+                out << indent << "rotationKey{ mTime = "<<rotationKey.mTime<<", mValue = ("<<rotationKey.mValue.x<<", "<<rotationKey.mValue.y<<", "<<rotationKey.mValue.z<<", "<<rotationKey.mValue.w<<") }"<<std::endl;
+            }
+            indent -= 2;
+            out << indent << "}"<<std::endl;
+        }
+
+        out << indent << "nodeAnim->mNumScalingKeys = "<<nodeAnim->mNumScalingKeys<<std::endl;
+        if (printAssimp >= 3)
+        {
+            out << indent << "{"<<std::endl;
+            indent += 2;
+            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+            {
+                auto& scalingKey =  nodeAnim->mScalingKeys[si];
+                out << indent << "scalingKey{ mTime = "<<scalingKey.mTime<<", mValue = ("<<scalingKey.mValue.x<<", "<<scalingKey.mValue.y<<", "<<scalingKey.mValue.z<<") }"<<std::endl;
+            }
+            indent -= 2;
+            out << indent << "}"<<std::endl;
+        }
+
+        /** Defines how the animation behaves before the first //
+        *  key is encountered.
+        *
+        *  The default value is aiAnimBehaviour_DEFAULT (the original
+        *  transformation matrix of the affected node is used).*/
+        out << indent << "aiAnimBehaviour mPreState = "<<nodeAnim->mPreState<<std::endl;
+
+        /** Defines how the animation behaves after the last
+        *  key was processed.
+        *
+        *  The default value is aiAnimBehaviour_DEFAULT (the original
+        *  transformation matrix of the affected node is taken).*/
+        out << indent << "aiAnimBehaviour mPostState = "<<nodeAnim->mPostState<<std::endl;
+
+        indent -= 2;
+        out << indent << "}"<<std::endl;
+    }
+
+    out << indent << "mNumMeshChannels = "<<animation->mNumMeshChannels<<std::endl;
+    if (animation->mNumMeshChannels != 0)
+    {
+        vsg::warn("Assimp::aiMeshAnim not supported, animation->mNumMeshChannels = ", animation->mNumMeshChannels, " ignored.");
+    }
+
+    out << indent << "mNumMorphMeshChannels = "<<animation->mNumMorphMeshChannels<<std::endl;
+
+    if (printAssimp >= 2 &&  animation->mNumMorphMeshChannels > 0)
+    {
+        out << indent << "{";
+        indent += 2;
+        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
+        {
+            auto meshMorphAnim = animation->mMorphMeshChannels[moi];
+
+            out << indent << "mMorphMeshChannels["<<moi<<"] = "<<meshMorphAnim<<std::endl;
+
+            out << indent << "{"<<std::endl;
+            indent += 2;
+
+            /** Name of the mesh to be animated. An empty string is not allowed,
+            *  animated meshes need to be named (not necessarily uniquely,
+            *  the name can basically serve as wildcard to select a group
+            *  of meshes with similar animation setup)*/
+            out << indent << "mName << "<<meshMorphAnim->mName.C_Str()<<std::endl;
+            out << indent << "mNumKeys<< "<<meshMorphAnim->mNumKeys<<std::endl;
+
+            if (printAssimp >= 3)
+            {
+                for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
+                {
+                    auto& morphKey = meshMorphAnim->mKeys[mki];
+                    out << indent << "morphKey["<<mki<<"]"<<std::endl;
+                    out << indent << "{";
+                    indent += 2;
+                    out << indent << "mTime = "<<morphKey.mTime<<", mValues = "<<morphKey.mValues<<", mWeights ="<<morphKey.mWeights<<", mNumValuesAndWeights = "<<morphKey.mNumValuesAndWeights;
+                    for(unsigned int vwi = 0; vwi < morphKey.mNumValuesAndWeights; ++vwi)
+                    {
+                        out << indent <<"morphKey.mNumValuesAndWeights["<<vwi<<"] = { value = "<<morphKey.mValues[vwi]<<", weight = "<<morphKey.mWeights[vwi]<<"}"<<std::endl;
+                    }
+                    indent -= 2;
+                    out << indent << "}";
+                }
+            }
+
+            indent -= 2;
+            out << indent << "}"<<std::endl;
+        }
+
+        indent -= 2;
+
+        out << indent << "}"<<std::endl;
+    }
+
+    indent -= 2;
+    out << indent << "}"<<std::endl;
+
+    return {};
+}
+
+SubgraphStats SceneConverter::print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent)
+{
+    out << indent << "aiMaterial " << in_material << std::endl;
+    return {};
+}
+
+SubgraphStats SceneConverter::print(std::ostream& out, const aiMesh* in_mesh, vsg::indentation indent)
+{
+    out << indent << "aiMesh " << in_mesh << std::endl;
+    out << indent << "{"<< std::endl;
+    indent += 2;
+
+    out << indent << "mName = " <<in_mesh->mName.C_Str()<<std::endl;
+    out << indent << "mNumVertices = " <<in_mesh->mNumVertices<<std::endl;
+    out << indent << "mNumFaces = "<<in_mesh->mNumFaces<<std::endl;
+    //out << indent << "mWeight = " <<in_mesh->mWeight<<std::endl;
+
+    out << indent << "mNumBones = " <<in_mesh->mNumBones<<std::endl;
+    if (in_mesh->HasBones())
+    {
+        out << indent << "mBones[] = "<<std::endl;
+        out << indent << "{"<<std::endl;
+
+        auto nested = indent + 2;
+
+        for(size_t i = 0; i < in_mesh->mNumBones; ++i)
+        {
+            auto bone = in_mesh->mBones[i];
+            out << nested << "mBones["<<i<<"] = "<<bone<<" { mName "<<bone->mName.C_Str()<<", mNode = "<<bone->mNode<<", mNumWeights = "<<bone->mNumWeights<< " }"<<std::endl;
+            // mOffsetMatrix
+            // mNumWeights // { mVertexId, mWeight }
+        }
+
+        out << indent << "}"<<std::endl;
+    }
+
+    out << indent << "mNumAnimMeshes "<<in_mesh->mNumAnimMeshes<<std::endl;
+    if (in_mesh->mNumAnimMeshes != 0)
+    {
+        out << indent << "mAnimMeshes[] = "<<std::endl;
+        out << indent << "{"<<std::endl;
+
+        auto nested = indent + 2;
+
+        for(unsigned int ai = 0; ai < in_mesh->mNumAnimMeshes; ++ai)
+        {
+            auto* animationMesh = in_mesh->mAnimMeshes[ai];
+            out << nested << "mAnimMeshes["<<ai<<"] = "<<animationMesh<<", mName = "<<animationMesh->mName.C_Str()<<", mWeight =  "<<animationMesh->mWeight<<std::endl;
+        }
+
+        out << indent << "}"<<std::endl;
+    }
+
+    indent -= 2;
+
+    out << indent << "}"<<std::endl;
+
+    return {};
+}
+
+SubgraphStats SceneConverter::print(std::ostream& out, const aiNode* in_node, vsg::indentation indent)
+{
+    SubgraphStats stats;
+    ++stats.numNodes;
+
+    out << indent << "aiNode " << in_node << " mName = "<< in_node->mName.C_Str() << std::endl;
+
+    out << indent << "{" << std::endl;
+    indent += 2;
+
+    if (boneTransforms.count(in_node) != 0)
+    {
+        out << indent << "Used as a boneTransform "<<std::endl;
+        ++stats.numBones;
+    }
+
+    out << indent << "mTransformation = "<<in_node->mTransformation<<std::endl;
+    out << indent << "mNumMeshes = "<< in_node->mNumMeshes<<std::endl;
+    if (in_node->mNumMeshes > 0)
+    {
+        out << indent << "mMeshes[] = { ";
+        for (unsigned int i = 0; i < in_node->mNumMeshes; ++i)
+        {
+            if (i>0) out <<", ";
+            out << in_node->mMeshes[i];
+
+        }
+        out << " }" << std::endl;
+
+        stats.numMesh += in_node->mNumMeshes;
+    }
+
+    out << indent << "mNumChildren = "<< in_node->mNumChildren<<std::endl;
+    if (in_node->mNumChildren > 0)
+    {
+        out << indent << "mChildren[] = " << std::endl;
+        out << indent << "{" << std::endl;
+        for (unsigned int i = 0; i < in_node->mNumChildren; ++i)
+        {
+            stats += print(out, in_node->mChildren[i], indent + 2);
+        }
+        out << indent << "}" << std::endl;
+    }
+
+    indent -= 2;
+    out << indent << "} " << stats << std::endl;
+
+    return stats;
+}
+
+SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent)
+{
+    SubgraphStats stats;
+
+    out << indent << "aiScene " << in_scene << std::endl;
+    out << indent << "{" << std::endl;
+
+    indent += 2;
+
+    out << indent << "scene->mNumMaterials " << scene->mNumMaterials << std::endl;
+    out << indent << "{" << std::endl;
+    for(unsigned int mi = 0; mi<scene->mNumMaterials; ++mi)
+    {
+        print(out, scene->mMaterials[mi], indent + 2);
+    }
+    out << indent << "}" << std::endl;
+
+    out << indent << "scene->mNumMeshes " << scene->mNumMeshes << std::endl;
+    out << indent << "{" << std::endl;
+    for(unsigned int mi = 0; mi<scene->mNumMeshes; ++mi)
+    {
+        print(out, scene->mMeshes[mi], indent + 2);
+    }
+    out << indent << "}" << std::endl;
+
+
+    out << indent << "scene->mNumAnimations " << scene->mNumAnimations << std::endl;
+    out << indent << "{" << std::endl;
+    if (scene->mNumAnimations > 0)
+    {
+        for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
+        {
+            print(out, scene->mAnimations[ai], indent + 2);
+        }
+    }
+    out << indent << "}" << std::endl;
+
+    out << indent << "scene->mRootNode " << scene->mRootNode << std::endl;
+    if (scene->mRootNode != nullptr)
+    {
+        stats += print(out, scene->mRootNode, indent);
+    }
+
+    indent -= 2;
+
+    out << indent << "}" << std::endl;
+    out << indent << stats << std::endl;
+
+    return stats;
+}
 
 SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTextureType type) const
 {
@@ -542,57 +933,11 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
-#if PRINT_ANIMATION >= 1
-
-        vsg::info("    model with Animation Bones filename = ", filename);
-        vsg::info("    aiMesh::mNumBones ", mesh->mNumBones);
-
-#if PRINT_ANIMATION >= 2
-        vsg::info("    aiMesh::aiBone** ", mesh->mBones);
         for(size_t i = 0; i < mesh->mNumBones; ++i)
         {
             auto bone = mesh->mBones[i];
-            vsg::info("    bone ", bone);
-            vsg::info("         bone->mName = ", bone->mName.C_Str());
-
-            #ifndef ASSIMP_BUILD_NO_ARMATUREPOPULATE_PROCESS
-            /// The bone armature node - used for skeleton conversion
-            /// you must enable aiProcess_PopulateArmatureData to populate this
-            vsg::info("         aiNode* mArmature = ", bone->mArmature);
-            vsg::info("         aiNode* mNode = ", bone->mNode);
-            #endif
-
-            vsg::mat4 m((float*)&(bone->mOffsetMatrix));
-            vsg::info("         aiMatrix4x4 mOffsetMatrix = ", m);
-
-            vsg::info("         mNumWeights = ", bone->mNumWeights);
-            for(size_t wi = 0; wi < bone->mNumWeights; ++wi)
-            {
-                auto& weight = bone->mWeights[wi];
-                vsg::info("             aiVertexWeight->mVertexId = ", weight.mVertexId);
-                vsg::info("             aiVertexWeight->mWeight = ", weight.mWeight);
-            }
-
+            if (bone->mNode) boneTransforms.insert(bone->mNode);
         }
-#endif
-#endif
-    }
-
-    if (mesh->mNumAnimMeshes != 0)
-    {
-#if PRINT_ANIMATION >= 1
-
-        vsg::info("    model with Animation Meshes filename = ", filename);
-        vsg::info("    aiMesh::mNumAnimMeshes ", mesh->mNumAnimMeshes);
-
-#if PRINT_ANIMATION >= 2
-        for(unsigned int ai = 0; ai < mesh->mNumAnimMeshes; ++ai)
-        {
-            auto* animationMesh = mesh->mAnimMeshes[ai];
-            vsg::info("         mesh->mAnimMeshes[", ai, "] = ", animationMesh, ", mName = ", animationMesh->mName.C_Str(), ", mWeight =  ", animationMesh->mWeight);
-        }
-#endif
-#endif
     }
 
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
@@ -731,6 +1076,16 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
 
+    if (mesh->HasBones())
+    {
+        vid->setValue("mNumBones", mesh->mNumBones);
+    }
+
+    if (mesh->mNumAnimMeshes != 0)
+    {
+        vid->setValue("animationMeshes", mesh->mNumBones);
+    }
+
     // set the GraphicsPipelineStates to the required values.
     struct SetPipelineStates : public vsg::Visitor
     {
@@ -784,6 +1139,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     scene = in_scene;
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
+    printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
 
     std::string name = scene->mName.C_Str();
 
@@ -808,6 +1164,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     {
         convert(scene->mMeshes[i], convertedMeshes[i]);
     }
+
+    // collect the subgraph stats to help with decisions on which VSG node to use to represent aiNode.
+    collectSubgraphStats(scene->mRootNode);
 
     auto vsg_scene = visit(scene->mRootNode, 0);
     if (!vsg_scene)
@@ -848,6 +1207,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     }
 
     if (!name.empty()) vsg_scene->setValue("name", name);
+
+    if (printAssimp > 0) print(std::cout, in_scene, 0);
+
     return vsg_scene;
 }
 
@@ -855,18 +1217,23 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 {
     vsg::Group::Children children;
 
+    auto& stats = subgraphStats[node];
+    bool subgraphActive = stats.numMesh;
+
     std::string name = node->mName.C_Str();
 
     // assign any cameras
     if (auto camera_itr = cameraMap.find(name); camera_itr != cameraMap.end())
     {
         children.push_back(camera_itr->second);
+        subgraphActive = true;
     }
 
     // assign any lights
     if (auto light_itr = lightMap.find(name); light_itr != lightMap.end())
     {
         children.push_back(light_itr->second);
+        subgraphActive = true;
     }
 
     // assign the meshes
@@ -877,6 +1244,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         {
             children.push_back(child);
         }
+        subgraphActive = true;
     }
 
     // visit the children
@@ -888,38 +1256,44 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         }
     }
 
-    if (children.empty() && discardEmptyNodes) return {};
-
-#if PRINT_ANIMATION >= 1
-    vsg::info("SceneConverter::visit(", node, ", ", depth, ") name = ", name, ", node->mTransformation.IsIdentity() = ", node->mTransformation.IsIdentity());
-#endif
-
-    if (!name.empty() && !animations.empty())
+    if ((!subgraphActive && stats.numBones > 0) || (!name.empty() && animationTransforms.count(name) != 0))
     {
+        aiMatrix4x4 m = node->mTransformation;
+        m.Transpose();
+
+        auto matrix = vsg::dmat4Value::create(vsg::mat4((float*)&m));
+
+        // wire up transform to animation keyframes
         for(auto& animation : animations)
         {
             for (auto transformKeyframes : animation->transformKeyframes)
             {
                 if (transformKeyframes->name == name)
                 {
-                    auto transform = vsg::AnimationTransform::create();
-                    transform->name = name;
-                    transform->children = children;
-
-                    aiMatrix4x4 m = node->mTransformation;
-                    m.Transpose();
-
-                    transform->matrix = vsg::dmat4(vsg::mat4((float*)&m));
-
-#if PRINT_ANIMATION >= 1
-                    vsg::info("Matched transform to transformMKeyframes, name = ", name, " matrix = ", transform->matrix);
-#endif
-                    return transform;
+                    transformKeyframes->matrix = matrix;
                 }
             }
         }
-    }
 
+        if (subgraphActive)
+        {
+            auto transform = vsg::AnimationTransform::create();
+            transform->name = name;
+            transform->matrix = matrix;
+            transform->children = children;
+
+            return transform;
+        }
+        else
+        {
+            auto transform = vsg::RiggedTransform::create();
+            transform->name = name;
+            transform->matrix = matrix;
+            transform->children = children;
+
+            return transform;
+        }
+    }
     if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
         if (children.size() == 1 && name.empty()) return children[0];
@@ -967,6 +1341,9 @@ void SceneConverter::processAnimations()
             auto vsg_transformKeyframes = vsg::TransformKeyframes::create();
             vsg_transformKeyframes->name = nodeAnim->mNodeName.C_Str();
             vsg_animation->transformKeyframes.push_back(vsg_transformKeyframes);
+
+            // record the node name that will be animated.
+            animationTransforms.insert(vsg_transformKeyframes->name);
 
             auto& positions = vsg_transformKeyframes->positions;
             positions.resize(nodeAnim->mNumPositionKeys);
@@ -1026,99 +1403,6 @@ void SceneConverter::processAnimations()
             }
         }
     }
-
-#if PRINT_ANIMATION >= 1
-    vsg::info("filename = ", filename, " SceneConverter::visit(aiScene* ", scene, ") scene->mNumAnimations = ", scene->mNumAnimations);
-
-    for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
-    {
-        auto animation = scene->mAnimations[ai];
-
-    #if PRINT_ANIMATION >= 2
-
-        for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
-        {
-            auto nodeAnim = animation->mChannels[ci];
-            /** The name of the node affected by this animation. The node
-            *  must exist and it must be unique.*/
-            vsg::info("            nodeAnim->mNodeName = ", nodeAnim->mNodeName.C_Str());
-
-            vsg::info("            nodeAnim->mNumPositionKeys = ", nodeAnim->mNumPositionKeys);
-#if PRINT_ANIMATION >= 3
-            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
-            {
-                auto& positionKey =  nodeAnim->mPositionKeys[pi];
-                vsg::info("               positionKey{ mTime = ", positionKey.mTime, ", mValue = (", positionKey.mValue.x, ", ", positionKey.mValue.y, ", ", positionKey.mValue.z, ") }");
-            }
-#endif
-
-            vsg::info("            nodeAnim->mNumRotationKeys = ", nodeAnim->mNumRotationKeys);
-#if PRINT_ANIMATION >= 3
-            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
-            {
-                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
-                vsg::info("               rotationKey{ mTime = ", rotationKey.mTime, ", mValue = (", rotationKey.mValue.x, ", ", rotationKey.mValue.y, ", ", rotationKey.mValue.z, ", ", rotationKey.mValue.w, ") }");
-            }
-#endif
-
-            vsg::info("            nodeAnim->mNumScalingKeys = ", nodeAnim->mNumScalingKeys);
-#if PRINT_ANIMATION >= 3
-            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
-            {
-                auto& scalingKey =  nodeAnim->mScalingKeys[si];
-                vsg::info("               scalingKey{ mTime = ", scalingKey.mTime, ", mValue = (", scalingKey.mValue.x, ", ", scalingKey.mValue.y, ", ", scalingKey.mValue.z,") }");
-            }
-#endif
-            /** Defines how the animation behaves before the first //
-            *  key is encountered.
-            *
-            *  The default value is aiAnimBehaviour_DEFAULT (the original
-            *  transformation matrix of the affected node is used).*/
-            vsg::info("            aiAnimBehaviour mPreState = ", nodeAnim->mPreState); // aiAnimBehaviour_DEFAULT
-
-            /** Defines how the animation behaves after the last
-            *  key was processed.
-            *
-            *  The default value is aiAnimBehaviour_DEFAULT (the original
-            *  transformation matrix of the affected node is taken).*/
-            vsg::info("            aiAnimBehaviour mPostState = ", nodeAnim->mPostState);
-        }
-
-        vsg::info("        mNumMeshChannels = ", animation->mNumMeshChannels);
-        if (animation->mNumMeshChannels != 0)
-        {
-            vsg::warn("Assimp::aiMeshAnim not supported, animation->mNumMeshChannels = ", animation->mNumMeshChannels, " ignored.");
-        }
-
-#if PRINT_ANIMATION >= 2
-        vsg::info("        mNumMorphMeshChannels = ", animation->mNumMorphMeshChannels);
-        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
-        {
-            auto meshMorphAnim = animation->mMorphMeshChannels[moi];
-
-            /** Name of the mesh to be animated. An empty string is not allowed,
-            *  animated meshes need to be named (not necessarily uniquely,
-            *  the name can basically serve as wildcard to select a group
-            *  of meshes with similar animation setup)*/
-            vsg::info("            meshMorphAnim->mName = ", meshMorphAnim->mName.C_Str());
-            vsg::info("            meshMorphAnim->mNumKeys = ", meshMorphAnim->mNumKeys);
-
-#if PRINT_ANIMATION >= 3
-            for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
-            {
-                auto& morphKey = meshMorphAnim->mKeys[mki];
-                vsg::info("                morphKey[", mki, "] = { mTime = ", morphKey.mTime, ", mValues = ", morphKey.mValues, ", mWeights = ", morphKey.mWeights, ", mNumValuesAndWeights = ", morphKey.mNumValuesAndWeights,"}");
-                for(unsigned int vwi = 0; vwi < morphKey.mNumValuesAndWeights; ++vwi)
-                {
-                    vsg::info("                    { value = ", morphKey.mValues[vwi], ", weight = ",  morphKey.mWeights[vwi],"}");
-                }
-            }
-#endif
-        }
-#endif
-#endif
-    }
-#endif
 }
 
 void SceneConverter::processCameras()

@@ -54,6 +54,7 @@ namespace vsgXchange
         static constexpr const char* crease_angle = "crease_angle"; /// float
         static constexpr const char* two_sided = "two_sided";       ///  bool
         static constexpr const char* discard_empty_nodes = "discard_empty_nodes"; /// bool
+        static constexpr const char* print_assimp = "print_assimp"; /// int
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
