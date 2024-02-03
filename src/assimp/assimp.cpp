@@ -1262,37 +1262,43 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         m.Transpose();
 
         auto matrix = vsg::dmat4Value::create(vsg::mat4((float*)&m));
+        vsg::ref_ptr<vsg::Node> transform;
+
+        if (subgraphActive)
+        {
+            auto at = vsg::AnimationTransform::create();
+            at->name = name;
+            at->matrix = matrix;
+            at->children = children;
+
+            transform = at;
+        }
+        else
+        {
+            auto rt = vsg::RiggedTransform::create();
+            rt->name = name;
+            rt->matrix = matrix;
+            rt->children = children;
+
+            transform = rt;
+        }
 
         // wire up transform to animation keyframes
         for(auto& animation : animations)
         {
-            for (auto transformKeyframes : animation->transformKeyframes)
+            for (auto sampler : animation->samplers)
             {
-                if (transformKeyframes->name == name)
+                if (sampler->name == name)
                 {
-                    transformKeyframes->matrix = matrix;
+                    if (auto transformSampler = sampler.cast<vsg::TransformSampler>())
+                    {
+                        transformSampler->object = transform;
+                    }
                 }
             }
         }
 
-        if (subgraphActive)
-        {
-            auto transform = vsg::AnimationTransform::create();
-            transform->name = name;
-            transform->matrix = matrix;
-            transform->children = children;
-
-            return transform;
-        }
-        else
-        {
-            auto transform = vsg::RiggedTransform::create();
-            transform->name = name;
-            transform->matrix = matrix;
-            transform->children = children;
-
-            return transform;
-        }
+        return transform;
     }
     if (discardEmptyNodes && node->mTransformation.IsIdentity())
     {
@@ -1340,7 +1346,12 @@ void SceneConverter::processAnimations()
 
             auto vsg_transformKeyframes = vsg::TransformKeyframes::create();
             vsg_transformKeyframes->name = nodeAnim->mNodeName.C_Str();
-            vsg_animation->transformKeyframes.push_back(vsg_transformKeyframes);
+
+            auto transformSampler = vsg::TransformSampler::create();
+            transformSampler->name = nodeAnim->mNodeName.C_Str();
+            transformSampler->keyframes = vsg_transformKeyframes;
+
+            vsg_animation->samplers.push_back(transformSampler);
 
             // record the node name that will be animated.
             animationTransforms.insert(vsg_transformKeyframes->name);
@@ -1380,7 +1391,12 @@ void SceneConverter::processAnimations()
 
             auto vsg_morphKeyframes = vsg::MorphKeyframes::create();
             vsg_morphKeyframes->name = meshMorphAnim->mName.C_Str();
-            vsg_animation->morphKeyframes.push_back(vsg_morphKeyframes);
+
+            auto morphSampler = vsg::MorphSampler::create();
+            morphSampler->name = meshMorphAnim->mName.C_Str();
+            morphSampler->keyframes = vsg_morphKeyframes;
+
+            vsg_animation->samplers.push_back(morphSampler);
 
             auto& keyFrames = vsg_morphKeyframes->keyframes;
             keyFrames.resize(meshMorphAnim->mNumKeys);
