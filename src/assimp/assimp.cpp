@@ -159,9 +159,11 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
 
 struct SubgraphStats
 {
+    unsigned int depth = 0;
     unsigned int numMesh = 0;
     unsigned int numNodes = 0;
     unsigned int numBones = 0;
+    vsg::ref_ptr<vsg::Object> vsg_object;
 
     SubgraphStats& operator += (const SubgraphStats& rhs)
     {
@@ -220,7 +222,7 @@ struct SceneConverter
     vsg::ref_ptr<vsg::JointSampler> jointSampler;
 
 
-    SubgraphStats collectSubgraphStats(aiNode* node);
+    SubgraphStats collectSubgraphStats(aiNode* node, unsigned int depth);
 
     SubgraphStats print(std::ostream& out, const aiAnimation* in_anim, vsg::indentation indent);
     SubgraphStats print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent);
@@ -314,10 +316,11 @@ struct SceneConverter
 };
 
 
-SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node)
+SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node, unsigned int depth)
 {
     SubgraphStats stats;
 
+    stats.depth = depth;
     ++stats.numNodes;
 
     if (boneTransforms.count(in_node) != 0)
@@ -329,7 +332,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node)
 
     for (unsigned int i = 0; i < in_node->mNumChildren; ++i)
     {
-        stats += collectSubgraphStats(in_node->mChildren[i]);
+        stats += collectSubgraphStats(in_node->mChildren[i], depth+1);
     }
 
     subgraphStats[in_node] = stats;
@@ -1070,10 +1073,10 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         {
             jointSampler = vsg::JointSampler::create();
             jointSampler->jointMatrices = vsg::mat4Array::create(mesh->mNumBones);
+            jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
             jointSampler->offsetMatrices.resize(mesh->mNumBones);
-            config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
         }
-
+        config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
 
         auto jointIndices = vsg::uivec4Array::create(mesh->mNumVertices, vsg::uivec4(0, 0, 0, 0));
         auto jointWeights = vsg::vec4Array::create(mesh->mNumVertices, vsg::vec4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -1091,6 +1094,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         vsg::info("\nProcessing bones");
         vsg::info("mesh->mNumBones = ", mesh->mNumBones);
         vsg::info("mesh->mNumVertices = ", mesh->mNumVertices);
+
+        bool normalizeWeights = false;
 
         for(size_t i = 0; i < mesh->mNumBones; ++i)
         {
@@ -1127,9 +1132,40 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                 }
                 else
                 {
-                    vsg::info("        WARNING vertex has too many joint weights ", weightCount);
+                    // too many weights associated with vertex so replace the smallest weight if it's smaller than the vertexWeight.mWeight
+                    // and normalize the final result to ensure that weights all add up to 1.0
+                    normalizeWeights = true;
+
+                    unsigned int minWeightIndex = 0;
+                    float minWeight = jointWeight[minWeightIndex];
+                    for(unsigned int wi = 1; wi < 4; ++wi)
+                    {
+                        if (minWeight > jointWeight[wi])
+                        {
+                            minWeight = jointWeight[wi];
+                            minWeightIndex = wi;
+                        }
+                    }
+                    if (minWeight < vertexWeight.mWeight)
+                    {
+                        jointIndex[minWeightIndex] = transformIndex;
+                        jointWeight[minWeightIndex] = vertexWeight.mWeight;
+                    }
                 }
                 ++weightCount;
+            }
+
+        }
+        if (normalizeWeights)
+        {
+            for(auto& weights : *jointWeights)
+            {
+                float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
+                if (totalWeight != 0.0f)
+                {
+                    weights /= totalWeight;
+                }
+
             }
         }
     }
@@ -1234,7 +1270,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     }
 
     // collect the subgraph stats to help with decisions on which VSG node to use to represent aiNode.
-    collectSubgraphStats(scene->mRootNode);
+    collectSubgraphStats(scene->mRootNode, 0);
 
     auto vsg_scene = visit(scene->mRootNode, 0);
     if (!vsg_scene)
@@ -1288,6 +1324,22 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
                     animation->samplers.push_back(jointSampler);
                 }
             }
+
+            const aiNode* topBoneTransform = nullptr;
+            unsigned int topDepth = 1000;
+            for(auto& bone : boneTransforms)
+            {
+                auto& stats = subgraphStats[bone];
+                if (stats.depth < topDepth)
+                {
+                    topBoneTransform = bone;
+                    topDepth = stats.depth;
+                }
+            }
+
+            vsg::info("top boneTransform = ", topBoneTransform, ", depth = ", subgraphStats[topBoneTransform].depth, ", ", subgraphStats[topBoneTransform].vsg_object);
+
+            jointSampler->subgraph = subgraphStats[topBoneTransform].vsg_object;
         }
 
         auto animationGroup = vsg::AnimationGroup::create();
@@ -1384,6 +1436,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
             transform = joint;
         }
 
+        subgraphStats[node].vsg_object = transform;
+
         // wire up transform to animation keyframes
         for(auto& animation : animations)
         {
@@ -1409,6 +1463,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         group->children = children;
         if (!name.empty()) group->setValue("name", name);
 
+        subgraphStats[node].vsg_object = group;
+
         return group;
     }
     else
@@ -1422,6 +1478,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
         // TODO check if subgraph requires culling
         //transform->subgraphRequiresLocalFrustum = false;
+
+        subgraphStats[node].vsg_object = transform;
 
         return transform;
     }
