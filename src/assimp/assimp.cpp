@@ -665,9 +665,6 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, 
     }
     out << indent << "}" << std::endl;
 
-
-    out << indent << "scene->mNumSkeletons " << scene->mNumSkeletons << std::endl;
-
     out << indent << "scene->mRootNode " << scene->mRootNode << std::endl;
     if (scene->mRootNode != nullptr)
     {
