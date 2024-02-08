@@ -174,6 +174,13 @@ struct SubgraphStats
     }
 };
 
+struct BoneStats
+{
+    unsigned int index = 0;
+    std::string name;
+    const aiNode* node;
+};
+
 inline std::ostream& operator<<(std::ostream& output, const SubgraphStats& stats)
 {
     return output<<"SubgraphStats{ numMesh = "<<stats.numMesh<<", numNodes = "<< stats.numNodes<<", numBones = "<<stats.numBones<<" }";
@@ -196,6 +203,8 @@ struct SceneConverter
     using CameraMap = std::map<std::string, vsg::ref_ptr<vsg::Camera>>;
     using LightMap = std::map<std::string, vsg::ref_ptr<vsg::Light>>;
     using SubgraphStatsMap = std::map<const aiNode*, SubgraphStats>;
+    using BoneStatsMap = std::map<const aiBone*, BoneStats>;
+    using BoneTransformMap = std::map<const aiNode*, unsigned int>;
 
     vsg::Path filename;
 
@@ -205,6 +214,9 @@ struct SceneConverter
     CameraMap cameraMap;
     LightMap lightMap;
     SubgraphStatsMap subgraphStats;
+    BoneStatsMap bones;
+    BoneTransformMap boneTransforms;
+
 
     bool useViewDependentState = true;
     bool discardEmptyNodes = false;
@@ -217,12 +229,12 @@ struct SceneConverter
 
     std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> convertedMaterials;
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
-    std::set<const aiNode*> boneTransforms;
     std::set<std::string> animationTransforms;
     vsg::ref_ptr<vsg::JointSampler> jointSampler;
 
 
-    SubgraphStats collectSubgraphStats(aiNode* node, unsigned int depth);
+    SubgraphStats collectSubgraphStats(const aiNode* node, unsigned int depth);
+    SubgraphStats collectSubgraphStats(const aiScene* in_scene);
 
     SubgraphStats print(std::ostream& out, const aiAnimation* in_anim, vsg::indentation indent);
     SubgraphStats print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent);
@@ -316,17 +328,12 @@ struct SceneConverter
 };
 
 
-SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node, unsigned int depth)
+SubgraphStats SceneConverter::collectSubgraphStats(const aiNode* in_node, unsigned int depth)
 {
     SubgraphStats stats;
 
     stats.depth = depth;
     ++stats.numNodes;
-
-    if (boneTransforms.count(in_node) != 0)
-    {
-        ++stats.numBones;
-    }
 
     stats.numMesh += in_node->mNumMeshes;
 
@@ -336,6 +343,43 @@ SubgraphStats SceneConverter::collectSubgraphStats(aiNode* in_node, unsigned int
     }
 
     subgraphStats[in_node] = stats;
+
+    return stats;
+}
+
+SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
+{
+    SubgraphStats stats;
+
+    bones.clear();
+
+    for(unsigned int mi = 0; mi < in_scene->mNumMeshes; ++mi)
+    {
+        auto mesh = in_scene->mMeshes[mi];
+        for(unsigned int bi = 0; bi < mesh->mNumBones; ++bi)
+        {
+            auto bone = mesh->mBones[bi];
+            if (bones.find(bone) == bones.end())
+            {
+                unsigned int jointIndex = bones.size();
+                auto& boneStats = bones[bone];
+                boneStats.index = jointIndex;
+                boneStats.name = bone->mName.C_Str();
+                boneStats.node = bone->mNode;
+
+                boneTransforms[boneStats.node] = boneStats.index;
+
+                vsg::info("bone = ", bone, ", name = ", bone->mName.C_Str(), ", node = ", boneStats.node, ", node->mName = ", boneStats.node->mName.C_Str(), ", joint.index = ", jointIndex);
+            }
+        }
+    }
+
+    stats.numBones = bones.size();
+
+    if (in_scene->mRootNode)
+    {
+        stats += collectSubgraphStats(in_scene->mRootNode, 1);
+    }
 
     return stats;
 }
@@ -549,12 +593,6 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiNode* in_node, vs
 
     out << indent << "{" << std::endl;
     indent += 2;
-
-    if (boneTransforms.count(in_node) != 0)
-    {
-        out << indent << "Used as a boneTransform "<<std::endl;
-        ++stats.numBones;
-    }
 
     out << indent << "mTransformation = "<<in_node->mTransformation<<std::endl;
     out << indent << "mNumMeshes = "<< in_node->mNumMeshes<<std::endl;
@@ -1064,21 +1102,14 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
     }
 
-    if (mesh->HasBones())
+    if (mesh->HasBones() && jointSampler)
     {
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
-        if (!jointSampler)
-        {
-            jointSampler = vsg::JointSampler::create();
-            jointSampler->jointMatrices = vsg::mat4Array::create(mesh->mNumBones);
-            jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
-            jointSampler->offsetMatrices.resize(mesh->mNumBones);
-        }
         config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
 
-        auto jointIndices = vsg::uivec4Array::create(mesh->mNumVertices, vsg::uivec4(0, 0, 0, 0));
+        auto jointIndices = vsg::ivec4Array::create(mesh->mNumVertices, vsg::ivec4(0, 0, 0, 0));
         auto jointWeights = vsg::vec4Array::create(mesh->mNumVertices, vsg::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         auto objects = vsg::Objects::create();
@@ -1108,14 +1139,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
             vsg::info("    bone[", i, "], bone->mName = ", bone->mName.C_Str());
 
-            unsigned int transformIndex = i;
-
-#ifndef ASSIMP_BUILD_NO_ARMATUREPOPULATE_PROCESS
-
-            /// The bone node in the scene - used for skeleton conversion
-            /// you must enable aiProcess_PopulateArmatureData to populate this
-            if (bone->mNode) boneTransforms.insert(bone->mNode);
-#endif
+            unsigned int boneIndex = bones[bone].index;
 
             //! The number of vertices affected by this bone.
             //! The maximum value for this member is #AI_MAX_BONE_WEIGHTS.
@@ -1127,7 +1151,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                 auto& weightCount = weightCounts[vertexWeight.mVertexId];
                 if (weightCount<4)
                 {
-                    jointIndex[weightCount] = transformIndex;
+                    jointIndex[weightCount] = boneIndex;
                     jointWeight[weightCount] = vertexWeight.mWeight;
                 }
                 else
@@ -1148,7 +1172,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                     }
                     if (minWeight < vertexWeight.mWeight)
                     {
-                        jointIndex[minWeightIndex] = transformIndex;
+                        jointIndex[minWeightIndex] = boneIndex;
                         jointWeight[minWeightIndex] = vertexWeight.mWeight;
                     }
                 }
@@ -1156,6 +1180,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
             }
 
         }
+
         if (normalizeWeights)
         {
             for(auto& weights : *jointWeights)
@@ -1165,7 +1190,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                 {
                     weights /= totalWeight;
                 }
-
             }
         }
     }
@@ -1177,11 +1201,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     vid->indexCount = static_cast<uint32_t>(indices->valueCount());
     vid->instanceCount = 1;
     if (!name.empty()) vid->setValue("name", name);
-
-    if (mesh->HasBones())
-    {
-        vid->setValue("mNumBones", mesh->mNumBones);
-    }
 
     if (mesh->mNumAnimMeshes != 0)
     {
@@ -1213,8 +1232,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     auto stateGroup = vsg::StateGroup::create();
 
     config->copyTo(stateGroup, sharedObjects);
-
-    if (jointSampler) stateGroup->setObject("jointSampler", jointSampler);
 
     stateGroup->addChild(vid);
 
@@ -1250,6 +1267,22 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
+    // collect the subgraph stats to help with decisions on which VSG node to use to represent aiNode.
+    auto sceneStats = collectSubgraphStats(scene);
+    if (!bones.empty())
+    {
+        jointSampler = vsg::JointSampler::create();
+        jointSampler->jointMatrices = vsg::mat4Array::create(sceneStats.numBones);
+        jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
+        jointSampler->offsetMatrices.resize(sceneStats.numBones);
+        vsg::info("Creating JointSampler to update joint matrices.", jointSampler, ", sceneStats.numBones = ", sceneStats.numBones);
+    }
+    else
+    {
+        vsg::info("sceneStats ", sceneStats.numBones);
+    }
+
+
     processAnimations();
     processCameras();
     processLights();
@@ -1268,9 +1301,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     {
         convert(scene->mMeshes[i], convertedMeshes[i]);
     }
-
-    // collect the subgraph stats to help with decisions on which VSG node to use to represent aiNode.
-    collectSubgraphStats(scene->mRootNode, 0);
 
     auto vsg_scene = visit(scene->mRootNode, 0);
     if (!vsg_scene)
@@ -1309,37 +1339,32 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         {
             for(auto& animation : animations)
             {
-                bool requiresJointSampler = false;
+                bool assignJointSampler = false;
                 for (auto sampler : animation->samplers)
                 {
                     if (auto transformSampler = sampler.cast<vsg::TransformSampler>())
                     {
-                        // transformSampler->object
-
-                        requiresJointSampler = true;
+                        assignJointSampler = true;
                     }
                 }
-                if (requiresJointSampler)
+                if (assignJointSampler)
                 {
                     animation->samplers.push_back(jointSampler);
                 }
             }
 
-            const aiNode* topBoneTransform = nullptr;
-            unsigned int topDepth = 1000;
-            for(auto& bone : boneTransforms)
+            struct FindTopJoint : public vsg::Visitor
             {
-                auto& stats = subgraphStats[bone];
-                if (stats.depth < topDepth)
-                {
-                    topBoneTransform = bone;
-                    topDepth = stats.depth;
-                }
-            }
+                vsg::ref_ptr<vsg::Joint> topJoint;
+                void apply(vsg::Object& object) override { object.traverse(*this); }
+                void apply(vsg::Joint& joint) override { topJoint = &joint; }
+            };
 
-            vsg::info("top boneTransform = ", topBoneTransform, ", depth = ", subgraphStats[topBoneTransform].depth, ", ", subgraphStats[topBoneTransform].vsg_object);
+            auto topJoint = vsg::visit<FindTopJoint>(vsg_scene).topJoint;
 
-            jointSampler->subgraph = subgraphStats[topBoneTransform].vsg_object;
+            vsg::info("top joint = ", topJoint);
+
+            jointSampler->subgraph = topJoint;
         }
 
         auto animationGroup = vsg::AnimationGroup::create();
@@ -1347,6 +1372,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         animationGroup->addChild(vsg_scene);
         vsg_scene = animationGroup;
     }
+    else
+    {
+    }
+
+    if (jointSampler) vsg_scene->setObject("jointSampler", jointSampler);
 
     if (!name.empty()) vsg_scene->setValue("name", name);
 
@@ -1398,7 +1428,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         }
     }
 
-    if ((!subgraphActive && stats.numBones > 0) || (!name.empty() && animationTransforms.count(name) != 0))
+    bool boneTransform = boneTransforms.find(node) != boneTransforms.end();
+    bool animationTransform = !name.empty() && (animationTransforms.find(name) != animationTransforms.end());
+    if (boneTransform || animationTransform)
     {
         aiMatrix4x4 m = node->mTransformation;
         m.Transpose();
@@ -1406,21 +1438,14 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         auto matrix(vsg::mat4((float*)&m));
         vsg::ref_ptr<vsg::Node> transform;
 
-        if (subgraphActive)
-        {
-            auto mt = vsg::MatrixTransform::create();
-            if (!name.empty()) mt->setValue("name", name);
-            mt->matrix = matrix;
-            mt->children = children;
-
-            transform = mt;
-        }
-        else
+        if (boneTransform)
         {
             auto joint = vsg::Joint::create();
+            joint->index = boneTransforms[node];
             joint->name = name;
             joint->matrix = matrix;
 
+#if 0
             for(auto& child : children)
             {
                 if (auto joint_child = child.cast<vsg::Joint>())
@@ -1432,8 +1457,19 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
                     vsg::warn("Child of Joint invalid : ", child, " must be of type vsg::Joint.");
                 }
             }
-
+#else
+            joint->children = children;
+#endif
             transform = joint;
+        }
+        else
+        {
+            auto mt = vsg::MatrixTransform::create();
+            if (!name.empty()) mt->setValue("name", name);
+            mt->matrix = matrix;
+            mt->children = children;
+
+            transform = mt;
         }
 
         subgraphStats[node].vsg_object = transform;
