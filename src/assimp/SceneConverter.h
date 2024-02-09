@@ -127,6 +127,7 @@ struct SceneConverter
     std::vector<vsg::ref_ptr<vsg::Node>> convertedMeshes;
     std::set<std::string> animationTransforms;
     vsg::ref_ptr<vsg::JointSampler> jointSampler;
+    vsg::ref_ptr<vsg::Node> topEmptyTransform;
 
 
     SubgraphStats collectSubgraphStats(const aiNode* node, unsigned int depth);

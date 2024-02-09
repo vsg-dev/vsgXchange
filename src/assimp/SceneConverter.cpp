@@ -956,6 +956,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
     printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
+    topEmptyTransform = {};
 
     std::string name = scene->mName.C_Str();
 
@@ -1048,6 +1049,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
                 }
             }
 
+#if 0
             struct FindTopJoint : public vsg::Visitor
             {
                 vsg::ref_ptr<vsg::Joint> topJoint;
@@ -1057,9 +1059,10 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 
             auto topJoint = vsg::visit<FindTopJoint>(vsg_scene).topJoint;
 
-            vsg::info("top joint = ", topJoint);
-
             jointSampler->subgraph = topJoint;
+#endif
+
+            jointSampler->subgraph = topEmptyTransform;
         }
 
         auto animationGroup = vsg::AnimationGroup::create();
@@ -1166,6 +1169,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 
             transform = mt;
         }
+
+        if (!subgraphActive || boneTransform) topEmptyTransform = transform;
 
         subgraphStats[node].vsg_object = transform;
 
