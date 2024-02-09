@@ -12,6 +12,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include "SceneConverter.h"
 
+using namespace vsgXchange;
+
 SubgraphStats SceneConverter::collectSubgraphStats(const aiNode* in_node, unsigned int depth)
 {
     SubgraphStats stats;

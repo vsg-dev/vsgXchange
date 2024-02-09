@@ -51,28 +51,7 @@ namespace
 
 } // namespace
 
-namespace vsg
-{
-    struct indentation
-    {
-        indentation(int i) : indent(i) {}
-        int indent;
 
-        indentation& operator += (int delta) { indent += delta; return *this; }
-        indentation& operator -= (int delta) { indent -= delta; return *this; }
-    };
-
-    inline indentation operator+(const indentation& lhs, const int rhs) { return indentation(lhs.indent + rhs); }
-    inline indentation operator-(const indentation& lhs, const int rhs) { return indentation(lhs.indent - rhs); }
-
-    inline std::ostream& operator<<(std::ostream& output, const indentation& in)
-    {
-        for(int i = 0; i< in.indent; ++i) output.put(' ');
-        return output;
-    }
-}
-
-using namespace vsgXchange;
 
 struct SubgraphStats
 {
