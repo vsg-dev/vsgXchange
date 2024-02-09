@@ -39,6 +39,8 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
 
     bones.clear();
 
+    std::map<const aiNode*, unsigned int> joints;
+
     for(unsigned int mi = 0; mi < in_scene->mNumMeshes; ++mi)
     {
         auto mesh = in_scene->mMeshes[mi];
@@ -47,11 +49,21 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
             auto bone = mesh->mBones[bi];
             if (bones.find(bone) == bones.end())
             {
-                unsigned int jointIndex = bones.size();
+                unsigned int jointIndex = 0;
+                if (auto itr = joints.find(bone->mNode); itr != joints.end())
+                {
+                    jointIndex = itr->second;
+                }
+                else
+                {
+                    joints[bone->mNode] = jointIndex = joints.size();
+                }
+
                 auto& boneStats = bones[bone];
                 boneStats.index = jointIndex;
                 boneStats.name = bone->mName.C_Str();
                 boneStats.node = bone->mNode;
+
 
                 boneTransforms[boneStats.node] = boneStats.index;
 
