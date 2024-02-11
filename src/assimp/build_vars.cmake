@@ -1,10 +1,5 @@
 # add assimp if available
 find_package(assimp 5.1 QUIET)
-if(NOT assimp_FOUND)
-find_package(assimp 5.0 QUIET)
-endif()
-
-
 
 if(assimp_FOUND)
     OPTION(vsgXchange_assimp "Optional Assimp support provided" ON)
