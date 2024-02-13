@@ -67,7 +67,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
 
                 boneTransforms[boneStats.node] = boneStats.index;
 
-                vsg::info("bone = ", bone, ", name = ", bone->mName.C_Str(), ", node = ", boneStats.node, ", node->mName = ", boneStats.node->mName.C_Str(), ", joint.index = ", jointIndex);
+                // vsg::info("bone = ", bone, ", name = ", bone->mName.C_Str(), ", node = ", boneStats.node, ", node->mName = ", boneStats.node->mName.C_Str(), ", joint.index = ", jointIndex);
             }
         }
     }
@@ -817,9 +817,9 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         config->assignArray(vertexArrays, "vsg_JointWeights", VK_VERTEX_INPUT_RATE_VERTEX, jointWeights);
 
 
-        vsg::info("\nProcessing bones");
-        vsg::info("mesh->mNumBones = ", mesh->mNumBones);
-        vsg::info("mesh->mNumVertices = ", mesh->mNumVertices);
+        // vsg::info("\nProcessing bones");
+        // vsg::info("mesh->mNumBones = ", mesh->mNumBones);
+        // vsg::info("mesh->mNumVertices = ", mesh->mNumVertices);
 
         bool normalizeWeights = false;
 
@@ -832,7 +832,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
             jointSampler->offsetMatrices[i] = vsg::dmat4(vsg::mat4((float*)&m));
 
-            vsg::info("    bone[", i, "], bone->mName = ", bone->mName.C_Str());
+            // vsg::info("    bone[", i, "], bone->mName = ", bone->mName.C_Str());
 
             unsigned int boneIndex = bones[bone].index;
 
