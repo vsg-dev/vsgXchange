@@ -83,6 +83,9 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::two_sided] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::print_assimp] = vsg::type_name<int>();
+    features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
+    features.optionNameTypeMap[assimp::sRGBTextures] = vsg::type_name<bool>();
 
     return true;
 }
@@ -95,9 +98,12 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::two_sided, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
     result = arguments.readAndAssign<int>(assimp::print_assimp, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
+    result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::sRGBTextures, &options) || result;
+
     return result;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -134,9 +140,17 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
-            SceneConverter converter;
+            vsgXchange_assimp::SceneConverter converter;
             converter.filename = filename;
-            return converter.visit(scene, opt, ext);
+
+            auto root = converter.visit(scene, opt, ext);
+            if (root)
+            {
+                if (converter.externalTextures && converter.externalObjects && !converter.externalObjects->entries.empty())
+                    root->setObject("external", converter.externalObjects);
+            }
+
+            return root;
         }
         else
         {
@@ -151,7 +165,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
     opt->paths.push_back(vsg::filePath(filename));
     opt->extensionHint = vsg::lowerCaseFileExtension(filename);
 
-    return read(file, opt);
+    return vsg::read(file, opt);
 #endif
 
     return {};

@@ -385,6 +385,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode) == AI_SUCCESS)
     {
         SamplerData samplerImage;
+        vsg::Path externalTextureFilename;
 
         if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
         {
@@ -431,6 +432,30 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
+        if (sRGBTextures && (type == aiTextureType_DIFFUSE || type == aiTextureType_EMISSIVE))
+        {
+            switch (samplerImage.data->properties.format)
+            {
+            case VK_FORMAT_R8G8B8A8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8G8B8A8_SRGB;
+                break;
+            case VK_FORMAT_R8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8_SRGB;
+                break;
+            case VK_FORMAT_R8G8_UNORM:
+                samplerImage.data->properties.format = VK_FORMAT_R8G8_SRGB;
+                break;
+            case VK_FORMAT_R8G8B8A8_SRGB:
+            case VK_FORMAT_R8_SRGB:
+            case VK_FORMAT_R8G8_SRGB:
+                // Probably set by us already
+                break;
+            default:
+                vsg::warn("Can't set format ", samplerImage.data->properties.format, "to sRGB.");
+                break;
+            }
+        }
+
         samplerImage.sampler = vsg::Sampler::create();
         samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
         samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
@@ -450,6 +475,40 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         {
             sharedObjects->share(samplerImage.data);
             sharedObjects->share(samplerImage.sampler);
+        }
+
+        if (externalTextures && externalObjects)
+        {
+            // calculate the texture filename
+            switch (externalTextureFormat)
+            {
+            case TextureFormat::native:
+                break;  // nothing to do
+            case TextureFormat::vsgt:
+                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgt");
+                break;
+            case TextureFormat::vsgb:
+                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgb");
+                break;
+            }
+
+            // actually write out the texture.. this need only be done once per texture!
+            if (externalObjects->entries.count(externalTextureFilename) == 0)
+            {
+                switch (externalTextureFormat)
+                {
+                case TextureFormat::native:
+                    break;  // nothing to do
+                case TextureFormat::vsgt:
+                    vsg::write(samplerImage.data, externalTextureFilename, options);
+                    break;
+                case TextureFormat::vsgb:
+                    vsg::write(samplerImage.data, externalTextureFilename, options);
+                    break;
+                }
+
+                externalObjects->add(externalTextureFilename, samplerImage.data);
+            }
         }
 
         return samplerImage;
@@ -502,6 +561,14 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
+        aiString alphaMode;
+        if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("OPAQUE"))
+            pbr.alphaMaskCutoff = 0.0f;
+
+        // Note: in practice some of these textures may resolve to the same texture. For example,
+        // the glTF spec says that ambient occlusion, roughness, and metallic values are mapped
+        // respectively to red, green, and blue channels; the Blender glTF exporter can pack them
+        // into one texture. It's not clear if anything should be done about that at the VSG level.
         SamplerData samplerImage;
         if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
         {
@@ -956,12 +1023,16 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
     printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
+    externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
+    externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
+    sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     topEmptyTransform = {};
 
     std::string name = scene->mName.C_Str();
 
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
+    if (externalTextures && !externalObjects) externalObjects = vsg::External::create();
 
     // collect the subgraph stats to help with decisions on which VSG node to use to represent aiNode.
     auto sceneStats = collectSubgraphStats(scene);
