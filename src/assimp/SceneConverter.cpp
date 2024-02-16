@@ -1074,11 +1074,9 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     {
     }
 
-    if (jointSampler) vsg_scene->setObject("jointSampler", jointSampler);
-
     if (!name.empty()) vsg_scene->setValue("name", name);
 
-    if (printAssimp > 0) print(std::cout, in_scene, 0);
+    if (printAssimp > 0) print(std::cout, in_scene, vsg::indentation{0});
 
     return vsg_scene;
 }
