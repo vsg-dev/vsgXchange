@@ -72,7 +72,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
         }
     }
 
-    stats.numBones = bones.size();
+    stats.numBones = joints.size(); // bones.size();
 
     if (in_scene->mRootNode)
     {
