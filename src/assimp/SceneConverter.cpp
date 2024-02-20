@@ -1043,7 +1043,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         jointSampler->jointMatrices = vsg::mat4Array::create(sceneStats.numBones);
         jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
         jointSampler->offsetMatrices.resize(sceneStats.numBones);
-        vsg::info("Creating JointSampler to update joint matrices.", jointSampler, ", sceneStats.numBones = ", sceneStats.numBones);
     }
     else
     {
