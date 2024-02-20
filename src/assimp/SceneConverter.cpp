@@ -1026,6 +1026,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
     sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
+    culling = vsg::value<bool>(true, assimp::culling, options);
     topEmptyTransform = {};
 
     std::string name = scene->mName.C_Str();
@@ -1148,6 +1149,14 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     if (!name.empty()) vsg_scene->setValue("name", name);
 
     if (printAssimp > 0) print(std::cout, in_scene, vsg::indentation{0});
+
+    if (culling)
+    {
+        auto bounds = vsg::visit<vsg::ComputeBounds>(vsg_scene).bounds;
+        vsg::dsphere bs((bounds.max + bounds.min) * 0.5, vsg::length(bounds.max - bounds.min) * 0.5);
+        auto cullNode = vsg::CullNode::create(bs, vsg_scene);
+        vsg_scene = cullNode;
+    }
 
     return vsg_scene;
 }

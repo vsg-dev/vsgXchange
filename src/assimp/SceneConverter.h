@@ -139,6 +139,7 @@ namespace vsgXchange
         bool externalTextures = false;
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool sRGBTextures = false;
+        bool culling = true;
 
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;

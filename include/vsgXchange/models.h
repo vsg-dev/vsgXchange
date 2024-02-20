@@ -58,6 +58,7 @@ namespace vsgXchange
         static constexpr const char* external_textures = "external_textures";   /// bool
         static constexpr const char* external_texture_format = "external_texture_format";   /// TextureFormat enum
         static constexpr const char* sRGBTextures = "sRGBTextures";  /// bool
+        static constexpr const char* culling = "culling";  /// bool, insert cull nodes, defaults to true
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 

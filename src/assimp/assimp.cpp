@@ -86,6 +86,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
     features.optionNameTypeMap[assimp::sRGBTextures] = vsg::type_name<bool>();
+    features.optionNameTypeMap[assimp::culling] = vsg::type_name<bool>();
 
     return true;
 }
@@ -101,6 +102,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
     result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::sRGBTextures, &options) || result;
+    result = arguments.readAndAssign<bool>(assimp::culling, &options) || result;
 
     return result;
 }
