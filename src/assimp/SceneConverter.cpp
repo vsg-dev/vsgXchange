@@ -688,6 +688,13 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         convertedMaterial.assignDescriptor("material", vsg::PhongMaterialValue::create(mat));
     }
 
+    if (jointSampler)
+    {
+        // useful reference for GLTF animation support
+        // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
+        convertedMaterial.assignDescriptor("jointMatrices", jointSampler->jointMatrices);
+    }
+
     if (sharedObjects)
     {
         for(auto& ds : convertedMaterial.descriptorSets)
@@ -869,7 +876,8 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
-        config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
+        // now done as part of the aiMateirial/DescriptorConfigurator setup.
+        // config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
 
         auto jointIndices = vsg::ivec4Array::create(mesh->mNumVertices, vsg::ivec4(0, 0, 0, 0));
         auto jointWeights = vsg::vec4Array::create(mesh->mNumVertices, vsg::vec4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -966,7 +974,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
     if (mesh->mNumAnimMeshes != 0)
     {
-        vid->setValue("animationMeshes", mesh->mNumBones);
+        vid->setValue("animationMeshes", mesh->mNumAnimMeshes);
     }
 
     // set the GraphicsPipelineStates to the required values.
