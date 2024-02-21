@@ -1312,6 +1312,7 @@ void SceneConverter::processAnimations()
         vsg_animation->name = animation->mName.C_Str();
         animations.push_back(vsg_animation);
 
+        double epsilion = 1e-6;
         for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
         {
             auto nodeAnim = animation->mChannels[ci];
@@ -1328,31 +1329,109 @@ void SceneConverter::processAnimations()
             // record the node name that will be animated.
             animationTransforms.insert(vsg_transformKeyframes->name);
 
-            auto& positions = vsg_transformKeyframes->positions;
-            positions.resize(nodeAnim->mNumPositionKeys);
-            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+            if (nodeAnim->mNumPositionKeys > 0)
             {
-                auto& positionKey =  nodeAnim->mPositionKeys[pi];
-                positions[pi].time = positionKey.mTime * timeScale;
-                positions[pi].value.set(positionKey.mValue.x, positionKey.mValue.y, positionKey.mValue.z);
+                unsigned numUniquePositions = 1;
+                for(unsigned int si = 1; si < nodeAnim->mNumPositionKeys; ++si)
+                {
+                    auto& prev =  nodeAnim->mPositionKeys[si-1];
+                    auto& curr =  nodeAnim->mPositionKeys[si];
+                    if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
+                        (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
+                        (std::fabs(prev.mValue.z - curr.mValue.z) > epsilion))
+                    {
+                        ++numUniquePositions;
+                    }
+                }
+
+                auto& positions = vsg_transformKeyframes->positions;
+                if (numUniquePositions <= 1)
+                {
+                    positions.resize(1);
+                    auto& positionKey =  nodeAnim->mPositionKeys[0];
+                    positions[0].time = positionKey.mTime * timeScale;
+                    positions[0].value.set(positionKey.mValue.x, positionKey.mValue.y, positionKey.mValue.z);
+                }
+                else
+                {
+                    positions.resize(nodeAnim->mNumPositionKeys);
+                    for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+                    {
+                        auto& positionKey =  nodeAnim->mPositionKeys[pi];
+                        positions[pi].time = positionKey.mTime * timeScale;
+                        positions[pi].value.set(positionKey.mValue.x, positionKey.mValue.y, positionKey.mValue.z);
+                    }
+                }
             }
 
-            auto& rotations = vsg_transformKeyframes->rotations;
-            rotations.resize(nodeAnim->mNumRotationKeys);
-            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+            if (nodeAnim->mNumRotationKeys > 0)
             {
-                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
-                rotations[ri].time = rotationKey.mTime * timeScale;
-                rotations[ri].value.set(rotationKey.mValue.x, rotationKey.mValue.y, rotationKey.mValue.z, rotationKey.mValue.w);
+                unsigned numUniqueRotations = 1;
+                for(unsigned int si = 1; si < nodeAnim->mNumRotationKeys; ++si)
+                {
+                    auto& prev =  nodeAnim->mRotationKeys[si-1];
+                    auto& curr =  nodeAnim->mRotationKeys[si];
+                    if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
+                        (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
+                        (std::fabs(prev.mValue.z - curr.mValue.z) > epsilion) ||
+                        (std::fabs(prev.mValue.w - curr.mValue.w) > epsilion))
+                    {
+                        ++numUniqueRotations;
+                    }
+                }
+
+                auto& rotations = vsg_transformKeyframes->rotations;
+                if (numUniqueRotations <= 1)
+                {
+                    rotations.resize(1);
+                    auto& rotationKey =  nodeAnim->mRotationKeys[0];
+                    rotations[0].time = rotationKey.mTime * timeScale;
+                    rotations[0].value.set(rotationKey.mValue.x, rotationKey.mValue.y, rotationKey.mValue.z, rotationKey.mValue.w);
+                }
+                else
+                {
+                    rotations.resize(nodeAnim->mNumRotationKeys);
+                    for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+                    {
+                        auto& rotationKey =  nodeAnim->mRotationKeys[ri];
+                        rotations[ri].time = rotationKey.mTime * timeScale;
+                        rotations[ri].value.set(rotationKey.mValue.x, rotationKey.mValue.y, rotationKey.mValue.z, rotationKey.mValue.w);
+                    }
+                }
             }
 
-            auto& scales = vsg_transformKeyframes->scales;
-            scales.resize(nodeAnim->mNumScalingKeys);
-            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+            if (nodeAnim->mNumScalingKeys > 0)
             {
-                auto& scalingKey =  nodeAnim->mScalingKeys[si];
-                scales[si].time = scalingKey.mTime * timeScale;
-                scales[si].value.set(scalingKey.mValue.x, scalingKey.mValue.y, scalingKey.mValue.z);
+                unsigned numUniqueScales = 1;
+                for(unsigned int si = 1; si < nodeAnim->mNumScalingKeys; ++si)
+                {
+                    auto& prev =  nodeAnim->mScalingKeys[si-1];
+                    auto& curr =  nodeAnim->mScalingKeys[si];
+                    if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
+                        (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
+                        (std::fabs(prev.mValue.z - curr.mValue.z) > epsilion))
+                    {
+                        ++numUniqueScales;
+                    }
+                }
+                auto& scales = vsg_transformKeyframes->scales;
+                if (numUniqueScales <= 1)
+                {
+                    scales.resize(1);
+                    auto& scalingKey =  nodeAnim->mScalingKeys[0];
+                    scales[0].time = scalingKey.mTime * timeScale;
+                    scales[0].value.set(scalingKey.mValue.x, scalingKey.mValue.y, scalingKey.mValue.z);
+                }
+                else
+                {
+                    scales.resize(nodeAnim->mNumScalingKeys);
+                    for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+                    {
+                        auto& scalingKey =  nodeAnim->mScalingKeys[si];
+                        scales[si].time = scalingKey.mTime * timeScale;
+                        scales[si].value.set(scalingKey.mValue.x, scalingKey.mValue.y, scalingKey.mValue.z);
+                    }
+                }
             }
 
         }
