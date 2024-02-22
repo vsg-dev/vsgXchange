@@ -1,10 +1,5 @@
 # add assimp if available
 find_package(assimp 5.1 QUIET)
-if(NOT assimp_FOUND)
-find_package(assimp 5.0 QUIET)
-endif()
-
-
 
 if(assimp_FOUND)
     OPTION(vsgXchange_assimp "Optional Assimp support provided" ON)
@@ -21,6 +16,7 @@ if (${vsgXchange_assimp})
 
     set(SOURCES ${SOURCES}
         assimp/assimp.cpp
+        assimp/SceneConverter.cpp
     )
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)
