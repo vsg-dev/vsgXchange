@@ -142,7 +142,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             auto opt = vsg::Options::create(*options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
-            vsgXchange_assimp::SceneConverter converter;
+            SceneConverter converter;
             converter.filename = filename;
 
             auto root = converter.visit(scene, opt, ext);
