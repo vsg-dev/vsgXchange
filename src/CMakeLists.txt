@@ -65,8 +65,8 @@ target_compile_definitions(vsgXchange PRIVATE ${EXTRA_DEFINES})
 
 target_include_directories(vsgXchange
     PUBLIC
-        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${VSGXCHANGE_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${VSGXCHANGE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${EXTRA_INCLUDES}
