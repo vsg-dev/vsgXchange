@@ -103,6 +103,10 @@ To convert an OpenSceneGraph Paged database (requires osg2vsg/OpenSceneGraph):
 
     vsgconv OsgDatabase/earth.osgb VsgDatabase/earth.vsgb -l 30 # convert up to level 30
 
+Options specific to a ReaderWriter are specified on the commandline using two dashes:
+
+    vsgconv FlightHelmet.gltf helmet.vsgb --discard_empty_nodes false
+
 ## File formats supported by all built in ReaderWriters
 
     $ vsgconv --features
