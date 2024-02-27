@@ -876,7 +876,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         // useful reference for GLTF animation support
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
 
-        // now done as part of the aiMateirial/DescriptorConfigurator setup.
+        // now done as part of the aiMaterial/DescriptorConfigurator setup.
         // config->assignDescriptor("jointMatrices", jointSampler->jointMatrices);
 
         auto jointIndices = vsg::ivec4Array::create(mesh->mNumVertices, vsg::ivec4(0, 0, 0, 0));
@@ -1097,7 +1097,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     }
 
 
-    // decoate scene graph with transform if required to standardize the coordinate frame
+    // decorate scene graph with transform if required to standardize the coordinate frame
     if (auto transform = processCoordinateFrame(ext))
     {
         transform->addChild(vsg_scene);
