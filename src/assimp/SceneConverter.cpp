@@ -1120,6 +1120,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
                     if (auto transformSampler = sampler.cast<vsg::TransformSampler>())
                     {
                         assignJointSampler = true;
+                        break;
                     }
                 }
                 if (assignJointSampler)
@@ -1314,7 +1315,7 @@ void SceneConverter::processAnimations()
         auto animation = scene->mAnimations[ai];
 
         // convert the time values the VSG uses to seconds.
-        double timeScale = 1.0/animation->mTicksPerSecond;
+        const double timeScale = 1.0/animation->mTicksPerSecond;
 
         auto vsg_animation = vsg::Animation::create();
         vsg_animation->name = animation->mName.C_Str();
