@@ -56,7 +56,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
                 }
                 else
                 {
-                    joints[bone->mNode] = jointIndex = joints.size();
+                    joints[bone->mNode] = jointIndex = static_cast<unsigned int>(joints.size());
                 }
 
                 auto& boneStats = bones[bone];
@@ -72,7 +72,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
         }
     }
 
-    stats.numBones = joints.size(); // bones.size();
+    stats.numBones = static_cast<unsigned int>(joints.size()); // bones.size();
 
     if (in_scene->mRootNode)
     {
