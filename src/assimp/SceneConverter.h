@@ -248,3 +248,5 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
     };
 }
+
+EVSG_type_name(vsgXchange::TextureFormat)
