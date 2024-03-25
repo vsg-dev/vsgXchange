@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 project(vsgXchange
-    VERSION 1.1.0
+    VERSION 1.1.1
     DESCRIPTION "VulkanSceneGraph 3rd party data integration library"
     LANGUAGES CXX C
 )
