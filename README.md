@@ -47,7 +47,12 @@ In source build:
 
 ### Windows:
 
-To be filled in by a kindly Windows dev :-)
+Using cmake:
+```
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
 
 ## How to use vsgXchange in your own applications
 
