@@ -1052,11 +1052,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
         jointSampler->offsetMatrices.resize(sceneStats.numBones);
     }
-    else
-    {
-        vsg::info("sceneStats ", sceneStats.numBones);
-    }
-
 
     processAnimations();
     processCameras();
