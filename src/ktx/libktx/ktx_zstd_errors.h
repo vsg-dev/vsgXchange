@@ -22,7 +22,7 @@ extern "C" {
 /* =====   ZSTDERRORLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDERRORLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
-#    define ZSTDERRORLIB_VISIBILITY __attribute__ ((visibility ("default")))
+#    define ZSTDERRORLIB_VISIBILITY __attribute__ ((visibility ("hidden")))
 #  else
 #    define ZSTDERRORLIB_VISIBILITY
 #  endif
