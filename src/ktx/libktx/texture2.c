@@ -22,8 +22,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "zstd.h"
-#include "zstd_errors.h"
+#include "ktx_zstd.h"
+#include "ktx_zstd_errors.h"
 #include <KHR/khr_df.h>
 
 #include "dfdutils/dfd.h"
