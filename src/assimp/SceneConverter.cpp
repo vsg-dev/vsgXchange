@@ -424,10 +424,10 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         }
         else
         {
-            auto textureFilename = vsg::findFile(texPath.C_Str(), options);
-            if (samplerImage.data = vsg::read_cast<vsg::Data>(textureFilename, options); !samplerImage.data.valid())
+            externalTextureFilename = vsg::findFile(texPath.C_Str(), options);
+            if (samplerImage.data = vsg::read_cast<vsg::Data>(externalTextureFilename, options); !samplerImage.data.valid())
             {
-                vsg::warn("Failed to load texture: ", textureFilename, " texPath = ", texPath.C_Str());
+                vsg::warn("Failed to load texture: ", externalTextureFilename, " texPath = ", texPath.C_Str());
                 return {};
             }
         }
