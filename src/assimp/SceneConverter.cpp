@@ -1594,7 +1594,7 @@ vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const 
     if (scene->mMetaData)
     {
         int upAxis = 1;
-        if (scene->mMetaData->Get("UpAxis", upAxis) == AI_SUCCESS)
+        if (scene->mMetaData->Get("UpAxis", upAxis))
         {
             if (upAxis == 0)
                 source_coordinateConvention = vsg::CoordinateConvention::X_UP;
