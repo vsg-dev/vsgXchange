@@ -533,7 +533,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         defines.insert("VSG_TWO_SIDED_LIGHTING");
     }
 
-    if (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness)
+    aiShadingMode shadingMode;
+    material->Get(AI_MATKEY_SHADING_MODEL, shadingMode);
+
+    if (!(shadingMode & aiShadingMode_Phong || shadingMode & aiShadingMode_Blinn) && (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness))
     {
         // PBR path
         convertedMaterial.shaderSet = getOrCreatePbrShaderSet();
@@ -621,9 +624,6 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         const auto diffuseResult = getColor(material, AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
         const auto emissiveResult = getColor(material, AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
         const auto specularResult = getColor(material, AI_MATKEY_COLOR_SPECULAR, mat.specular);
-
-        aiShadingMode shadingModel = aiShadingMode_Phong;
-        material->Get(AI_MATKEY_SHADING_MODEL, shadingModel);
 
         unsigned int maxValue = 1;
         float strength = 1.0f;
