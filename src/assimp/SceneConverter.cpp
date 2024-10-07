@@ -533,10 +533,13 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         defines.insert("VSG_TWO_SIDED_LIGHTING");
     }
 
-    aiShadingMode shadingMode;
+    aiShadingMode shadingMode = {};
     material->Get(AI_MATKEY_SHADING_MODEL, shadingMode);
 
-    if (!(shadingMode & aiShadingMode_Phong || shadingMode & aiShadingMode_Blinn) && (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness))
+    bool phongShading = (shadingMode == aiShadingMode_Phong) || (shadingMode == aiShadingMode_Blinn);
+    bool pbrShading = (getColor(material, AI_MATKEY_BASE_COLOR, pbr.baseColorFactor) || hasPbrSpecularGlossiness);
+
+    if (pbrShading && !phongShading)
     {
         // PBR path
         convertedMaterial.shaderSet = getOrCreatePbrShaderSet();
