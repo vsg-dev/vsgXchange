@@ -239,10 +239,10 @@ namespace vsgXchange
 
         SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
 
-        void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
+        void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace);
 
         vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices);
-        void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
+        void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace);
 
         vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
         vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
