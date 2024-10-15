@@ -120,6 +120,7 @@ namespace vsgXchange
         using SubgraphStatsMap = std::map<const aiNode*, SubgraphStats>;
         using BoneStatsMap = std::map<const aiBone*, BoneStats>;
         using BoneTransformMap = std::map<const aiNode*, unsigned int>;
+        using ColorSpace = vsg::Options::ColorSpace;
 
         vsg::Path filename;
 
@@ -140,6 +141,10 @@ namespace vsgXchange
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool sRGBTextures = false;
         bool culling = true;
+        ColorSpace sceneVertexColorColorSpace = ColorSpace::linearRGB;
+        ColorSpace sceneMaterialColorSpace = ColorSpace::linearRGB;
+        ColorSpace sourceVertexColorColorSpace = ColorSpace::sRGB;
+        ColorSpace sourceMaterialColorSpace = ColorSpace::sRGB;
 
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
@@ -239,10 +244,10 @@ namespace vsgXchange
 
         SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
 
-        void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace);
+        void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
         vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices);
-        void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace);
+        void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
 
         vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
         vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);

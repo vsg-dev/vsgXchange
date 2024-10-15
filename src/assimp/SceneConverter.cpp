@@ -531,7 +531,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     }
 }
 
-void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace)
+void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial)
 {
     auto& defines = convertedMaterial.defines;
 
@@ -579,10 +579,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
-        convertColor(pbr.baseColorFactor, sourceColorSpace, destinationColorSpace);
-        convertColor(pbr.emissiveFactor, sourceColorSpace, destinationColorSpace);
-        convertColor(pbr.diffuseFactor, sourceColorSpace, destinationColorSpace);
-        convertColor(pbr.specularFactor, sourceColorSpace, destinationColorSpace);
+        convertColor(pbr.baseColorFactor, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(pbr.emissiveFactor, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(pbr.diffuseFactor, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(pbr.specularFactor, sourceMaterialColorSpace, sceneMaterialColorSpace);
 
         aiString alphaMode;
         if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("OPAQUE"))
@@ -645,10 +645,10 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         const auto emissiveResult = getColor(material, AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
         const auto specularResult = getColor(material, AI_MATKEY_COLOR_SPECULAR, mat.specular);
 
-        convertColor(mat.ambient, sourceColorSpace, destinationColorSpace);
-        convertColor(mat.diffuse, sourceColorSpace, destinationColorSpace);
-        convertColor(mat.emissive, sourceColorSpace, destinationColorSpace);
-        convertColor(mat.specular, sourceColorSpace, destinationColorSpace);
+        convertColor(mat.ambient, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(mat.diffuse, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(mat.emissive, sourceMaterialColorSpace, sceneMaterialColorSpace);
+        convertColor(mat.specular, sourceMaterialColorSpace, sceneMaterialColorSpace);
 
         unsigned int maxValue = 1;
         float strength = 1.0f;
@@ -765,7 +765,7 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
     }
 }
 
-void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node, vsg::Options::ColorSpace sourceColorSpace, vsg::Options::ColorSpace destinationColorSpace)
+void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
@@ -889,7 +889,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node, 
         auto colors = vsg::vec4Array::create(mesh->mNumVertices);
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
         for (auto& color : *colors)
-            convertColor(color, sourceColorSpace, destinationColorSpace);
+            convertColor(color, sourceVertexColorColorSpace, sceneVertexColorColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
     }
     else
@@ -1062,6 +1062,15 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
     sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
+    sceneVertexColorColorSpace = options->sceneVertexColorColorSpace;
+    sceneMaterialColorSpace = options->sceneMaterialColorSpace;
+    // this is a good heuristic for every format I've checked, but I've not covered all the ~60 formats assimp supports
+    sourceVertexColorColorSpace = (ext == ".gltf" || ext == ".glb") ? vsg::Options::linearRGB : vsg::Options::sRGB;
+    if (auto itr = options->formatVertexColorColorSpaces.find(ext); itr != options->formatVertexColorColorSpaces.end())
+        sourceVertexColorColorSpace = itr->second;
+    sourceMaterialColorSpace = (ext == ".gltf" || ext == ".glb") ? vsg::Options::linearRGB : vsg::Options::sRGB;
+    if (auto itr = options->formatMaterialColorSpaces.find(ext); itr != options->formatMaterialColorSpaces.end())
+        sourceMaterialColorSpace = itr->second;
     topEmptyTransform = {};
 
     std::string name = scene->mName.C_Str();
@@ -1085,25 +1094,18 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     processLights();
 
     // convert the materials
-    // this is a good heuristic for every format I've checked, but I've not covered all the ~60 formats assimp supports
-    vsg::Options::ColorSpace sourceColorSpace = (ext == ".gltf" || ext == ".glb") ? vsg::Options::linearRGB : vsg::Options::sRGB;
-    if (auto itr = options->formatMaterialColorSpaces.find(ext); itr != options->formatMaterialColorSpaces.end())
-        sourceColorSpace = itr->second;
     convertedMaterials.resize(scene->mNumMaterials);
     for (unsigned int i = 0; i < scene->mNumMaterials; ++i)
     {
         convertedMaterials[i] = vsg::DescriptorConfigurator::create();
-        convert(scene->mMaterials[i], *convertedMaterials[i], sourceColorSpace, options->sceneMaterialColorSpace);
+        convert(scene->mMaterials[i], *convertedMaterials[i]);
     }
 
     // convert the meshes
-    sourceColorSpace = (ext == ".gltf" || ext == ".glb") ? vsg::Options::linearRGB : vsg::Options::sRGB;
-    if (auto itr = options->formatVertexColorColorSpaces.find(ext); itr != options->formatVertexColorColorSpaces.end())
-        sourceColorSpace = itr->second;
     convertedMeshes.resize(scene->mNumMeshes);
     for (unsigned int i = 0; i < scene->mNumMeshes; ++i)
     {
-        convert(scene->mMeshes[i], convertedMeshes[i], sourceColorSpace, options->sceneVertexColorColorSpace);
+        convert(scene->mMeshes[i], convertedMeshes[i]);
     }
 
     auto vsg_scene = visit(scene->mRootNode, 0);
