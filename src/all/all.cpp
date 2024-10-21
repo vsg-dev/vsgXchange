@@ -18,15 +18,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
 
+#include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>
+#include <vsg/io/glsl.h>
 #include <vsg/io/spirv.h>
 #include <vsg/io/tile.h>
-#include <vsg/io/glsl.h>
 #include <vsg/io/txt.h>
-#include <vsg/io/Logger.h>
 
 #ifdef vsgXchange_OSG
-#include <osg2vsg/OSG.h>
+#    include <osg2vsg/OSG.h>
 #endif
 
 using namespace vsgXchange;
@@ -52,7 +52,7 @@ void vsgXchange::init()
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
     vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
     vsg::ObjectFactory::instance()->add<vsgXchange::GDAL>();
-//    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
+    //    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
 }
 
 all::all()

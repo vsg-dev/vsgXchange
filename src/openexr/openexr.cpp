@@ -104,7 +104,7 @@ namespace
         {
             curPlace = pos;
         };
-        virtual void clear(){};
+        virtual void clear() {};
 
     private:
         const uint8_t* data;

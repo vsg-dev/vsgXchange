@@ -10,7 +10,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-
 #include <cmath>
 #include <sstream>
 #include <stack>
@@ -51,7 +50,7 @@ namespace vsgXchange
     };
 
     // this needs to be defined before 'vsg/commandline.h' has been included
-    inline std::istream& operator>> (std::istream& is, TextureFormat& textureFormat)
+    inline std::istream& operator>>(std::istream& is, TextureFormat& textureFormat)
     {
         std::string value;
         is >> value;
@@ -60,7 +59,7 @@ namespace vsgXchange
             textureFormat = TextureFormat::native;
         else if (value == "vsgb")
             textureFormat = TextureFormat::vsgb;
-        else if ((value == "vsgt")||(value == "vsga"))
+        else if ((value == "vsgt") || (value == "vsga"))
             textureFormat = TextureFormat::vsgt;
         else
             textureFormat = TextureFormat::native;
@@ -82,7 +81,7 @@ namespace vsgXchange
         unsigned int numBones = 0;
         vsg::ref_ptr<vsg::Object> vsg_object;
 
-        SubgraphStats& operator += (const SubgraphStats& rhs)
+        SubgraphStats& operator+=(const SubgraphStats& rhs)
         {
             numMesh += rhs.numMesh;
             numNodes += rhs.numNodes;
@@ -100,13 +99,15 @@ namespace vsgXchange
 
     inline std::ostream& operator<<(std::ostream& output, const SubgraphStats& stats)
     {
-        return output<<"SubgraphStats{ numMesh = "<<stats.numMesh<<", numNodes = "<< stats.numNodes<<", numBones = "<<stats.numBones<<" }";
+        return output << "SubgraphStats{ numMesh = " << stats.numMesh << ", numNodes = " << stats.numNodes << ", numBones = " << stats.numBones << " }";
     }
 
     inline std::ostream& operator<<(std::ostream& output, const aiMatrix4x4& m)
     {
-        if (m.IsIdentity()) return output<<"aiMatrix4x4{ Identity }";
-        else return output<<"aiMatrix4x4{ {"<<m.a1<<", "<<m.a2<<", "<<m.a3<<", "<<m.a4<< "} {"<<m.b1<<", "<<m.b2<<", "<<m.b3<<", "<<m.b4<< "} {"<<m.c1<<", "<<m.c2<<", "<<m.c3<<", "<<m.c4<< "} {"<<m.d1<<", "<<m.d2<<", "<<m.d3<<", "<<m.d4<< "} }";
+        if (m.IsIdentity())
+            return output << "aiMatrix4x4{ Identity }";
+        else
+            return output << "aiMatrix4x4{ {" << m.a1 << ", " << m.a2 << ", " << m.a3 << ", " << m.a4 << "} {" << m.b1 << ", " << m.b2 << ", " << m.b3 << ", " << m.b4 << "} {" << m.c1 << ", " << m.c2 << ", " << m.c3 << ", " << m.c4 << "} {" << m.d1 << ", " << m.d2 << ", " << m.d3 << ", " << m.d4 << "} }";
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +133,6 @@ namespace vsgXchange
         BoneStatsMap bones;
         BoneTransformMap boneTransforms;
 
-
         bool useViewDependentState = true;
         bool discardEmptyNodes = false;
         int printAssimp = 0;
@@ -153,7 +153,6 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::JointSampler> jointSampler;
         vsg::ref_ptr<vsg::Node> topEmptyTransform;
 
-
         SubgraphStats collectSubgraphStats(const aiNode* node, unsigned int depth);
         SubgraphStats collectSubgraphStats(const aiScene* in_scene);
 
@@ -168,7 +167,7 @@ namespace vsgXchange
         static vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
         static vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
 
-        static bool getColor(const aiMaterial* material, const char *pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
+        static bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
         {
             aiColor3D color;
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
@@ -178,7 +177,7 @@ namespace vsgXchange
             }
             return false;
         }
-        static bool getColor(const aiMaterial* material, const char *pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
+        static bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
         {
             aiColor4D color;
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
@@ -247,6 +246,6 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
         vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
     };
-}
+} // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::TextureFormat)

@@ -296,7 +296,7 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
 
 vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-     if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
+    if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)

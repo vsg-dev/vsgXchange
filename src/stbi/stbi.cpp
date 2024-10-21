@@ -82,51 +82,49 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
 {
     int num_components = 0;
     vsg::ref_ptr<const vsg::Data> local_data;
-    switch(data->properties.format)
+    switch (data->properties.format)
     {
-        case(VK_FORMAT_R8_UNORM):
-            num_components = 1;
-            break;
-        case(VK_FORMAT_R8G8_UNORM):
-            num_components = 2;
-            break;
-        case(VK_FORMAT_R8G8B8_UNORM):
-            num_components = 3;
-            break;
-        case(VK_FORMAT_R8G8B8A8_UNORM):
-            num_components = 4;
-            break;
-        case(VK_FORMAT_B8G8R8_UNORM):
+    case (VK_FORMAT_R8_UNORM):
+        num_components = 1;
+        break;
+    case (VK_FORMAT_R8G8_UNORM):
+        num_components = 2;
+        break;
+    case (VK_FORMAT_R8G8B8_UNORM):
+        num_components = 3;
+        break;
+    case (VK_FORMAT_R8G8B8A8_UNORM):
+        num_components = 4;
+        break;
+    case (VK_FORMAT_B8G8R8_UNORM): {
+        auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8_UNORM});
+        auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
+        for (auto& dest : *dest_data)
         {
-            auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8_UNORM});
-            auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
-            for(auto& dest : *dest_data)
-            {
-                auto& src = *(src_ptr++);
-                dest.set(src[2], src[1], src[0]);
-            }
-
-            num_components = 3;
-            local_data = dest_data;
-            break;
+            auto& src = *(src_ptr++);
+            dest.set(src[2], src[1], src[0]);
         }
-        case(VK_FORMAT_B8G8R8A8_UNORM):
+
+        num_components = 3;
+        local_data = dest_data;
+        break;
+    }
+    case (VK_FORMAT_B8G8R8A8_UNORM): {
+        auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+        auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
+        for (auto& dest : *dest_data)
         {
-            auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
-            auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
-            for(auto& dest : *dest_data)
-            {
-                auto& src = *(src_ptr++);
-                dest.set(src[2], src[1], src[0], src[3]);
-            }
-
-            num_components = 4;
-            local_data = dest_data;
-            break;
+            auto& src = *(src_ptr++);
+            dest.set(src[2], src[1], src[0], src[3]);
         }
-        default:
-            vsg::warn("stbi::write(", data->className(),", ", filename,") data format VkFormat(", data->properties.format, ") not supported.");
-            return {0,{}};
+
+        num_components = 4;
+        local_data = dest_data;
+        break;
+    }
+    default:
+        vsg::warn("stbi::write(", data->className(), ", ", filename, ") data format VkFormat(", data->properties.format, ") not supported.");
+        return {0, {}};
     }
     return {num_components, local_data};
 }
@@ -144,7 +142,7 @@ bool stbi::getFeatures(Features& features) const
     features.extensionFeatureMap[".png"] = read_write_mask;
     features.extensionFeatureMap[".bmp"] = read_write_mask;
     features.extensionFeatureMap[".tga"] = read_write_mask;
-    features.extensionFeatureMap[".jpg"] = features.extensionFeatureMap[".jpeg"] = features.extensionFeatureMap[".jpe"] =  read_write_mask;
+    features.extensionFeatureMap[".jpg"] = features.extensionFeatureMap[".jpeg"] = features.extensionFeatureMap[".jpe"] = read_write_mask;
 
     features.extensionFeatureMap[".psd"] = read_mask;
     features.extensionFeatureMap[".pgm"] = read_mask;
@@ -240,7 +238,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
     auto [num_components, local_data] = reformatForWriting(data, {});
-    if (num_components==0) return false;
+    if (num_components == 0) return false;
     if (local_data) data = local_data.get();
 
     int result = 0;
@@ -256,7 +254,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
     {
         result = stbi_write_tga_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer());
     }
-    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe" )
+    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe")
     {
         int quality = 100;
         if (options)
@@ -265,7 +263,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
         }
         result = stbi_write_jpg_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), quality);
     }
-    return result==1;
+    return result == 1;
 }
 
 bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -281,7 +279,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
 
     // if we need to swizzle the image we'll need to allocate a temporary vsg::Data to store the swizzled data
     auto [num_components, local_data] = reformatForWriting(data, filename);
-    if (num_components==0) return false;
+    if (num_components == 0) return false;
     if (local_data) data = local_data.get();
 
     // convert to utf8 std::string
@@ -299,7 +297,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
     {
         result = stbi_write_tga(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer());
     }
-    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe" )
+    else if (ext == ".jpg" || ext == ".jpeg" || ext == ".jpe")
     {
         int quality = 100;
         if (options)
@@ -309,5 +307,5 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
         result = stbi_write_jpg(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), quality);
     }
 
-    return result==1;
+    return result == 1;
 }

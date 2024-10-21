@@ -25,7 +25,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiNode* in_node, unsign
 
     for (unsigned int i = 0; i < in_node->mNumChildren; ++i)
     {
-        stats += collectSubgraphStats(in_node->mChildren[i], depth+1);
+        stats += collectSubgraphStats(in_node->mChildren[i], depth + 1);
     }
 
     subgraphStats[in_node] = stats;
@@ -41,10 +41,10 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
 
     std::map<const aiNode*, unsigned int> joints;
 
-    for(unsigned int mi = 0; mi < in_scene->mNumMeshes; ++mi)
+    for (unsigned int mi = 0; mi < in_scene->mNumMeshes; ++mi)
     {
         auto mesh = in_scene->mMeshes[mi];
-        for(unsigned int bi = 0; bi < mesh->mNumBones; ++bi)
+        for (unsigned int bi = 0; bi < mesh->mNumBones; ++bi)
         {
             auto bone = mesh->mBones[bi];
             if (bones.find(bone) == bones.end())
@@ -63,7 +63,6 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
                 boneStats.index = jointIndex;
                 boneStats.name = bone->mName.C_Str();
                 boneStats.node = bone->mNode;
-
 
                 boneTransforms[boneStats.node] = boneStats.index;
 
@@ -84,63 +83,63 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
 
 SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animation, vsg::indentation indent)
 {
-    out << indent << "aiAnimation "<< animation << " name = "<<animation->mName.C_Str()<<std::endl;
-    out << indent << "{"<<std::endl;
+    out << indent << "aiAnimation " << animation << " name = " << animation->mName.C_Str() << std::endl;
+    out << indent << "{" << std::endl;
 
     indent += 2;
 
-    out << indent << "animation->mNumChannels "<< animation->mNumChannels<<std::endl;
-    for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
+    out << indent << "animation->mNumChannels " << animation->mNumChannels << std::endl;
+    for (unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
     {
         auto nodeAnim = animation->mChannels[ci];
         /** The name of the node affected by this animation. The node
         *  must exist and it must be unique.*/
-        out << indent << "aiNodeAnim["<<ci<<"] = "<<nodeAnim<<" mNodeName = "<<nodeAnim->mNodeName.C_Str()<<std::endl;
-        out << indent << "{"<<std::endl;
+        out << indent << "aiNodeAnim[" << ci << "] = " << nodeAnim << " mNodeName = " << nodeAnim->mNodeName.C_Str() << std::endl;
+        out << indent << "{" << std::endl;
 
         indent += 2;
 
-        out << indent << "nodeAnim->mNumPositionKeys = "<<nodeAnim->mNumPositionKeys<<std::endl;
+        out << indent << "nodeAnim->mNumPositionKeys = " << nodeAnim->mNumPositionKeys << std::endl;
 
         if (printAssimp >= 3)
         {
-            out << indent << "{"<<std::endl;
+            out << indent << "{" << std::endl;
             indent += 2;
-            for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+            for (unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
             {
-                auto& positionKey =  nodeAnim->mPositionKeys[pi];
-                out << indent << "positionKey{ mTime = "<<positionKey.mTime<<", mValue = ("<<positionKey.mValue.x<<", "<<positionKey.mValue.y<<", "<<positionKey.mValue.z<<") }"<<std::endl;
+                auto& positionKey = nodeAnim->mPositionKeys[pi];
+                out << indent << "positionKey{ mTime = " << positionKey.mTime << ", mValue = (" << positionKey.mValue.x << ", " << positionKey.mValue.y << ", " << positionKey.mValue.z << ") }" << std::endl;
             }
             indent -= 2;
-            out << indent << "}"<<std::endl;
+            out << indent << "}" << std::endl;
         }
 
-        out << indent << "nodeAnim->mNumRotationKeys = "<<nodeAnim->mNumRotationKeys<<std::endl;
+        out << indent << "nodeAnim->mNumRotationKeys = " << nodeAnim->mNumRotationKeys << std::endl;
         if (printAssimp >= 3)
         {
-            out << indent << "{"<<std::endl;
+            out << indent << "{" << std::endl;
             indent += 2;
-            for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+            for (unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
             {
-                auto& rotationKey =  nodeAnim->mRotationKeys[ri];
-                out << indent << "rotationKey{ mTime = "<<rotationKey.mTime<<", mValue = ("<<rotationKey.mValue.x<<", "<<rotationKey.mValue.y<<", "<<rotationKey.mValue.z<<", "<<rotationKey.mValue.w<<") }"<<std::endl;
+                auto& rotationKey = nodeAnim->mRotationKeys[ri];
+                out << indent << "rotationKey{ mTime = " << rotationKey.mTime << ", mValue = (" << rotationKey.mValue.x << ", " << rotationKey.mValue.y << ", " << rotationKey.mValue.z << ", " << rotationKey.mValue.w << ") }" << std::endl;
             }
             indent -= 2;
-            out << indent << "}"<<std::endl;
+            out << indent << "}" << std::endl;
         }
 
-        out << indent << "nodeAnim->mNumScalingKeys = "<<nodeAnim->mNumScalingKeys<<std::endl;
+        out << indent << "nodeAnim->mNumScalingKeys = " << nodeAnim->mNumScalingKeys << std::endl;
         if (printAssimp >= 3)
         {
-            out << indent << "{"<<std::endl;
+            out << indent << "{" << std::endl;
             indent += 2;
-            for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+            for (unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
             {
-                auto& scalingKey =  nodeAnim->mScalingKeys[si];
-                out << indent << "scalingKey{ mTime = "<<scalingKey.mTime<<", mValue = ("<<scalingKey.mValue.x<<", "<<scalingKey.mValue.y<<", "<<scalingKey.mValue.z<<") }"<<std::endl;
+                auto& scalingKey = nodeAnim->mScalingKeys[si];
+                out << indent << "scalingKey{ mTime = " << scalingKey.mTime << ", mValue = (" << scalingKey.mValue.x << ", " << scalingKey.mValue.y << ", " << scalingKey.mValue.z << ") }" << std::endl;
             }
             indent -= 2;
-            out << indent << "}"<<std::endl;
+            out << indent << "}" << std::endl;
         }
 
         /** Defines how the animation behaves before the first //
@@ -148,59 +147,59 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animat
         *
         *  The default value is aiAnimBehaviour_DEFAULT (the original
         *  transformation matrix of the affected node is used).*/
-        out << indent << "aiAnimBehaviour mPreState = "<<nodeAnim->mPreState<<std::endl;
+        out << indent << "aiAnimBehaviour mPreState = " << nodeAnim->mPreState << std::endl;
 
         /** Defines how the animation behaves after the last
         *  key was processed.
         *
         *  The default value is aiAnimBehaviour_DEFAULT (the original
         *  transformation matrix of the affected node is taken).*/
-        out << indent << "aiAnimBehaviour mPostState = "<<nodeAnim->mPostState<<std::endl;
+        out << indent << "aiAnimBehaviour mPostState = " << nodeAnim->mPostState << std::endl;
 
         indent -= 2;
-        out << indent << "}"<<std::endl;
+        out << indent << "}" << std::endl;
     }
 
-    out << indent << "mNumMeshChannels = "<<animation->mNumMeshChannels<<std::endl;
+    out << indent << "mNumMeshChannels = " << animation->mNumMeshChannels << std::endl;
     if (animation->mNumMeshChannels != 0)
     {
         vsg::warn("Assimp::aiMeshAnim not supported, animation->mNumMeshChannels = ", animation->mNumMeshChannels, " ignored.");
     }
 
-    out << indent << "mNumMorphMeshChannels = "<<animation->mNumMorphMeshChannels<<std::endl;
+    out << indent << "mNumMorphMeshChannels = " << animation->mNumMorphMeshChannels << std::endl;
 
-    if (printAssimp >= 2 &&  animation->mNumMorphMeshChannels > 0)
+    if (printAssimp >= 2 && animation->mNumMorphMeshChannels > 0)
     {
         out << indent << "{";
         indent += 2;
-        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
+        for (unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
         {
             auto meshMorphAnim = animation->mMorphMeshChannels[moi];
 
-            out << indent << "mMorphMeshChannels["<<moi<<"] = "<<meshMorphAnim<<std::endl;
+            out << indent << "mMorphMeshChannels[" << moi << "] = " << meshMorphAnim << std::endl;
 
-            out << indent << "{"<<std::endl;
+            out << indent << "{" << std::endl;
             indent += 2;
 
             /** Name of the mesh to be animated. An empty string is not allowed,
             *  animated meshes need to be named (not necessarily uniquely,
             *  the name can basically serve as wildcard to select a group
             *  of meshes with similar animation setup)*/
-            out << indent << "mName << "<<meshMorphAnim->mName.C_Str()<<std::endl;
-            out << indent << "mNumKeys<< "<<meshMorphAnim->mNumKeys<<std::endl;
+            out << indent << "mName << " << meshMorphAnim->mName.C_Str() << std::endl;
+            out << indent << "mNumKeys<< " << meshMorphAnim->mNumKeys << std::endl;
 
             if (printAssimp >= 3)
             {
-                for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
+                for (unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
                 {
                     auto& morphKey = meshMorphAnim->mKeys[mki];
-                    out << indent << "morphKey["<<mki<<"]"<<std::endl;
+                    out << indent << "morphKey[" << mki << "]" << std::endl;
                     out << indent << "{";
                     indent += 2;
-                    out << indent << "mTime = "<<morphKey.mTime<<", mValues = "<<morphKey.mValues<<", mWeights ="<<morphKey.mWeights<<", mNumValuesAndWeights = "<<morphKey.mNumValuesAndWeights;
-                    for(unsigned int vwi = 0; vwi < morphKey.mNumValuesAndWeights; ++vwi)
+                    out << indent << "mTime = " << morphKey.mTime << ", mValues = " << morphKey.mValues << ", mWeights =" << morphKey.mWeights << ", mNumValuesAndWeights = " << morphKey.mNumValuesAndWeights;
+                    for (unsigned int vwi = 0; vwi < morphKey.mNumValuesAndWeights; ++vwi)
                     {
-                        out << indent <<"morphKey.mNumValuesAndWeights["<<vwi<<"] = { value = "<<morphKey.mValues[vwi]<<", weight = "<<morphKey.mWeights[vwi]<<"}"<<std::endl;
+                        out << indent << "morphKey.mNumValuesAndWeights[" << vwi << "] = { value = " << morphKey.mValues[vwi] << ", weight = " << morphKey.mWeights[vwi] << "}" << std::endl;
                     }
                     indent -= 2;
                     out << indent << "}";
@@ -208,16 +207,16 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animat
             }
 
             indent -= 2;
-            out << indent << "}"<<std::endl;
+            out << indent << "}" << std::endl;
         }
 
         indent -= 2;
 
-        out << indent << "}"<<std::endl;
+        out << indent << "}" << std::endl;
     }
 
     indent -= 2;
-    out << indent << "}"<<std::endl;
+    out << indent << "}" << std::endl;
 
     return {};
 }
@@ -231,53 +230,53 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiMaterial* in_mate
 SubgraphStats SceneConverter::print(std::ostream& out, const aiMesh* in_mesh, vsg::indentation indent)
 {
     out << indent << "aiMesh " << in_mesh << std::endl;
-    out << indent << "{"<< std::endl;
+    out << indent << "{" << std::endl;
     indent += 2;
 
-    out << indent << "mName = " <<in_mesh->mName.C_Str()<<std::endl;
-    out << indent << "mNumVertices = " <<in_mesh->mNumVertices<<std::endl;
-    out << indent << "mNumFaces = "<<in_mesh->mNumFaces<<std::endl;
+    out << indent << "mName = " << in_mesh->mName.C_Str() << std::endl;
+    out << indent << "mNumVertices = " << in_mesh->mNumVertices << std::endl;
+    out << indent << "mNumFaces = " << in_mesh->mNumFaces << std::endl;
     //out << indent << "mWeight = " <<in_mesh->mWeight<<std::endl;
 
-    out << indent << "mNumBones = " <<in_mesh->mNumBones<<std::endl;
+    out << indent << "mNumBones = " << in_mesh->mNumBones << std::endl;
     if (in_mesh->HasBones())
     {
-        out << indent << "mBones[] = "<<std::endl;
-        out << indent << "{"<<std::endl;
+        out << indent << "mBones[] = " << std::endl;
+        out << indent << "{" << std::endl;
 
         auto nested = indent + 2;
 
-        for(size_t i = 0; i < in_mesh->mNumBones; ++i)
+        for (size_t i = 0; i < in_mesh->mNumBones; ++i)
         {
             auto bone = in_mesh->mBones[i];
-            out << nested << "mBones["<<i<<"] = "<<bone<<" { mName "<<bone->mName.C_Str()<<", mNode = "<<bone->mNode<<", mNumWeights = "<<bone->mNumWeights<< " }"<<std::endl;
+            out << nested << "mBones[" << i << "] = " << bone << " { mName " << bone->mName.C_Str() << ", mNode = " << bone->mNode << ", mNumWeights = " << bone->mNumWeights << " }" << std::endl;
             // mOffsetMatrix
             // mNumWeights // { mVertexId, mWeight }
         }
 
-        out << indent << "}"<<std::endl;
+        out << indent << "}" << std::endl;
     }
 
-    out << indent << "mNumAnimMeshes "<<in_mesh->mNumAnimMeshes<<std::endl;
+    out << indent << "mNumAnimMeshes " << in_mesh->mNumAnimMeshes << std::endl;
     if (in_mesh->mNumAnimMeshes != 0)
     {
-        out << indent << "mAnimMeshes[] = "<<std::endl;
-        out << indent << "{"<<std::endl;
+        out << indent << "mAnimMeshes[] = " << std::endl;
+        out << indent << "{" << std::endl;
 
         auto nested = indent + 2;
 
-        for(unsigned int ai = 0; ai < in_mesh->mNumAnimMeshes; ++ai)
+        for (unsigned int ai = 0; ai < in_mesh->mNumAnimMeshes; ++ai)
         {
             auto* animationMesh = in_mesh->mAnimMeshes[ai];
-            out << nested << "mAnimMeshes["<<ai<<"] = "<<animationMesh<<", mName = "<<animationMesh->mName.C_Str()<<", mWeight =  "<<animationMesh->mWeight<<std::endl;
+            out << nested << "mAnimMeshes[" << ai << "] = " << animationMesh << ", mName = " << animationMesh->mName.C_Str() << ", mWeight =  " << animationMesh->mWeight << std::endl;
         }
 
-        out << indent << "}"<<std::endl;
+        out << indent << "}" << std::endl;
     }
 
     indent -= 2;
 
-    out << indent << "}"<<std::endl;
+    out << indent << "}" << std::endl;
 
     return {};
 }
@@ -287,28 +286,27 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiNode* in_node, vs
     SubgraphStats stats;
     ++stats.numNodes;
 
-    out << indent << "aiNode " << in_node << " mName = "<< in_node->mName.C_Str() << std::endl;
+    out << indent << "aiNode " << in_node << " mName = " << in_node->mName.C_Str() << std::endl;
 
     out << indent << "{" << std::endl;
     indent += 2;
 
-    out << indent << "mTransformation = "<<in_node->mTransformation<<std::endl;
-    out << indent << "mNumMeshes = "<< in_node->mNumMeshes<<std::endl;
+    out << indent << "mTransformation = " << in_node->mTransformation << std::endl;
+    out << indent << "mNumMeshes = " << in_node->mNumMeshes << std::endl;
     if (in_node->mNumMeshes > 0)
     {
         out << indent << "mMeshes[] = { ";
         for (unsigned int i = 0; i < in_node->mNumMeshes; ++i)
         {
-            if (i>0) out <<", ";
+            if (i > 0) out << ", ";
             out << in_node->mMeshes[i];
-
         }
         out << " }" << std::endl;
 
         stats.numMesh += in_node->mNumMeshes;
     }
 
-    out << indent << "mNumChildren = "<< in_node->mNumChildren<<std::endl;
+    out << indent << "mNumChildren = " << in_node->mNumChildren << std::endl;
     if (in_node->mNumChildren > 0)
     {
         out << indent << "mChildren[] = " << std::endl;
@@ -337,7 +335,7 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, 
 
     out << indent << "scene->mNumMaterials " << scene->mNumMaterials << std::endl;
     out << indent << "{" << std::endl;
-    for(unsigned int mi = 0; mi<scene->mNumMaterials; ++mi)
+    for (unsigned int mi = 0; mi < scene->mNumMaterials; ++mi)
     {
         print(out, scene->mMaterials[mi], indent + 2);
     }
@@ -345,18 +343,17 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, 
 
     out << indent << "scene->mNumMeshes " << scene->mNumMeshes << std::endl;
     out << indent << "{" << std::endl;
-    for(unsigned int mi = 0; mi<scene->mNumMeshes; ++mi)
+    for (unsigned int mi = 0; mi < scene->mNumMeshes; ++mi)
     {
         print(out, scene->mMeshes[mi], indent + 2);
     }
     out << indent << "}" << std::endl;
 
-
     out << indent << "scene->mNumAnimations " << scene->mNumAnimations << std::endl;
     out << indent << "{" << std::endl;
     if (scene->mNumAnimations > 0)
     {
-        for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
+        for (unsigned int ai = 0; ai < scene->mNumAnimations; ++ai)
         {
             print(out, scene->mAnimations[ai], indent + 2);
         }
@@ -411,7 +408,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
                 // Vulkan doesn't support this format, we have to reorder it to RGBA
                 auto image = vsg::ubvec4Array2D::create(texture->mWidth, texture->mHeight, vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
                 auto src = texture->pcData;
-                for(auto& dest_c : *image)
+                for (auto& dest_c : *image)
                 {
                     auto& src_c = *(src++);
                     dest_c.r = src_c.r;
@@ -483,7 +480,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             switch (externalTextureFormat)
             {
             case TextureFormat::native:
-                break;  // nothing to do
+                break; // nothing to do
             case TextureFormat::vsgt:
                 externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgt");
                 break;
@@ -498,7 +495,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
                 switch (externalTextureFormat)
                 {
                 case TextureFormat::native:
-                    break;  // nothing to do
+                    break; // nothing to do
                 case TextureFormat::vsgt:
                     vsg::write(samplerImage.data, externalTextureFilename, options);
                     break;
@@ -700,7 +697,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
     if (sharedObjects)
     {
-        for(auto& ds : convertedMaterial.descriptorSets)
+        for (auto& ds : convertedMaterial.descriptorSets)
         {
             if (ds)
             {
@@ -894,14 +891,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         config->assignArray(vertexArrays, "vsg_JointIndices", VK_VERTEX_INPUT_RATE_VERTEX, jointIndices);
         config->assignArray(vertexArrays, "vsg_JointWeights", VK_VERTEX_INPUT_RATE_VERTEX, jointWeights);
 
-
         // vsg::info("\nProcessing bones");
         // vsg::info("mesh->mNumBones = ", mesh->mNumBones);
         // vsg::info("mesh->mNumVertices = ", mesh->mNumVertices);
 
         bool normalizeWeights = false;
 
-        for(size_t i = 0; i < mesh->mNumBones; ++i)
+        for (size_t i = 0; i < mesh->mNumBones; ++i)
         {
             aiBone* bone = mesh->mBones[i];
 
@@ -916,13 +912,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
             //! The number of vertices affected by this bone.
             //! The maximum value for this member is #AI_MAX_BONE_WEIGHTS.
-            for(unsigned int bwi = 0; bwi < bone->mNumWeights; ++bwi)
+            for (unsigned int bwi = 0; bwi < bone->mNumWeights; ++bwi)
             {
                 auto& vertexWeight = bone->mWeights[bwi];
                 auto& jointIndex = jointIndices->at(vertexWeight.mVertexId);
                 auto& jointWeight = jointWeights->at(vertexWeight.mVertexId);
                 auto& weightCount = weightCounts[vertexWeight.mVertexId];
-                if (weightCount<4)
+                if (weightCount < 4)
                 {
                     jointIndex[weightCount] = boneIndex;
                     jointWeight[weightCount] = vertexWeight.mWeight;
@@ -935,7 +931,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
                     unsigned int minWeightIndex = 0;
                     float minWeight = jointWeight[minWeightIndex];
-                    for(unsigned int wi = 1; wi < 4; ++wi)
+                    for (unsigned int wi = 1; wi < 4; ++wi)
                     {
                         if (minWeight > jointWeight[wi])
                         {
@@ -951,12 +947,11 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
                 }
                 ++weightCount;
             }
-
         }
 
         if (normalizeWeights)
         {
-            for(auto& weights : *jointWeights)
+            for (auto& weights : *jointWeights)
             {
                 float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
                 if (totalWeight != 0.0f)
@@ -966,7 +961,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
             }
         }
     }
-
 
     auto vid = vsg::VertexIndexDraw::create();
     vid->assignArrays(vertexArrays);
@@ -987,10 +981,14 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         bool blending = false;
         bool two_sided = false;
 
-        SetPipelineStates(VkPrimitiveTopology in_topology, bool in_blending, bool in_two_sided) : topology(in_topology), blending(in_blending), two_sided(in_two_sided) {}
+        SetPipelineStates(VkPrimitiveTopology in_topology, bool in_blending, bool in_two_sided) :
+            topology(in_topology), blending(in_blending), two_sided(in_two_sided) {}
 
         void apply(vsg::Object& object) { object.traverse(*this); }
-        void apply(vsg::RasterizationState& rs) { if (two_sided) rs.cullMode = VK_CULL_MODE_NONE; }
+        void apply(vsg::RasterizationState& rs)
+        {
+            if (two_sided) rs.cullMode = VK_CULL_MODE_NONE;
+        }
         void apply(vsg::InputAssemblyState& ias) { ias.topology = topology; }
         void apply(vsg::ColorBlendState& cbs) { cbs.configureAttachments(blending); }
     } sps(topology, material->blending, material->two_sided);
@@ -1094,7 +1092,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         if (!vsg_scene) return {};
     }
 
-
     // decorate scene graph with transform if required to standardize the coordinate frame
     if (auto transform = processCoordinateFrame(ext))
     {
@@ -1105,12 +1102,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         // transform->subgraphRequiresLocalFrustum = false;
     }
 
-
     if (!animations.empty())
     {
         if (jointSampler)
         {
-            for(auto& animation : animations)
+            for (auto& animation : animations)
             {
                 bool assignJointSampler = false;
                 for (auto sampler : animation->samplers)
@@ -1259,7 +1255,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
         subgraphStats[node].vsg_object = transform;
 
         // wire up transform to animation keyframes
-        for(auto& animation : animations)
+        for (auto& animation : animations)
         {
             for (auto sampler : animation->samplers)
             {
@@ -1308,19 +1304,19 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
 void SceneConverter::processAnimations()
 {
 
-    for(unsigned int ai = 0; ai<scene->mNumAnimations; ++ai)
+    for (unsigned int ai = 0; ai < scene->mNumAnimations; ++ai)
     {
         auto animation = scene->mAnimations[ai];
 
         // convert the time values the VSG uses to seconds.
-        const double timeScale = 1.0/animation->mTicksPerSecond;
+        const double timeScale = 1.0 / animation->mTicksPerSecond;
 
         auto vsg_animation = vsg::Animation::create();
         vsg_animation->name = animation->mName.C_Str();
         animations.push_back(vsg_animation);
 
         double epsilion = 1e-6;
-        for(unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
+        for (unsigned int ci = 0; ci < animation->mNumChannels; ++ci)
         {
             auto nodeAnim = animation->mChannels[ci];
 
@@ -1339,9 +1335,9 @@ void SceneConverter::processAnimations()
             if (nodeAnim->mNumPositionKeys > 0)
             {
                 unsigned numUniquePositions = 1;
-                for(unsigned int si = 1; si < nodeAnim->mNumPositionKeys; ++si)
+                for (unsigned int si = 1; si < nodeAnim->mNumPositionKeys; ++si)
                 {
-                    auto& prev = nodeAnim->mPositionKeys[si-1];
+                    auto& prev = nodeAnim->mPositionKeys[si - 1];
                     auto& curr = nodeAnim->mPositionKeys[si];
                     if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
                         (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
@@ -1362,7 +1358,7 @@ void SceneConverter::processAnimations()
                 else
                 {
                     positions.resize(nodeAnim->mNumPositionKeys);
-                    for(unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
+                    for (unsigned int pi = 0; pi < nodeAnim->mNumPositionKeys; ++pi)
                     {
                         auto& positionKey = nodeAnim->mPositionKeys[pi];
                         positions[pi].time = positionKey.mTime * timeScale;
@@ -1374,9 +1370,9 @@ void SceneConverter::processAnimations()
             if (nodeAnim->mNumRotationKeys > 0)
             {
                 unsigned numUniqueRotations = 1;
-                for(unsigned int si = 1; si < nodeAnim->mNumRotationKeys; ++si)
+                for (unsigned int si = 1; si < nodeAnim->mNumRotationKeys; ++si)
                 {
-                    auto& prev = nodeAnim->mRotationKeys[si-1];
+                    auto& prev = nodeAnim->mRotationKeys[si - 1];
                     auto& curr = nodeAnim->mRotationKeys[si];
                     if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
                         (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
@@ -1398,7 +1394,7 @@ void SceneConverter::processAnimations()
                 else
                 {
                     rotations.resize(nodeAnim->mNumRotationKeys);
-                    for(unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
+                    for (unsigned int ri = 0; ri < nodeAnim->mNumRotationKeys; ++ri)
                     {
                         auto& rotationKey = nodeAnim->mRotationKeys[ri];
                         rotations[ri].time = rotationKey.mTime * timeScale;
@@ -1410,9 +1406,9 @@ void SceneConverter::processAnimations()
             if (nodeAnim->mNumScalingKeys > 0)
             {
                 unsigned numUniqueScales = 1;
-                for(unsigned int si = 1; si < nodeAnim->mNumScalingKeys; ++si)
+                for (unsigned int si = 1; si < nodeAnim->mNumScalingKeys; ++si)
                 {
-                    auto& prev = nodeAnim->mScalingKeys[si-1];
+                    auto& prev = nodeAnim->mScalingKeys[si - 1];
                     auto& curr = nodeAnim->mScalingKeys[si];
                     if ((std::fabs(prev.mValue.x - curr.mValue.x) > epsilion) ||
                         (std::fabs(prev.mValue.y - curr.mValue.y) > epsilion) ||
@@ -1432,7 +1428,7 @@ void SceneConverter::processAnimations()
                 else
                 {
                     scales.resize(nodeAnim->mNumScalingKeys);
-                    for(unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
+                    for (unsigned int si = 0; si < nodeAnim->mNumScalingKeys; ++si)
                     {
                         auto& scalingKey = nodeAnim->mScalingKeys[si];
                         scales[si].time = scalingKey.mTime * timeScale;
@@ -1440,10 +1436,9 @@ void SceneConverter::processAnimations()
                     }
                 }
             }
-
         }
 
-        for(unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
+        for (unsigned int moi = 0; moi < animation->mNumMorphMeshChannels; ++moi)
         {
             auto meshMorphAnim = animation->mMorphMeshChannels[moi];
 
@@ -1459,7 +1454,7 @@ void SceneConverter::processAnimations()
             auto& keyFrames = vsg_morphKeyframes->keyframes;
             keyFrames.resize(meshMorphAnim->mNumKeys);
 
-            for(unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
+            for (unsigned int mki = 0; mki < meshMorphAnim->mNumKeys; ++mki)
             {
                 auto& morphKey = meshMorphAnim->mKeys[mki];
                 keyFrames[mki].time = morphKey.mTime * timeScale;
@@ -1469,7 +1464,7 @@ void SceneConverter::processAnimations()
                 values.resize(morphKey.mNumValuesAndWeights);
                 weights.resize(morphKey.mNumValuesAndWeights);
 
-                for(unsigned int vi = 0; vi < morphKey.mNumValuesAndWeights; ++vi)
+                for (unsigned int vi = 0; vi < morphKey.mNumValuesAndWeights; ++vi)
                 {
                     values[vi] = morphKey.mValues[vi];
                     weights[vi] = morphKey.mWeights[vi];
@@ -1508,10 +1503,9 @@ void SceneConverter::processLights()
 {
     if (scene->mNumLights > 0)
     {
-        auto setColorAndIntensity = [&](const aiLight& light, vsg::Light& vsg_light) -> void
-        {
+        auto setColorAndIntensity = [&](const aiLight& light, vsg::Light& vsg_light) -> void {
             vsg_light.color = convert(light.mColorDiffuse);
-            float maxValue = std::max(std::max(vsg_light.color.r, vsg_light.color.g),  vsg_light.color.b);
+            float maxValue = std::max(std::max(vsg_light.color.r, vsg_light.color.g), vsg_light.color.b);
             if (maxValue > 0.0)
             {
                 vsg_light.color /= maxValue;
