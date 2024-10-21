@@ -51,6 +51,7 @@ vsg_add_target_clang_format(
         ${VSGXCHANGE_SOURCE_DIR}/applications/*/*.cpp
     EXCLUDES
         ${VSGXCHANGE_SOURCE_DIR}/src/stbi/stb_image.h
+        ${VSGXCHANGE_SOURCE_DIR}/src/stbi/stb_image_write.h
         ${VSGXCHANGE_SOURCE_DIR}/src/dds/tinyddsloader.h
 )
 vsg_add_target_clobber()
