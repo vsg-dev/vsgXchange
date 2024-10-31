@@ -121,7 +121,6 @@ namespace vsgXchange
         using SubgraphStatsMap = std::map<const aiNode*, SubgraphStats>;
         using BoneStatsMap = std::map<const aiBone*, BoneStats>;
         using BoneTransformMap = std::map<const aiNode*, unsigned int>;
-        using ColorSpace = vsg::Options::ColorSpace;
 
         vsg::Path filename;
 
@@ -141,10 +140,7 @@ namespace vsgXchange
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool sRGBTextures = false;
         bool culling = true;
-        ColorSpace sceneVertexColorColorSpace = ColorSpace::linearRGB;
-        ColorSpace sceneMaterialColorSpace = ColorSpace::linearRGB;
-        ColorSpace sourceVertexColorColorSpace = ColorSpace::sRGB;
-        ColorSpace sourceMaterialColorSpace = ColorSpace::sRGB;
+        vsg::ref_ptr<vsg::ColorSpaceConvertor> colorSpaceConvertor;
 
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
