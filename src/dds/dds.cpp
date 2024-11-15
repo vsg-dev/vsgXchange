@@ -55,7 +55,9 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm, VK_FORMAT_BC2_UNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC2_UNorm_SRGB, VK_FORMAT_BC2_SRGB_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm, VK_FORMAT_BC1_RGBA_UNORM_BLOCK},
-        {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB, VK_FORMAT_BC1_RGBA_SRGB_BLOCK}};
+        {tinyddsloader::DDSFile::DXGIFormat::BC1_UNorm_SRGB, VK_FORMAT_BC1_RGBA_SRGB_BLOCK},
+        {tinyddsloader::DDSFile::DXGIFormat::R16G16B16A16_Float, VK_FORMAT_R16G16B16A16_SFLOAT},
+        {tinyddsloader::DDSFile::DXGIFormat::R32G32B32A32_Float, VK_FORMAT_R32G32B32A32_SFLOAT}};
 
     uint8_t* allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile)
     {
@@ -203,11 +205,33 @@ namespace
                 case tinyddsloader::DDSFile::TextureDimension::Texture2D:
                     if (numArrays > 1)
                     {
+                        switch (it->first)
+                        {
+                            case tinyddsloader::DDSFile::DXGIFormat::R32G32B32A32_Float:
+                                vsg_data = vsg::vec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::vec4*>(raw), layout);
+                                break;
+                            case tinyddsloader::DDSFile::DXGIFormat::R16G16B16A16_Float:
+                                vsg_data = vsg::usvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                                break;
+                            default:
                         vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                                break;
+                        }
                     }
                     else
                     {
+                        switch (it->first)
+                        {
+                            case tinyddsloader::DDSFile::DXGIFormat::R32G32B32A32_Float:
+                                vsg_data = vsg::vec4Array2D::create(width, height, reinterpret_cast<vsg::vec4*>(raw), layout);
+                                break;
+                            case tinyddsloader::DDSFile::DXGIFormat::R16G16B16A16_Float:
+                                vsg_data = vsg::usvec4Array2D::create(width, height, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                                break;
+                            default:
                         vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                               break;
+                        }
                     }
                     break;
                 case tinyddsloader::DDSFile::TextureDimension::Texture3D:
