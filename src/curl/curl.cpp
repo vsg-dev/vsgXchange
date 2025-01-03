@@ -234,11 +234,6 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
             object = vsg::read(sstr, local_options);
 
-            if (!object)
-            {
-                vsg::info("downloaded: ", filename, " but failed to read it. sstr.size() = ", sstr.str().size(), " str = [", sstr.str(),"]");
-            }
-
             if (object && options->fileCache)
             {
                 auto fileCachePath = getFileCachePath(options->fileCache, filename);
@@ -259,12 +254,12 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
         }
         else
         {
-            std::cerr << "libcurl error, filename = "<<filename<<", response_code = " << response_code<<std::endl;
+            object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", CURLINFO_RESPONSE_CODE = ", response_code));
         }
     }
     else
     {
-        std::cerr << "libcurl error, curl_easy_perform() returned " << result << ", " << curl_easy_strerror(result) << std::endl;
+        object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", result = ", result, ", ",curl_easy_strerror(result)));
     }
 
     if (_curl) curl_easy_cleanup(_curl);
