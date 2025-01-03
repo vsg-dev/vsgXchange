@@ -22,7 +22,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/VSG.h>
 #include <vsg/io/glsl.h>
 #include <vsg/io/spirv.h>
-#include <vsg/io/tile.h>
 #include <vsg/io/txt.h>
 
 #ifdef vsgXchange_OSG
