@@ -183,6 +183,7 @@ curl::Implementation::~Implementation()
 size_t StreamCallback(void* ptr, size_t size, size_t nmemb, void* user_data)
 {
     size_t realsize = size * nmemb;
+
     if (user_data)
     {
         std::ostream* ostr = reinterpret_cast<std::ostream*>(user_data);
@@ -214,39 +215,51 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
 
     vsg::ref_ptr<vsg::Object> object;
 
-    CURLcode responseCode = curl_easy_perform(_curl);
-    if (responseCode == 0)
+    CURLcode result = curl_easy_perform(_curl);
+    if (result == 0)
     {
-        // success
-        auto local_options = vsg::Options::create(*options);
-        local_options->paths.insert(local_options->paths.begin(), vsg::filePath(filename));
-        if (!local_options->extensionHint)
-        {
-            local_options->extensionHint = vsg::lowerCaseFileExtension(filename);
-        }
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+        long response_code = 0;
+        result = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &response_code);
 
-        object = vsg::read(sstr, local_options);
-
-        if (object && options->fileCache)
+        if (result == 0 && response_code >= 200 && response_code<300) // successful responses.
         {
-            auto fileCachePath = getFileCachePath(options->fileCache, filename);
-            if (fileCachePath)
+            // success
+            auto local_options = vsg::Options::create(*options);
+            local_options->paths.insert(local_options->paths.begin(), vsg::filePath(filename));
+            if (!local_options->extensionHint)
             {
-                vsg::makeDirectory(vsg::filePath(fileCachePath));
-
-                // reset the stringstream iterator to the beginning so we can copy it to the file cache file.
-                sstr.clear(std::stringstream::goodbit);
-                sstr.seekg(0);
-
-                std::ofstream fout(fileCachePath, std::ios::out | std::ios::binary);
-
-                fout << sstr.rdbuf();
+                local_options->extensionHint = vsg::lowerCaseFileExtension(filename);
             }
+
+            object = vsg::read(sstr, local_options);
+
+            if (object && options->fileCache)
+            {
+                auto fileCachePath = getFileCachePath(options->fileCache, filename);
+                if (fileCachePath)
+                {
+                    vsg::makeDirectory(vsg::filePath(fileCachePath));
+
+                    // reset the stringstream iterator to the beginning so we can copy it to the file cache file.
+                    sstr.clear(std::stringstream::goodbit);
+                    sstr.seekg(0);
+
+                    std::ofstream fout(fileCachePath, std::ios::out | std::ios::binary);
+
+                    fout << sstr.rdbuf();
+                }
+            }
+
+        }
+        else
+        {
+            object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", CURLINFO_RESPONSE_CODE = ", response_code));
         }
     }
     else
     {
-        std::cerr << "libcurl error responseCode = " << responseCode << ", " << curl_easy_strerror(responseCode) << std::endl;
+        object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", result = ", result, ", ",curl_easy_strerror(result)));
     }
 
     if (_curl) curl_easy_cleanup(_curl);
