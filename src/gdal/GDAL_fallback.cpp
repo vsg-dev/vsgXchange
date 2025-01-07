@@ -32,6 +32,14 @@ vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path&, vsg::ref_ptr<const vsg::O
 {
     return {};
 }
+vsg::ref_ptr<vsg::Object> GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return {};
+}
+vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return {};
+}
 bool GDAL::getFeatures(Features&) const
 {
     return false;
