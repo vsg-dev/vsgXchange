@@ -564,6 +564,11 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         getColor(material, AI_MATKEY_COLOR_EMISSIVE, pbr.emissiveFactor);
         material->Get(AI_MATKEY_GLTF_ALPHACUTOFF, pbr.alphaMaskCutoff);
 
+        colorSpaceConvertor->convertMaterialColor(pbr.baseColorFactor);
+        colorSpaceConvertor->convertMaterialColor(pbr.emissiveFactor);
+        colorSpaceConvertor->convertMaterialColor(pbr.diffuseFactor);
+        colorSpaceConvertor->convertMaterialColor(pbr.specularFactor);
+
         aiString alphaMode;
         if (material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("OPAQUE"))
             pbr.alphaMaskCutoff = 0.0f;
@@ -624,6 +629,11 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         const auto diffuseResult = getColor(material, AI_MATKEY_COLOR_DIFFUSE, mat.diffuse);
         const auto emissiveResult = getColor(material, AI_MATKEY_COLOR_EMISSIVE, mat.emissive);
         const auto specularResult = getColor(material, AI_MATKEY_COLOR_SPECULAR, mat.specular);
+
+        colorSpaceConvertor->convertMaterialColor(mat.ambient);
+        colorSpaceConvertor->convertMaterialColor(mat.diffuse);
+        colorSpaceConvertor->convertMaterialColor(mat.emissive);
+        colorSpaceConvertor->convertMaterialColor(mat.specular);
 
         unsigned int maxValue = 1;
         float strength = 1.0f;
@@ -863,11 +873,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         auto colors = vsg::vec4Array::create(mesh->mNumVertices);
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
+        colorSpaceConvertor->convertVertexColors(*colors);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
     }
     else
     {
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        colorSpaceConvertor->convertVertexColor(colors->value());
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
     }
 
@@ -1036,6 +1048,13 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
     sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
+    if (auto itr = options->formatLoadColorSpaceConvertors.find(ext); itr != options->formatLoadColorSpaceConvertors.end() && itr->second)
+        colorSpaceConvertor = itr->second;
+    // this is a good heuristic for every format I've checked, but I've not covered all the ~60 formats assimp supports
+    else if (ext == ".gltf" || ext == ".glb")
+        colorSpaceConvertor = vsg::NoOpColorSpaceConvertor::create();
+    else
+        colorSpaceConvertor = vsg::sRGB_to_linearColorSpaceConvertor::create();
     topEmptyTransform = {};
 
     std::string name = scene->mName.C_Str();

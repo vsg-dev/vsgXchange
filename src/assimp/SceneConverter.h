@@ -140,6 +140,7 @@ namespace vsgXchange
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool sRGBTextures = false;
         bool culling = true;
+        vsg::ref_ptr<vsg::ColorSpaceConvertor> colorSpaceConvertor;
 
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
