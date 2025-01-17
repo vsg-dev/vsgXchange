@@ -866,11 +866,13 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     {
         auto colors = vsg::vec4Array::create(mesh->mNumVertices);
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
+        vsg::convert(colors->size(), &(colors->at(0)), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
     }
     else
     {
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        vsg::convert(colors->value(), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
     }
 
@@ -1040,6 +1042,19 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
     topEmptyTransform = {};
+
+    if (ext == ".gltf" || ext == ".glb")
+    {
+        sourceVertexColorSpace = vsg::linearRGB;
+        sourceMaterialColorSpace = vsg::linearRGB;
+        sourceTextureColorSpace = vsg::sRGB;
+    }
+    else
+    {
+        sourceVertexColorSpace = vsg::sRGB;
+        sourceMaterialColorSpace = vsg::sRGB;
+        sourceTextureColorSpace = vsg::sRGB;
+    }
 
     std::string name = scene->mName.C_Str();
 

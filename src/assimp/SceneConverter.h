@@ -182,6 +182,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
+                vsg::convert(value, sourceMaterialColorSpace, targetMaterialColorSpace);
                 return true;
             }
             return false;
@@ -192,6 +193,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
+                vsg::convert(value, sourceMaterialColorSpace, targetMaterialColorSpace);
                 return true;
             }
             return false;
