@@ -141,6 +141,15 @@ namespace vsgXchange
         bool sRGBTextures = false;
         bool culling = true;
 
+        vsg::ColorSpace sourceVertexColorSpace = vsg::linearRGB;
+        vsg::ColorSpace sourceMaterialColorSpace = vsg::linearRGB;
+        vsg::ColorSpace sourceTextureColorSpace = vsg::sRGB;
+
+        vsg::ColorSpace targetVertexColorSpace = vsg::linearRGB;
+        vsg::ColorSpace targetMaterialColorSpace = vsg::linearRGB;
+        vsg::ColorSpace targetTextureColorSpace = vsg::sRGB;
+
+
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
         vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;
@@ -162,12 +171,12 @@ namespace vsgXchange
         SubgraphStats print(std::ostream& out, const aiNode* in_node, vsg::indentation indent);
         SubgraphStats print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent);
 
-        static vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
-        static vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
-        static vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
-        static vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
+        vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
+        vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
+        vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
+        vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
 
-        static bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
+        bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
         {
             aiColor3D color;
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
@@ -177,7 +186,7 @@ namespace vsgXchange
             }
             return false;
         }
-        static bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
+        bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
         {
             aiColor4D color;
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
@@ -236,7 +245,7 @@ namespace vsgXchange
             return phongShaderSet;
         }
 
-        SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
+        SamplerData convertTexture(const aiMaterial& material, aiTextureType type, vsg::ColorSpace targetColorSpace) const;
 
         void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
