@@ -90,12 +90,15 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
     case (VK_FORMAT_R8G8_UNORM):
         num_components = 2;
         break;
+    case (VK_FORMAT_R8G8B8_SRGB):
     case (VK_FORMAT_R8G8B8_UNORM):
         num_components = 3;
         break;
+    case (VK_FORMAT_R8G8B8A8_SRGB):
     case (VK_FORMAT_R8G8B8A8_UNORM):
         num_components = 4;
         break;
+    case (VK_FORMAT_B8G8R8_SRGB):
     case (VK_FORMAT_B8G8R8_UNORM): {
         auto dest_data = vsg::ubvec3Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8_UNORM});
         auto src_ptr = static_cast<const vsg::ubvec3*>(data->dataPointer());
@@ -109,6 +112,7 @@ static std::pair<int, vsg::ref_ptr<const vsg::Data>> reformatForWriting(const vs
         local_data = dest_data;
         break;
     }
+    case (VK_FORMAT_B8G8R8A8_SRGB):
     case (VK_FORMAT_B8G8R8A8_UNORM): {
         auto dest_data = vsg::ubvec4Array2D::create(data->width(), data->height(), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
         auto src_ptr = static_cast<const vsg::ubvec4*>(data->dataPointer());
@@ -177,7 +181,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
 
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
 
         return vsg_data;
     }
@@ -203,7 +207,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
     const auto pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc*>(input.data()), static_cast<int>(input.size()), &width, &height, &channels, STBI_rgb_alpha);
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
         return vsg_data;
     }
 
@@ -218,7 +222,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     const auto pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(ptr), static_cast<int>(size), &width, &height, &channels, STBI_rgb_alpha);
     if (pixels)
     {
-        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_UNORM});
+        auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
         return vsg_data;
     }
 

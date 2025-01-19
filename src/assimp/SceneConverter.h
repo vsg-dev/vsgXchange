@@ -138,7 +138,6 @@ namespace vsgXchange
         int printAssimp = 0;
         bool externalTextures = false;
         TextureFormat externalTextureFormat = TextureFormat::native;
-        bool sRGBTextures = false;
         bool culling = true;
 
         vsg::ColorSpace sourceVertexColorSpace = vsg::linearRGB;

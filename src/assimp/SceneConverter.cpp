@@ -429,30 +429,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
-        if (sRGBTextures && (type == aiTextureType_DIFFUSE || type == aiTextureType_EMISSIVE))
-        {
-            switch (samplerImage.data->properties.format)
-            {
-            case VK_FORMAT_R8G8B8A8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8G8B8A8_SRGB;
-                break;
-            case VK_FORMAT_R8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8_SRGB;
-                break;
-            case VK_FORMAT_R8G8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8G8_SRGB;
-                break;
-            case VK_FORMAT_R8G8B8A8_SRGB:
-            case VK_FORMAT_R8_SRGB:
-            case VK_FORMAT_R8G8_SRGB:
-                // Probably set by us already
-                break;
-            default:
-                vsg::warn("Can't set format ", samplerImage.data->properties.format, "to sRGB.");
-                break;
-            }
-        }
-
         samplerImage.sampler = vsg::Sampler::create();
         samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
         samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
@@ -508,7 +484,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
-        if (targetColorSpace==vsg::sRGB) samplerImage.data->properties.format = vsg::uNorm_to_sRGB(samplerImage.data->properties.format);
+        //if (targetColorSpace==vsg::sRGB) samplerImage.data->properties.format = vsg::uNorm_to_sRGB(samplerImage.data->properties.format);
         if (targetColorSpace==vsg::linearRGB) samplerImage.data->properties.format = vsg::sRGB_to_uNorm(samplerImage.data->properties.format);
 
         return samplerImage;
@@ -1039,7 +1015,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
     externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
-    sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
     topEmptyTransform = {};
 
