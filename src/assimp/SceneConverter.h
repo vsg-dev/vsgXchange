@@ -142,11 +142,9 @@ namespace vsgXchange
 
         vsg::CoordinateSpace sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
-        vsg::CoordinateSpace sourceTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
 
         vsg::CoordinateSpace targetVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace targetMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
-        vsg::CoordinateSpace targetTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
 
 
         // TODO flatShadedShaderSet?
@@ -246,7 +244,7 @@ namespace vsgXchange
             return phongShaderSet;
         }
 
-        SamplerData convertTexture(const aiMaterial& material, aiTextureType type, vsg::CoordinateSpace targetCoordinateSpace) const;
+        SamplerData convertTexture(const aiMaterial& material, aiTextureType type) const;
 
         void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 

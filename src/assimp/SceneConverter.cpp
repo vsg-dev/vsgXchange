@@ -374,7 +374,7 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, 
     return stats;
 }
 
-SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTextureType type, vsg::CoordinateSpace targetCoordinateSpace) const
+SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTextureType type) const
 {
     aiString texPath;
     aiTextureMapMode wrapMode[]{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
@@ -484,9 +484,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
-        //if (targetCoordinateSpace==vsg::CoordinateSpace::sRGB) samplerImage.data->properties.format = vsg::uNorm_to_sRGB(samplerImage.data->properties.format);
-        if (targetCoordinateSpace==vsg::CoordinateSpace::LINEAR) samplerImage.data->properties.format = vsg::sRGB_to_uNorm(samplerImage.data->properties.format);
-
         return samplerImage;
     }
     else
@@ -552,36 +549,36 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         // respectively to red, green, and blue channels; the Blender glTF exporter can pack them
         // into one texture. It's not clear if anything should be done about that at the VSG level.
         SamplerData samplerImage;
-        if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
         }
-        if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("emissiveMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_NORMALS, vsg::CoordinateSpace::LINEAR); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_NORMALS); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
         }
 
         // map either aiTextureType_METALNESS or aiTextureType_UNKNOWN to metal roughness.
-        if (samplerImage = convertTexture(*material, aiTextureType_METALNESS, vsg::CoordinateSpace::LINEAR); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_METALNESS); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
         }
-        else if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN, vsg::CoordinateSpace::LINEAR); samplerImage.data.valid())
+        else if (samplerImage = convertTexture(*material, aiTextureType_UNKNOWN); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("mrMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
         }
@@ -625,7 +622,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         }
 
         SamplerData samplerImage;
-        if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_DIFFUSE); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("diffuseMap", samplerImage.data, samplerImage.sampler);
 
@@ -633,7 +630,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
                 mat.diffuse.set(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_EMISSIVE); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("emissiveMap", samplerImage.data, samplerImage.sampler);
 
@@ -641,21 +638,21 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
                 mat.emissive.set(1.0f, 1.0f, 1.0f, 1.0f);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_LIGHTMAP); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
         }
-        else if (samplerImage = convertTexture(*material, aiTextureType_AMBIENT, targetTextureCoordinateSpace); samplerImage.data.valid())
+        else if (samplerImage = convertTexture(*material, aiTextureType_AMBIENT); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("aoMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_NORMALS, vsg::CoordinateSpace::LINEAR); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_NORMALS); samplerImage.data.valid())
         {
             convertedMaterial.assignTexture("normalMap", samplerImage.data, samplerImage.sampler);
         }
 
-        if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR, targetTextureCoordinateSpace); samplerImage.data.valid())
+        if (samplerImage = convertTexture(*material, aiTextureType_SPECULAR); samplerImage.data.valid())
         {
             // TODO phong shader doesn't have a specular texture map at present
             convertedMaterial.assignTexture("specularMap", samplerImage.data, samplerImage.sampler);
@@ -1022,13 +1019,11 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     {
         sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
         sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
-        sourceTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
     }
     else
     {
         sourceVertexCoordinateSpace = vsg::CoordinateSpace::sRGB;
         sourceMaterialCoordinateSpace = vsg::CoordinateSpace::sRGB;
-        sourceTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
     }
 
     std::string name = scene->mName.C_Str();
