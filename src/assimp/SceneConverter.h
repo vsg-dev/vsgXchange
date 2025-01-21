@@ -140,13 +140,13 @@ namespace vsgXchange
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool culling = true;
 
-        vsg::ColorSpace sourceVertexColorSpace = vsg::linearRGB;
-        vsg::ColorSpace sourceMaterialColorSpace = vsg::linearRGB;
-        vsg::ColorSpace sourceTextureColorSpace = vsg::sRGB;
+        vsg::CoordinateSpace sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace sourceTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
 
-        vsg::ColorSpace targetVertexColorSpace = vsg::linearRGB;
-        vsg::ColorSpace targetMaterialColorSpace = vsg::linearRGB;
-        vsg::ColorSpace targetTextureColorSpace = vsg::sRGB;
+        vsg::CoordinateSpace targetVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace targetMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace targetTextureCoordinateSpace = vsg::CoordinateSpace::sRGB;
 
 
         // TODO flatShadedShaderSet?
@@ -181,7 +181,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
-                vsg::convert(value, sourceMaterialColorSpace, targetMaterialColorSpace);
+                vsg::convert(value, sourceMaterialCoordinateSpace, targetMaterialCoordinateSpace);
                 return true;
             }
             return false;
@@ -192,7 +192,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
-                vsg::convert(value, sourceMaterialColorSpace, targetMaterialColorSpace);
+                vsg::convert(value, sourceMaterialCoordinateSpace, targetMaterialCoordinateSpace);
                 return true;
             }
             return false;
@@ -246,7 +246,7 @@ namespace vsgXchange
             return phongShaderSet;
         }
 
-        SamplerData convertTexture(const aiMaterial& material, aiTextureType type, vsg::ColorSpace targetColorSpace) const;
+        SamplerData convertTexture(const aiMaterial& material, aiTextureType type, vsg::CoordinateSpace targetCoordinateSpace) const;
 
         void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
