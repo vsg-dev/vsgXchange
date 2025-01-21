@@ -517,6 +517,9 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         // PBR path
         convertedMaterial.shaderSet = getOrCreatePbrShaderSet();
 
+        auto& materialBinding = convertedMaterial.shaderSet->getDescriptorBinding("material");
+        targetMaterialCoordinateSpace = materialBinding.coordinateSpace;
+
         if (convertedMaterial.blending)
             pbr.alphaMask = 0.0f;
 
@@ -589,6 +592,9 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     {
         // Phong shading
         convertedMaterial.shaderSet = getOrCreatePhongShaderSet();
+
+        auto& materialBinding = convertedMaterial.shaderSet->getDescriptorBinding("material");
+        targetMaterialCoordinateSpace = materialBinding.coordinateSpace;
 
         vsg::PhongMaterial mat;
 
@@ -834,6 +840,10 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         auto texcoord = vsg::vec2Value::create(vsg::vec2(0.0f, 0.0f));
         config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
     }
+
+
+    vsg::AttributeBinding& colorBinding = config->shaderSet->getAttributeBinding("vsg_Color");
+    sourceVertexCoordinateSpace = colorBinding.coordinateSpace;
 
     if (mesh->mColors[0])
     {

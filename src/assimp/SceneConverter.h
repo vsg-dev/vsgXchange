@@ -140,9 +140,11 @@ namespace vsgXchange
         TextureFormat externalTextureFormat = TextureFormat::native;
         bool culling = true;
 
+        // set for the file format being read.
         vsg::CoordinateSpace sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
 
+        // set for the target ShaderSet's
         vsg::CoordinateSpace targetVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace targetMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
 
