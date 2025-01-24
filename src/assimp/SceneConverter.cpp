@@ -429,30 +429,6 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
             }
         }
 
-        if (sRGBTextures && (type == aiTextureType_DIFFUSE || type == aiTextureType_EMISSIVE))
-        {
-            switch (samplerImage.data->properties.format)
-            {
-            case VK_FORMAT_R8G8B8A8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8G8B8A8_SRGB;
-                break;
-            case VK_FORMAT_R8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8_SRGB;
-                break;
-            case VK_FORMAT_R8G8_UNORM:
-                samplerImage.data->properties.format = VK_FORMAT_R8G8_SRGB;
-                break;
-            case VK_FORMAT_R8G8B8A8_SRGB:
-            case VK_FORMAT_R8_SRGB:
-            case VK_FORMAT_R8G8_SRGB:
-                // Probably set by us already
-                break;
-            default:
-                vsg::warn("Can't set format ", samplerImage.data->properties.format, "to sRGB.");
-                break;
-            }
-        }
-
         samplerImage.sampler = vsg::Sampler::create();
         samplerImage.sampler->addressModeU = getWrapMode(wrapMode[0]);
         samplerImage.sampler->addressModeV = getWrapMode(wrapMode[1]);
@@ -541,6 +517,9 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         // PBR path
         convertedMaterial.shaderSet = getOrCreatePbrShaderSet();
 
+        auto& materialBinding = convertedMaterial.shaderSet->getDescriptorBinding("material");
+        targetMaterialCoordinateSpace = materialBinding.coordinateSpace;
+
         if (convertedMaterial.blending)
             pbr.alphaMask = 0.0f;
 
@@ -613,6 +592,9 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     {
         // Phong shading
         convertedMaterial.shaderSet = getOrCreatePhongShaderSet();
+
+        auto& materialBinding = convertedMaterial.shaderSet->getDescriptorBinding("material");
+        targetMaterialCoordinateSpace = materialBinding.coordinateSpace;
 
         vsg::PhongMaterial mat;
 
@@ -859,15 +841,21 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
     }
 
+
+    vsg::AttributeBinding& colorBinding = config->shaderSet->getAttributeBinding("vsg_Color");
+    sourceVertexCoordinateSpace = colorBinding.coordinateSpace;
+
     if (mesh->mColors[0])
     {
         auto colors = vsg::vec4Array::create(mesh->mNumVertices);
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
+        vsg::convert(colors->size(), &(colors->at(0)), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
     }
     else
     {
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        vsg::convert(colors->value(), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
     }
 
@@ -1034,9 +1022,19 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
     externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
     externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
-    sRGBTextures = vsg::value<bool>(false, assimp::sRGBTextures, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
     topEmptyTransform = {};
+
+    if (ext == ".gltf" || ext == ".glb")
+    {
+        sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+    }
+    else
+    {
+        sourceVertexCoordinateSpace = vsg::CoordinateSpace::sRGB;
+        sourceMaterialCoordinateSpace = vsg::CoordinateSpace::sRGB;
+    }
 
     std::string name = scene->mName.C_Str();
 
