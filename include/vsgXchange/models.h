@@ -58,6 +58,8 @@ namespace vsgXchange
         static constexpr const char* external_textures = "external_textures";             /// bool
         static constexpr const char* external_texture_format = "external_texture_format"; /// TextureFormat enum
         static constexpr const char* culling = "culling";                                 /// bool, insert cull nodes, defaults to true
+        static constexpr const char* vertex_color = "vertex_color";                       /// CoordinateSpace {sRGB or LINEAR} to assume when loading vertex colours
+        static constexpr const char* material_color = "material_color";                   /// CoordinateSpace {sRGB or LINEAR} to assume when loading materials colours
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
