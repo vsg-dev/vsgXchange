@@ -843,7 +843,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
 
     vsg::AttributeBinding& colorBinding = config->shaderSet->getAttributeBinding("vsg_Color");
-    sourceVertexCoordinateSpace = colorBinding.coordinateSpace;
+    targetVertexCoordinateSpace = colorBinding.coordinateSpace;
 
     if (mesh->mColors[0])
     {
@@ -851,12 +851,16 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
         vsg::convert(colors->size(), &(colors->at(0)), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
+
+        vsg::info("vsg::convert(", colors, ", ", sourceVertexCoordinateSpace, ", ", targetVertexCoordinateSpace, ")");
     }
     else
     {
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
         vsg::convert(colors->value(), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
+
+        vsg::info("vsg::convert(", colors, ", ", sourceVertexCoordinateSpace, ", ", targetVertexCoordinateSpace, ")");
     }
 
     if (mesh->HasBones() && jointSampler)
@@ -1035,6 +1039,18 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         sourceVertexCoordinateSpace = vsg::CoordinateSpace::sRGB;
         sourceMaterialCoordinateSpace = vsg::CoordinateSpace::sRGB;
     }
+
+    vsg::info("before sourceVertexCoordinateSpace = ", sourceVertexCoordinateSpace, ", sourceMaterialCoordinateSpace = ", sourceMaterialCoordinateSpace);
+
+    if (options)
+    {
+
+        options->getValue(assimp::vertex_color, sourceVertexCoordinateSpace);
+        options->getValue(assimp::material_color, sourceMaterialCoordinateSpace);
+    }
+
+    vsg::info("after sourceVertexCoordinateSpace = ", sourceVertexCoordinateSpace, ", sourceMaterialCoordinateSpace = ", sourceMaterialCoordinateSpace);
+
 
     std::string name = scene->mName.C_Str();
 
