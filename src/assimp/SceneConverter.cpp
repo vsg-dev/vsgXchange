@@ -843,24 +843,24 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 
 
     vsg::AttributeBinding& colorBinding = config->shaderSet->getAttributeBinding("vsg_Color");
-    targetVertexCoordinateSpace = colorBinding.coordinateSpace;
+    targetVertexColorSpace = colorBinding.coordinateSpace;
 
     if (mesh->mColors[0])
     {
         auto colors = vsg::vec4Array::create(mesh->mNumVertices);
         std::memcpy(colors->dataPointer(), mesh->mColors[0], mesh->mNumVertices * 16);
-        vsg::convert(colors->size(), &(colors->at(0)), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
+        vsg::convert(colors->size(), &(colors->at(0)), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
 
-        vsg::info("vsg::convert(", colors, ", ", sourceVertexCoordinateSpace, ", ", targetVertexCoordinateSpace, ")");
+        vsg::info("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
     }
     else
     {
         auto colors = vsg::vec4Value::create(vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-        vsg::convert(colors->value(), sourceVertexCoordinateSpace, targetVertexCoordinateSpace);
+        vsg::convert(colors->value(), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
 
-        vsg::info("vsg::convert(", colors, ", ", sourceVertexCoordinateSpace, ", ", targetVertexCoordinateSpace, ")");
+        vsg::info("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
     }
 
     if (mesh->HasBones() && jointSampler)
@@ -1031,25 +1031,25 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
 
     if (ext == ".gltf" || ext == ".glb")
     {
-        sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
-        sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        sourceVertexColorSpace = vsg::CoordinateSpace::LINEAR;
+        sourceMaterialColorSpace = vsg::CoordinateSpace::LINEAR;
     }
     else
     {
-        sourceVertexCoordinateSpace = vsg::CoordinateSpace::sRGB;
-        sourceMaterialCoordinateSpace = vsg::CoordinateSpace::sRGB;
+        sourceVertexColorSpace = vsg::CoordinateSpace::sRGB;
+        sourceMaterialColorSpace = vsg::CoordinateSpace::sRGB;
     }
 
-    vsg::info("before sourceVertexCoordinateSpace = ", sourceVertexCoordinateSpace, ", sourceMaterialCoordinateSpace = ", sourceMaterialCoordinateSpace);
+    vsg::info("before sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
 
     if (options)
     {
 
-        options->getValue(assimp::vertex_color, sourceVertexCoordinateSpace);
-        options->getValue(assimp::material_color, sourceMaterialCoordinateSpace);
+        options->getValue(assimp::vertex_color_space, sourceVertexColorSpace);
+        options->getValue(assimp::material_color_space, sourceMaterialColorSpace);
     }
 
-    vsg::info("after sourceVertexCoordinateSpace = ", sourceVertexCoordinateSpace, ", sourceMaterialCoordinateSpace = ", sourceMaterialCoordinateSpace);
+    vsg::info("after sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
 
 
     std::string name = scene->mName.C_Str();

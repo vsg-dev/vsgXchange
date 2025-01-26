@@ -86,8 +86,8 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
     features.optionNameTypeMap[assimp::culling] = vsg::type_name<bool>();
-    features.optionNameTypeMap[assimp::vertex_color] = vsg::type_name<vsg::CoordinateSpace>();
-    features.optionNameTypeMap[assimp::material_color] = vsg::type_name<vsg::CoordinateSpace>();
+    features.optionNameTypeMap[assimp::vertex_color_space] = vsg::type_name<vsg::CoordinateSpace>();
+    features.optionNameTypeMap[assimp::material_color_space] = vsg::type_name<vsg::CoordinateSpace>();
 
     return true;
 }
@@ -103,8 +103,8 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
     result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::culling, &options) || result;
-    result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::vertex_color, &options) || result;
-    result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::material_color, &options) || result;
+    result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::vertex_color_space, &options) || result;
+    result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::material_color_space, &options) || result;
 
     return result;
 }
