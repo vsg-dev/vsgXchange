@@ -114,13 +114,16 @@ Options specific to a ReaderWriter are specified on the commandline using two da
 
 ## File formats supported by all built in ReaderWriters
 
-    $ vsgconv --features
     vsgXchange::all
         vsgXchange::curl provides support for 0 extensions, and 2 protocols.
             Protocols       Supported ReaderWriter methods
             ----------      ------------------------------
             http            read(vsg::Path, ..)
             https           read(vsg::Path, ..)
+
+            vsg::Options::Value  type
+            -------------------  ----
+            CURLOPT_SSL_OPTIONS  uint32_t
 
         vsg::VSG provides support for 2 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
@@ -133,7 +136,7 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             ----------      ------------------------------
             .spv            read(vsg::Path, ..) write(vsg::Path, ..)
 
-        vsgXchange::glsl provides support for 16 extensions, and 0 protocols.
+        vsg::glsl provides support for 16 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
             .comp           read(vsg::Path, ..) write(vsg::Path, ..)
@@ -153,24 +156,39 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .tese           read(vsg::Path, ..) write(vsg::Path, ..)
             .vert           read(vsg::Path, ..) write(vsg::Path, ..)
 
+        vsg::txt provides support for 7 extensions, and 0 protocols.
+            Extensions      Supported ReaderWriter methods
+            ----------      ------------------------------
+            .bat            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .json           read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .md             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .sh             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .text           read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .txt            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .xml            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+
         vsgXchange::cpp provides support for 1 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
             .cpp            write(vsg::Path, ..)
 
-        vsgXchange::stbi provides support for 10 extensions, and 0 protocols.
+        vsgXchange::stbi provides support for 9 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
-            .bmp            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .gif            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .jpe            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .jpeg           read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .jpg            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .bmp            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
+            .jpe            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
+            .jpeg           read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
+            .jpg            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
             .pgm            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .png            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .png            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
             .ppm            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .psd            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
-            .tga            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .tga            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..) write(vsg::Path, ..) write(std::ostream, ..)
+
+            vsg::Options::Value  type
+            -------------------  ----
+            image_format         vsg::CoordinateSpace
+            jpeg_quality         int
 
         vsgXchange::dds provides support for 1 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
@@ -203,7 +221,12 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .ttf            read(vsg::Path, ..)
             .woff           read(vsg::Path, ..)
 
-        vsgXchange::assimp provides support for 69 extensions, and 0 protocols.
+            vsg::Options::Value  type
+            -------------------  ----
+            quad_margin_ratio    float
+            texel_margin_ratio   float
+
+        vsgXchange::assimp provides support for 70 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
             .3d             read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
@@ -231,6 +254,7 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .hmp            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .ifc            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .ifczip         read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
+            .iqm            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .irr            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .irrmesh        read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
             .lwo            read(vsg::Path, ..) read(std::istream, ..) read(uint8_t* ptr, size_t size, ..)
@@ -279,15 +303,23 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             vsg::Options::Value      type
             -------------------      ----
             crease_angle             float
+            culling                  bool
+            discard_empty_nodes      bool
+            external_texture_format  vsgXchange::TextureFormat
+            external_textures        bool
             generate_sharp_normals   bool
             generate_smooth_normals  bool
+            material_color_space     vsg::CoordinateSpace
+            print_assimp             int
             two_sided                bool
+            vertex_color_space       vsg::CoordinateSpace
 
         vsgXchange::GDAL provides support for 96 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
             .ACE2           read(vsg::Path, ..)
             .asc            read(vsg::Path, ..)
+            .b              read(vsg::Path, ..)
             .bag            read(vsg::Path, ..)
             .bil            read(vsg::Path, ..)
             .bin            read(vsg::Path, ..)
@@ -301,20 +333,19 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .dat            read(vsg::Path, ..)
             .ddf            read(vsg::Path, ..)
             .dem            read(vsg::Path, ..)
-            .dgrda          read(vsg::Path, ..)
             .dt0            read(vsg::Path, ..)
             .dt1            read(vsg::Path, ..)
             .dt2            read(vsg::Path, ..)
             .dwg            read(vsg::Path, ..)
-            .e00            read(vsg::Path, ..)
             .err            read(vsg::Path, ..)
             .ers            read(vsg::Path, ..)
             .fits           read(vsg::Path, ..)
+            .gdb            read(vsg::Path, ..)
             .gen            read(vsg::Path, ..)
             .gff            read(vsg::Path, ..)
             .gif            read(vsg::Path, ..)
             .gpkg           read(vsg::Path, ..)
-            .gra            read(vsg::Path, ..)
+            .gpkg.zip       read(vsg::Path, ..)
             .grb            read(vsg::Path, ..)
             .grb2           read(vsg::Path, ..)
             .grc            read(vsg::Path, ..)
@@ -334,10 +365,11 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .img            read(vsg::Path, ..)
             .isg            read(vsg::Path, ..)
             .j2k            read(vsg::Path, ..)
-            .jls            read(vsg::Path, ..)
             .jp2            read(vsg::Path, ..)
             .jpeg           read(vsg::Path, ..)
             .jpg            read(vsg::Path, ..)
+            .json           read(vsg::Path, ..)
+            .kap            read(vsg::Path, ..)
             .kml            read(vsg::Path, ..)
             .kmz            read(vsg::Path, ..)
             .kro            read(vsg::Path, ..)
@@ -346,7 +378,6 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .map            read(vsg::Path, ..)
             .mbtiles        read(vsg::Path, ..)
             .mem            read(vsg::Path, ..)
-            .mnt            read(vsg::Path, ..)
             .mpl            read(vsg::Path, ..)
             .mpr            read(vsg::Path, ..)
             .mrf            read(vsg::Path, ..)
@@ -376,23 +407,25 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .tif            read(vsg::Path, ..)
             .tiff           read(vsg::Path, ..)
             .toc            read(vsg::Path, ..)
-            .txt            read(vsg::Path, ..)
+            .tpkx           read(vsg::Path, ..)
             .vrt            read(vsg::Path, ..)
             .webp           read(vsg::Path, ..)
             .xml            read(vsg::Path, ..)
             .xpm            read(vsg::Path, ..)
             .xyz            read(vsg::Path, ..)
 
-        vsgXchange::OSG provides support for 115 extensions, and 0 protocols.
+        osg2vsg::OSG provides support for 132 extensions, and 0 protocols.
             Extensions      Supported ReaderWriter methods
             ----------      ------------------------------
             .*              read(vsg::Path, ..)
             .3dc            read(vsg::Path, ..)
             .3ds            read(vsg::Path, ..)
+            .3gp            read(vsg::Path, ..)
             .ac             read(vsg::Path, ..)
             .added          read(vsg::Path, ..)
             .asc            read(vsg::Path, ..)
             .attr           read(vsg::Path, ..)
+            .avi            read(vsg::Path, ..)
             .bmp            read(vsg::Path, ..)
             .bvh            read(vsg::Path, ..)
             .bw             read(vsg::Path, ..)
@@ -405,8 +438,8 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .curl           read(vsg::Path, ..)
             .dds            read(vsg::Path, ..)
             .dxf            read(vsg::Path, ..)
-            .fbx            read(vsg::Path, ..)
             .flt            read(vsg::Path, ..)
+            .flv            read(vsg::Path, ..)
             .fnt            read(vsg::Path, ..)
             .fon            read(vsg::Path, ..)
             .frag           read(vsg::Path, ..)
@@ -433,11 +466,20 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .lw             read(vsg::Path, ..)
             .lwo            read(vsg::Path, ..)
             .lws            read(vsg::Path, ..)
+            .m2ts           read(vsg::Path, ..)
+            .m4v            read(vsg::Path, ..)
             .material       read(vsg::Path, ..)
             .md2            read(vsg::Path, ..)
+            .mjpeg          read(vsg::Path, ..)
+            .mkv            read(vsg::Path, ..)
             .modified       read(vsg::Path, ..)
+            .mov            read(vsg::Path, ..)
+            .mp4            read(vsg::Path, ..)
+            .mpg            read(vsg::Path, ..)
+            .mpv            read(vsg::Path, ..)
             .normals        read(vsg::Path, ..)
             .obj            read(vsg::Path, ..)
+            .ogg            read(vsg::Path, ..)
             .ogr            read(vsg::Path, ..)
             .osc            read(vsg::Path, ..)
             .osg            read(vsg::Path, ..)
@@ -473,7 +515,9 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .rgba           read(vsg::Path, ..)
             .rot            read(vsg::Path, ..)
             .rotation_path  read(vsg::Path, ..)
+            .sav            read(vsg::Path, ..)
             .scale          read(vsg::Path, ..)
+            .sdp            read(vsg::Path, ..)
             .sgi            read(vsg::Path, ..)
             .shadow         read(vsg::Path, ..)
             .shp            read(vsg::Path, ..)
@@ -498,6 +542,10 @@ Options specific to a ReaderWriter are specified on the commandline using two da
             .vert           read(vsg::Path, ..)
             .view           read(vsg::Path, ..)
             .vs             read(vsg::Path, ..)
+            .vsga           read(vsg::Path, ..)
+            .vsgb           read(vsg::Path, ..)
+            .vsgt           read(vsg::Path, ..)
+            .wmv            read(vsg::Path, ..)
             .woff           read(vsg::Path, ..)
             .x              read(vsg::Path, ..)
             .zip            read(vsg::Path, ..)
