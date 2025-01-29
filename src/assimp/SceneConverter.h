@@ -141,11 +141,11 @@ namespace vsgXchange
         bool culling = true;
 
         // set for the file format being read.
-        vsg::CoordinateSpace sourceVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
-        vsg::CoordinateSpace sourceMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace sourceVertexColorSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace sourceMaterialColorSpace = vsg::CoordinateSpace::LINEAR;
 
         // set for the target ShaderSet's
-        vsg::CoordinateSpace targetVertexCoordinateSpace = vsg::CoordinateSpace::LINEAR;
+        vsg::CoordinateSpace targetVertexColorSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace targetMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
 
 
@@ -181,7 +181,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
-                vsg::convert(value, sourceMaterialCoordinateSpace, targetMaterialCoordinateSpace);
+                vsg::convert(value, sourceMaterialColorSpace, targetMaterialCoordinateSpace);
                 return true;
             }
             return false;
@@ -192,7 +192,7 @@ namespace vsgXchange
             if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
             {
                 value = convert(color);
-                vsg::convert(value, sourceMaterialCoordinateSpace, targetMaterialCoordinateSpace);
+                vsg::convert(value, sourceMaterialColorSpace, targetMaterialCoordinateSpace);
                 return true;
             }
             return false;

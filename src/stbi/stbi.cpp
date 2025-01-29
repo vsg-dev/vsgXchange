@@ -14,6 +14,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/Logger.h>
+#include <vsg/utils/CoordinateSpace.h>
 #include <vsg/utils/CommandLine.h>
 
 #include <cstring>
@@ -75,6 +76,18 @@ using namespace vsgXchange;
 static void writeToStream(void* context, void* data, int size)
 {
     reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
+}
+
+static void process_image_format(vsg::ref_ptr<const vsg::Options> options, VkFormat& format)
+{
+    if (!options) return;
+
+    vsg::CoordinateSpace coordinateSpace;
+    if (options->getValue(stbi::image_format, coordinateSpace))
+    {
+        if (coordinateSpace==vsg::CoordinateSpace::sRGB) format = vsg::uNorm_to_sRGB(format);
+        else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) format = vsg::sRGB_to_uNorm(format);
+    }
 }
 
 // if the data is in BGR or BGRA form create a copy that is reformated into RGB or RGBA respectively
@@ -153,6 +166,7 @@ bool stbi::getFeatures(Features& features) const
     features.extensionFeatureMap[".ppm"] = read_mask;
 
     features.optionNameTypeMap[stbi::jpeg_quality] = vsg::type_name<int>();
+    features.optionNameTypeMap[stbi::image_format] = vsg::type_name<vsg::CoordinateSpace>();
 
     return true;
 }
@@ -160,6 +174,7 @@ bool stbi::getFeatures(Features& features) const
 bool stbi::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     bool result = arguments.readAndAssign<int>(stbi::jpeg_quality, &options);
+    result = arguments.readAndAssign<vsg::CoordinateSpace>(stbi::image_format, &options) | result;
     return result;
 }
 
@@ -182,7 +197,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
-
+        process_image_format(options, vsg_data->properties.format);
         return vsg_data;
     }
 
@@ -208,6 +223,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
+        process_image_format(options, vsg_data->properties.format);
         return vsg_data;
     }
 
@@ -223,6 +239,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
+        process_image_format(options, vsg_data->properties.format);
         return vsg_data;
     }
 
@@ -263,7 +280,7 @@ bool stbi::write(const vsg::Object* object, std::ostream& stream, vsg::ref_ptr<c
         int quality = 100;
         if (options)
         {
-            options->getValue("jpeg_quality", quality);
+            options->getValue(stbi::jpeg_quality, quality);
         }
         result = stbi_write_jpg_to_func(&writeToStream, &stream, data->width(), data->height(), num_components, data->dataPointer(), quality);
     }
@@ -306,7 +323,7 @@ bool stbi::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_
         int quality = 100;
         if (options)
         {
-            options->getValue("jpeg_quality", quality);
+            options->getValue(stbi::jpeg_quality, quality);
         }
         result = stbi_write_jpg(filename_str.c_str(), data->width(), data->height(), num_components, data->dataPointer(), quality);
     }

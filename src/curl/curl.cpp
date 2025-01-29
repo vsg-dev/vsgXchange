@@ -104,7 +104,7 @@ vsg::ref_ptr<vsg::Object> curl::read(const vsg::Path& filename, vsg::ref_ptr<con
             auto fileCachePath = getFileCachePath(options->fileCache, serverFilename);
             if (vsg::fileExists(fileCachePath))
             {
-                auto local_options = vsg::Options::create(*options);
+                auto local_options = vsg::clone(options);
 
                 local_options->paths.insert(local_options->paths.begin(), vsg::filePath(serverFilename));
                 local_options->extensionHint = vsg::lowerCaseFileExtension(filename);
@@ -225,7 +225,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
         if (result == 0 && response_code >= 200 && response_code<300) // successful responses.
         {
             // success
-            auto local_options = vsg::Options::create(*options);
+            auto local_options = vsg::clone(options);
             local_options->paths.insert(local_options->paths.begin(), vsg::filePath(filename));
             if (!local_options->extensionHint)
             {
