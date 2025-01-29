@@ -394,7 +394,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
                 vsg::debug("filename = ", filename, " : Embedded compressed format texture->achFormatHint = ", texture->achFormatHint);
 
                 // texture is a compressed format, defer to the VSG's vsg::read() to convert the block of data to vsg::Data image.
-                auto imageOptions = vsg::Options::create(*options);
+                auto imageOptions = vsg::clone(options);
                 imageOptions->extensionHint = vsg::Path(".") + texture->achFormatHint;
                 samplerImage.data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(texture->pcData), texture->mWidth, imageOptions);
 

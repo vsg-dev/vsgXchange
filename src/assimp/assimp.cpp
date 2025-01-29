@@ -141,7 +141,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
 
         if (auto scene = importer.ReadFile(filenameToUse.string(), flags); scene)
         {
-            auto opt = vsg::Options::create(*options);
+            auto opt = vsg::clone(options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
             SceneConverter converter;
@@ -161,16 +161,6 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             vsg::warn("Failed to load file: ", filename, '\n', importer.GetErrorString());
         }
     }
-
-#if 0
-    // Testing the stream support
-    std::ifstream file(filename, std::ios::binary);
-    auto opt = vsg::Options::create(*options);
-    opt->paths.push_back(vsg::filePath(filename));
-    opt->extensionHint = vsg::lowerCaseFileExtension(filename);
-
-    return vsg::read(file, opt);
-#endif
 
     return {};
 }
