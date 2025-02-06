@@ -852,7 +852,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         vsg::convert(colors->size(), &(colors->at(0)), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_VERTEX, colors);
 
-        vsg::info("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
+        vsg::debug("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
     }
     else
     {
@@ -860,7 +860,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         vsg::convert(colors->value(), sourceVertexColorSpace, targetVertexColorSpace);
         config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, colors);
 
-        vsg::info("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
+        vsg::debug("vsg::convert(", colors, ", ", sourceVertexColorSpace, ", ", targetVertexColorSpace, ")");
     }
 
     if (mesh->HasBones() && jointSampler)
@@ -1040,8 +1040,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         sourceMaterialColorSpace = vsg::CoordinateSpace::sRGB;
     }
 
-    vsg::info("before sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
-
     if (options)
     {
 
@@ -1049,7 +1047,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         options->getValue(assimp::material_color_space, sourceMaterialColorSpace);
     }
 
-    vsg::info("after sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
+    vsg::debug("vsgXchange::assimp sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
 
 
     std::string name = scene->mName.C_Str();
