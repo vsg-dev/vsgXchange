@@ -609,13 +609,13 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
 
         unsigned int maxValue = 1;
         float strength = 1.0f;
-        if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &mat.shininess, &maxValue) == AI_SUCCESS)
-        {
-            maxValue = 1;
-            if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS_STRENGTH, &strength, &maxValue) == AI_SUCCESS)
-                mat.shininess *= strength;
-        }
-        else
+        // any factors for other material parameters get multiplied in by AssImp before we see them, but the specular factor is different
+        // doing it like this means it's happening after conversion to the target colour space, which is sensible, but not necessarily what old data expects
+        if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS_STRENGTH, &strength, &maxValue) == AI_SUCCESS)
+            mat.specular *= strength;
+
+        maxValue = 1;
+        if (aiGetMaterialFloatArray(material, AI_MATKEY_SHININESS, &mat.shininess, &maxValue) != AI_SUCCESS)
         {
             mat.shininess = 0.0f;
             mat.specular.set(0.0f, 0.0f, 0.0f, 0.0f);
