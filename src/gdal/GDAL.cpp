@@ -247,7 +247,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref
 vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     std::string temp_filename("/vsimem/temp");
-    temp_filename.append(options->extensionHint);
+    temp_filename.append(options->extensionHint.string());
 
     // create a GDAL Virtual File for memory block.
     VSILFILE* vsFile = VSIFileFromMemBuffer(temp_filename.c_str(), static_cast<GByte*>(const_cast<uint8_t*>(ptr)), static_cast<vsi_l_offset>(size), 0);
