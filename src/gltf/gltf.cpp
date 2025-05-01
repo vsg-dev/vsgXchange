@@ -838,16 +838,6 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         return true;
     };
 
-    auto mimeTypeToExtension = [](const std::string_view& mimeType) -> vsg::Path
-    {
-        if (mimeType=="image/png") return ".png";
-        else if (mimeType=="image/jpeg") return ".jpeg";
-        else if (mimeType=="image/bmp") return ".bmp";
-        else if (mimeType=="image/gif") return ".gif";
-        else if (mimeType=="image/ktx") return ".ktx";
-        return "";
-    };
-
     struct OperationWithLatch : public vsg::Inherit<vsg::Operation, OperationWithLatch>
     {
         vsg::ref_ptr<vsg::Latch> latch;
@@ -981,7 +971,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                 size_t destTailCount = lengthToUse - count * 3;
                 for(; count > 0; --count)
                 {
-                    const uint8_t decodedBytes[4] = { lookup[*(src_itr++)], lookup[*(src_itr++)], lookup[*(src_itr++)], lookup[*(src_itr++)]};
+                    const uint8_t decodedBytes[4] = { lookup[static_cast<uint8_t>(*(src_itr++))], lookup[static_cast<uint8_t>(*(src_itr++))], lookup[static_cast<uint8_t>(*(src_itr++))], lookup[static_cast<uint8_t>(*(src_itr++))]};
 
                     (*dest_itr++) = (decodedBytes[0] << 2) + ((decodedBytes[1] & 0x30) >> 4);
                     (*dest_itr++) = ((decodedBytes[1] & 0x0f) << 4) + ((decodedBytes[2] & 0x3c) >> 2);
@@ -991,10 +981,10 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                 if (srcTailCount != 0 && destTailCount != 0)
                 {
                     const uint8_t decodedBytes[4] = {
-                        lookup[*(src_itr++)],
-                        srcTailCount >= 2 ? lookup[*(src_itr++)] : uint8_t(0),
-                        srcTailCount >= 3 ? lookup[*(src_itr++)] : uint8_t(0),
-                        srcTailCount >= 4 ? lookup[*(src_itr++)] : uint8_t(0)};
+                        lookup[static_cast<uint8_t>(*(src_itr++))],
+                        srcTailCount >= 2 ? lookup[static_cast<uint8_t>(*(src_itr++))] : uint8_t(0),
+                        srcTailCount >= 3 ? lookup[static_cast<uint8_t>(*(src_itr++))] : uint8_t(0),
+                        srcTailCount >= 4 ? lookup[static_cast<uint8_t>(*(src_itr++))] : uint8_t(0)};
 
                     (*dest_itr++) = (decodedBytes[0] << 2) + ((decodedBytes[1] & 0x30) >> 4);
                     if (destTailCount >= 2) (*dest_itr++) = ((decodedBytes[1] & 0x0f) << 4) + ((decodedBytes[2] & 0x3c) >> 2);
@@ -1007,31 +997,22 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                     *dest_itr = 0;
                 }
 
-                auto readData = [](vsg::ref_ptr<vsg::Data> input,  vsg::ref_ptr<const vsg::Options> opt, const vsg::Path& extensionHint) -> vsg::ref_ptr<vsg::Data>
-                {
-                    auto local_options = vsg::clone(opt);
-                    local_options->extensionHint = extensionHint;
-
-                    auto data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(input->dataPointer()), input->dataSize(), local_options);
-
-                    if (data)
-                    {
-                        vsg::info("read decoded data [", input->dataSize(), ", ", extensionHint, "] dimensions = {", data->width(), ", ", data->height(), "}");
-                    }
-                    else
-                    {
-                        vsg::warn("unable to decoded data [", input->dataSize(), ", ", extensionHint, "]");
-                    }
-
-                    return data;
-                };
-
-
                 if (mimeType.compare(0, 6, "image/") == 0)
                 {
                     if (auto extensionHint = gltf::mimeTypeToExtension(mimeType); !extensionHint.empty())
                     {
-                        data = readData(decodedData, options, extensionHint);
+                        auto local_options = vsg::clone(options);
+                        local_options->extensionHint = extensionHint;
+
+                        data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(decodedData->dataPointer()), decodedData->dataSize(), local_options);
+                        if (data)
+                        {
+                            vsg::info("read decoded data [", decodedData->dataSize(), ", ", extensionHint, "] dimensions = {", data->width(), ", ", data->height(), "}");
+                        }
+                        else
+                        {
+                            vsg::warn("unable to decoded data [", decodedData->dataSize(), ", ", extensionHint, "]");
+                        }
                     }
                     else
                     {
@@ -1249,9 +1230,6 @@ vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<con
 
     auto opt = vsg::clone(options);
     opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
-
-    vsg::ref_ptr<vsg::stringValue> contents = vsg::stringValue::create();
-    auto& buffer = contents->value();
 
     std::ifstream fin(filenameToUse, std::ios::ate | std::ios::binary);
     return _read(fin, opt, filename);
