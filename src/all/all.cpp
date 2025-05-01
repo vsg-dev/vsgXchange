@@ -21,6 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>
 #include <vsg/io/glsl.h>
+#include <vsg/io/json.h>
 #include <vsg/io/spirv.h>
 #include <vsg/io/txt.h>
 
@@ -65,6 +66,7 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
+    add(vsg::json::create());
     add(vsg::glsl::create());
     add(vsg::txt::create());
 
