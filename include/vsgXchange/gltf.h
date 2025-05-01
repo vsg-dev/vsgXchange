@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
+#include <vsg/app/Camera.h>
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/io/JSONParser.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
@@ -219,10 +220,10 @@ namespace vsgXchange
 
         struct VSGXCHANGE_DECLSPEC PbrMetallicRoughness : public vsg::Inherit<ExtensionsExtras, PbrMetallicRoughness>
         {
-            vsg::ValuesSchema<double> baseColorFactor; // default { 1.0, 1.0, 1.0, 1.0 }
+            vsg::ValuesSchema<float> baseColorFactor; // default { 1.0, 1.0, 1.0, 1.0 }
             TextureInfo baseColorTexture;
-            double metallicFactor = 1.0;
-            double roughnessFactor = 1.0;
+            float metallicFactor = 1.0;
+            float roughnessFactor = 1.0;
             TextureInfo metallicRoughnessTexture;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -232,14 +233,14 @@ namespace vsgXchange
 
         struct VSGXCHANGE_DECLSPEC NormalTextureInfo : public vsg::Inherit<TextureInfo, NormalTextureInfo>
         {
-            double scale = 1.0;
+            float scale = 1.0;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
         struct VSGXCHANGE_DECLSPEC OcclusionTextureInfo : public vsg::Inherit<TextureInfo, OcclusionTextureInfo>
         {
-            double strength = 1.0;
+            float strength = 1.0;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -247,9 +248,9 @@ namespace vsgXchange
         /// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_specular
         struct VSGXCHANGE_DECLSPEC KHR_materials_specular : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_specular>
         {
-            double specularFactor = 1.0;
+            float specularFactor = 1.0;
             TextureInfo specularTexture;
-            vsg::ValuesSchema<double> specularColorFactor;
+            vsg::ValuesSchema<float> specularColorFactor;
             TextureInfo specularColorTexture;
 
             // extention prototype will be cloned when it's used.
@@ -263,7 +264,7 @@ namespace vsgXchange
         /// index of refraction : https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_ior
         struct VSGXCHANGE_DECLSPEC KHR_materials_ior : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_ior>
         {
-            double ior = 1.5;
+            float ior = 1.5;
 
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_ior::create(*this); }
@@ -313,9 +314,9 @@ namespace vsgXchange
             NormalTextureInfo normalTexture;
             OcclusionTextureInfo occlusionTexture;
             TextureInfo emissiveTexture;
-            vsg::ValuesSchema<double> emissiveFactor; // default { 0.0, 0.0, 0.0 }
+            vsg::ValuesSchema<float> emissiveFactor; // default { 0.0, 0.0, 0.0 }
             std::string alphaMode = "OPAQUE";
-            double alphaCutoff = 0.5;
+            float alphaCutoff = 0.5f;
             bool doubleSided = false;
 
             void report();
