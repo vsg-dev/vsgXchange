@@ -1220,7 +1220,7 @@ vsg::ref_ptr<vsg::Object> gltf::_read(std::istream& fin, vsg::ref_ptr<const vsg:
 
 vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::info("gltf::read(", filename, ")");
+    if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
 
     vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
@@ -1237,6 +1237,8 @@ vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
+    if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
+
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
@@ -1245,6 +1247,8 @@ vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::
 
 vsg::ref_ptr<vsg::Object> gltf::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
+    if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
+
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
@@ -1257,6 +1261,7 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     bool result = arguments.readAndAssign<bool>(gltf::report, &options);
     result = arguments.readAndAssign<bool>(gltf::culling, &options) || result;
+    result = arguments.readAndAssign<bool>(gltf::disable_gltf, &options) || result;
     return result;
 }
 

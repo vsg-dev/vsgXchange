@@ -49,8 +49,9 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";
-        static constexpr const char* culling = "culling"; /// bool, insert cull nodes, defaults to true
+        static constexpr const char* report = "report";             /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* culling = "culling";           /// bool, insert cull nodes, defaults to true
+        static constexpr const char* disable_gltf = "disable_gltf"; /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 

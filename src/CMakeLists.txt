@@ -23,6 +23,7 @@ set(SOURCES
     stbi/stbi.cpp
     dds/dds.cpp
     images/images.cpp
+    bin/bin.cpp
     gltf/gltf.cpp
     gltf/SceneGraphBuilder.cpp
 )
