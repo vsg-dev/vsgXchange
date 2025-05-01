@@ -13,6 +13,7 @@ set(HEADERS
     ${HEADER_PATH}/freetype.h
     ${HEADER_PATH}/images.h
     ${HEADER_PATH}/models.h
+    ${HEADER_PATH}/gltf.h
 )
 
 set(SOURCES
@@ -22,6 +23,8 @@ set(SOURCES
     stbi/stbi.cpp
     dds/dds.cpp
     images/images.cpp
+    gltf/gltf.cpp
+    gltf/SceneGraphBuilder.cpp
 )
 
 # add freetype if available

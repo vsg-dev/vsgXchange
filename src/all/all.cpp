@@ -17,6 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/gdal.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
+#include <vsgXchange/gltf.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>
@@ -50,6 +51,7 @@ void vsgXchange::init()
 
     vsg::ObjectFactory::instance()->add<vsgXchange::openexr>();
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::gltf>();
     vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
     vsg::ObjectFactory::instance()->add<vsgXchange::GDAL>();
     //    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
@@ -69,6 +71,8 @@ all::all()
     add(vsg::json::create());
     add(vsg::glsl::create());
     add(vsg::txt::create());
+
+    add(gltf::create());
 
     add(cpp::create());
 
