@@ -19,6 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/models.h>
 #include <vsgXchange/gltf.h>
 #include <vsgXchange/bin.h>
+#include <vsgXchange/3d-tiles.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>
@@ -72,15 +73,17 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
-    add(vsg::json::create());
     add(vsg::glsl::create());
-    add(vsg::txt::create());
 
     add(bin::create());
     add(gltf::create());
-    add(Tile3D::create());
+    add(Tiles3D::create());
+
+    add(vsg::json::create());
 
     add(cpp::create());
+
+    add(vsg::txt::create());
 
     add(stbi::create());
     add(dds::create());

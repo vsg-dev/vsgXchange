@@ -10,7 +10,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/Tiles3D.h>
+#include <vsgXchange/3d-tiles.h>
 
 #include <vsg/io/Path.h>
 #include <vsg/io/mem_stream.h>
@@ -25,6 +25,48 @@ using namespace vsgXchange;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// Tileset
+//
+
+void Tiles3D::Tileset::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+}
+
+void Tiles3D::Tileset::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+}
+
+void Tiles3D::Tileset::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+}
+
+
+void Tiles3D::Tileset::report()
+{
+}
+
+void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// FeatureTable
+//
+void Tiles3D::FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
+    else parser.warning();
+}
+
+void Tiles3D::FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property=="BATCH_LENGTH") input >> BATCH_LENGTH;
+    else parser.warning();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Tiles3D
 //
 Tiles3D::Tiles3D()
@@ -36,9 +78,9 @@ bool Tiles3D::supportedExtension(const vsg::Path& ext) const
     return ext == ".json" || ext == ".b3dm";
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::json_read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::json_read()");
+    vsg::info("Tiles3D::read_json()");
 
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();
@@ -62,20 +104,84 @@ vsg::ref_ptr<vsg::Object> Tiles3D::json_read(std::istream& fin, vsg::ref_ptr<con
     return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::b3dm_read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::b3dm_read()");
+    vsg::info("Tiles3D::read_b3dm()");
 
+    // https://github.com/CesiumGS/3d-tiles/tree/1.0/specification/TileFormats/Batched3DModel
+    fin.seekg(0);
+
+    struct Header
+    {
+        char magic[4] = {0,0,0,0};
+        uint32_t version = 0;
+        uint32_t byteLength = 0;
+        uint32_t featureTableJSONByteLength = 0;
+        uint32_t featureTableBinaryByteLength = 0;
+        uint32_t batchTableJSONByteLength = 0;
+        uint32_t batchTabelBinaryLength = 0;
+    };
+
+    Header header;
+    fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
+
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading bd3m file.");
+        return {};
+    }
+
+    vsg::info("magic = ", header.magic);
+    vsg::info("version = ", header.version);
+    vsg::info("byteLength = ", header.byteLength);
+    vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
+    vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
+    vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
+    vsg::info("batchTabelBinaryLength = ", header.batchTabelBinaryLength);
+
+    if (strncmp(header.magic, "b3dm", 4) != 0)
+    {
+        vsg::warn("magic number not b3dm");
+        return {};
+    }
+
+    // Feature table
+    // Batch table
+    // Binary glTF
+
+    vsg::ref_ptr<FeatureTable> featureTable;
+    if (header.featureTableJSONByteLength > 0)
+    {
+        vsg::JSONParser parser;
+        parser.buffer.resize(header.featureTableJSONByteLength);
+        fin.read(parser.buffer.data(), header.featureTableJSONByteLength);
+
+        featureTable = FeatureTable::create();
+        parser.read_object(*featureTable);
+
+        vsg::info("read featureTableJSON = ", parser.buffer);
+        vsg::info("read featureTable = ", featureTable);
+        vsg::info("read featureTable->BATCH_LENGTH = ", featureTable->BATCH_LENGTH);
+        vsg::info("read featureTable->RTC_CENTER = ", featureTable->RTC_CENTER.values.size());
+    }
+
+    if (header.batchTableJSONByteLength > 0)
+    {
+        std::string batchTableJSON;
+        batchTableJSON.resize(header.batchTableJSONByteLength);
+        fin.read(batchTableJSON.data(), header.batchTableJSONByteLength);
+        vsg::info("read batchTableJSON = ", batchTableJSON);
+    }
+
+
+#if 0
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();
 
-    if (fileSize==0) return {};
-
     std::string buffer;
-
     buffer.resize(fileSize);
-    fin.seekg(0);
     fin.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+#endif
 
     vsg::ref_ptr<vsg::Object> result;
 
@@ -84,8 +190,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::b3dm_read(std::istream& fin, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (vsg::value<bool>(false, Tiles3D::disable_Tiles3D, options)) return {};
-
     vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
 
@@ -97,8 +201,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
     std::ifstream fin(filenameToUse, std::ios::ate | std::ios::binary);
 
-    if (options->extensionHint==".json") return json_read(fin, options);
-    else if (options->extensionHint==".b3dm") return b3ddm_read(fin, options);
+    if (ext==".json") return read_json(fin, options);
+    else if (ext==".b3dm") return read_b3dm(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -108,13 +212,11 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (vsg::value<bool>(false, Tiles3D::disable_Tiles3D, options)) return {};
-
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
-    if (options->extensionHint==".json") return json_read(fin, options);
-    else if (options->extensionHint==".b3dm") return b3ddm_read(fin, options);
+    if (options->extensionHint==".json") return read_json(fin, options);
+    else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -124,15 +226,13 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(std::istream& fin, vsg::ref_ptr<const vs
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    if (vsg::value<bool>(false, Tiles3D::disable_Tiles3D, options)) return {};
-
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
     vsg::mem_stream fin(ptr, size);
 
-    if (options->extensionHint==".json") return json_read(fin, options);
-    else if (options->extensionHint==".b3dm") return b3ddm_read(fin, options);
+    if (options->extensionHint==".json") return read_json(fin, options);
+    else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -144,7 +244,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::re
 bool Tiles3D::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     bool result = arguments.readAndAssign<bool>(Tiles3D::report, &options);
-    result = arguments.readAndAssign<bool>(Tiles3D::culling, &options) || result;
     return result;
 }
 

@@ -41,7 +41,7 @@ Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
 {
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<Tiles3D::glTF> root, vsg::ref_ptr<const vsg::Options> in_options)
+vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> root, vsg::ref_ptr<const vsg::Options> in_options)
 {
     if (!root) return {};
 

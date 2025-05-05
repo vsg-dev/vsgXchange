@@ -23,16 +23,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
-#include <vsg/app/Camera.h>
-#include <vsg/io/ReaderWriter.h>
-#include <vsg/io/JSONParser.h>
-#include <vsg/utils/GraphicsPipelineConfigurator.h>
-#include <vsgXchange/Version.h>
+#include <vsgXchange/gltf.h>
 
 namespace vsgXchange
 {
 
     /// 3d-tiles ReaderWriter, C++ won't handle class called 3d-tiles so make do with Tiles3D
+    /// specs for 3D-Tiles https://github.com/CesiumGS/3d-tiles
     class VSGXCHANGE_DECLSPEC Tiles3D : public vsg::Inherit<vsg::ReaderWriter, Tiles3D>
     {
     public:
@@ -57,12 +54,50 @@ namespace vsgXchange
 
     public:
 
+        /// https://github.com/CesiumGS/3d-tiles/blob/main/specification/schema/tileset.schema.json
+        struct VSGXCHANGE_DECLSPEC Tileset : public vsg::Inherit<gltf::ExtensionsExtras, Tileset>
+        {
+            // asset
+            // properties
+            // schema
+            // schemaUri
+            // statistics
+            // group
+            // metadata
+            // geometricError
+            // root
+            // extensionsUsed
+            // extensionsRequired
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+
+            void report();
+
+            virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
+        };
+
+        struct VSGXCHANGE_DECLSPEC FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, FeatureTable>
+        {
+            uint32_t BATCH_LENGTH = 0;
+            vsg::ValuesSchema<double> RTC_CENTER;
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
+    public:
+
         class VSGXCHANGE_DECLSPEC SceneGraphBuilder : public vsg::Inherit<vsg::Object, SceneGraphBuilder>
         {
         public:
             SceneGraphBuilder();
 
-            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> root, vsg::ref_ptr<const vsg::Options> options);
+            vsg::ref_ptr<const vsg::Options> options;
+            vsg::ref_ptr<vsg::ShaderSet> shaderSet;
+            vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
+
+            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> root, vsg::ref_ptr<const vsg::Options> options);
         };
     };
 
