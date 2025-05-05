@@ -89,6 +89,14 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        struct VSGXCHANGE_DECLSPEC BatchTable : public vsg::Inherit<gltf::ExtensionsExtras, BatchTable>
+        {
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
     public:
 
         class VSGXCHANGE_DECLSPEC SceneGraphBuilder : public vsg::Inherit<vsg::Object, SceneGraphBuilder>

@@ -67,6 +67,34 @@ void Tiles3D::FeatureTable::read_number(vsg::JSONParser& parser, const std::stri
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// BatchTable
+//
+void Tiles3D::BatchTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    vsg::info("read_array(", property, ")");
+}
+
+void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    vsg::info("read_object(", property, ")");
+}
+
+void Tiles3D::BatchTable::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    std::string value;
+    parser.read_string(value);
+    vsg::info("read_string(", property, ") value = ", value);
+}
+
+void Tiles3D::BatchTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    double value = 0.0;
+    input >> value;
+    vsg::info("read_number(", property, ") value = ", value);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Tiles3D
 //
 Tiles3D::Tiles3D()
@@ -119,7 +147,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         uint32_t featureTableJSONByteLength = 0;
         uint32_t featureTableBinaryByteLength = 0;
         uint32_t batchTableJSONByteLength = 0;
-        uint32_t batchTabelBinaryLength = 0;
+        uint32_t batchTableBinaryLength = 0;
     };
 
     Header header;
@@ -137,7 +165,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
     vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
     vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
-    vsg::info("batchTabelBinaryLength = ", header.batchTabelBinaryLength);
+    vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
 
     if (strncmp(header.magic, "b3dm", 4) != 0)
     {
@@ -148,6 +176,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     // Feature table
     // Batch table
     // Binary glTF
+
 
     vsg::ref_ptr<FeatureTable> featureTable;
     if (header.featureTableJSONByteLength > 0)
@@ -165,14 +194,36 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         vsg::info("read featureTable->RTC_CENTER = ", featureTable->RTC_CENTER.values.size());
     }
 
-    if (header.batchTableJSONByteLength > 0)
+    vsg::ref_ptr<vsg::ubyteArray> featureTableBinary;
+    if (header.featureTableBinaryByteLength > 0)
     {
-        std::string batchTableJSON;
-        batchTableJSON.resize(header.batchTableJSONByteLength);
-        fin.read(batchTableJSON.data(), header.batchTableJSONByteLength);
-        vsg::info("read batchTableJSON = ", batchTableJSON);
+        featureTableBinary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
+        fin.read(reinterpret_cast<char*>(featureTableBinary->dataPointer()), header.featureTableBinaryByteLength);
+        vsg::info("read featureTableBinary = ", featureTableBinary);
     }
 
+
+    vsg::ref_ptr<BatchTable> batchTable;
+    if (header.batchTableJSONByteLength > 0)
+    {
+        vsg::JSONParser parser;
+        parser.buffer.resize(header.batchTableJSONByteLength);
+        fin.read(parser.buffer.data(), header.batchTableJSONByteLength);
+
+        vsg::info("read batchTable.buffer = ", parser.buffer);
+        vsg::info("read batchTable = ", batchTable);
+
+        batchTable = BatchTable::create();
+        parser.read_object(*batchTable);
+    }
+
+    vsg::ref_ptr<vsg::ubyteArray> batchTableBinary;
+    if (header.batchTableBinaryLength > 0)
+    {
+        batchTableBinary = vsg::ubyteArray::create(header.batchTableBinaryLength);
+        fin.read(reinterpret_cast<char*>(batchTableBinary->dataPointer()), header.batchTableBinaryLength);
+        vsg::info("read batchTableBinary = ", batchTableBinary);
+    }
 
 #if 0
     fin.seekg(0, fin.end);
