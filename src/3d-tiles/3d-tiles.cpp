@@ -75,7 +75,7 @@ Tiles3D::Tiles3D()
 
 bool Tiles3D::supportedExtension(const vsg::Path& ext) const
 {
-    return ext == ".json" || ext == ".b3dm";
+    return ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
@@ -188,6 +188,25 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     return result;
 }
 
+vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+{
+    vsg::warn("Tiles3D::read_cmpt(..) not implemented yet.");
+    return {};
+}
+
+vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+{
+    vsg::warn("Tiles3D::read_i3dm(..) not implemented yet.");
+    return {};
+}
+
+vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+{
+    vsg::warn("Tiles3D::read_pnts(..) not implemented yet.");
+    return {};
+}
+
+
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
@@ -203,6 +222,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
     if (ext==".json") return read_json(fin, options);
     else if (ext==".b3dm") return read_b3dm(fin, options);
+    else if (ext==".cmpt") return read_cmpt(fin, options);
+    else if (ext==".i3dm") return read_i3dm(fin, options);
+    else if (ext==".pnts") return read_pnts(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -217,6 +239,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(std::istream& fin, vsg::ref_ptr<const vs
 
     if (options->extensionHint==".json") return read_json(fin, options);
     else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
+    else if (options->extensionHint==".cmpt") return read_cmpt(fin, options);
+    else if (options->extensionHint==".i3dm") return read_i3dm(fin, options);
+    else if (options->extensionHint==".pnts") return read_pnts(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -233,6 +258,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::re
 
     if (options->extensionHint==".json") return read_json(fin, options);
     else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
+    else if (options->extensionHint==".cmpt") return read_cmpt(fin, options);
+    else if (options->extensionHint==".i3dm") return read_i3dm(fin, options);
+    else if (options->extensionHint==".pnts") return read_pnts(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -252,6 +280,9 @@ bool Tiles3D::getFeatures(Features& features) const
     vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     features.extensionFeatureMap[".json"] = supported_features;
     features.extensionFeatureMap[".b3dm"] = supported_features;
+    features.extensionFeatureMap[".cmpt"] = supported_features;
+    features.extensionFeatureMap[".i3dm"] = supported_features;
+    features.extensionFeatureMap[".pnts"] = supported_features;
 
     return true;
 }

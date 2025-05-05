@@ -41,6 +41,9 @@ namespace vsgXchange
 
         vsg::ref_ptr<vsg::Object> read_json(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
         vsg::ref_ptr<vsg::Object> read_b3dm(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
+        vsg::ref_ptr<vsg::Object> read_cmpt(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
+        vsg::ref_ptr<vsg::Object> read_i3dm(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
+        vsg::ref_ptr<vsg::Object> read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
 
         vsg::Logger::Level level = vsg::Logger::LOGGER_WARN;
 
