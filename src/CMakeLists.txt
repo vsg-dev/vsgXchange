@@ -14,6 +14,7 @@ set(HEADERS
     ${HEADER_PATH}/images.h
     ${HEADER_PATH}/models.h
     ${HEADER_PATH}/gltf.h
+    ${HEADER_PATH}/3d-tiles.h
 )
 
 set(SOURCES
@@ -26,6 +27,8 @@ set(SOURCES
     bin/bin.cpp
     gltf/gltf.cpp
     gltf/SceneGraphBuilder.cpp
+    3d-tiles/3d-tiles.cpp
+    3d-tiles/SceneGraphBuilder.cpp
 )
 
 # add freetype if available

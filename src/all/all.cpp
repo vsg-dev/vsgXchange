@@ -52,6 +52,7 @@ void vsgXchange::init()
 
     vsg::ObjectFactory::instance()->add<vsgXchange::bin>();
     vsg::ObjectFactory::instance()->add<vsgXchange::gltf>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::Tiles3D>();
 
     vsg::ObjectFactory::instance()->add<vsgXchange::openexr>();
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
@@ -77,6 +78,7 @@ all::all()
 
     add(bin::create());
     add(gltf::create());
+    add(Tile3D::create());
 
     add(cpp::create());
 
