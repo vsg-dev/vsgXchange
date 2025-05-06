@@ -20,6 +20,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/utils/CommandLine.h>
 
 #include <fstream>
+#include <iostream>
 
 using namespace vsgXchange;
 
@@ -266,12 +267,35 @@ void Tiles3D::BatchTable::convert()
 
 void Tiles3D::BatchTable::report()
 {
+    struct PrintValues : public vsg::ConstVisitor
+    {
+        void apply(const vsg::stringArray& strings) override
+        {
+            for(auto value : strings) vsg::info("        ", value);
+        }
+
+        void apply(const vsg::intArray& ints) override
+        {
+            for(auto value : ints) vsg::info("        ", value);
+        }
+
+        void apply(const vsg::doubleArray& doubles) override
+        {
+            for(auto value : doubles) vsg::info("        ", value);
+        }
+    } pv;
+
     for(auto& [name, batch] : batches)
     {
         vsg::info("batch ", name, "{");
 
-        if (batch->object) vsg::info("    object = ", batch->object);
-        if (batch->objects)
+        if (batch->object)
+        {
+            vsg::info("    object = ", batch->object);
+            batch->object->accept(pv);
+            vsg::info(" }");
+        }
+        else if (batch->objects)
         {
             vsg::info("    objects = ", batch->objects);
             for(auto& child : batch->objects->children)
@@ -279,9 +303,12 @@ void Tiles3D::BatchTable::report()
                 vsg::info("        child = ", child);
             }
         }
-        vsg::info("    byteOffset = ", batch->byteOffset);
-        vsg::info("    componentType = ", batch->componentType);
-        vsg::info("    type = ", batch->type);
+        else
+        {
+            vsg::info("    byteOffset = ", batch->byteOffset);
+            vsg::info("    componentType = ", batch->componentType);
+            vsg::info("    type = ", batch->type);
+        }
 
         vsg::info("}");
     }
