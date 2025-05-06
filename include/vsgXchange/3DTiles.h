@@ -89,12 +89,25 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
-        struct VSGXCHANGE_DECLSPEC BatchTable : public vsg::Inherit<gltf::ExtensionsExtras, BatchTable>
+        struct VSGXCHANGE_DECLSPEC Batch : public vsg::Inherit<vsg::JSONtoMetaDataSchema, Batch>
         {
-            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
-            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            uint32_t byteOffset = 0;
+            std::string componentType;
+            std::string type;
+
+            // read object parts
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
+        struct VSGXCHANGE_DECLSPEC BatchTable : public vsg::Inherit<gltf::ExtensionsExtras, BatchTable>
+        {
+            std::map<std::string, vsg::ref_ptr<Batch>> batches;
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+
+            void report();
         };
 
     public:

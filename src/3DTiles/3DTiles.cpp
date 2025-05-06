@@ -67,31 +67,62 @@ void Tiles3D::FeatureTable::read_number(vsg::JSONParser& parser, const std::stri
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// Batch
+//
+void Tiles3D::Batch::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "componentType") parser.read_string(componentType);
+    else if (property == "type") parser.read_string(type);
+    else parser.warning();
+}
+
+void Tiles3D::Batch::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "byteOffset") input >> byteOffset;
+    else parser.warning();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // BatchTable
 //
 void Tiles3D::BatchTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
-    vsg::info("read_array(", property, ")");
+    auto batch = Batch::create();
+    parser.read_array(*batch);
+    batches[std::string(property)] = batch;
 }
 
 void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    vsg::info("read_object(", property, ")");
+    auto batch = Batch::create();
+    parser.read_object(*batch);
+    batches[std::string(property)] = batch;
 }
 
-void Tiles3D::BatchTable::read_string(vsg::JSONParser& parser, const std::string_view& property)
+void Tiles3D::BatchTable::report()
 {
-    std::string value;
-    parser.read_string(value);
-    vsg::info("read_string(", property, ") value = ", value);
-}
+    for(auto& [name, batch] : batches)
+    {
+        vsg::info("batch ", name, "{");
 
-void Tiles3D::BatchTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
-{
-    double value = 0.0;
-    input >> value;
-    vsg::info("read_number(", property, ") value = ", value);
-}
+        if (batch->object) vsg::info("    object = ", batch->object);
+        if (batch->objects)
+        {
+            vsg::info("    objects = ", batch->objects);
+            for(auto& child : batch->objects->children)
+            {
+                vsg::info("        child = ", child);
+            }
+        }
+        vsg::info("    byteOffset = ", batch->byteOffset);
+        vsg::info("    componentType = ", batch->componentType);
+        vsg::info("    type = ", batch->type);
+
+        vsg::info("}");
+    }
+ }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -187,11 +218,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
         featureTable = FeatureTable::create();
         parser.read_object(*featureTable);
-
-        vsg::info("read featureTableJSON = ", parser.buffer);
-        vsg::info("read featureTable = ", featureTable);
-        vsg::info("read featureTable->BATCH_LENGTH = ", featureTable->BATCH_LENGTH);
-        vsg::info("read featureTable->RTC_CENTER = ", featureTable->RTC_CENTER.values.size());
     }
 
     vsg::ref_ptr<vsg::ubyteArray> featureTableBinary;
@@ -199,9 +225,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     {
         featureTableBinary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
         fin.read(reinterpret_cast<char*>(featureTableBinary->dataPointer()), header.featureTableBinaryByteLength);
-        vsg::info("read featureTableBinary = ", featureTableBinary);
     }
-
 
     vsg::ref_ptr<BatchTable> batchTable;
     if (header.batchTableJSONByteLength > 0)
@@ -210,20 +234,22 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         parser.buffer.resize(header.batchTableJSONByteLength);
         fin.read(parser.buffer.data(), header.batchTableJSONByteLength);
 
-        vsg::info("read batchTable.buffer = ", parser.buffer);
-        vsg::info("read batchTable = ", batchTable);
-
         batchTable = BatchTable::create();
         parser.read_object(*batchTable);
-    }
+   }
 
     vsg::ref_ptr<vsg::ubyteArray> batchTableBinary;
     if (header.batchTableBinaryLength > 0)
     {
         batchTableBinary = vsg::ubyteArray::create(header.batchTableBinaryLength);
         fin.read(reinterpret_cast<char*>(batchTableBinary->dataPointer()), header.batchTableBinaryLength);
-        vsg::info("read batchTableBinary = ", batchTableBinary);
     }
+
+    if (vsg::value<bool>(false, gltf::report, options))
+    {
+        if (batchTable) batchTable->report();
+    }
+
 
 #if 0
     fin.seekg(0, fin.end);
