@@ -28,8 +28,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
 
-    /// 3d-tiles ReaderWriter, C++ won't handle class called 3d-tiles so make do with Tiles3D
-    /// specs for 3D-Tiles https://github.com/CesiumGS/3d-tiles
+    /// 3DTiles ReaderWriter, C++ won't handle class called 3DTiles so make do with Tiles3D.
+    /// Specs for 3DTiles https://github.com/CesiumGS/3d-tiles
     class VSGXCHANGE_DECLSPEC Tiles3D : public vsg::Inherit<vsg::ReaderWriter, Tiles3D>
     {
     public:
@@ -89,11 +89,15 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        class BatchTable;
+
         struct VSGXCHANGE_DECLSPEC Batch : public vsg::Inherit<vsg::JSONtoMetaDataSchema, Batch>
         {
             uint32_t byteOffset = 0;
             std::string componentType;
             std::string type;
+
+            void convert(BatchTable& batchTable);
 
             // read object parts
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -104,8 +108,13 @@ namespace vsgXchange
         {
             std::map<std::string, vsg::ref_ptr<Batch>> batches;
 
+            uint32_t length = 0;
+            vsg::ref_ptr<vsg::ubyteArray> buffer;
+
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+
+            void convert();
 
             void report();
         };

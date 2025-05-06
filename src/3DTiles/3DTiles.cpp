@@ -82,6 +82,165 @@ void Tiles3D::Batch::read_number(vsg::JSONParser& parser, const std::string_view
     else parser.warning();
 }
 
+void Tiles3D::Batch::convert(BatchTable& batchTable)
+{
+    if (object) return;
+
+    if (objects)
+    {
+
+        if (objects->children.empty())
+        {
+            vsg::warn("Tiles3D::Batch::convert() failed ", objects, " empty.");
+            return;
+        }
+
+        if (objects->children.size() == 1)
+        {
+            object = objects->children.front();
+            return;
+        }
+
+        auto first_child = objects->children.front();
+        size_t numDifferent = 0;
+        size_t numSame = 0;
+        for(auto& child : objects->children)
+        {
+            if (first_child->type_info() != child->type_info()) ++numDifferent;
+            else ++numSame;
+        }
+
+        if (numDifferent == 0)
+        {
+            struct ValuesToArray : public vsg::ConstVisitor
+            {
+                ValuesToArray(vsg::Objects::Children& in_children) : children(in_children) {}
+
+                vsg::Objects::Children children;
+                vsg::ref_ptr<vsg::Data> array;
+
+                void apply(const vsg::Object& value) override
+                {
+                    vsg::warn("Tiles3D::Batch::convert() unhandled type ",  value.className());
+                }
+
+                void apply(const vsg::stringValue&) override
+                {
+                    auto strings = vsg::stringArray::create(children.size());
+                    auto itr = strings->begin();
+                    for(auto& child : children)
+                    {
+                        if (auto sv = child.cast<vsg::stringValue>()) *itr = sv->value();
+                        else vsg::info("Unable to convert to stringValue ", child);
+                        ++itr;
+                    }
+
+                    array = strings;
+                }
+
+                void apply(const vsg::floatValue&) override
+                {
+                    auto floats = vsg::floatArray::create(children.size());
+                    auto itr = floats->begin();
+                    for(auto& child : children)
+                    {
+                        if (auto sv = child.cast<vsg::floatValue>()) *itr = sv->value();
+                        else vsg::info("Unable to convert to floatValue ", child);
+                        ++itr;
+                    }
+
+                    array = floats;
+                }
+
+                void apply(const vsg::doubleValue&) override
+                {
+                    auto doubles = vsg::doubleArray::create(children.size());
+                    auto itr = doubles->begin();
+                    for(auto& child : children)
+                    {
+                        if (auto sv = child.cast<vsg::doubleValue>()) *itr = sv->value();
+                        else vsg::info("Unable to convert to doubleValue ", child);
+                        ++itr;
+                    }
+
+                    array = doubles;
+                }
+            };
+
+            ValuesToArray vta(objects->children);
+            first_child->accept(vta);
+
+            if (vta.array)
+            {
+                object = vta.array;
+            }
+            else
+            {
+                vsg::warn("Tiles3D::Batch::convert() enable to convert ", objects);
+                object = objects;
+            }
+        }
+        else
+        {
+            // mixed data so the best we can do it just use the vsg::Objects object for access
+            object = objects;
+        }
+
+    }
+    else if (type == "SCALAR")
+    {
+        if (componentType=="BYTE") object = vsg::byteArray::create(batchTable.buffer, byteOffset, 1, batchTable.length);
+        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubyteArray::create(batchTable.buffer, byteOffset, 1, batchTable.length);
+        else if (componentType=="SHORT") object = vsg::shortArray::create(batchTable.buffer, byteOffset, 2, batchTable.length);
+        else if (componentType=="UNSIGNED_SHORT") object = vsg::ushortArray::create(batchTable.buffer, byteOffset, 2, batchTable.length);
+        else if (componentType=="INT") object = vsg::intArray::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="UNSIGNED_INT") object = vsg::uintArray::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="FLOAT") object = vsg::floatArray::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="DOUBLE") object = vsg::doubleArray::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else vsg::warn("Unsupported Tiles3D::Batch SCALAR componentType = ", componentType);
+    }
+    else if (type == "VEC2")
+    {
+        if (componentType=="BYTE") object = vsg::bvec2Array::create(batchTable.buffer, byteOffset, 2, batchTable.length);
+        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec2Array::create(batchTable.buffer, byteOffset, 2, batchTable.length);
+        else if (componentType=="SHORT") object = vsg::svec2Array::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec2Array::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="INT") object = vsg::ivec2Array::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else if (componentType=="UNSIGNED_INT") object = vsg::uivec2Array::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else if (componentType=="FLOAT") object = vsg::vec2Array::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else if (componentType=="DOUBLE") object = vsg::dvec2Array::create(batchTable.buffer, byteOffset, 16, batchTable.length);
+        else vsg::warn("Unsupported Tiles3D::Batch VEC2 componentType = ", componentType);
+    }
+    else if (type == "VEC3")
+    {
+        if (componentType=="BYTE") object = vsg::bvec3Array::create(batchTable.buffer, byteOffset, 3, batchTable.length);
+        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec3Array::create(batchTable.buffer, byteOffset, 3, batchTable.length);
+        else if (componentType=="SHORT") object = vsg::svec3Array::create(batchTable.buffer, byteOffset, 6, batchTable.length);
+        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec3Array::create(batchTable.buffer, byteOffset, 6, batchTable.length);
+        else if (componentType=="INT") object = vsg::ivec3Array::create(batchTable.buffer, byteOffset, 12, batchTable.length);
+        else if (componentType=="UNSIGNED_INT") object = vsg::uivec3Array::create(batchTable.buffer, byteOffset, 12, batchTable.length);
+        else if (componentType=="FLOAT") object = vsg::vec3Array::create(batchTable.buffer, byteOffset, 12, batchTable.length);
+        else if (componentType=="DOUBLE") object = vsg::dvec3Array::create(batchTable.buffer, byteOffset, 16, batchTable.length);
+        else vsg::warn("Unsupported Tiles3D::Batch VEC3 componentType = ", componentType);
+    }
+    else if (type == "VEC4")
+    {
+        if (componentType=="BYTE") object = vsg::bvec4Array::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec4Array::create(batchTable.buffer, byteOffset, 4, batchTable.length);
+        else if (componentType=="SHORT") object = vsg::svec4Array::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec4Array::create(batchTable.buffer, byteOffset, 8, batchTable.length);
+        else if (componentType=="INT") object = vsg::ivec4Array::create(batchTable.buffer, byteOffset, 16, batchTable.length);
+        else if (componentType=="UNSIGNED_INT") object = vsg::uivec4Array::create(batchTable.buffer, byteOffset, 16, batchTable.length);
+        else if (componentType=="FLOAT") object = vsg::vec4Array::create(batchTable.buffer, byteOffset, 16, batchTable.length);
+        else if (componentType=="DOUBLE") object = vsg::dvec4Array::create(batchTable.buffer, byteOffset, 32, batchTable.length);
+        else vsg::warn("Unsupported Tiles3D::Batch VEC4 componentType = ", componentType);
+    }
+    else
+    {
+        vsg::warn("Unsupported Tiles3D::Batch type = ", type);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // BatchTable
@@ -98,6 +257,11 @@ void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string
     auto batch = Batch::create();
     parser.read_object(*batch);
     batches[std::string(property)] = batch;
+}
+
+void Tiles3D::BatchTable::convert()
+{
+    for(auto itr = batches.begin(); itr != batches.end(); ++itr) itr->second->convert(*this);
 }
 
 void Tiles3D::BatchTable::report()
@@ -243,6 +407,13 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     {
         batchTableBinary = vsg::ubyteArray::create(header.batchTableBinaryLength);
         fin.read(reinterpret_cast<char*>(batchTableBinary->dataPointer()), header.batchTableBinaryLength);
+    }
+
+    if (featureTable && batchTable && batchTableBinary)
+    {
+        batchTable->length = featureTable->BATCH_LENGTH;
+        batchTable->buffer = batchTableBinary;
+        batchTable->convert();
     }
 
     if (vsg::value<bool>(false, gltf::report, options))
