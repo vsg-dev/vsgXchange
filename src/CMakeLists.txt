@@ -27,7 +27,7 @@ set(SOURCES
     bin/bin.cpp
     gltf/gltf.cpp
     gltf/SceneGraphBuilder.cpp
-    3DTiles/3d-tiles.cpp
+    3DTiles/3DTiles.cpp
     3DTiles/SceneGraphBuilder.cpp
 )
 
