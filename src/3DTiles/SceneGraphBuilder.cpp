@@ -21,7 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
-#include <vsgXchange/3d-tiles.h>
+#include <vsgXchange/3DTiles.h>
 
 #include <vsg/nodes/Group.h>
 #include <vsg/nodes/MatrixTransform.h>
