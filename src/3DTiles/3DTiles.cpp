@@ -89,7 +89,6 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
 
     if (objects)
     {
-
         if (objects->children.empty())
         {
             vsg::warn("Tiles3D::Batch::convert() failed ", objects, " empty.");
@@ -269,6 +268,21 @@ void Tiles3D::BatchTable::report()
 {
     struct PrintValues : public vsg::ConstVisitor
     {
+        void apply(const vsg::stringValue& v) override
+        {
+            vsg::info("        ", v.value());
+        }
+
+        void apply(const vsg::floatValue& v) override
+        {
+            vsg::info("        ", v.value());
+        }
+
+        void apply(const vsg::doubleValue& v) override
+        {
+            vsg::info("        ", v.value());
+        }
+
         void apply(const vsg::stringArray& strings) override
         {
             for(auto value : strings) vsg::info("        ", value);
@@ -287,7 +301,7 @@ void Tiles3D::BatchTable::report()
 
     for(auto& [name, batch] : batches)
     {
-        vsg::info("batch ", name, "{");
+        vsg::info("batch ", name, " {");
 
         if (batch->object)
         {
@@ -436,7 +450,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         fin.read(reinterpret_cast<char*>(batchTableBinary->dataPointer()), header.batchTableBinaryLength);
     }
 
-    if (featureTable && batchTable && batchTableBinary)
+    if (featureTable && batchTable)
     {
         batchTable->length = featureTable->BATCH_LENGTH;
         batchTable->buffer = batchTableBinary;
