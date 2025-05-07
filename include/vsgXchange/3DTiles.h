@@ -149,7 +149,7 @@ namespace vsgXchange
             std::map<std::string, vsg::ref_ptr<Batch>> batches;
 
             uint32_t length = 0;
-            vsg::ref_ptr<vsg::ubyteArray> buffer;
+            vsg::ref_ptr<vsg::ubyteArray> binary;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
