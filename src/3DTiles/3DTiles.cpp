@@ -26,27 +26,210 @@ using namespace vsgXchange;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// BoundingVolume
+//
+void Tiles3D::BoundingVolume::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "box")
+    {
+        parser.read_array(box);
+    }
+    else if (property == "region")
+    {
+        parser.read_array(region);
+    }
+    else if (property == "sphere")
+    {
+        parser.read_array(sphere);
+    }
+    else parser.warning();
+}
+
+void Tiles3D::BoundingVolume::report()
+{
+    vsg::info("    BoundingVolume {");
+    vsg::info("        box = ", box.values);
+    vsg::info("        region = ", region.values);
+    vsg::info("        sphere = ", sphere.values);
+    vsg::info("    }");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Content
+//
+void Tiles3D::Content::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "boundingVolume")
+    {
+        boundingVolume = BoundingVolume::create();
+        parser.read_object(*boundingVolume);
+    }
+    else ExtensionsExtras::read_object(parser, property);
+}
+
+void Tiles3D::Content::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "uri") parser.read_string(uri);
+    else parser.warning();
+}
+
+void Tiles3D::Content::report()
+{
+    vsg::info("    Content {");
+    if (boundingVolume) boundingVolume->report();
+    vsg::info("        uri = ", uri);
+    vsg::info("    }");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Tile
+//
+void Tiles3D::Tile::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "transform")
+    {
+        parser.read_array(transform);
+    }
+    else if (property == "children")
+    {
+        parser.read_array(children);
+    }
+    else parser.warning();
+}
+
+void Tiles3D::Tile::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "boundingVolume")
+    {
+        boundingVolume = BoundingVolume::create();
+        parser.read_object(*boundingVolume);
+    }
+    else if (property == "viewerRequestVolume")
+    {
+        viewerRequestVolume = BoundingVolume::create();
+        parser.read_object(*viewerRequestVolume);
+    }
+    else if (property == "viewerRequestVolume")
+    {
+        viewerRequestVolume = BoundingVolume::create();
+        parser.read_object(*viewerRequestVolume);
+    }
+    else if (property == "content")
+    {
+        content = Content::create();
+        parser.read_object(*content);
+    }
+    else ExtensionsExtras::read_object(parser, property);
+}
+
+
+void Tiles3D::Tile::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "geometricError") input >> geometricError;
+    else parser.warning();
+}
+
+void Tiles3D::Tile::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "refine") parser.read_string(refine);
+    else parser.warning();
+}
+
+void Tiles3D::Tile::report()
+{
+    vsg::info("    Tile {");
+    vsg::info("        geometricError = ", geometricError);
+    vsg::info("        refine = ", refine);
+    if (content) content->report();
+    vsg::info("        transform = ", transform.values);
+    if (boundingVolume) boundingVolume->report();
+    if (viewerRequestVolume) viewerRequestVolume->report();
+    vsg::info("        children {");
+    for(auto& child : children.values)
+    {
+        child->report();
+    }
+    vsg::info("        }");
+    vsg::info("    }");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Properties
+//
+void Tiles3D::Properties::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "minimum") input >> minimum;
+    else if (property == "maximum") input >> maximum;
+    else parser.warning();
+}
+
+void Tiles3D::Properties::report()
+{
+    vsg::info("    Properties {");
+    vsg::info("        minimum = ", minimum);
+    vsg::info("        maximum = ", maximum);
+    vsg::info("    }");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Tileset
 //
-
 void Tiles3D::Tileset::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
+    if (property == "extensionsUsed") parser.read_array(extensionsUsed);
+    else if (property == "extensionsRequired") parser.read_array(extensionsRequired);
+    else parser.warning();
 }
 
 void Tiles3D::Tileset::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
+    if (property == "asset")
+    {
+        asset = gltf::Asset::create();
+        parser.read_object(*asset);
+    }
+    else if (property == "properties")
+    {
+        properties = Properties::create();
+        parser.read_object(*properties);
+    }
+    else if (property == "root")
+    {
+        root = Tile::create();
+        parser.read_object(*root);
+    }
+    else ExtensionsExtras::read_object(parser, property);
 }
 
 void Tiles3D::Tileset::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
+    if (property == "geometricError") input >> geometricError;
+    else parser.warning();
 }
 
 
 void Tiles3D::Tileset::report()
 {
+    vsg::info("Tileset {");
+
+    if (asset) asset->report();
+    if (properties) properties->report();
+
+    vsg::info("    geometricError = ", geometricError);
+    vsg::info("    extensionsUsed = ", extensionsUsed.values);
+    vsg::info("    extensionsRequired = ", extensionsRequired.values);
+
+    if (root) root->report();
+
+    vsg::info("}");
 }
 
-void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
+void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options>)
 {
 }
 
@@ -152,7 +335,7 @@ void Tiles3D::i3dm_FeatureTable::report()
 //
 // Batch
 //
-void Tiles3D::Batch::read_number(vsg::JSONParser& parser, std::istream& input)
+void Tiles3D::Batch::read_number(vsg::JSONParser&, std::istream& input)
 {
     if (componentType=="UNSIGNED_INT")
     {
@@ -449,7 +632,7 @@ bool Tiles3D::supportedExtension(const vsg::Path& ext) const
     return ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
     vsg::info("Tiles3D::read_json()");
 
@@ -471,6 +654,31 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     // skip white space
     parser.pos = parser.buffer.find_first_not_of(" \t\r\n", 0);
     if (parser.pos == std::string::npos) return {};
+
+    if (parser.buffer[parser.pos]=='{')
+    {
+        auto root = Tiles3D::Tileset::create();
+
+        parser.warningCount = 0;
+        parser.read_object(*root);
+
+        root->resolveURIs(options);
+
+        if (parser.warningCount != 0) vsg::warn("3DTiles parsing failure : ", filename);
+        else vsg::debug("3DTiles parsing success : ", filename);
+
+        if (vsg::value<bool>(false, gltf::report, options))
+        {
+            root->report();
+        }
+
+        auto builder = Tiles3D::SceneGraphBuilder::create();
+        result = builder->createSceneGraph(root, options);
+    }
+    else
+    {
+        vsg::warn("glTF parsing error, could not find opening {");
+    }
 
     return result;
 }
@@ -564,6 +772,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         if (batchTable) batchTable->report();
     }
 
+    uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
+    uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
+
+    vsg::info("size_of_gltfField = ", size_of_gltfField);
 
 #if 0
     fin.seekg(0, fin.end);

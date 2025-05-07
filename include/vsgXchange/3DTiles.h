@@ -57,20 +57,69 @@ namespace vsgXchange
 
     public:
 
+
+        /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/boundingVolume.schema.json
+        struct VSGXCHANGE_DECLSPEC BoundingVolume : public vsg::Inherit<gltf::ExtensionsExtras, BoundingVolume>
+        {
+            vsg::ValuesSchema<double> box;
+            vsg::ValuesSchema<double> region;
+            vsg::ValuesSchema<double> sphere;
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+
+            void report();
+        };
+
+        /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/tile.content.schema.json
+        struct VSGXCHANGE_DECLSPEC Content : public vsg::Inherit<gltf::ExtensionsExtras, Content>
+        {
+            vsg::ref_ptr<BoundingVolume> boundingVolume;
+            std::string uri;
+
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
+
+            void report();
+        };
+
+        /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/tile.schema.json
+        struct VSGXCHANGE_DECLSPEC Tile : public vsg::Inherit<gltf::ExtensionsExtras, Tile>
+        {
+            vsg::ref_ptr<BoundingVolume> boundingVolume;
+            vsg::ref_ptr<BoundingVolume> viewerRequestVolume;
+            double geometricError = 0.0;
+            std::string refine;
+            vsg::ValuesSchema<double> transform;
+            vsg::ObjectsSchema<Tile> children;
+            vsg::ref_ptr<Content> content;
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+            void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
+
+            void report();
+        };
+
+        /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/properties.schema.json
+        struct VSGXCHANGE_DECLSPEC Properties : public vsg::Inherit<gltf::ExtensionsExtras, Properties>
+        {
+            double minimum = 0.0;
+            double maximum = 0.0;
+
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+            void report();
+        };
+
         /// https://github.com/CesiumGS/3d-tiles/blob/main/specification/schema/tileset.schema.json
         struct VSGXCHANGE_DECLSPEC Tileset : public vsg::Inherit<gltf::ExtensionsExtras, Tileset>
         {
-            // asset
-            // properties
-            // schema
-            // schemaUri
-            // statistics
-            // group
-            // metadata
-            // geometricError
-            // root
-            // extensionsUsed
-            // extensionsRequired
+            vsg::ref_ptr<gltf::Asset> asset;
+            vsg::ref_ptr<Properties> properties;
+            vsg::ref_ptr<Tile> root;
+            double geometricError = 0.0;
+            vsg::ValuesSchema<std::string> extensionsUsed;
+            vsg::ValuesSchema<std::string> extensionsRequired;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
