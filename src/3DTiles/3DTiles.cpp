@@ -52,17 +52,73 @@ void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// FeatureTable
+// b3dm_FeatureTable
 //
-void Tiles3D::FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
+void Tiles3D::b3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
     if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
     else parser.warning();
 }
 
-void Tiles3D::FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+void Tiles3D::b3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property=="RTC_CENTER") RTC_CENTER.read_and_assign(parser, *binary);
+    else parser.warning();
+}
+
+void Tiles3D::b3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
     if (property=="BATCH_LENGTH") input >> BATCH_LENGTH;
+    else parser.warning();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// i3dm_FeatureTable
+//
+void Tiles3D::i3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property=="POSITION") parser.read_array(POSITION);
+    else if (property=="POSITION_QUANTIZED") parser.read_array(POSITION_QUANTIZED);
+    else if (property=="NORMAL_UP") parser.read_array(NORMAL_UP);
+    else if (property=="NORMAL_RIGHT") parser.read_array(NORMAL_RIGHT);
+    else if (property=="NORMAL_UP_OCT32P") parser.read_array(NORMAL_UP_OCT32P);
+    else if (property=="NORMAL_RIGHT_OCT32P") parser.read_array(NORMAL_RIGHT_OCT32P);
+    else if (property=="SCALE") parser.read_array(SCALE);
+    else if (property=="SCALE_NON_UNIFORM") parser.read_array(SCALE_NON_UNIFORM);
+    else if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
+    else if (property=="QUANTIZED_VOLUME_OFFSET") parser.read_array(QUANTIZED_VOLUME_OFFSET);
+    else if (property=="QUANTIZED_VOLUME_SCALE") parser.read_array(QUANTIZED_VOLUME_SCALE);
+    else parser.warning();
+}
+
+void Tiles3D::i3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property=="POSITION") POSITION.read_and_assign(parser, *binary);
+    else if (property=="POSITION_QUANTIZED") POSITION_QUANTIZED.read_and_assign(parser, *binary);
+    else if (property=="NORMAL_UP") NORMAL_UP.read_and_assign(parser, *binary);
+    else if (property=="NORMAL_RIGHT") NORMAL_RIGHT.read_and_assign(parser, *binary);
+    else if (property=="NORMAL_UP_OCT32P") NORMAL_UP_OCT32P.read_and_assign(parser, *binary);
+    else if (property=="NORMAL_RIGHT_OCT32P") NORMAL_RIGHT_OCT32P.read_and_assign(parser, *binary);
+    else if (property=="SCALE") SCALE.read_and_assign(parser, *binary);
+    else if (property=="SCALE_NON_UNIFORM") SCALE_NON_UNIFORM.read_and_assign(parser, *binary);
+    else if (property=="RTC_CENTER") RTC_CENTER.read_and_assign(parser, *binary);
+    else if (property=="QUANTIZED_VOLUME_OFFSET") QUANTIZED_VOLUME_OFFSET.read_and_assign(parser, *binary);
+    else if (property=="QUANTIZED_VOLUME_SCALE") QUANTIZED_VOLUME_SCALE.read_and_assign(parser, *binary);
+    else parser.warning();
+}
+
+void Tiles3D::i3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property=="BATCH_ID") input >> BATCH_ID;
+    if (property=="INSTANCES_LENGTH") input >> INSTANCES_LENGTH;
+    else parser.warning();
+}
+
+void Tiles3D::i3dm_FeatureTable::read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value)
+{
+    if (property=="EAST_NORTH_UP") EAST_NORTH_UP = value;
     else parser.warning();
 }
 
@@ -342,7 +398,7 @@ bool Tiles3D::supportedExtension(const vsg::Path& ext) const
     return ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
 {
     vsg::info("Tiles3D::read_json()");
 
@@ -368,13 +424,13 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
 {
     vsg::info("Tiles3D::read_b3dm()");
 
-    // https://github.com/CesiumGS/3d-tiles/tree/1.0/specification/TileFormats/Batched3DModel
     fin.seekg(0);
 
+    // https://github.com/CesiumGS/3d-tiles/tree/1.0/specification/TileFormats/Batched3DModel
     struct Header
     {
         char magic[4] = {0,0,0,0};
@@ -395,14 +451,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         return {};
     }
 
-    vsg::info("magic = ", header.magic);
-    vsg::info("version = ", header.version);
-    vsg::info("byteLength = ", header.byteLength);
-    vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
-    vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
-    vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
-    vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
-
     if (strncmp(header.magic, "b3dm", 4) != 0)
     {
         vsg::warn("magic number not b3dm");
@@ -413,23 +461,17 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     // Batch table
     // Binary glTF
 
-
-    vsg::ref_ptr<FeatureTable> featureTable;
-    if (header.featureTableJSONByteLength > 0)
+    vsg::ref_ptr<b3dm_FeatureTable> featureTable = b3dm_FeatureTable::create();
     {
+        featureTable = b3dm_FeatureTable::create();
+        featureTable->binary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
+
         vsg::JSONParser parser;
         parser.buffer.resize(header.featureTableJSONByteLength);
         fin.read(parser.buffer.data(), header.featureTableJSONByteLength);
+        fin.read(reinterpret_cast<char*>(featureTable->binary->dataPointer()), header.featureTableBinaryByteLength);
 
-        featureTable = FeatureTable::create();
         parser.read_object(*featureTable);
-    }
-
-    vsg::ref_ptr<vsg::ubyteArray> featureTableBinary;
-    if (header.featureTableBinaryByteLength > 0)
-    {
-        featureTableBinary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
-        fin.read(reinterpret_cast<char*>(featureTableBinary->dataPointer()), header.featureTableBinaryByteLength);
     }
 
     vsg::ref_ptr<BatchTable> batchTable;
@@ -459,6 +501,14 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
+        vsg::info("magic = ", header.magic);
+        vsg::info("version = ", header.version);
+        vsg::info("byteLength = ", header.byteLength);
+        vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
+        vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
+        vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
+        vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
+
         if (batchTable) batchTable->report();
     }
 
@@ -477,19 +527,189 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
 {
-    vsg::warn("Tiles3D::read_cmpt(..) not implemented yet.");
-    return {};
+    vsg::warn("Tiles3D::read_cmpt(..).");
+
+    fin.seekg(0);
+
+    // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Composite/README.adoc
+    struct Header
+    {
+        char magic[4] = {0,0,0,0};
+        uint32_t version = 0;
+        uint32_t byteLength = 0;
+        uint32_t tilesLength = 0;
+    };
+
+    struct InnerHeader
+    {
+        char magic[4] = {0,0,0,0};
+        uint32_t version = 0;
+        uint32_t byteLength = 0;
+    };
+
+    Header header;
+    fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
+
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading cmpt file.");
+        return {};
+    }
+
+    if (strncmp(header.magic, "cmpt", 4) != 0)
+    {
+        vsg::warn("magic number not cmpt");
+        return {};
+    }
+
+    std::list<InnerHeader> innerHeaders;
+    for(uint32_t i=0; i < header.tilesLength; ++i)
+    {
+        InnerHeader innerHeader;
+        fin.read(reinterpret_cast<char*>(&innerHeader), sizeof(InnerHeader));
+            vsg::info("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
+
+        if (!fin.good())
+        {
+            vsg::warn("IO error reading cmpt file.");
+            return {};
+        }
+
+        // skip over rest of tile to next one.
+        fin.seekg(innerHeader.byteLength - sizeof(InnerHeader), fin.cur);
+
+        innerHeaders.push_back(innerHeader);
+    }
+
+    if (vsg::value<bool>(false, gltf::report, options))
+    {
+        vsg::info("magic = ", header.magic);
+        vsg::info("version = ", header.version);
+        vsg::info("byteLength = ", header.byteLength);
+        vsg::info("tilesLength = ", header.tilesLength);
+
+        vsg::info("innerHeaders.size() = ", innerHeaders.size());
+        for(auto& innerHeader : innerHeaders)
+        {
+            vsg::info("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
+        }
+    }
+
+
+    vsg::ref_ptr<vsg::Object> result;
+
+    return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
 {
     vsg::warn("Tiles3D::read_i3dm(..) not implemented yet.");
-    return {};
+    fin.seekg(0);
+
+    // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Instanced3DModel/README.adoc
+    struct Header
+    {
+        char magic[4] = {0,0,0,0};
+        uint32_t version = 0;
+        uint32_t byteLength = 0;
+        uint32_t featureTableJSONByteLength = 0;
+        uint32_t featureTableBinaryByteLength = 0;
+        uint32_t batchTableJSONByteLength = 0;
+        uint32_t batchTableBinaryLength = 0;
+        uint32_t gltfFormat = 0;
+    };
+
+    Header header;
+    fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
+
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading i3dm file.");
+        return {};
+    }
+
+    if (strncmp(header.magic, "i3dm", 4) != 0)
+    {
+        vsg::warn("magic number not i3dm");
+        return {};
+    }
+
+    // Feature table
+    // Batch table
+    // Binary glTF
+
+    vsg::ref_ptr<i3dm_FeatureTable> featureTable;
+    if (header.featureTableJSONByteLength > 0)
+    {
+        vsg::info("Reading i3dm_FeatureTable");
+
+        featureTable = i3dm_FeatureTable::create();
+        featureTable->binary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
+
+        vsg::JSONParser parser;
+        parser.buffer.resize(header.featureTableJSONByteLength);
+        fin.read(parser.buffer.data(), header.featureTableJSONByteLength);
+        fin.read(reinterpret_cast<char*>(featureTable->binary->dataPointer()), header.featureTableBinaryByteLength);
+
+        parser.read_object(*featureTable);
+
+        vsg::info("finished Reading i3dm_FeatureTable");
+    }
+
+    vsg::ref_ptr<vsg::ubyteArray> featureTableBinary;
+    if (header.featureTableBinaryByteLength > 0)
+    {
+        featureTableBinary = vsg::ubyteArray::create(header.featureTableBinaryByteLength);
+        fin.read(reinterpret_cast<char*>(featureTableBinary->dataPointer()), header.featureTableBinaryByteLength);
+    }
+#if 0
+    vsg::ref_ptr<BatchTable> batchTable;
+    if (header.batchTableJSONByteLength > 0)
+    {
+        vsg::JSONParser parser;
+        parser.buffer.resize(header.batchTableJSONByteLength);
+        fin.read(parser.buffer.data(), header.batchTableJSONByteLength);
+
+        batchTable = BatchTable::create();
+        parser.read_object(*batchTable);
+   }
+
+    vsg::ref_ptr<vsg::ubyteArray> batchTableBinary;
+    if (header.batchTableBinaryLength > 0)
+    {
+        batchTableBinary = vsg::ubyteArray::create(header.batchTableBinaryLength);
+        fin.read(reinterpret_cast<char*>(batchTableBinary->dataPointer()), header.batchTableBinaryLength);
+    }
+
+    if (featureTable && batchTable)
+    {
+        batchTable->length = featureTable->BATCH_LENGTH;
+        batchTable->buffer = batchTableBinary;
+        batchTable->convert();
+    }
+#endif
+
+    if (vsg::value<bool>(false, gltf::report, options))
+    {
+        vsg::info("magic = ", header.magic);
+        vsg::info("version = ", header.version);
+        vsg::info("byteLength = ", header.byteLength);
+        vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
+        vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
+        vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
+        vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
+
+//        if (batchTable) batchTable->report();
+    }
+
+    vsg::ref_ptr<vsg::Object> result;
+
+    return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path&) const
 {
     vsg::warn("Tiles3D::read_pnts(..) not implemented yet.");
     return {};

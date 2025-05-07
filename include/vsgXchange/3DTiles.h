@@ -81,11 +81,49 @@ namespace vsgXchange
             virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
         };
 
-        struct VSGXCHANGE_DECLSPEC FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, FeatureTable>
+        /// Template class for reading an array of values from JSON or from a binary block
+        template<typename T, int C>
+        struct ArraySchema : public Inherit<vsg::JSONParser::Schema, ArraySchema<T, C>>
         {
+            const uint32_t count = C;
+            std::vector<T> values;
+
+            void read_number(vsg::JSONParser&, std::istream& input) override
+            {
+                T value;
+                input >> value;
+                values.push_back(value);
+            }
+
+            uint32_t byteOffset = 0;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override
+            {
+                if (property=="byteOffset") input >> byteOffset;
+                else parser.warning();
+            }
+
+            void read_and_assign(vsg::JSONParser& parser, vsg::ubyteArray& binary)
+            {
+                parser.read_object(*this);
+
+                T* ptr = reinterpret_cast<T*>(binary.data() + byteOffset);
+                for(uint32_t i=0; i<count; ++i)
+                {
+                    values.push_back(*(ptr++));
+                }
+            }
+        };
+
+
+        struct VSGXCHANGE_DECLSPEC b3dm_FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, b3dm_FeatureTable>
+        {
+            // storage for binary section
+            vsg::ref_ptr<vsg::ubyteArray> binary;
+
             uint32_t BATCH_LENGTH = 0;
-            vsg::ValuesSchema<double> RTC_CENTER;
+            ArraySchema<double, 3> RTC_CENTER;
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -117,6 +155,35 @@ namespace vsgXchange
             void convert();
 
             void report();
+        };
+
+        struct VSGXCHANGE_DECLSPEC i3dm_FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, i3dm_FeatureTable>
+        {
+            // storage for binary section
+            vsg::ref_ptr<vsg::ubyteArray> binary;
+
+            // Instance sematics
+            ArraySchema<float, 3> POSITION;
+            ArraySchema<uint16_t, 3> POSITION_QUANTIZED;
+            ArraySchema<float, 3> NORMAL_UP;
+            ArraySchema<float, 3> NORMAL_RIGHT;
+            ArraySchema<uint16_t, 2> NORMAL_UP_OCT32P;
+            ArraySchema<uint16_t, 2> NORMAL_RIGHT_OCT32P;
+            ArraySchema<float, 3> SCALE;
+            ArraySchema<float, 3> SCALE_NON_UNIFORM;
+            uint32_t BATCH_ID = 0;
+
+            // Global sematics
+            uint32_t INSTANCES_LENGTH = 0;
+            ArraySchema<float, 3> RTC_CENTER;
+            ArraySchema<float, 3> QUANTIZED_VOLUME_OFFSET;
+            ArraySchema<float, 3> QUANTIZED_VOLUME_SCALE;
+            bool EAST_NORTH_UP = false;
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+            void read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value) override;
         };
 
     public:
