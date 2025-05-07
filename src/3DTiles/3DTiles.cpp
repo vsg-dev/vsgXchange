@@ -72,6 +72,13 @@ void Tiles3D::b3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std:
     else parser.warning();
 }
 
+void Tiles3D::b3dm_FeatureTable::report()
+{
+    vsg::info("b3dm_FeatureTable { ");
+    vsg::info("    RTC_CENTER ", RTC_CENTER.values);
+    vsg::info("    BATCH_LENGTH ", BATCH_LENGTH);
+    vsg::info("}");
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -120,6 +127,25 @@ void Tiles3D::i3dm_FeatureTable::read_bool(vsg::JSONParser& parser, const std::s
 {
     if (property=="EAST_NORTH_UP") EAST_NORTH_UP = value;
     else parser.warning();
+}
+
+void Tiles3D::i3dm_FeatureTable::report()
+{
+    vsg::info("i3dm_FeatureTable { ");
+    vsg::info("    POSITION ", POSITION.values);
+    vsg::info("    POSITION_QUANTIZED ", POSITION_QUANTIZED.values);
+    vsg::info("    NORMAL_UP ", NORMAL_UP.values);
+    vsg::info("    NORMAL_RIGHT ", NORMAL_RIGHT.values);
+    vsg::info("    NORMAL_UP_OCT32P ", NORMAL_UP_OCT32P.values);
+    vsg::info("    NORMAL_RIGHT_OCT32P ", NORMAL_RIGHT_OCT32P.values);
+    vsg::info("    SCALE ", SCALE.values);
+    vsg::info("    SCALE_NON_UNIFORM ", SCALE_NON_UNIFORM.values);
+    vsg::info("    RTC_CENTER ", RTC_CENTER.values);
+    vsg::info("    QUANTIZED_VOLUME_OFFSET ", QUANTIZED_VOLUME_OFFSET.values);
+    vsg::info("    QUANTIZED_VOLUME_SCALE ", QUANTIZED_VOLUME_SCALE.values);
+    vsg::info("    BATCH_ID ", BATCH_ID);
+    vsg::info("    INSTANCES_LENGTH ", INSTANCES_LENGTH);
+    vsg::info("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -509,6 +535,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
         vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
 
+        if (featureTable) featureTable->report();
         if (batchTable) batchTable->report();
     }
 
@@ -701,6 +728,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
         vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
 
+        if (featureTable) featureTable->report();
 //        if (batchTable) batchTable->report();
     }
 

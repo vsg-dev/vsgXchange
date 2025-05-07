@@ -125,6 +125,8 @@ namespace vsgXchange
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+
+            void report();
         };
 
         class BatchTable;
@@ -184,6 +186,8 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value) override;
+
+            void report();
         };
 
     public:
