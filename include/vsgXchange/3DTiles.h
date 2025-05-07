@@ -139,6 +139,9 @@ namespace vsgXchange
 
             void convert(BatchTable& batchTable);
 
+            // read array parts
+            void read_number(vsg::JSONParser& parser, std::istream& input) override;
+
             // read object parts
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;

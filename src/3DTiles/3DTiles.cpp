@@ -152,6 +152,24 @@ void Tiles3D::i3dm_FeatureTable::report()
 //
 // Batch
 //
+void Tiles3D::Batch::read_number(vsg::JSONParser& parser, std::istream& input)
+{
+    if (componentType=="UNSIGNED_INT")
+    {
+        uint32_t value;
+        input >> value;
+
+        addToArray(vsg::uintValue::create(value));
+    }
+    else
+    {
+        double value;
+        input >> value;
+
+        addToArray(vsg::doubleValue::create(value));
+    }
+}
+
 void Tiles3D::Batch::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
     if (property == "componentType") parser.read_string(componentType);
@@ -194,6 +212,7 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
 
         if (numDifferent == 0)
         {
+
             struct ValuesToArray : public vsg::ConstVisitor
             {
                 ValuesToArray(vsg::Objects::Children& in_children) : children(in_children) {}
@@ -330,12 +349,18 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
 void Tiles3D::BatchTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
     auto batch = Batch::create();
+
+    // for batchID hint that the type should be uint.
+    if (property=="batchId") batch->componentType = "UNSIGNED_INT";
+
     parser.read_array(*batch);
     batches[std::string(property)] = batch;
 }
 
 void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
+    vsg::info("Tiles3D::BatchTable::read_object(.., ", property, ")");
+
     auto batch = Batch::create();
     parser.read_object(*batch);
     batches[std::string(property)] = batch;
