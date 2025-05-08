@@ -45,13 +45,15 @@ void Tiles3D::BoundingVolume::read_array(vsg::JSONParser& parser, const std::str
     else parser.warning();
 }
 
-void Tiles3D::BoundingVolume::report()
+void Tiles3D::BoundingVolume::report(vsg::LogOutput& output)
 {
-    vsg::info("    BoundingVolume {");
-    vsg::info("        box = ", box.values);
-    vsg::info("        region = ", region.values);
-    vsg::info("        sphere = ", sphere.values);
-    vsg::info("    }");
+    output("BoundingVolume {");
+    output.in();
+    output("box = ", box.values);
+    output("region = ", region.values);
+    output("sphere = ", sphere.values);
+    output.out();
+    output("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,12 +76,14 @@ void Tiles3D::Content::read_string(vsg::JSONParser& parser, const std::string_vi
     else parser.warning();
 }
 
-void Tiles3D::Content::report()
+void Tiles3D::Content::report(vsg::LogOutput& output)
 {
-    vsg::info("    Content {");
-    if (boundingVolume) boundingVolume->report();
-    vsg::info("        uri = ", uri);
-    vsg::info("    }");
+    output("Content {");
+    output.in();
+    if (boundingVolume) boundingVolume->report(output);
+    output("uri = ", uri);
+    output.out();
+    output("}");
 }
 
 
@@ -138,22 +142,33 @@ void Tiles3D::Tile::read_string(vsg::JSONParser& parser, const std::string_view&
     else parser.warning();
 }
 
-void Tiles3D::Tile::report()
+void Tiles3D::Tile::report(vsg::LogOutput& output)
 {
-    vsg::info("    Tile {");
-    vsg::info("        geometricError = ", geometricError);
-    vsg::info("        refine = ", refine);
-    if (content) content->report();
-    vsg::info("        transform = ", transform.values);
-    if (boundingVolume) boundingVolume->report();
-    if (viewerRequestVolume) viewerRequestVolume->report();
-    vsg::info("        children {");
-    for(auto& child : children.values)
+    output("Tile {");
+    output.in();
+
+    output("geometricError = ", geometricError);
+    output("refine = ", refine);
+    if (content) content->report(output);
+    output("transform = ", transform.values);
+    if (boundingVolume) boundingVolume->report(output);
+    if (viewerRequestVolume) viewerRequestVolume->report(output);
+
+    if (children.values.empty()) output("children {}");
+    else
     {
-        child->report();
+        output("children {");
+        output.in();
+        for(auto& child : children.values)
+        {
+            child->report(output);
+        }
+        output.out();
+        output("}");
     }
-    vsg::info("        }");
-    vsg::info("    }");
+
+    output.out();
+    output("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,12 +182,14 @@ void Tiles3D::Properties::read_number(vsg::JSONParser& parser, const std::string
     else parser.warning();
 }
 
-void Tiles3D::Properties::report()
+void Tiles3D::Properties::report(vsg::LogOutput& output)
 {
-    vsg::info("    Properties {");
-    vsg::info("        minimum = ", minimum);
-    vsg::info("        maximum = ", maximum);
-    vsg::info("    }");
+    output("Properties {");
+    output.in();
+    output("minimum = ", minimum);
+    output("maximum = ", maximum);
+    output.out();
+    output("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,20 +230,22 @@ void Tiles3D::Tileset::read_number(vsg::JSONParser& parser, const std::string_vi
 }
 
 
-void Tiles3D::Tileset::report()
+void Tiles3D::Tileset::report(vsg::LogOutput& output)
 {
-    vsg::info("Tileset {");
+    output("Tileset {");
+    output.in();
 
     if (asset) asset->report();
-    if (properties) properties->report();
+    if (properties) properties->report(output);
 
-    vsg::info("    geometricError = ", geometricError);
-    vsg::info("    extensionsUsed = ", extensionsUsed.values);
-    vsg::info("    extensionsRequired = ", extensionsRequired.values);
+    output("geometricError = ", geometricError);
+    output("extensionsUsed = ", extensionsUsed.values);
+    output("extensionsRequired = ", extensionsRequired.values);
 
-    if (root) root->report();
+    if (root) root->report(output);
 
-    vsg::info("}");
+    output.out();
+    output("}");
 }
 
 void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options>)
@@ -255,12 +274,12 @@ void Tiles3D::b3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std:
     else parser.warning();
 }
 
-void Tiles3D::b3dm_FeatureTable::report()
+void Tiles3D::b3dm_FeatureTable::report(vsg::LogOutput& output)
 {
-    vsg::info("b3dm_FeatureTable { ");
-    vsg::info("    RTC_CENTER ", RTC_CENTER.values);
-    vsg::info("    BATCH_LENGTH ", BATCH_LENGTH);
-    vsg::info("}");
+    output("b3dm_FeatureTable { ");
+    output("    RTC_CENTER ", RTC_CENTER.values);
+    output("    BATCH_LENGTH ", BATCH_LENGTH);
+    output("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,23 +331,23 @@ void Tiles3D::i3dm_FeatureTable::read_bool(vsg::JSONParser& parser, const std::s
     else parser.warning();
 }
 
-void Tiles3D::i3dm_FeatureTable::report()
+void Tiles3D::i3dm_FeatureTable::report(vsg::LogOutput& output)
 {
-    vsg::info("i3dm_FeatureTable { ");
-    vsg::info("    POSITION ", POSITION.values);
-    vsg::info("    POSITION_QUANTIZED ", POSITION_QUANTIZED.values);
-    vsg::info("    NORMAL_UP ", NORMAL_UP.values);
-    vsg::info("    NORMAL_RIGHT ", NORMAL_RIGHT.values);
-    vsg::info("    NORMAL_UP_OCT32P ", NORMAL_UP_OCT32P.values);
-    vsg::info("    NORMAL_RIGHT_OCT32P ", NORMAL_RIGHT_OCT32P.values);
-    vsg::info("    SCALE ", SCALE.values);
-    vsg::info("    SCALE_NON_UNIFORM ", SCALE_NON_UNIFORM.values);
-    vsg::info("    RTC_CENTER ", RTC_CENTER.values);
-    vsg::info("    QUANTIZED_VOLUME_OFFSET ", QUANTIZED_VOLUME_OFFSET.values);
-    vsg::info("    QUANTIZED_VOLUME_SCALE ", QUANTIZED_VOLUME_SCALE.values);
-    vsg::info("    BATCH_ID ", BATCH_ID);
-    vsg::info("    INSTANCES_LENGTH ", INSTANCES_LENGTH);
-    vsg::info("}");
+    output("i3dm_FeatureTable { ");
+    output("    POSITION ", POSITION.values);
+    output("    POSITION_QUANTIZED ", POSITION_QUANTIZED.values);
+    output("    NORMAL_UP ", NORMAL_UP.values);
+    output("    NORMAL_RIGHT ", NORMAL_RIGHT.values);
+    output("    NORMAL_UP_OCT32P ", NORMAL_UP_OCT32P.values);
+    output("    NORMAL_RIGHT_OCT32P ", NORMAL_RIGHT_OCT32P.values);
+    output("    SCALE ", SCALE.values);
+    output("    SCALE_NON_UNIFORM ", SCALE_NON_UNIFORM.values);
+    output("    RTC_CENTER ", RTC_CENTER.values);
+    output("    QUANTIZED_VOLUME_OFFSET ", QUANTIZED_VOLUME_OFFSET.values);
+    output("    QUANTIZED_VOLUME_SCALE ", QUANTIZED_VOLUME_SCALE.values);
+    output("    BATCH_ID ", BATCH_ID);
+    output("    INSTANCES_LENGTH ", INSTANCES_LENGTH);
+    output("}");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -415,7 +434,7 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
                     for(auto& child : children)
                     {
                         if (auto sv = child.cast<vsg::stringValue>()) *itr = sv->value();
-                        else vsg::info("Unable to convert to stringValue ", child);
+                        else vsg::warn("Unable to convert to stringValue ", child);
                         ++itr;
                     }
 
@@ -429,7 +448,7 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
                     for(auto& child : children)
                     {
                         if (auto sv = child.cast<vsg::floatValue>()) *itr = sv->value();
-                        else vsg::info("Unable to convert to floatValue ", child);
+                        else vsg::warn("Unable to convert to floatValue ", child);
                         ++itr;
                     }
 
@@ -443,7 +462,7 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
                     for(auto& child : children)
                     {
                         if (auto sv = child.cast<vsg::doubleValue>()) *itr = sv->value();
-                        else vsg::info("Unable to convert to doubleValue ", child);
+                        else vsg::warn("Unable to convert to doubleValue ", child);
                         ++itr;
                     }
 
@@ -542,8 +561,6 @@ void Tiles3D::BatchTable::read_array(vsg::JSONParser& parser, const std::string_
 
 void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    vsg::info("Tiles3D::BatchTable::read_object(.., ", property, ")");
-
     auto batch = Batch::create();
     parser.read_object(*batch);
     batches[std::string(property)] = batch;
@@ -554,67 +571,82 @@ void Tiles3D::BatchTable::convert()
     for(auto itr = batches.begin(); itr != batches.end(); ++itr) itr->second->convert(*this);
 }
 
-void Tiles3D::BatchTable::report()
+void Tiles3D::BatchTable::report(vsg::LogOutput& output)
 {
     struct PrintValues : public vsg::ConstVisitor
     {
+        vsg::LogOutput& out;
+        PrintValues(vsg::LogOutput& o) : out(o) {}
+
         void apply(const vsg::stringValue& v) override
         {
-            vsg::info("        ", v.value());
+            out(v.value());
         }
 
         void apply(const vsg::floatValue& v) override
         {
-            vsg::info("        ", v.value());
+            out(v.value());
         }
 
         void apply(const vsg::doubleValue& v) override
         {
-            vsg::info("        ", v.value());
+            out(v.value());
         }
 
         void apply(const vsg::stringArray& strings) override
         {
-            for(auto value : strings) vsg::info("        ", value);
+            for(auto value : strings) out(value);
         }
 
         void apply(const vsg::intArray& ints) override
         {
-            for(auto value : ints) vsg::info("        ", value);
+            for(auto value : ints) out(value);
         }
 
         void apply(const vsg::doubleArray& doubles) override
         {
-            for(auto value : doubles) vsg::info("        ", value);
+            for(auto value : doubles) out(value);
         }
-    } pv;
+    } pv(output);
 
     for(auto& [name, batch] : batches)
     {
-        vsg::info("batch ", name, " {");
+        output("batch ", name, " {");
+
+        output.in();
 
         if (batch->object)
         {
-            vsg::info("    object = ", batch->object);
+            output("object = ", batch->object);
+            output.in();
+
             batch->object->accept(pv);
-            vsg::info(" }");
+
+            output.out();
         }
         else if (batch->objects)
         {
-            vsg::info("    objects = ", batch->objects);
+            output("objects = ", batch->objects);
+
+            output.in();
+
             for(auto& child : batch->objects->children)
             {
-                vsg::info("        child = ", child);
+                output("child = ", child);
             }
+
+            output.out();
         }
         else
         {
-            vsg::info("    byteOffset = ", batch->byteOffset);
-            vsg::info("    componentType = ", batch->componentType);
-            vsg::info("    type = ", batch->type);
+            output("byteOffset = ", batch->byteOffset);
+            output("componentType = ", batch->componentType);
+            output("type = ", batch->type);
         }
 
-        vsg::info("}");
+        output.out();
+
+        output("}");
     }
  }
 
@@ -669,7 +701,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
 
         if (vsg::value<bool>(false, gltf::report, options))
         {
-            root->report();
+            vsg::LogOutput output;
+            root->report(output);
         }
 
         auto builder = Tiles3D::SceneGraphBuilder::create();
@@ -760,22 +793,24 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
-        vsg::info("magic = ", header.magic);
-        vsg::info("version = ", header.version);
-        vsg::info("byteLength = ", header.byteLength);
-        vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
-        vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
-        vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
-        vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
+        vsg::LogOutput output;
 
-        if (featureTable) featureTable->report();
-        if (batchTable) batchTable->report();
+        output("magic = ", header.magic);
+        output("version = ", header.version);
+        output("byteLength = ", header.byteLength);
+        output("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
+        output("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
+        output("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
+        output("batchTableBinaryLength = ", header.batchTableBinaryLength);
+
+        vsg::LogOutput log;
+
+        if (featureTable) featureTable->report(output);
+        if (batchTable) batchTable->report(output);
     }
 
-    uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
-    uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
-
-    vsg::info("size_of_gltfField = ", size_of_gltfField);
+    // uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
+    // uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
 #if 0
     fin.seekg(0, fin.end);
@@ -833,7 +868,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
     {
         InnerHeader innerHeader;
         fin.read(reinterpret_cast<char*>(&innerHeader), sizeof(InnerHeader));
-            vsg::info("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
 
         if (!fin.good())
         {
@@ -849,15 +883,17 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
-        vsg::info("magic = ", header.magic);
-        vsg::info("version = ", header.version);
-        vsg::info("byteLength = ", header.byteLength);
-        vsg::info("tilesLength = ", header.tilesLength);
+        vsg::LogOutput output;
 
-        vsg::info("innerHeaders.size() = ", innerHeaders.size());
+        output("magic = ", header.magic);
+        output("version = ", header.version);
+        output("byteLength = ", header.byteLength);
+        output("tilesLength = ", header.tilesLength);
+
+        output("innerHeaders.size() = ", innerHeaders.size());
         for(auto& innerHeader : innerHeaders)
         {
-            vsg::info("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
+            output("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
         }
     }
 
@@ -949,17 +985,19 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
-        vsg::info("magic = ", header.magic);
-        vsg::info("version = ", header.version);
-        vsg::info("byteLength = ", header.byteLength);
-        vsg::info("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
-        vsg::info("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
-        vsg::info("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
-        vsg::info("batchTableBinaryLength = ", header.batchTableBinaryLength);
-        vsg::info("gltfFormat = ", header.gltfFormat);
+        vsg::LogOutput output;
 
-        if (featureTable) featureTable->report();
-        if (batchTable) batchTable->report();
+        output("magic = ", header.magic);
+        output("version = ", header.version);
+        output("byteLength = ", header.byteLength);
+        output("featureTableJSONByteLength = ", header.featureTableJSONByteLength);
+        output("featureTableBinaryByteLength = ", header.featureTableBinaryByteLength);
+        output("batchTableJSONByteLength = ", header.batchTableJSONByteLength);
+        output("batchTableBinaryLength = ", header.batchTableBinaryLength);
+        output("gltfFormat = ", header.gltfFormat);
+
+        if (featureTable) featureTable->report(output);
+        if (batchTable) batchTable->report(output);
     }
 
     uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;

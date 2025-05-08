@@ -67,7 +67,7 @@ namespace vsgXchange
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/tile.content.schema.json
@@ -79,7 +79,7 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/tile.schema.json
@@ -98,7 +98,7 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/properties.schema.json
@@ -108,7 +108,7 @@ namespace vsgXchange
             double maximum = 0.0;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         /// https://github.com/CesiumGS/3d-tiles/blob/main/specification/schema/tileset.schema.json
@@ -125,7 +125,7 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
 
             virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
         };
@@ -175,7 +175,7 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         class BatchTable;
@@ -208,7 +208,7 @@ namespace vsgXchange
 
             void convert();
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
         struct VSGXCHANGE_DECLSPEC i3dm_FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, i3dm_FeatureTable>
@@ -239,7 +239,7 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
         };
 
     public:
