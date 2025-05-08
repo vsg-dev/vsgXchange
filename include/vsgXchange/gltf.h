@@ -292,6 +292,7 @@ namespace vsgXchange
             uint32_t magFilter = 0;
             uint32_t wrapS = 10497; // default REPEAT
             uint32_t wrapT = 10497; // default REPEAT
+            uint32_t wrapR = 10497; // default REPEAT, not part of official glTF spec but occurs in select .gltf/.glb files.
 
             // extensions
             // extras

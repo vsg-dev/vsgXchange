@@ -572,6 +572,7 @@ void gltf::Sampler::read_number(vsg::JSONParser& parser, const std::string_view&
     else if (property=="magFilter") input >> magFilter;
     else if (property=="wrapS") input >> wrapS;
     else if (property=="wrapT") input >> wrapT;
+    else if (property=="wrapR") input >> wrapR;
     else parser.warning();
 }
 
