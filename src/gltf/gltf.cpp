@@ -499,8 +499,9 @@ void gltf::Mesh::report()
 {
     vsg::info("Mesh { ");
     NameExtensionsExtras::report();
-    vsg::info("    primitives: ", primitives.values.size());
-    vsg::info("    weights: ", weights.values.size());
+    vsg::info("    primitives: ", primitives.values);
+    for(auto& primitive : primitives.values) primitive->report();
+    vsg::info("    weights: ", weights.values);
     vsg::info("} ");
 }
 
@@ -1164,7 +1165,7 @@ bool gltf::supportedExtension(const vsg::Path& ext) const
     return ext == ".gltf" || ext == ".glb";
 }
 
-vsg::ref_ptr<vsg::Object> gltf::_read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();
@@ -1217,6 +1218,151 @@ vsg::ref_ptr<vsg::Object> gltf::_read(std::istream& fin, vsg::ref_ptr<const vsg:
     return result;
 }
 
+vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
+{
+    vsg::info("gltf::read_glb() filename = ", filename);
+
+    fin.seekg(0);
+
+    struct Header
+    {
+        char magic[4] = {0,0,0,0};
+        uint32_t version = 0;
+        uint32_t length = 0;
+    };
+
+    struct Chunk
+    {
+        uint32_t chunkLength = 0;
+        uint32_t chunkType = 0;
+    };
+
+    Header header;
+    fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading GLB file.");
+        return {};
+    }
+
+    if (strncmp(header.magic, "glTF", 4) != 0)
+    {
+        vsg::warn("magic number not glTF");
+        return {};
+    }
+
+    vsg::info("header.magic = ", header.magic);
+    vsg::info("header.version = ", header.version);
+    vsg::info("header.length = ", header.length);
+
+
+    Chunk chunk0;
+    fin.read(reinterpret_cast<char*>(&chunk0), sizeof(Chunk));
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading GLB file.");
+        return {};
+    }
+
+    uint32_t jsonSize = chunk0.chunkLength;// - sizeof(Chunk);
+
+    vsg::info("chunk0.chunkLength = ", chunk0.chunkLength);
+    vsg::info("chunk0.chunkType = ", chunk0.chunkType);
+    vsg::info("jsonSize = ", jsonSize);
+    if (chunk0.chunkType==0x4E4F534A) vsg::info("JSON chunk");
+    if (chunk0.chunkType==0x004E4942) vsg::info("BIN chunk");
+
+    vsg::JSONParser parser;
+    parser.level =  level;
+    parser.options = options;
+
+    // set up the supported extensions
+    parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
+    parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
+
+    parser.buffer.resize(jsonSize);
+    fin.read(reinterpret_cast<char*>(parser.buffer.data()), jsonSize);
+
+    vsg::info("parser.buffer = ||", parser.buffer, "||");
+
+    Chunk chunk1;
+    fin.read(reinterpret_cast<char*>(&chunk1), sizeof(Chunk));
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading GLB file.");
+        return {};
+    }
+
+    uint32_t binarySize = chunk1.chunkLength;// - sizeof(Chunk);
+    vsg::info("chunk1.chunkLength = ", chunk1.chunkLength);
+    vsg::info("chunk1.chunkType = ", chunk1.chunkType);
+    vsg::info("binarySize = ", binarySize);
+    if (chunk1.chunkType==0x4E4F534A) vsg::info("JSON chunk");
+    if (chunk1.chunkType==0x004E4942) vsg::info("BIN chunk");
+
+    auto binaryData = vsg::ubyteArray::create(binarySize);
+    fin.read(reinterpret_cast<char*>(binaryData->dataPointer()), binarySize);
+
+    uint32_t totalSize = sizeof(Header)+2*sizeof(Chunk)+chunk0.chunkLength+chunk1.chunkLength;
+
+    vsg::info("totalSize = ", totalSize);
+    if (totalSize != header.length) vsg::warn("file = ", filename, ", header size of ", header.length, " and total size of ", totalSize, " differ.");
+    else vsg::info("file = ", filename, ", header size of ", header.length, " and total size of ", totalSize, " equal.");
+
+    vsg::info("binaryData = ", binaryData);
+
+    vsg::ref_ptr<vsg::Object> result;
+
+    // skip white space
+    parser.pos = parser.buffer.find_first_not_of(" \t\r\n", 0);
+    if (parser.pos == std::string::npos) return {};
+
+    if (parser.buffer[parser.pos]=='{')
+    {
+        auto root = gltf::glTF::create();
+        parser.warningCount = 0;
+        parser.read_object(*root);
+
+        if (root->buffers.values.size() >= 1)
+        {
+            auto& firstBuffer = root->buffers.values.front();
+            if (firstBuffer->uri.empty() && firstBuffer->byteLength == binarySize)
+            {
+                firstBuffer->data = binaryData;
+            }
+            else
+            {
+                vsg::warn("First glTF Buffer not comptible with binary data");
+            }
+        }
+        else
+        {
+            auto binaryBuffer = Buffer::create();
+            binaryBuffer->byteLength = binarySize;
+            binaryBuffer->data = binaryData;
+
+            root->buffers.values.push_back(binaryBuffer);
+        }
+
+        root->resolveURIs(options);
+
+        if (parser.warningCount != 0) vsg::warn("glTF parsing failure : ", filename);
+        else vsg::debug("glTF parsing success : ", filename);
+
+        if (vsg::value<bool>(false, gltf::report, options))
+        {
+            root->report();
+        }
+
+        auto builder = gltf::SceneGraphBuilder::create();
+        result = builder->createSceneGraph(root, options);
+    }
+    else
+    {
+        vsg::warn("glTF parsing error, could not find opening {");
+    }
+    return result;
+}
 
 vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
@@ -1232,7 +1378,9 @@ vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<con
     opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
     std::ifstream fin(filenameToUse, std::ios::ate | std::ios::binary);
-    return _read(fin, opt, filename);
+
+    if (ext == ".gltf") return read_gltf(fin, opt, filename);
+    else return read_glb(fin, opt, filename);
 }
 
 vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
@@ -1242,7 +1390,8 @@ vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
-    return _read(fin, options);
+    if (options->extensionHint == ".gltf") return read_gltf(fin, options);
+    else return read_glb(fin, options);
 }
 
 vsg::ref_ptr<vsg::Object> gltf::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
@@ -1253,7 +1402,9 @@ vsg::ref_ptr<vsg::Object> gltf::read(const uint8_t* ptr, size_t size, vsg::ref_p
     if (!supportedExtension(options->extensionHint)) return {};
 
     vsg::mem_stream fin(ptr, size);
-    return _read(fin, options);
+
+    if (options->extensionHint == ".gltf") return read_gltf(fin, options);
+    else return read_glb(fin, options);
 }
 
 

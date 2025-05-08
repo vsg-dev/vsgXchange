@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsg/nodes/Group.h>
 #include <vsg/nodes/MatrixTransform.h>
+#include <vsg/nodes/VertexDraw.h>
 #include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/nodes/StateGroup.h>
 #include <vsg/nodes/DepthSorted.h>
@@ -103,11 +104,11 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createBufferView(vsg::ref_ptr<g
         return {};
     }
 
-    // TODO: deciode whether we need to do anything with the BufferView.target
+    // TODO: decide whether we need to do anything with the BufferView.target
     auto vsg_buffer =  vsg::ubyteArray::create(vsg_buffers[gltf_bufferView->buffer.value],
-                                                gltf_bufferView->byteOffset,
-                                                gltf_bufferView->byteStride,
-                                                gltf_bufferView->byteLength / gltf_bufferView->byteStride);
+                                               gltf_bufferView->byteOffset,
+                                               gltf_bufferView->byteStride,
+                                               gltf_bufferView->byteLength / gltf_bufferView->byteStride);
     return vsg_buffer;
 }
 
@@ -177,7 +178,7 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
             break;
     }
 #if 0
-    //if (vsg_data->storage())
+    // if (vsg_data->storage())
     {
         vsg::info("clonning vsg_data ", vsg_data);
         vsg_data = vsg::clone(vsg_data);
@@ -563,9 +564,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 #endif
 
 
-        auto vid = vsg::VertexIndexDraw::create();
-
-        assign_extras(*primitive, *vid);
 
         vsg::DataList vertexArrays;
 
@@ -593,17 +591,30 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, defaultColor);
         }
 
-        vid->assignArrays(vertexArrays);
+        vsg::ref_ptr<vsg::Command> draw;
 
         if (primitive->indices)
         {
+            auto vid = vsg::VertexIndexDraw::create();
+            assign_extras(*primitive, *vid);
+            vid->assignArrays(vertexArrays);
+            vid->instanceCount = 1;
+
             auto indices = vsg_accessors[primitive->indices.value];
             vid->assignIndices(indices);
             vid->indexCount = static_cast<uint32_t>(indices->valueCount());
-        } // TODO: else use VertexDraw?
 
-
-        vid->instanceCount = 1;
+            draw = vid;
+        }
+        else
+        {
+            auto vd = vsg::VertexDraw::create();
+            assign_extras(*primitive, *vd);
+            vd->assignArrays(vertexArrays);
+            vd->instanceCount = 1;
+            vd->vertexCount = vertexArrays.front()->valueCount();
+            draw = vd;
+        }
 
         // set the GraphicsPipelineStates to the required values.
         struct SetPipelineStates : public vsg::Visitor
@@ -637,12 +648,12 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         config->copyTo(stateGroup, sharedObjects);
 
-        stateGroup->addChild(vid);
+        stateGroup->addChild(draw);
 
         if (vsg_material->blending)
         {
             vsg::ComputeBounds computeBounds;
-            vid->accept(computeBounds);
+            draw->accept(computeBounds);
             vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
             double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
 
