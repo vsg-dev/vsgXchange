@@ -1273,7 +1273,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     parser.buffer.resize(jsonSize);
     fin.read(reinterpret_cast<char*>(parser.buffer.data()), jsonSize);
 
-    vsg::info("parser.buffer = ", parser.buffer, "\n");
+    // vsg::info("parser.buffer = ", parser.buffer, "\n");
 
     Chunk chunk1;
     fin.read(reinterpret_cast<char*>(&chunk1), sizeof(Chunk));
