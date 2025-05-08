@@ -135,8 +135,8 @@ namespace vsgXchange
             vsg::ref_ptr<Properties> properties;
             vsg::ref_ptr<Tile> root;
             double geometricError = 0.0;
-            vsg::ValuesSchema<std::string> extensionsUsed;
-            vsg::ValuesSchema<std::string> extensionsRequired;
+            vsg::StringsSchema extensionsUsed;
+            vsg::StringsSchema extensionsRequired;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;

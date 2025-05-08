@@ -1158,6 +1158,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 //
 gltf::gltf()
 {
+//    level = vsg::Logger::LOGGER_FATAL;
 }
 
 bool gltf::supportedExtension(const vsg::Path& ext) const
@@ -1251,11 +1252,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
         return {};
     }
 
-    vsg::info("header.magic = ", header.magic);
-    vsg::info("header.version = ", header.version);
-    vsg::info("header.length = ", header.length);
-
-
     Chunk chunk0;
     fin.read(reinterpret_cast<char*>(&chunk0), sizeof(Chunk));
     if (!fin.good())
@@ -1265,12 +1261,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     }
 
     uint32_t jsonSize = chunk0.chunkLength;// - sizeof(Chunk);
-
-    vsg::info("chunk0.chunkLength = ", chunk0.chunkLength);
-    vsg::info("chunk0.chunkType = ", chunk0.chunkType);
-    vsg::info("jsonSize = ", jsonSize);
-    if (chunk0.chunkType==0x4E4F534A) vsg::info("JSON chunk");
-    if (chunk0.chunkType==0x004E4942) vsg::info("BIN chunk");
 
     vsg::JSONParser parser;
     parser.level =  level;
@@ -1283,7 +1273,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     parser.buffer.resize(jsonSize);
     fin.read(reinterpret_cast<char*>(parser.buffer.data()), jsonSize);
 
-    vsg::info("parser.buffer = ||", parser.buffer, "||");
+    vsg::info("parser.buffer = ", parser.buffer, "\n");
 
     Chunk chunk1;
     fin.read(reinterpret_cast<char*>(&chunk1), sizeof(Chunk));
@@ -1294,22 +1284,8 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     }
 
     uint32_t binarySize = chunk1.chunkLength;// - sizeof(Chunk);
-    vsg::info("chunk1.chunkLength = ", chunk1.chunkLength);
-    vsg::info("chunk1.chunkType = ", chunk1.chunkType);
-    vsg::info("binarySize = ", binarySize);
-    if (chunk1.chunkType==0x4E4F534A) vsg::info("JSON chunk");
-    if (chunk1.chunkType==0x004E4942) vsg::info("BIN chunk");
-
     auto binaryData = vsg::ubyteArray::create(binarySize);
     fin.read(reinterpret_cast<char*>(binaryData->dataPointer()), binarySize);
-
-    uint32_t totalSize = sizeof(Header)+2*sizeof(Chunk)+chunk0.chunkLength+chunk1.chunkLength;
-
-    vsg::info("totalSize = ", totalSize);
-    if (totalSize != header.length) vsg::warn("file = ", filename, ", header size of ", header.length, " and total size of ", totalSize, " differ.");
-    else vsg::info("file = ", filename, ", header size of ", header.length, " and total size of ", totalSize, " equal.");
-
-    vsg::info("binaryData = ", binaryData);
 
     vsg::ref_ptr<vsg::Object> result;
 

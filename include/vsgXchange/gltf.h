@@ -468,8 +468,8 @@ namespace vsgXchange
 
         struct VSGXCHANGE_DECLSPEC glTF : public vsg::Inherit<ExtensionsExtras, glTF>
         {
-            vsg::ValuesSchema<std::string> extensionsUsed;
-            vsg::ValuesSchema<std::string> extensionsRequired;
+            vsg::StringsSchema extensionsUsed;
+            vsg::StringsSchema extensionsRequired;
             vsg::ref_ptr<Asset> asset;
             vsg::ObjectsSchema<Accessor> accessors;
             vsg::ObjectsSchema<BufferView> bufferViews;
