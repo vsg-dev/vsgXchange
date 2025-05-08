@@ -21,6 +21,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <fstream>
 #include <iostream>
+#include <stack>
 
 using namespace vsgXchange;
 
@@ -194,6 +195,47 @@ void Tiles3D::Properties::report(vsg::LogOutput& output)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// Asset
+//
+void Tiles3D::Asset::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "version") parser.read_string(version);
+    else if (property == "tilesetVersion") parser.read_string(tilesetVersion);
+    else parser.read_string(strings[std::string(property)]);
+}
+
+void Tiles3D::Asset::read_number(vsg::JSONParser&, const std::string_view& property, std::istream& input)
+{
+    input >> numbers[std::string(property)];
+}
+
+void Tiles3D::Asset::report(vsg::LogOutput& output)
+{
+    output("Asset {");
+    output.in();
+    output("version = ", version);
+    output("tilesetVersion = ", tilesetVersion);
+    if (!strings.empty())
+    {
+        for(auto& [name, value] : strings)
+        {
+            output(name, " = ", value);
+        }
+    }
+    if (!numbers.empty())
+    {
+        for(auto& [name, value] : numbers)
+        {
+            output(name, " = ", value);
+        }
+    }
+    output("extras = ", extras);
+    output.out();
+    output("}");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Tileset
 //
 void Tiles3D::Tileset::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -207,7 +249,7 @@ void Tiles3D::Tileset::read_object(vsg::JSONParser& parser, const std::string_vi
 {
     if (property == "asset")
     {
-        asset = gltf::Asset::create();
+        asset = Asset::create();
         parser.read_object(*asset);
     }
     else if (property == "properties")
@@ -235,7 +277,7 @@ void Tiles3D::Tileset::report(vsg::LogOutput& output)
     output("Tileset {");
     output.in();
 
-    if (asset) asset->report();
+    if (asset) asset->report(output);
     if (properties) properties->report(output);
 
     output("geometricError = ", geometricError);
@@ -248,8 +290,43 @@ void Tiles3D::Tileset::report(vsg::LogOutput& output)
     output("}");
 }
 
-void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options>)
+void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 {
+    vsg::info("Tiles3D::Tileset::resolveURIs()");
+
+    std::stack<Tile*> tileStack;
+
+    size_t tileCount = 0;
+
+    if (root)
+    {
+        tileStack.push(root);
+    }
+
+    while(!tileStack.empty())
+    {
+        ++tileCount;
+        auto tile = tileStack.top();
+        tileStack.pop();
+        if (tile->content && !(tile->content->uri.empty()))
+        {
+            tile->content->object = vsg::read(tile->content->uri, options);
+            if (tile->content->object)
+            {
+                vsg::info("Loaded uri = ", tile->content->uri, ", object = ", tile->content->object);
+            }
+            else
+            {
+                vsg::info("uri = ", tile->content->uri, ", unable to load.");
+            }
+        }
+        for(auto child : tile->children.values)
+        {
+            tileStack.push(child);
+        }
+    }
+
+    vsg::info("tileCount = ", tileCount);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -702,6 +779,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
         if (vsg::value<bool>(false, gltf::report, options))
         {
             vsg::LogOutput output;
+            output("Tiles3D::read_json() filename = ", filename);
             root->report(output);
         }
 
@@ -1046,11 +1124,11 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
     std::ifstream fin(filenameToUse, std::ios::ate | std::ios::binary);
 
-    if (ext==".json") return read_json(fin, opt);
-    else if (ext==".b3dm") return read_b3dm(fin, opt);
-    else if (ext==".cmpt") return read_cmpt(fin, opt);
-    else if (ext==".i3dm") return read_i3dm(fin, opt);
-    else if (ext==".pnts") return read_pnts(fin, opt);
+    if (ext==".json") return read_json(fin, opt, filename);
+    else if (ext==".b3dm") return read_b3dm(fin, opt, filename);
+    else if (ext==".cmpt") return read_cmpt(fin, opt, filename);
+    else if (ext==".i3dm") return read_i3dm(fin, opt, filename);
+    else if (ext==".pnts") return read_pnts(fin, opt, filename);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
