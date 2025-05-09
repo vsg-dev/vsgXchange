@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/mem_stream.h>
 #include <vsg/io/read.h>
 #include <vsg/io/write.h>
+#include <vsg/nodes/MatrixTransform.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/utils/CommandLine.h>
 
@@ -1081,6 +1082,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
     uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
+    vsg::ref_ptr<vsg::Node> model;
     if (header.gltfFormat==0)
     {
         std::string uri;
@@ -1088,20 +1090,42 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         fin.read(uri.data(), size_of_gltfField);
 
-        auto model = vsg::read(uri, options);
+        // trim trailing null characters
+        while(uri.back()==0) uri.pop_back();
 
-        // TODO: place transform above model based on POSITION, SCALE, NORMAL_UP etc.
-
-        return model;
+        // load model
+        model = vsg::read_cast<vsg::Node>(uri, options);
     }
     else
     {
-        vsg::info("BINARY glTF");
+        std::string binary;
+        binary.resize(size_of_gltfField);
+        fin.read(binary.data(), size_of_gltfField);
+
+        vsg::mem_stream binary_fin(reinterpret_cast<uint8_t*>(binary.data()), binary.size());
+
+        auto opt = vsg::clone(options);
+        opt->extensionHint = ".glb";
+
+        model = vsg::read_cast<vsg::Node>(binary_fin, opt);
     }
 
-    vsg::ref_ptr<vsg::Object> result;
+    if (model)
+    {
+        // TODO: place transform above model based on POSITION, SCALE, NORMAL_UP etc.
 
-    return result;
+        vsg::dvec3 position;
+        vsg::dquat rotation;
+        vsg::dvec3 scale(1.0, 1.0, 1.0);
+
+        auto transform = vsg::MatrixTransform::create();
+        transform->matrix = vsg::translate(position) * vsg::rotate(rotation) * vsg::scale(scale);
+        transform->addChild(model);
+
+        model = transform;
+    }
+
+    return model;
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path&) const
