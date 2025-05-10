@@ -342,7 +342,7 @@ void Tiles3D::b3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::
 
 void Tiles3D::b3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="RTC_CENTER") RTC_CENTER.read_and_assign(parser, *binary);
+    if (property=="RTC_CENTER") parser.read_object(RTC_CENTER);
     else parser.warning();
 }
 
@@ -350,6 +350,13 @@ void Tiles3D::b3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std:
 {
     if (property=="BATCH_LENGTH") input >> BATCH_LENGTH;
     else parser.warning();
+}
+
+void Tiles3D::b3dm_FeatureTable::convert()
+{
+    if (!binary) return;
+
+    RTC_CENTER.assign(*binary, 3);
 }
 
 void Tiles3D::b3dm_FeatureTable::report(vsg::LogOutput& output)
@@ -377,28 +384,31 @@ void Tiles3D::i3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::
     else if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
     else if (property=="QUANTIZED_VOLUME_OFFSET") parser.read_array(QUANTIZED_VOLUME_OFFSET);
     else if (property=="QUANTIZED_VOLUME_SCALE") parser.read_array(QUANTIZED_VOLUME_SCALE);
+    else if (property=="BATCH_ID") parser.read_array(BATCH_ID);
     else parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="POSITION") POSITION.read_and_assign(parser, *binary);
-    else if (property=="POSITION_QUANTIZED") POSITION_QUANTIZED.read_and_assign(parser, *binary);
-    else if (property=="NORMAL_UP") NORMAL_UP.read_and_assign(parser, *binary);
-    else if (property=="NORMAL_RIGHT") NORMAL_RIGHT.read_and_assign(parser, *binary);
-    else if (property=="NORMAL_UP_OCT32P") NORMAL_UP_OCT32P.read_and_assign(parser, *binary);
-    else if (property=="NORMAL_RIGHT_OCT32P") NORMAL_RIGHT_OCT32P.read_and_assign(parser, *binary);
-    else if (property=="SCALE") SCALE.read_and_assign(parser, *binary);
-    else if (property=="SCALE_NON_UNIFORM") SCALE_NON_UNIFORM.read_and_assign(parser, *binary);
-    else if (property=="RTC_CENTER") RTC_CENTER.read_and_assign(parser, *binary);
-    else if (property=="QUANTIZED_VOLUME_OFFSET") QUANTIZED_VOLUME_OFFSET.read_and_assign(parser, *binary);
-    else if (property=="QUANTIZED_VOLUME_SCALE") QUANTIZED_VOLUME_SCALE.read_and_assign(parser, *binary);
+    vsg::info("Tiles3D::i3dm_FeatureTable::read_object(", property, ")");
+
+    if (property=="POSITION") { vsg::info("    reading POSITION. "); parser.read_object(POSITION); }
+    else if (property=="POSITION_QUANTIZED") parser.read_object(POSITION_QUANTIZED);
+    else if (property=="NORMAL_UP") parser.read_object(NORMAL_UP);
+    else if (property=="NORMAL_RIGHT") parser.read_object(NORMAL_RIGHT);
+    else if (property=="NORMAL_UP_OCT32P") parser.read_object(NORMAL_UP_OCT32P);
+    else if (property=="NORMAL_RIGHT_OCT32P") parser.read_object(NORMAL_RIGHT_OCT32P);
+    else if (property=="SCALE") parser.read_object(SCALE);
+    else if (property=="SCALE_NON_UNIFORM") parser.read_object(SCALE_NON_UNIFORM);
+    else if (property=="RTC_CENTER") parser.read_object(RTC_CENTER);
+    else if (property=="QUANTIZED_VOLUME_OFFSET") parser.read_object(QUANTIZED_VOLUME_OFFSET);
+    else if (property=="QUANTIZED_VOLUME_SCALE") parser.read_object(QUANTIZED_VOLUME_SCALE);
+    else if (property=="BATCH_ID") parser.read_object(BATCH_ID);
     else parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property=="BATCH_ID") input >> BATCH_ID;
     if (property=="INSTANCES_LENGTH") input >> INSTANCES_LENGTH;
     else parser.warning();
 }
@@ -409,22 +419,41 @@ void Tiles3D::i3dm_FeatureTable::read_bool(vsg::JSONParser& parser, const std::s
     else parser.warning();
 }
 
+void Tiles3D::i3dm_FeatureTable::convert()
+{
+    if (INSTANCES_LENGTH==0 || !binary) return;
+
+    POSITION.assign(*binary, 3 * INSTANCES_LENGTH);
+    POSITION_QUANTIZED.assign(*binary, 3 * INSTANCES_LENGTH);
+    NORMAL_UP.assign(*binary, 3 * INSTANCES_LENGTH);
+    NORMAL_RIGHT.assign(*binary, 3 * INSTANCES_LENGTH);
+    NORMAL_UP_OCT32P.assign(*binary, 2 * INSTANCES_LENGTH);
+    NORMAL_RIGHT_OCT32P.assign(*binary, 2 * INSTANCES_LENGTH);
+    SCALE.assign(*binary, INSTANCES_LENGTH);
+    SCALE_NON_UNIFORM.assign(*binary, 3 * INSTANCES_LENGTH);
+    BATCH_ID.assign(*binary, INSTANCES_LENGTH);
+    RTC_CENTER.assign(*binary, 3);
+    QUANTIZED_VOLUME_OFFSET.assign(*binary, 3);
+    QUANTIZED_VOLUME_SCALE.assign(*binary, 3);
+}
+
 void Tiles3D::i3dm_FeatureTable::report(vsg::LogOutput& output)
 {
     output("i3dm_FeatureTable { ");
-    output("    POSITION ", POSITION.values);
-    output("    POSITION_QUANTIZED ", POSITION_QUANTIZED.values);
-    output("    NORMAL_UP ", NORMAL_UP.values);
-    output("    NORMAL_RIGHT ", NORMAL_RIGHT.values);
-    output("    NORMAL_UP_OCT32P ", NORMAL_UP_OCT32P.values);
-    output("    NORMAL_RIGHT_OCT32P ", NORMAL_RIGHT_OCT32P.values);
-    output("    SCALE ", SCALE.values);
-    output("    SCALE_NON_UNIFORM ", SCALE_NON_UNIFORM.values);
-    output("    RTC_CENTER ", RTC_CENTER.values);
-    output("    QUANTIZED_VOLUME_OFFSET ", QUANTIZED_VOLUME_OFFSET.values);
-    output("    QUANTIZED_VOLUME_SCALE ", QUANTIZED_VOLUME_SCALE.values);
-    output("    BATCH_ID ", BATCH_ID);
+    if (POSITION) output("    POSITION ", POSITION.values);
+    if (POSITION_QUANTIZED) output("    POSITION_QUANTIZED ", POSITION_QUANTIZED.values);
+    if (NORMAL_UP) output("    NORMAL_UP ", NORMAL_UP.values);
+    if (NORMAL_RIGHT) output("    NORMAL_RIGHT ", NORMAL_RIGHT.values);
+    if (NORMAL_UP_OCT32P) output("    NORMAL_UP_OCT32P ", NORMAL_UP_OCT32P.values);
+    if (NORMAL_RIGHT_OCT32P) output("    NORMAL_RIGHT_OCT32P ", NORMAL_RIGHT_OCT32P.values);
+    if (SCALE) output("    SCALE ", SCALE.values);
+    if (SCALE_NON_UNIFORM) output("    SCALE_NON_UNIFORM ", SCALE_NON_UNIFORM.values);
+    if (RTC_CENTER) output("    RTC_CENTER ", RTC_CENTER.values);
+    if (BATCH_ID) output("    BATCH_ID ", BATCH_ID.values);
+    if (QUANTIZED_VOLUME_OFFSET) output("    QUANTIZED_VOLUME_OFFSET ", QUANTIZED_VOLUME_OFFSET.values);
+    if (QUANTIZED_VOLUME_SCALE) output("    QUANTIZED_VOLUME_SCALE ", QUANTIZED_VOLUME_SCALE.values);
     output("    INSTANCES_LENGTH ", INSTANCES_LENGTH);
+    output("    EAST_NORTH_UP ", EAST_NORTH_UP);
     output("}");
 }
 
@@ -1037,6 +1066,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         }
 
         parser.read_object(*featureTable);
+        featureTable->convert();
+
 
         vsg::info("finished Reading i3dm_FeatureTable");
     }
@@ -1055,6 +1086,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             batchTable->binary = vsg::ubyteArray::create(header.batchTableBinaryLength);
             fin.read(reinterpret_cast<char*>(batchTable->binary->dataPointer()), header.batchTableBinaryLength);
         }
+
+        vsg::info("BatchTable JSON = ", parser.buffer);
+        vsg::info("BatchTable batchTableBinaryLength = ", header.batchTableBinaryLength);
 
         parser.read_object(*batchTable);
 
