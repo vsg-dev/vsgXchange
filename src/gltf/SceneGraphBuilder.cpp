@@ -780,7 +780,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
         return {};
     }
 
-    vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
     vsg::CoordinateConvention destination_coordinateConvention = vsg::CoordinateConvention::Z_UP;
     if (options) destination_coordinateConvention = options->sceneCoordinateConvention;
 

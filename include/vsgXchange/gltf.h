@@ -512,6 +512,8 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::ShaderSet> shaderSet;
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
+            vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
+
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_buffers;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_bufferViews;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_accessors;

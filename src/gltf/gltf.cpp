@@ -1210,6 +1210,15 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
         }
 
         auto builder = gltf::SceneGraphBuilder::create();
+        if (options)
+        {
+            vsg::Path ext  = (options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
+            if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end())
+            {
+                builder->source_coordinateConvention = itr->second;
+            }
+        }
+
         result = builder->createSceneGraph(root, options);
     }
     else
@@ -1330,6 +1339,17 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
         }
 
         auto builder = gltf::SceneGraphBuilder::create();
+        if (options)
+        {
+            vsg::Path ext  = (options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
+            vsg::info("ext = ", ext);
+            if (auto itr = options->formatCoordinateConventions.find(ext); itr != options->formatCoordinateConventions.end())
+            {
+                builder->source_coordinateConvention = itr->second;
+                vsg::info("setting builder->source_coordinateConvention = ", builder->source_coordinateConvention);
+            }
+        }
+
         result = builder->createSceneGraph(root, options);
     }
     else

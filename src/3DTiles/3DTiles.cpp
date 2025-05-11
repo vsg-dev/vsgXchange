@@ -813,6 +813,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             root->report(output);
         }
 
+        // TODO : need to how to handle the Asset gltfUpAxis opt->formatCoordinateConventions[".glb"] = vsg::CoordinateConvention::Z_UP;
+
         auto builder = Tiles3D::SceneGraphBuilder::create();
         result = builder->createSceneGraph(root, options);
     }
