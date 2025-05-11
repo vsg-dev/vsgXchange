@@ -1224,7 +1224,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 {
     vsg::info("gltf::read_glb() filename = ", filename);
 
-    //fin.seekg(0);
+    fin.seekg(0);
 
     struct Header
     {
