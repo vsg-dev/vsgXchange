@@ -1146,17 +1146,70 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
     if (model)
     {
-        // TODO: place transform above model based on POSITION, SCALE, NORMAL_UP etc.
+        vsg::dvec3 quantizeOffset(0.0, 0, 0.0);
+        vsg::dvec3 quantizeScale(1.0, 1.0, 1.0);
+        if (featureTable->QUANTIZED_VOLUME_OFFSET && featureTable->QUANTIZED_VOLUME_OFFSET.values.size()==3)
+        {
+            const auto& values = featureTable->QUANTIZED_VOLUME_OFFSET.values;
+            quantizeOffset.set(values[0], values[1], values[2]);
+        }
 
-        vsg::dvec3 position;
-        vsg::dquat rotation;
-        vsg::dvec3 scale(1.0, 1.0, 1.0);
+        if (featureTable->QUANTIZED_VOLUME_SCALE && featureTable->QUANTIZED_VOLUME_SCALE.values.size()==3)
+        {
+            const auto& values = featureTable->QUANTIZED_VOLUME_SCALE.values;
+            quantizeScale.set(values[0], values[1], values[2]);
+            quantizeScale /= 65535.0;
+        }
 
-        auto transform = vsg::MatrixTransform::create();
-        transform->matrix = vsg::translate(position) * vsg::rotate(rotation) * vsg::scale(scale);
-        transform->addChild(model);
+        auto group = vsg::Group::create();
+        for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
+        {
+            vsg::dvec3 position;
+            vsg::dquat rotation;
+            vsg::dvec3 scale(1.0, 1.0, 1.0);
 
-        model = transform;
+
+            if (featureTable->POSITION && i*3 < featureTable->POSITION.values.size())
+            {
+                const auto& values = featureTable->POSITION.values;
+                position.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            }
+            else if (featureTable->POSITION_QUANTIZED && i*3 < featureTable->POSITION_QUANTIZED.values.size())
+            {
+                const auto& values = featureTable->POSITION_QUANTIZED.values;
+                vsg::dvec3 quantizedPosition(static_cast<double>(values[i*3 + 0]), static_cast<double>(values[i*3 + 1]), static_cast<double>(values[i*3 + 2]));
+                position = quantizeOffset + quantizedPosition * quantizeScale;
+            }
+
+
+            // ArraySchema<float> NORMAL_UP;
+            // ArraySchema<float> NORMAL_RIGHT;
+            // ArraySchema<uint16_t> NORMAL_UP_OCT32P;
+            // ArraySchema<uint16_t> NORMAL_RIGHT_OCT32P;
+
+            if (featureTable->SCALE && i < featureTable->SCALE.values.size())
+            {
+                double value = featureTable->SCALE.values[i];
+                scale.set(value, value, value);
+            }
+
+            if (featureTable->SCALE_NON_UNIFORM && i*3 < featureTable->SCALE_NON_UNIFORM.values.size())
+            {
+                const auto& values = featureTable->SCALE_NON_UNIFORM.values;
+                scale.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
+            }
+
+            // vsg::info("instance position = ", position, ", scale = ", scale);
+
+            auto transform = vsg::MatrixTransform::create();
+            transform->matrix = vsg::translate(position) * vsg::rotate(rotation) * vsg::scale(scale);
+            transform->addChild(model);
+
+            group->addChild(transform);
+        }
+
+        if (group->children.size()==1) model = group->children[0];
+        else if (!group->children.empty()) model = group;
     }
 
     return model;
