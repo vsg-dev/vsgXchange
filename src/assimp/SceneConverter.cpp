@@ -683,6 +683,17 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         {
             if (ds)
             {
+                for (auto& d : ds->descriptors)
+                {
+                    if (auto di = vsg::ref_ptr(d->cast<vsg::DescriptorImage>()))
+                    {
+                        for (auto& imageInfo : di->imageInfoList)
+                        {
+                            imageInfo->computeNumMipMapLevels();
+                        }
+                    }
+                }
+
                 sharedObjects->share(ds->descriptors);
                 sharedObjects->share(ds);
             }
