@@ -29,6 +29,7 @@ set(SOURCES
     gltf/SceneGraphBuilder.cpp
     3DTiles/3DTiles.cpp
     3DTiles/i3dm.cpp
+    3DTiles/b3dm.cpp
     3DTiles/SceneGraphBuilder.cpp
 )
 
