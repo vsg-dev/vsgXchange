@@ -158,20 +158,21 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         if (batchTable) batchTable->report(output);
     }
 
-    // uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
-    // uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
-#if 0
-    fin.seekg(0, fin.end);
-    size_t fileSize = fin.tellg();
+    uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
+    uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
-    std::string buffer;
-    buffer.resize(fileSize);
-    fin.read(reinterpret_cast<char*>(buffer.data()), fileSize);
-#endif
+    std::string binary;
+    binary.resize(size_of_gltfField);
+    fin.read(binary.data(), size_of_gltfField);
 
-    vsg::ref_ptr<vsg::Object> result;
+    vsg::mem_stream binary_fin(reinterpret_cast<uint8_t*>(binary.data()), binary.size());
 
-    return result;
+    auto opt = vsg::clone(options);
+    opt->extensionHint = ".glb";
+
+    auto model = vsg::read_cast<vsg::Node>(binary_fin, opt);
+
+    return model;
 }
 
