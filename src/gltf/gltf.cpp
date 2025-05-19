@@ -1258,7 +1258,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 
     if (strncmp(header.magic, "glTF", 4) != 0)
     {
-        vsg::warn("magic number not glTF");
+        vsg::warn("magic number not glTF, header.magic = ", header.magic);
         return {};
     }
 
@@ -1361,12 +1361,12 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 
 vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
+    vsg::Path ext  = vsg::lowerCaseFileExtension(filename);
+    if (!supportedExtension(ext)) return {};
+
     vsg::info("gltf::read(", filename, ")");
 
     if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
-
-    vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
-    if (!supportedExtension(ext)) return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse) return {};

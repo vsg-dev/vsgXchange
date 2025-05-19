@@ -787,7 +787,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const v
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
+    vsg::Path ext  = vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
