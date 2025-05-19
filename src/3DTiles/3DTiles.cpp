@@ -1163,13 +1163,25 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             quantizeScale /= 65535.0;
         }
 
+        auto convert_oct32 = [](uint16_t x, uint16_t y) -> vsg::dvec3
+        {
+            const double oct32_multiplier = (2.0 / 65535.0);
+            vsg::dvec2 e(static_cast<double>(x) * oct32_multiplier - 1.0, static_cast<double>(y) * oct32_multiplier - 1.0);
+            vsg::dvec3 v(e.x, e.y, 1.0 - std::abs(e.x) - std::abs(e.y));
+            if (v.z < 0.0)
+            {
+                v.x = (1.0 - std::abs(e.y)) * std::copysignl(1.0, e.x);
+                v.y = (1.0 - std::abs(e.x)) * std::copysignl(1.0, e.y);
+            }
+            return vsg::normalize(v);
+        };
+
+
         auto group = vsg::Group::create();
         for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
         {
             vsg::dvec3 position;
-            vsg::dquat rotation;
             vsg::dvec3 scale(1.0, 1.0, 1.0);
-
 
             if (featureTable->POSITION && i*3 < featureTable->POSITION.values.size())
             {
@@ -1183,11 +1195,47 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
                 position = quantizeOffset + quantizedPosition * quantizeScale;
             }
 
+            vsg::dvec3 normal_up(0.0, 0.0, 1.0);
+            vsg::dvec3 normal_right(1.0, 0.0, 0.0);
 
-            // ArraySchema<float> NORMAL_UP;
-            // ArraySchema<float> NORMAL_RIGHT;
-            // ArraySchema<uint16_t> NORMAL_UP_OCT32P;
-            // ArraySchema<uint16_t> NORMAL_RIGHT_OCT32P;
+            if (featureTable->EAST_NORTH_UP)
+            {
+                const double epsilon = 1e-7;
+
+                normal_up = vsg::normalize(position);
+                normal_right.set(-position.y, position.x, 0.0);
+                double len = vsg::length(normal_right);
+                if (len > epsilon)
+                {
+                    normal_right /= len;
+                }
+                else
+                {
+                    normal_right.set(0.0, 1.0, 0.0);
+                }
+            }
+
+            if (featureTable->NORMAL_UP && i*3 < featureTable->NORMAL_UP.values.size())
+            {
+                const auto& values = featureTable->NORMAL_UP.values;
+                normal_up.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            }
+            else if (featureTable->NORMAL_UP_OCT32P && i*2 < featureTable->NORMAL_UP_OCT32P.values.size())
+            {
+                const auto& values = featureTable->NORMAL_UP_OCT32P.values;
+                normal_up = convert_oct32(values[i*2 + 0], values[i*2 + 1]);
+            }
+
+            if (featureTable->NORMAL_RIGHT && i*3 < featureTable->NORMAL_RIGHT.values.size())
+            {
+                const auto& values = featureTable->NORMAL_RIGHT.values;
+                normal_right.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            }
+            else if (featureTable->NORMAL_RIGHT_OCT32P && i*2 < featureTable->NORMAL_RIGHT_OCT32P.values.size())
+            {
+                const auto& values = featureTable->NORMAL_RIGHT_OCT32P.values;
+                normal_right = convert_oct32(values[i*2 + 0], values[i*2 + 1]);
+            }
 
             if (featureTable->SCALE && i < featureTable->SCALE.values.size())
             {
@@ -1201,10 +1249,21 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
                 scale.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
             }
 
-            // vsg::info("instance position = ", position, ", scale = ", scale);
+            vsg::dvec3 normal_forward = vsg::cross(normal_up, normal_right);
+
+            vsg::dmat4 rotation(normal_right.x, normal_right.y, normal_right.z, 0.0,
+                                normal_forward.x, normal_forward.y, normal_forward.z, 0.0,
+                                normal_up.x, normal_up.y, normal_up.z, 0.0,
+                                0.0, 0.0, 0.0, 1.0);
+
+            if (featureTable->RTC_CENTER)
+            {
+                vsg::info("featureTable->RTC_CENTER = ", featureTable->RTC_CENTER.values);
+            }
+
 
             auto transform = vsg::MatrixTransform::create();
-            transform->matrix = vsg::translate(position) * vsg::rotate(rotation) * vsg::scale(scale);
+            transform->matrix = vsg::translate(position) * rotation * vsg::scale(scale);
             transform->addChild(model);
 
             group->addChild(transform);
