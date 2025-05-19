@@ -162,6 +162,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
     uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
+    // TODO: need to modify glTF loader to handle batched value assessor.
+    // https://github.com/CesiumGS/3d-tiles/tree/1.0/specification/TileFormats/Batched3DModel#batch-table
+
     std::string binary;
     binary.resize(size_of_gltfField);
     fin.read(binary.data(), size_of_gltfField);
