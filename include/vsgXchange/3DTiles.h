@@ -277,6 +277,8 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::ShaderSet> shaderSet;
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
+            vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
+
             vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> root, vsg::ref_ptr<const vsg::Options> options);
         };
     };

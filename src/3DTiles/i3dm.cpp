@@ -49,9 +49,7 @@ void Tiles3D::i3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::
 
 void Tiles3D::i3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    vsg::info("Tiles3D::i3dm_FeatureTable::read_object(", property, ")");
-
-    if (property=="POSITION") { vsg::info("    reading POSITION. "); parser.read_object(POSITION); }
+    if (property=="POSITION") { parser.read_object(POSITION); }
     else if (property=="POSITION_QUANTIZED") parser.read_object(POSITION_QUANTIZED);
     else if (property=="NORMAL_UP") parser.read_object(NORMAL_UP);
     else if (property=="NORMAL_RIGHT") parser.read_object(NORMAL_RIGHT);
@@ -149,7 +147,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
     if (strncmp(header.magic, "i3dm", 4) != 0)
     {
-        vsg::warn("magic number not i3dm");
+        vsg::warn("magic number not i3dm, magic = ", int(header.magic[0]), ", ", int(header.magic[1]), ", ", int(header.magic[2]), ", ", int(header.magic[3]), ", ");
         return {};
     }
 
@@ -196,8 +194,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             fin.read(reinterpret_cast<char*>(batchTable->binary->dataPointer()), header.batchTableBinaryLength);
         }
 
-        vsg::info("BatchTable JSON = ", parser.buffer);
-        vsg::info("BatchTable batchTableBinaryLength = ", header.batchTableBinaryLength);
+        // vsg::info("BatchTable JSON = ", parser.buffer);
+        // vsg::info("BatchTable batchTableBinaryLength = ", header.batchTableBinaryLength);
 
         parser.read_object(*batchTable);
 
@@ -234,10 +232,13 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         fin.read(uri.data(), size_of_gltfField);
 
         // trim trailing null characters
-        while(uri.back()==0) uri.pop_back();
+        while(uri.back()<=32) uri.pop_back();
+
+        auto opt = vsg::clone(options);
+        opt->extensionHint = ".glb";
 
         // load model
-        model = vsg::read_cast<vsg::Node>(uri, options);
+        model = vsg::read_cast<vsg::Node>(uri, opt);
     }
     else
     {
@@ -283,6 +284,13 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             return vsg::normalize(v);
         };
 
+        vsg::dvec3 rtc_center;
+        if (featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size()==3)
+        {
+            rtc_center.x = featureTable->RTC_CENTER.values[0];
+            rtc_center.y = featureTable->RTC_CENTER.values[1];
+            rtc_center.z = featureTable->RTC_CENTER.values[2];
+        }
 
         auto group = vsg::Group::create();
         for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
@@ -363,14 +371,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
                                 normal_up.x, normal_up.y, normal_up.z, 0.0,
                                 0.0, 0.0, 0.0, 1.0);
 
-            if (featureTable->RTC_CENTER)
-            {
-                vsg::info("featureTable->RTC_CENTER = ", featureTable->RTC_CENTER.values);
-            }
-
-
             auto transform = vsg::MatrixTransform::create();
-            transform->matrix = vsg::translate(position) * rotation * vsg::scale(scale);
+            transform->matrix = vsg::translate(rtc_center + position) * rotation * vsg::scale(scale);
             transform->addChild(model);
 
             group->addChild(transform);
@@ -378,6 +380,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         if (group->children.size()==1) model = group->children[0];
         else if (!group->children.empty()) model = group;
+
+        vsg::info("i3dm returning model = ", model);
     }
 
     return model;

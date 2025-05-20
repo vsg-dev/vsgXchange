@@ -786,6 +786,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
     vsg::ref_ptr<vsg::Node> vsg_scene;
 
     vsg::dmat4 matrix;
+
     if (vsg::transform(source_coordinateConvention, destination_coordinateConvention, matrix))
     {
         auto mt = vsg::MatrixTransform::create(matrix);
@@ -797,7 +798,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
 
         vsg_scene = mt;
     }
-    else if (gltf_scene->nodes.values.size()>1)
+    else
+
+    if (gltf_scene->nodes.values.size()>1)
     {
         auto group = vsg::Group::create();
         for(auto& id : gltf_scene->nodes.values)

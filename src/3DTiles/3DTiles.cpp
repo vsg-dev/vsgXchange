@@ -676,7 +676,28 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
         parser.warningCount = 0;
         parser.read_object(*root);
 
-        root->resolveURIs(options);
+        auto builder = Tiles3D::SceneGraphBuilder::create();
+
+        auto opt = vsg::clone(options);
+
+        if (root->asset)
+        {
+            const auto& strings = root->asset->strings;
+            if (auto itr = strings.find("gltfUpAxis"); itr != strings.end())
+            {
+                std::string gltfUpAxis = itr->second;
+                vsg::CoordinateConvention upAxis = vsg::CoordinateConvention::Y_UP;
+                if (gltfUpAxis=="X") upAxis = vsg::CoordinateConvention::X_UP;
+                else if (gltfUpAxis=="Y") upAxis = vsg::CoordinateConvention::Y_UP;
+                else if (gltfUpAxis=="Z") upAxis = vsg::CoordinateConvention::Z_UP;
+
+                opt->formatCoordinateConventions[".gltf"] = upAxis;
+                opt->formatCoordinateConventions[".glb"] = upAxis;
+                builder->source_coordinateConvention = upAxis;
+            }
+        }
+
+        root->resolveURIs(opt);
 
         if (parser.warningCount != 0) vsg::warn("3DTiles parsing failure : ", filename);
         else vsg::debug("3DTiles parsing success : ", filename);
@@ -688,9 +709,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             root->report(output);
         }
 
-        // TODO : need to how to handle the Asset gltfUpAxis opt->formatCoordinateConventions[".glb"] = vsg::CoordinateConvention::Z_UP;
-
-        auto builder = Tiles3D::SceneGraphBuilder::create();
         result = builder->createSceneGraph(root, options);
     }
     else
@@ -738,22 +756,48 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
         return {};
     }
 
+    uint32_t sizeOfTiles = header.byteLength - sizeof(Header);
+    std::string binary;
+    binary.resize(sizeOfTiles);
+    fin.read(binary.data(), sizeOfTiles);
+    if (!fin.good())
+    {
+        vsg::warn("IO error reading cmpt file.");
+        return {};
+    }
+
+    auto group = vsg::Group::create();
     std::list<InnerHeader> innerHeaders;
+    uint32_t pos = 0;
     for(uint32_t i=0; i < header.tilesLength; ++i)
     {
-        InnerHeader innerHeader;
-        fin.read(reinterpret_cast<char*>(&innerHeader), sizeof(InnerHeader));
+        InnerHeader* tile = reinterpret_cast<InnerHeader*>(&binary[pos]);
+        innerHeaders.push_back(*tile);
 
-        if (!fin.good())
+        vsg::mem_stream binary_fin(reinterpret_cast<uint8_t*>(&binary[pos]), tile->byteLength);
+        pos += tile->byteLength;
+
+        std::string ext = ".";
+        for(int c = 0; c<4; ++c)
         {
-            vsg::warn("IO error reading cmpt file.");
-            return {};
+            if (tile->magic[c] != 0) ext.push_back(tile->magic[c]);
+            else break;
         }
 
-        // skip over rest of tile to next one.
-        fin.seekg(innerHeader.byteLength - sizeof(InnerHeader), fin.cur);
+        auto opt = vsg::clone(options);
+        opt->extensionHint = ext;
 
-        innerHeaders.push_back(innerHeader);
+#if 0
+        // force axis to Z up.
+        auto upAxis = vsg::CoordinateConvention::Z_UP;
+        opt->formatCoordinateConventions[".gltf"] = upAxis;
+        opt->formatCoordinateConventions[".glb"] = upAxis;
+#endif
+
+        if (auto model = vsg::read_cast<vsg::Node>(binary_fin, opt))
+        {
+            group->addChild(model);
+        }
     }
 
     if (vsg::value<bool>(false, gltf::report, options))
@@ -772,10 +816,9 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
         }
     }
 
-
-    vsg::ref_ptr<vsg::Object> result;
-
-    return result;
+    if (group->children.empty()) return {};
+    else if (group->children.size()==1) return group->children[0];
+    else return group;
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path&) const
