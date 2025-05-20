@@ -719,114 +719,11 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     return result;
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
-{
-    vsg::info("Tiles3D::read_cmpt(..)");
-
-    fin.seekg(0);
-
-    // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Composite/README.adoc
-    struct Header
-    {
-        char magic[4] = {0,0,0,0};
-        uint32_t version = 0;
-        uint32_t byteLength = 0;
-        uint32_t tilesLength = 0;
-    };
-
-    struct InnerHeader
-    {
-        char magic[4] = {0,0,0,0};
-        uint32_t version = 0;
-        uint32_t byteLength = 0;
-    };
-
-    Header header;
-    fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
-
-    if (!fin.good())
-    {
-        vsg::warn("IO error reading cmpt file.");
-        return {};
-    }
-
-    if (strncmp(header.magic, "cmpt", 4) != 0)
-    {
-        vsg::warn("magic number not cmpt");
-        return {};
-    }
-
-    uint32_t sizeOfTiles = header.byteLength - sizeof(Header);
-    std::string binary;
-    binary.resize(sizeOfTiles);
-    fin.read(binary.data(), sizeOfTiles);
-    if (!fin.good())
-    {
-        vsg::warn("IO error reading cmpt file.");
-        return {};
-    }
-
-    auto group = vsg::Group::create();
-    std::list<InnerHeader> innerHeaders;
-    uint32_t pos = 0;
-    for(uint32_t i=0; i < header.tilesLength; ++i)
-    {
-        InnerHeader* tile = reinterpret_cast<InnerHeader*>(&binary[pos]);
-        innerHeaders.push_back(*tile);
-
-        vsg::mem_stream binary_fin(reinterpret_cast<uint8_t*>(&binary[pos]), tile->byteLength);
-        pos += tile->byteLength;
-
-        std::string ext = ".";
-        for(int c = 0; c<4; ++c)
-        {
-            if (tile->magic[c] != 0) ext.push_back(tile->magic[c]);
-            else break;
-        }
-
-        auto opt = vsg::clone(options);
-        opt->extensionHint = ext;
-
-#if 0
-        // force axis to Z up.
-        auto upAxis = vsg::CoordinateConvention::Z_UP;
-        opt->formatCoordinateConventions[".gltf"] = upAxis;
-        opt->formatCoordinateConventions[".glb"] = upAxis;
-#endif
-
-        if (auto model = vsg::read_cast<vsg::Node>(binary_fin, opt))
-        {
-            group->addChild(model);
-        }
-    }
-
-    if (vsg::value<bool>(false, gltf::report, options))
-    {
-        vsg::LogOutput output;
-
-        output("magic = ", header.magic);
-        output("version = ", header.version);
-        output("byteLength = ", header.byteLength);
-        output("tilesLength = ", header.tilesLength);
-
-        output("innerHeaders.size() = ", innerHeaders.size());
-        for(auto& innerHeader : innerHeaders)
-        {
-            output("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
-        }
-    }
-
-    if (group->children.empty()) return {};
-    else if (group->children.size()==1) return group->children[0];
-    else return group;
-}
-
 vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path&) const
 {
     vsg::warn("Tiles3D::read_pnts(..) not implemented yet.");
     return {};
 }
-
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
