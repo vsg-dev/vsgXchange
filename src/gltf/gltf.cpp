@@ -1175,7 +1175,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     if (fileSize==0) return {};
 
     vsg::JSONParser parser;
-    parser.level =  level;
     parser.options = options;
 
     // set up the supported extensions
@@ -1196,13 +1195,16 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     {
         auto root = gltf::glTF::create();
 
-        parser.warningCount = 0;
         parser.read_object(*root);
 
-        root->resolveURIs(options);
+        if (!parser.warnings.empty())
+        {
+            vsg::warn("glTF parsing failure : ", filename);
+            for(auto& warning : parser.warnings) vsg::log(level, warning);
+            return {};
+        }
 
-        if (parser.warningCount != 0) vsg::warn("glTF parsing failure : ", filename);
-        else vsg::debug("glTF parsing success : ", filename);
+        root->resolveURIs(options);
 
         if (vsg::value<bool>(false, gltf::report, options))
         {
@@ -1273,7 +1275,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     uint32_t jsonSize = chunk0.chunkLength;// - sizeof(Chunk);
 
     vsg::JSONParser parser;
-    parser.level =  level;
     parser.options = options;
 
     // set up the supported extensions
@@ -1304,8 +1305,14 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     if (parser.buffer[parser.pos]=='{')
     {
         auto root = gltf::glTF::create();
-        parser.warningCount = 0;
         parser.read_object(*root);
+
+        if (!parser.warnings.empty())
+        {
+            vsg::warn("glTF parsing failure : ", filename);
+            for(auto& warning : parser.warnings) vsg::log(level, warning);
+            return {};
+        }
 
         if (root->buffers.values.size() >= 1)
         {
@@ -1329,9 +1336,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
         }
 
         root->resolveURIs(options);
-
-        if (parser.warningCount != 0) vsg::warn("glTF parsing failure : ", filename);
-        else vsg::debug("glTF parsing success : ", filename);
 
         if (vsg::value<bool>(false, gltf::report, options))
         {

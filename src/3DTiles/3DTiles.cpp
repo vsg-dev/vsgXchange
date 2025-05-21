@@ -656,7 +656,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     if (fileSize==0) return {};
 
     vsg::JSONParser parser;
-    parser.level =  level;
     parser.options = options;
 
     parser.buffer.resize(fileSize);
@@ -671,18 +670,24 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
 
     if (parser.buffer[parser.pos]=='{')
     {
-        auto root = Tiles3D::Tileset::create();
+        auto tileset = Tiles3D::Tileset::create();
 
-        parser.warningCount = 0;
-        parser.read_object(*root);
+        parser.read_object(*tileset);
+
+        if (!parser.warnings.empty())
+        {
+            vsg::warn("3DTiles parsing failure : ", filename);
+            for(auto& warning : parser.warnings) vsg::log(level, warning);
+            return {};
+        }
 
         auto builder = Tiles3D::SceneGraphBuilder::create();
 
         auto opt = vsg::clone(options);
 
-        if (root->asset)
+        if (tileset->asset)
         {
-            const auto& strings = root->asset->strings;
+            const auto& strings = tileset->asset->strings;
             if (auto itr = strings.find("gltfUpAxis"); itr != strings.end())
             {
                 std::string gltfUpAxis = itr->second;
@@ -697,26 +702,19 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             }
         }
 
-        root->resolveURIs(opt);
-
-        if (parser.warningCount != 0) vsg::warn("3DTiles parsing failure : ", filename);
-        else vsg::debug("3DTiles parsing success : ", filename);
-
         if (vsg::value<bool>(false, gltf::report, options))
         {
             vsg::LogOutput output;
             output("Tiles3D::read_json() filename = ", filename);
-            root->report(output);
+            tileset->report(output);
         }
 
-        result = builder->createSceneGraph(root, options);
+        return builder->createSceneGraph(tileset, options);
     }
     else
     {
-        vsg::warn("glTF parsing error, could not find opening {");
+        return {};
     }
-
-    return result;
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path&) const
