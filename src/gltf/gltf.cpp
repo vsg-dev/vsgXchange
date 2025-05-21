@@ -1309,8 +1309,11 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 
         if (!parser.warnings.empty())
         {
-            vsg::warn("glTF parsing failure : ", filename);
-            for(auto& warning : parser.warnings) vsg::log(level, warning);
+            if (level != vsg::Logger::LOGGER_OFF)
+            {
+                vsg::warn("glTF parsing failure : ", filename);
+                for(auto& warning : parser.warnings) vsg::log(level, warning);
+            }
             return {};
         }
 

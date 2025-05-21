@@ -676,8 +676,11 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
 
         if (!parser.warnings.empty())
         {
-            vsg::warn("3DTiles parsing failure : ", filename);
-            for(auto& warning : parser.warnings) vsg::log(level, warning);
+            if (level != vsg::Logger::LOGGER_OFF)
+            {
+                vsg::warn("3DTiles parsing failure : ", filename);
+                for(auto& warning : parser.warnings) vsg::log(level, warning);
+            }
             return {};
         }
 
