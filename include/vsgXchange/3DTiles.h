@@ -105,12 +105,20 @@ namespace vsgXchange
         };
 
         /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/properties.schema.json
-        struct VSGXCHANGE_DECLSPEC Properties : public vsg::Inherit<gltf::ExtensionsExtras, Properties>
+        struct VSGXCHANGE_DECLSPEC PropertyRange : public vsg::Inherit<gltf::ExtensionsExtras, PropertyRange>
         {
             double minimum = 0.0;
             double maximum = 0.0;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
+        struct VSGXCHANGE_DECLSPEC Properties : public vsg::Inherit<gltf::ExtensionsExtras, Properties>
+        {
+            std::map<std::string, PropertyRange> properties;
+
+            void read_object(vsg::JSONParser& parser, const std::string_view& property_name) override;
+
             void report(vsg::LogOutput& output);
         };
 

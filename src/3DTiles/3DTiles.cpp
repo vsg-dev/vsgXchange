@@ -177,19 +177,27 @@ void Tiles3D::Tile::report(vsg::LogOutput& output)
 //
 // Properties
 //
-void Tiles3D::Properties::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+void Tiles3D::PropertyRange::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
     if (property == "minimum") input >> minimum;
     else if (property == "maximum") input >> maximum;
     else parser.warning();
 }
 
+void Tiles3D::Properties::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    parser.read_object(properties[std::string(property)]);
+}
+
 void Tiles3D::Properties::report(vsg::LogOutput& output)
 {
     output("Properties {");
     output.in();
-    output("minimum = ", minimum);
-    output("maximum = ", maximum);
+
+    for(auto& [name, property] : properties)
+    {
+        output(name, " { minimum = ", property.minimum, ", maximum = ", property.maximum, " }");
+    }
     output.out();
     output("}");
 }

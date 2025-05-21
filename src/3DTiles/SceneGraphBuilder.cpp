@@ -58,7 +58,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     vsg::info("Tiles3D::SceneGraphBuilder::createSceneGraph() not yet implemented.");
 
-    tileset->resolveURIs(options);
+    // tileset->resolveURIs(options);
 
     return {};
 }
