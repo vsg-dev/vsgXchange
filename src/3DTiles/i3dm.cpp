@@ -118,7 +118,7 @@ void Tiles3D::i3dm_FeatureTable::report(vsg::LogOutput& output)
 //
 // read_i3dm
 //
-vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
     vsg::info("Tiles3D::read_i3dm(..)");
     fin.seekg(0);
@@ -383,6 +383,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         vsg::info("i3dm returning model = ", model);
     }
+
+    if (model && filename) model->setValue("i3dm", filename);
 
     return model;
 }

@@ -118,11 +118,6 @@ void Tiles3D::Tile::read_object(vsg::JSONParser& parser, const std::string_view&
         viewerRequestVolume = BoundingVolume::create();
         parser.read_object(*viewerRequestVolume);
     }
-    else if (property == "viewerRequestVolume")
-    {
-        viewerRequestVolume = BoundingVolume::create();
-        parser.read_object(*viewerRequestVolume);
-    }
     else if (property == "content")
     {
         content = Content::create();

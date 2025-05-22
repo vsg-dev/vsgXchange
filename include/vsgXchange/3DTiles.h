@@ -287,7 +287,8 @@ namespace vsgXchange
 
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
 
-            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> options);
+            virtual vsg::ref_ptr<vsg::Node> createTile(vsg::ref_ptr<Tiles3D::Tile> tile);
+            virtual vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options);
         };
     };
 

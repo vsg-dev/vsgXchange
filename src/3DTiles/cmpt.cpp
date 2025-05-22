@@ -26,7 +26,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsgXchange;
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
     vsg::info("Tiles3D::read_cmpt(..)");
 
@@ -123,7 +123,12 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
         }
     }
 
-    if (group->children.empty()) return {};
-    else if (group->children.size()==1) return group->children[0];
-    else return group;
+    vsg::ref_ptr<vsg::Node> model;
+
+    if (group->children.size()==1) model = group->children[0];
+    else if (!group->children.empty()) model = group;
+
+    if (model && filename) model->setValue("b3dm", filename);
+
+    return model;
 }

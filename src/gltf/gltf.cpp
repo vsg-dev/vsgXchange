@@ -1356,6 +1356,8 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
         }
 
         result = builder->createSceneGraph(root, options);
+
+        if (result && filename) result->setValue("gltf", filename);
     }
     else
     {

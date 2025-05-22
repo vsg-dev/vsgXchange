@@ -65,7 +65,7 @@ void Tiles3D::b3dm_FeatureTable::report(vsg::LogOutput& output)
 //
 // read_b3dm
 //
-vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path&) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
     vsg::info("Tiles3D::read_b3dm()");
 
@@ -175,6 +175,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     opt->extensionHint = ".glb";
 
     auto model = vsg::read_cast<vsg::Node>(binary_fin, opt);
+
+    if (model && filename) model->setValue("b3dm", filename);
 
     return model;
 }
