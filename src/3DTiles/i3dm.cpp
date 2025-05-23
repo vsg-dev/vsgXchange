@@ -236,6 +236,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         auto opt = vsg::clone(options);
         opt->extensionHint = ".glb";
+        opt->formatCoordinateConventions[".glb"] = vsg::CoordinateConvention::Y_UP;
 
         // load model
         model = vsg::read_cast<vsg::Node>(uri, opt);
@@ -250,6 +251,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         auto opt = vsg::clone(options);
         opt->extensionHint = ".glb";
+        opt->formatCoordinateConventions[".glb"] = vsg::CoordinateConvention::Y_UP;
 
         model = vsg::read_cast<vsg::Node>(binary_fin, opt);
     }

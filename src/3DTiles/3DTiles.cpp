@@ -715,7 +715,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             tileset->report(output);
         }
 
-        return builder->createSceneGraph(tileset, options);
+        return builder->createSceneGraph(tileset, opt);
     }
     else
     {

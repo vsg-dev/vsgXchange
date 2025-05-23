@@ -45,6 +45,7 @@ Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile)
 {
+#if 0
     vsg::info("Tiles3D::createTile() {");
     vsg::info("    boundingVolume = ", tile->boundingVolume);
     vsg::info("    viewerRequestVolume = ", tile->viewerRequestVolume);
@@ -52,13 +53,13 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     vsg::info("    refine = ", tile->refine);
     vsg::info("    transform = ", tile->transform.values);
     vsg::info("    content = ", tile->content);
+#endif
 
     vsg::dsphere bound;
     if (tile->boundingVolume)
     {
         if (tile->boundingVolume->box.values.size()==12)
         {
-            vsg::info("Need to compute bounding sphere using box = ",tile->boundingVolume->box.values);
             const auto& v = tile->boundingVolume->box.values;
             bound.center.set(v[0], v[1], v[2]);
             vsg::dvec3 axis_x(v[3], v[4], v[5]);
@@ -75,7 +76,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         }
         else if (tile->boundingVolume->sphere.values.size()==4)
         {
-            vsg::info("Need to compute bounding sphere using sphere = ",tile->boundingVolume->sphere.values);
             const auto& v = tile->boundingVolume->box.values;
             bound.center.set(v[0], v[1], v[2]);
             bound.radius = v[3];
@@ -86,7 +86,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             vsg::LogOutput output;
             tile->boundingVolume->report(output);
         }
-        vsg::info("computed sphere = ", bound);
     }
 
     vsg::ref_ptr<vsg::Node> local_subgraph;
@@ -145,11 +144,14 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         vsg::ref_ptr<vsg::Node> highres_subgraph = group;
         if (group->children.size() == 1) highres_subgraph = group->children[0];
 
+        double pixelErrorToScreenHeightRatio = 0.01; // 0.001
         double minimumScreenHeightRatio = 0.5;
+        if (tile->geometricError > 0.0)
+        {
+            minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
+        }
 
-        minimumScreenHeightRatio = (bound.radius / tile->geometricError) * 0.001;
-
-        vsg::info("tile->geometricError = ", tile->geometricError, ", minimumScreenHeightRatio = ", minimumScreenHeightRatio);
+        // vsg::info("tile->geometricError = ", tile->geometricError, ", minimumScreenHeightRatio = ", minimumScreenHeightRatio);
 
         auto lod = vsg::LOD::create();
         lod->bound = bound;
@@ -195,8 +197,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
             vsg_tileset->addChild(vsg_root);
         }
     }
-
-    // tileset->resolveURIs(options);
 
     return vsg_tileset;
 }
