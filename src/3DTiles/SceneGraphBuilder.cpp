@@ -188,7 +188,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     auto vsg_tileset = vsg::Group::create();
 
-    vsg_tileset->setObject("tileset", tileset);
+    // vsg_tileset->setObject("tileset", tileset);
 
     if (tileset->root)
     {
