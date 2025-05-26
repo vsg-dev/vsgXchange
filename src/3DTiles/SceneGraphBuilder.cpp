@@ -69,10 +69,17 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         }
         else if (tile->boundingVolume->region.values.size()==6)
         {
-            vsg::warn("Need to compute bounding sphere using region = ",tile->boundingVolume->region.values);
-            // TODO: use ElipsoidModel to compute ECEF bounding sphere.
-            // const auto& v = tile->boundingVolume->region.values;
-            // double west = v[0], south = v[1], east = v[2], north = v[3], low = v[4], high = v[5];
+            const auto& v = tile->boundingVolume->region.values;
+            double west = v[0], south = v[1], east = v[2], north = v[3], low = v[4], high = v[5];
+            auto centerECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south+north)*0.5, vsg::degrees(west+east)*0.5, (high+low)*0.5));
+            auto southWestLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south), vsg::degrees(west), low));
+            auto northEastLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(north), vsg::degrees(east), low));
+
+            bound.center = centerECEF;
+            bound.radius = std::max(vsg::length(southWestLowECEF - bound.center), vsg::length(northEastLowECEF - bound.center));
+
+            // TODO do we need to track the accumulated transform?
+
         }
         else if (tile->boundingVolume->sphere.values.size()==4)
         {
@@ -144,7 +151,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         vsg::ref_ptr<vsg::Node> highres_subgraph = group;
         if (group->children.size() == 1) highres_subgraph = group->children[0];
 
-        double pixelErrorToScreenHeightRatio = 0.01; // 0.001
         double minimumScreenHeightRatio = 0.5;
         if (tile->geometricError > 0.0)
         {

@@ -708,12 +708,14 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             }
         }
 
-        if (vsg::value<bool>(false, gltf::report, options))
+        if (vsg::value<bool>(false, Tiles3D::report, options))
         {
             vsg::LogOutput output;
             output("Tiles3D::read_json() filename = ", filename);
             tileset->report(output);
         }
+
+        builder->pixelErrorToScreenHeightRatio = vsg::value<double>(builder->pixelErrorToScreenHeightRatio, Tiles3D::pixel_ratio, options);
 
         return builder->createSceneGraph(tileset, opt);
     }
@@ -794,6 +796,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::re
 bool Tiles3D::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     bool result = arguments.readAndAssign<bool>(Tiles3D::report, &options);
+    result = arguments.readAndAssign<double>(Tiles3D::pixel_ratio, &options) | result;
     return result;
 }
 

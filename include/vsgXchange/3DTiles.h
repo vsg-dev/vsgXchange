@@ -52,6 +52,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
         static constexpr const char* report = "report";             /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* pixel_ratio = "pixel_ratio";       /// double, sets the SceneGraphBuilder::pixelErrorToScreenHeightRatio value used for setting LOD ranges.
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -285,7 +286,9 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::ShaderSet> shaderSet;
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
+            vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel = vsg::EllipsoidModel::create();
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
+            double pixelErrorToScreenHeightRatio = 0.016; // 0.016 looks to replicate vsgCs worldviewer transition distances
 
             virtual vsg::ref_ptr<vsg::Node> createTile(vsg::ref_ptr<Tiles3D::Tile> tile);
             virtual vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options);
