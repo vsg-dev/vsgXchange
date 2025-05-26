@@ -43,6 +43,21 @@ Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
 {
 }
 
+vsg::dmat4 Tiles3D::SceneGraphBuilder::createMatrix(const std::vector<double>& m)
+{
+    if (m.size()==16)
+    {
+        return vsg::dmat4(m[0], m[1], m[2], m[3],
+                          m[4], m[5], m[6], m[7],
+                          m[8], m[9], m[10], m[11],
+                          m[12], m[13], m[14], m[15]);
+    }
+    else
+    {
+        return {};
+    }
+}
+
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile)
 {
 #if 0
@@ -108,16 +123,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     vsg::ref_ptr<vsg::MatrixTransform> vsg_transform;
     if (!tile->transform.values.empty())
     {
-        vsg_transform = vsg::MatrixTransform::create();
-
-        auto& m = tile->transform.values;
-        if (m.size() == 16)
-        {
-            vsg_transform->matrix.set(m[0], m[1], m[2], m[3],
-                                      m[4], m[5], m[6], m[7],
-                                      m[8], m[9], m[10], m[11],
-                                      m[12], m[13], m[14], m[15]);
-        }
+        vsg_transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
     }
 
 
