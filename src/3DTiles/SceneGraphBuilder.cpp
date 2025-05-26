@@ -58,6 +58,48 @@ vsg::dmat4 Tiles3D::SceneGraphBuilder::createMatrix(const std::vector<double>& m
     }
 }
 
+vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume> boundingVolume)
+{
+    if (boundingVolume)
+    {
+        if (boundingVolume->box.values.size()==12)
+        {
+            const auto& v = boundingVolume->box.values;
+            vsg::dvec3 axis_x(v[3], v[4], v[5]);
+            vsg::dvec3 axis_y(v[6], v[7], v[8]);
+            vsg::dvec3 axis_z(v[9], v[10], v[11]);
+            return vsg::dsphere(v[0], v[1], v[2], vsg::length(axis_x + axis_y + axis_z));
+        }
+        else if (boundingVolume->region.values.size()==6)
+        {
+            const auto& v = boundingVolume->region.values;
+            double west = v[0], south = v[1], east = v[2], north = v[3], low = v[4], high = v[5];
+            auto centerECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south+north)*0.5, vsg::degrees(west+east)*0.5, (high+low)*0.5));
+            auto southWestLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south), vsg::degrees(west), low));
+            auto northEastLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(north), vsg::degrees(east), low));
+
+            // TODO: do we need to track the accumulated transform?
+            return vsg::dsphere(centerECEF, std::max(vsg::length(southWestLowECEF - centerECEF), vsg::length(northEastLowECEF - centerECEF)));
+        }
+        else if (boundingVolume->sphere.values.size()==4)
+        {
+            const auto& v = boundingVolume->box.values;
+            return vsg::dsphere(v[0], v[1], v[2], v[3]);
+        }
+        else
+        {
+            vsg::info("createBound() Unhandled boundingVolume type");
+            vsg::LogOutput output;
+            boundingVolume->report(output);
+            return {};
+        }
+    }
+    else
+    {
+        return {};
+    }
+}
+
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile)
 {
 #if 0
@@ -70,45 +112,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     vsg::info("    content = ", tile->content);
 #endif
 
-    vsg::dsphere bound;
-    if (tile->boundingVolume)
-    {
-        if (tile->boundingVolume->box.values.size()==12)
-        {
-            const auto& v = tile->boundingVolume->box.values;
-            bound.center.set(v[0], v[1], v[2]);
-            vsg::dvec3 axis_x(v[3], v[4], v[5]);
-            vsg::dvec3 axis_y(v[6], v[7], v[8]);
-            vsg::dvec3 axis_z(v[9], v[10], v[11]);
-            bound.radius = vsg::length(axis_x + axis_y + axis_z);
-        }
-        else if (tile->boundingVolume->region.values.size()==6)
-        {
-            const auto& v = tile->boundingVolume->region.values;
-            double west = v[0], south = v[1], east = v[2], north = v[3], low = v[4], high = v[5];
-            auto centerECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south+north)*0.5, vsg::degrees(west+east)*0.5, (high+low)*0.5));
-            auto southWestLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south), vsg::degrees(west), low));
-            auto northEastLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(north), vsg::degrees(east), low));
-
-            bound.center = centerECEF;
-            bound.radius = std::max(vsg::length(southWestLowECEF - bound.center), vsg::length(northEastLowECEF - bound.center));
-
-            // TODO do we need to track the accumulated transform?
-
-        }
-        else if (tile->boundingVolume->sphere.values.size()==4)
-        {
-            const auto& v = tile->boundingVolume->box.values;
-            bound.center.set(v[0], v[1], v[2]);
-            bound.radius = v[3];
-        }
-        else
-        {
-            vsg::info("createTile() Unhandled boundingVolume type");
-            vsg::LogOutput output;
-            tile->boundingVolume->report(output);
-        }
-    }
+    vsg::dsphere bound = computeBound(tile->boundingVolume);
 
     vsg::ref_ptr<vsg::Node> local_subgraph;
 
