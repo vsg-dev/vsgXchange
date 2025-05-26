@@ -44,6 +44,7 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Object> read_cmpt(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
         vsg::ref_ptr<vsg::Object> read_i3dm(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
         vsg::ref_ptr<vsg::Object> read_pnts(std::istream&, vsg::ref_ptr<const vsg::Options>, const vsg::Path& filename = {}) const;
+        vsg::ref_ptr<vsg::Object> read_tiles(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const;
 
         vsg::Logger::Level level = vsg::Logger::LOGGER_WARN;
 
@@ -51,8 +52,9 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";             /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* report = "report";                 /// bool, report parsed glTF to console, defaults to false
         static constexpr const char* pixel_ratio = "pixel_ratio";       /// double, sets the SceneGraphBuilder::pixelErrorToScreenHeightRatio value used for setting LOD ranges.
+        static constexpr const char* pre_load_level = "pre_load_level"; /// uint, sets the SceneGraphBuilder::preLoadLevel values to control what LOD level are pre loaded when reading a tileset.
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -289,11 +291,11 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel = vsg::EllipsoidModel::create();
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
             double pixelErrorToScreenHeightRatio = 0.016; // 0.016 looks to replicate vsgCs worldviewer transition distances
-
+            uint32_t preLoadLevel = 1;
 
             virtual vsg::dmat4 createMatrix(const std::vector<double>& values);
             virtual vsg::dsphere createBound(vsg::ref_ptr<BoundingVolume> boundingVolume);
-            virtual vsg::ref_ptr<vsg::Node> createTile(vsg::ref_ptr<Tiles3D::Tile> tile);
+            virtual vsg::ref_ptr<vsg::Node> createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level);
             virtual vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options);
         };
     };

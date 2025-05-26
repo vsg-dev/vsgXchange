@@ -646,7 +646,13 @@ Tiles3D::Tiles3D()
 
 bool Tiles3D::supportedExtension(const vsg::Path& ext) const
 {
-    return ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
+    return ext == ".tiles" || ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
+}
+
+vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    vsg::info("Tiles3D::read_tiles(", filename, ", ", options);
+    return {};
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
@@ -715,6 +721,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             tileset->report(output);
         }
 
+        builder->preLoadLevel = vsg::value<uint32_t>(builder->preLoadLevel, Tiles3D::pre_load_level, options);
         builder->pixelErrorToScreenHeightRatio = vsg::value<double>(builder->pixelErrorToScreenHeightRatio, Tiles3D::pixel_ratio, options);
 
         return builder->createSceneGraph(tileset, opt);
@@ -735,6 +742,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 {
     vsg::Path ext  = vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
+
+    if (ext==".tiles") return read_tiles(filename, options);
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse) return {};
@@ -797,6 +806,7 @@ bool Tiles3D::readOptions(vsg::Options& options, vsg::CommandLine& arguments) co
 {
     bool result = arguments.readAndAssign<bool>(Tiles3D::report, &options);
     result = arguments.readAndAssign<double>(Tiles3D::pixel_ratio, &options) | result;
+    result = arguments.readAndAssign<uint32_t>(Tiles3D::pre_load_level, &options) | result;
     return result;
 }
 
@@ -804,6 +814,7 @@ bool Tiles3D::getFeatures(Features& features) const
 {
     vsg::ReaderWriter::FeatureMask supported_features = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     features.extensionFeatureMap[".json"] = supported_features;
+    features.extensionFeatureMap[".tiles"] = supported_features;
     features.extensionFeatureMap[".b3dm"] = supported_features;
     features.extensionFeatureMap[".cmpt"] = supported_features;
     features.extensionFeatureMap[".i3dm"] = supported_features;
