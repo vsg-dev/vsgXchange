@@ -651,7 +651,8 @@ bool Tiles3D::supportedExtension(const vsg::Path& ext) const
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::info("Tiles3D::read_tiles(", filename, ", ", options);
+    auto tile = options->getRefObject<vsgXchange::Tiles3D::Tile>("tile");
+    vsg::info("Tiles3D::read_tiles(", filename, ", ", options, ") tile = ", tile);
     return {};
 }
 
