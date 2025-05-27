@@ -915,7 +915,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         vsg_meshes[mi] = createMesh(root->meshes.values[mi]);
     }
 
-    vsg::info("create nodes = ", root->nodes.values.size());
+    // vsg::info("create nodes = ", root->nodes.values.size());
     vsg_nodes.resize(root->nodes.values.size());
     for(size_t ni=0; ni<root->nodes.values.size(); ++ni)
     {
@@ -938,8 +938,8 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         }
     }
 
-    vsg::info("scene = ", root->scene);
-    vsg::info("scenes = ", root->scenes.values.size());
+    // vsg::info("scene = ", root->scene);
+    // vsg::info("scenes = ", root->scenes.values.size());
 
     vsg_scenes.resize(root->scenes.values.size());
     for(size_t sci = 0; sci < root->scenes.values.size(); ++sci)

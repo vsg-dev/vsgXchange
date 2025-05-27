@@ -1233,8 +1233,6 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
 
 vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("gltf::read_glb() filename = ", filename);
-
     fin.seekg(0);
 
     struct Header
@@ -1342,6 +1340,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 
         if (vsg::value<bool>(false, gltf::report, options))
         {
+            vsg::info("gltf::read_glb() filename = ", filename);
             root->report();
         }
 
@@ -1369,11 +1368,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
-
-    vsg::info("gltf::read(", filename, ") ext = ", ext);
-
     if (!supportedExtension(ext)) return {};
-
 
     if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
 
@@ -1391,8 +1386,6 @@ vsg::ref_ptr<vsg::Object> gltf::read(const vsg::Path& filename, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::info("gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) options->extensionHint = ", options->extensionHint);
-
     if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
 
     if (!options || !options->extensionHint) return {};
@@ -1404,8 +1397,6 @@ vsg::ref_ptr<vsg::Object> gltf::read(std::istream& fin, vsg::ref_ptr<const vsg::
 
 vsg::ref_ptr<vsg::Object> gltf::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::info("gltf::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) options->extensionHint = ", options->extensionHint);
-
     if (vsg::value<bool>(false, gltf::disable_gltf, options)) return {};
 
     if (!options || !options->extensionHint) return {};

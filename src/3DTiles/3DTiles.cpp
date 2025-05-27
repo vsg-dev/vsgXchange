@@ -665,7 +665,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path&, vsg::ref_ptr<con
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::read_json()");
+    vsg::info("Tiles3D::read_json(", filename, ")");
 
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();

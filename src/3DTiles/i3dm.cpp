@@ -120,7 +120,6 @@ void Tiles3D::i3dm_FeatureTable::report(vsg::LogOutput& output)
 //
 vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::read_i3dm(..)");
     fin.seekg(0);
 
     // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Instanced3DModel/README.adoc
@@ -158,8 +157,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     vsg::ref_ptr<i3dm_FeatureTable> featureTable = i3dm_FeatureTable::create();
     if (header.featureTableJSONByteLength > 0)
     {
-        vsg::info("Reading i3dm_FeatureTable");
-
         featureTable = i3dm_FeatureTable::create();
 
         vsg::JSONParser parser;
@@ -174,9 +171,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         parser.read_object(*featureTable);
         featureTable->convert();
-
-
-        vsg::info("finished Reading i3dm_FeatureTable");
     }
 
     vsg::ref_ptr<BatchTable> batchTable;
@@ -207,6 +201,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     {
         vsg::LogOutput output;
 
+        output("Tiles3D::read_i3dm(..)");
         output("magic = ", header.magic);
         output("version = ", header.version);
         output("byteLength = ", header.byteLength);
@@ -382,8 +377,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         if (group->children.size()==1) model = group->children[0];
         else if (!group->children.empty()) model = group;
-
-        vsg::info("i3dm returning model = ", model);
     }
 
     if (model && filename) model->setValue("i3dm", filename);

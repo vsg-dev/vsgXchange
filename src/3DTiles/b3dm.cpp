@@ -67,7 +67,6 @@ void Tiles3D::b3dm_FeatureTable::report(vsg::LogOutput& output)
 //
 vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::read_b3dm()");
 
     fin.seekg(0);
 
@@ -144,6 +143,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     {
         vsg::LogOutput output;
 
+        output("Tiles3D::read_b3dm()");
         output("magic = ", header.magic);
         output("version = ", header.version);
         output("byteLength = ", header.byteLength);

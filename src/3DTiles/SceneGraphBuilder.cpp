@@ -103,6 +103,8 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
 {
+    vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size());
+
     auto group = vsg::Group::create();
     for(auto child : tile->children.values)
     {

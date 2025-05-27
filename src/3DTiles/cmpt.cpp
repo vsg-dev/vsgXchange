@@ -28,8 +28,6 @@ using namespace vsgXchange;
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
 {
-    vsg::info("Tiles3D::read_cmpt(..)");
-
     fin.seekg(0);
 
     // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Composite/README.adoc
@@ -111,6 +109,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
     {
         vsg::LogOutput output;
 
+        output("Tiles3D::read_cmpt(..)");
         output("magic = ", header.magic);
         output("version = ", header.version);
         output("byteLength = ", header.byteLength);
