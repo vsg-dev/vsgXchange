@@ -101,6 +101,21 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
     }
 }
 
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
+{
+    auto group = vsg::Group::create();
+    for(auto child : tile->children.values)
+    {
+        if (auto vsg_child = createTile(child, level+1))
+        {
+            group->addChild(vsg_child);
+        }
+    }
+
+    if (group->children.size() == 1) return group->children[0];
+    else return group;
+}
+
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
 {
 #if 0
@@ -130,8 +145,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     {
         vsg_transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
     }
-
-    vsg::info("createTile() preLoadLevel = ", preLoadLevel, ", level = ", level);
 
     bool usePagedLOD = level > preLoadLevel;
 
@@ -168,23 +181,15 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
         auto load_options = vsg::clone(options);
         load_options->setObject("tile", tile);
+        load_options->setObject("builder", vsg::ref_ptr<SceneGraphBuilder>(this));
+        load_options->setValue("level", level);
         plod->options = load_options;
 
         return plod;
     }
     else // use LOD
     {
-        auto group = vsg::Group::create();
-        for(auto child : tile->children.values)
-        {
-            if (auto vsg_child = createTile(child, level+1))
-            {
-                group->addChild(vsg_child);
-            }
-        }
-
-        vsg::ref_ptr<vsg::Node> highres_subgraph = group;
-        if (group->children.size() == 1) highres_subgraph = group->children[0];
+        auto highres_subgraph = readTileChildren(tile, level);
 
         double minimumScreenHeightRatio = 0.5;
         if (tile->geometricError > 0.0)

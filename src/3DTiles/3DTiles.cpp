@@ -649,11 +649,18 @@ bool Tiles3D::supportedExtension(const vsg::Path& ext) const
     return ext == ".tiles" || ext == ".json" || ext == ".b3dm" || ext == ".cmpt" || ext == ".i3dm" || ext == ".pnts";
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path&, vsg::ref_ptr<const vsg::Options> options) const
 {
-    auto tile = options->getRefObject<vsgXchange::Tiles3D::Tile>("tile");
-    vsg::info("Tiles3D::read_tiles(", filename, ", ", options, ") tile = ", tile);
-    return {};
+    auto non_const_options = const_cast<vsg::Options*>(options.get());
+
+    auto tile = non_const_options->getRefObject<vsgXchange::Tiles3D::Tile>("tile");
+    auto builder = non_const_options->getRefObject<vsgXchange::Tiles3D::SceneGraphBuilder>("builder");
+
+    uint32_t lod_level = 0;
+    non_const_options->getValue("level", lod_level);
+
+    if (tile && builder) return builder->readTileChildren(tile, lod_level);
+    else return {};
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
