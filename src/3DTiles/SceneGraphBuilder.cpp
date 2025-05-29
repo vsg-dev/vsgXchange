@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/maths/transform.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsg/utils/ComputeBounds.h>
+#include <vsg/threading/OperationThreads.h>
 #include <vsg/state/material.h>
 
 using namespace vsgXchange;
@@ -103,14 +104,66 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
 {
-    vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size());
+    // vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size(), ", ", operationThreads);
 
     auto group = vsg::Group::create();
-    for(auto child : tile->children.values)
+    if (operationThreads && tile->children.values.size() > 1)
     {
-        if (auto vsg_child = createTile(child, level+1))
+        struct ReadTileOperation : public vsg::Inherit<vsg::Operation, ReadTileOperation>
         {
-            group->addChild(vsg_child);
+            SceneGraphBuilder* builder;
+            vsg::ref_ptr<Tiles3D::Tile> tileToCreate;
+            vsg::ref_ptr<vsg::Node>& subgraph;
+            uint32_t level;
+            vsg::ref_ptr<vsg::Latch> latch;
+
+            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, vsg::ref_ptr<vsg::Latch> in_latch) :
+                builder(in_builder),
+                tileToCreate(in_tile),
+                subgraph(in_subgraph),
+                level(in_level),
+                latch(in_latch) {}
+
+            void run() override
+            {
+                subgraph = builder->createTile(tileToCreate, level);
+                // vsg::info("Tiles3D::SceneGraphBuilder::readTileChildren() createTile() ", subgraph);
+                if (latch) latch->count_down();
+            }
+        };
+
+        auto latch = vsg::Latch::create(static_cast<int>(tile->children.values.size()));
+
+        std::vector<vsg::ref_ptr<vsg::Node>> children(tile->children.values.size());
+        auto itr = children.begin();
+        for(auto child : tile->children.values)
+        {
+            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level+1, latch), vsg::INSERT_FRONT);
+        }
+
+        // use this thread to read the files as well
+        operationThreads->run();
+
+        // wait till all the read operations have completed
+        latch->wait();
+
+        for(auto& child : children)
+        {
+            if (child)
+            {
+                group->addChild(child);
+            }
+            else vsg::info("Failed to read child");
+        }
+    }
+    else
+    {
+        for(auto child : tile->children.values)
+        {
+            if (auto vsg_child = createTile(child, level+1))
+            {
+                group->addChild(vsg_child);
+            }
         }
     }
 
@@ -223,15 +276,25 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 {
     if (!tileset) return {};
 
-    if (in_options) options = in_options;
+    if (in_options) options = vsg::clone(in_options);
+    else options = vsg::Options::create();
 
-    if (options) sharedObjects = options->sharedObjects;
-    if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
+    if (options)
+    {
+        sharedObjects = options->sharedObjects;
+        operationThreads = options->operationThreads;
+        if (operationThreads) options->operationThreads.reset();
+    }
+
+    if (!sharedObjects)
+    {
+        options->sharedObjects = sharedObjects = vsg::SharedObjects::create();
+    }
 
     if (!shaderSet)
     {
         shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
-        if (sharedObjects) sharedObjects->share(shaderSet);
+        sharedObjects->share(shaderSet);
     }
 
     auto vsg_tileset = vsg::Group::create();

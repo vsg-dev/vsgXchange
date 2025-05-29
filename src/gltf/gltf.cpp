@@ -1102,9 +1102,9 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         for(auto& operation : operations)
         {
             operation->latch = latch;
-
-            operationThreads->add(operation);
         }
+
+        operationThreads->add(operations.begin(), operations.end(), vsg::INSERT_FRONT);
 
         // use this thread to read the files as well
         operationThreads->run();
@@ -1131,9 +1131,9 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         for(auto& operation : secondary_operations)
         {
             operation->latch = secondary_latch;
-
-            operationThreads->add(operation);
         }
+
+        operationThreads->add(operations.begin(), operations.end(), vsg::INSERT_FRONT);
 
         // use this thread to read the files as well
         operationThreads->run();
@@ -1252,7 +1252,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     fin.read(reinterpret_cast<char*>(&header), sizeof(Header));
     if (!fin.good())
     {
-        vsg::warn("IO error reading GLB file.");
+        vsg::warn("IO error reading GLB file, &fin=", &fin, ", options = ", options, ", filename = ", filename);
         return {};
     }
 

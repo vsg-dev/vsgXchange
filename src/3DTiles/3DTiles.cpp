@@ -761,6 +761,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
     std::ifstream fin(filenameToUse, std::ios::ate | std::ios::binary);
 
+    // vsg::info("Tiles3D::read(", filename, ", ", options, ") &fin = ", &fin);
+
     if (ext==".json") return read_json(fin, opt, filename);
     else if (ext==".b3dm") return read_b3dm(fin, opt, filename);
     else if (ext==".cmpt") return read_cmpt(fin, opt, filename);

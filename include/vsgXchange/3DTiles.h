@@ -284,9 +284,10 @@ namespace vsgXchange
         public:
             SceneGraphBuilder();
 
-            vsg::ref_ptr<const vsg::Options> options;
+            vsg::ref_ptr<vsg::Options> options;
             vsg::ref_ptr<vsg::ShaderSet> shaderSet;
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
+            vsg::ref_ptr<vsg::OperationThreads> operationThreads;
 
             vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel = vsg::EllipsoidModel::create();
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
