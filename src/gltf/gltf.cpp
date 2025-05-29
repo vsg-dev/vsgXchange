@@ -1133,7 +1133,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
             operation->latch = secondary_latch;
         }
 
-        operationThreads->add(operations.begin(), operations.end(), vsg::INSERT_FRONT);
+        operationThreads->add(secondary_operations.begin(), secondary_operations.end(), vsg::INSERT_FRONT);
 
         // use this thread to read the files as well
         operationThreads->run();
