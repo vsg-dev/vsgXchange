@@ -240,15 +240,24 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
 {
     auto vsg_sampler = vsg::Sampler::create();
 
+    // assume mipmapping.
+    vsg_sampler->minLod = 0.0f;
+    vsg_sampler->maxLod = 16.0f;
+
+    // See https://docs.vulkan.org/spec/latest/chapters/samplers.html for suggestions on mapping from OpenGL style to Vulkan
     switch(gltf_sampler->minFilter)
     {
         case(9728) : // NEAREST
             vsg_sampler->minFilter = VK_FILTER_NEAREST;
             vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            vsg_sampler->minLod = 0.0f;
+            vsg_sampler->maxLod = 0.25f;
             break;
         case(9729) : // LINEAR
             vsg_sampler->minFilter = VK_FILTER_LINEAR;
             vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            vsg_sampler->minLod = 0.0f;
+            vsg_sampler->maxLod = 0.25f;
             break;
         case(9984) : // NEAREST_MIPMAP_NEAREST
             vsg_sampler->minFilter = VK_FILTER_NEAREST;
@@ -267,7 +276,9 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
             vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             break;
         default:
-            vsg::warn("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not supported.");
+            vsg::warn("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not set, using linear mipmap linear.");
+            vsg_sampler->minFilter = VK_FILTER_LINEAR;
+            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             break;
     }
 
@@ -280,7 +291,8 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
             vsg_sampler->magFilter = VK_FILTER_LINEAR;
             break;
         default:
-            vsg::warn("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not supported.");
+            vsg::warn("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not set, using default of linear.");
+            vsg_sampler->magFilter = VK_FILTER_LINEAR;
             break;
     }
 
@@ -304,6 +316,13 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
 
     vsg_sampler->addressModeU = addressMode(gltf_sampler->wrapS);
     vsg_sampler->addressModeV = addressMode(gltf_sampler->wrapT);
+
+    // defaults used by vsgXchange::assimp, TODO: use KHR_materials_anisotropy
+    if (vsg_sampler->maxLod >= 1.0f)
+    {
+        vsg_sampler->anisotropyEnable = VK_TRUE;
+        vsg_sampler->maxAnisotropy = 16.0f;
+    }
 
     // vsg::info("created sampler { ", vsg_sampler->minFilter, ", ", vsg_sampler->magFilter, ", ", vsg_sampler->mipmapMode, ", ",  gltf_sampler->wrapS, ", ", gltf_sampler->wrapT, "}");
 
@@ -882,6 +901,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     // vsg::info("create samplers = ", root->samplers.values.size());
     vsg_samplers.resize(root->samplers.values.size());
+    std::vector<uint32_t> maxDimensions(root->samplers.values.size(), 0);
     for(size_t sai=0; sai<root->samplers.values.size(); ++sai)
     {
         vsg_samplers[sai] = createSampler(root->samplers.values[sai]);
@@ -894,11 +914,32 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
          if (root->images.values[ii]) vsg_images[ii] = createImage(root->images.values[ii]);
     }
 
+
     // vsg::info("create textures = ", root->textures.values.size());
     vsg_textures.resize(root->textures.values.size());
     for(size_t ti=0; ti<root->textures.values.size(); ++ti)
     {
-        vsg_textures[ti] = createTexture(root->textures.values[ti]);
+        auto& gltf_texture = root->textures.values[ti];
+        auto& si = vsg_textures[ti] = createTexture(gltf_texture);
+
+        if (si.sampler && si.image)
+        {
+            auto& maxDimension = maxDimensions[gltf_texture->sampler.value];
+            if (si.image->width() > maxDimension) maxDimension = si.image->width();
+            if (si.image->height() > maxDimension) maxDimension = si.image->height();
+            if (si.image->depth() > maxDimension) maxDimension = si.image->depth();
+        }
+    }
+
+    // reset the maxLod's to the be appropriate for the dimensions of the images being used.
+    for(size_t sai=0; sai<root->samplers.values.size(); ++sai)
+    {
+        float maxLod = std::floor(std::log2f(static_cast<float>(maxDimensions[sai])));
+        if (vsg_samplers[sai]->maxLod > maxLod)
+        {
+            vsg_samplers[sai]->maxLod = maxLod;
+        }
+
     }
 
     // vsg::info("create materials = ", root->materials.values.size());
