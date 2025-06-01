@@ -451,11 +451,16 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
     }
 
 
-    pbrMaterial.alphaMaskCutoff = gltf_material->alphaCutoff;
-
-    // TODO: vsg_material->defines.insert("VSG_ALPHA_TEST");
-    // TODO: pbrMaterial.alphaMask = 1.0f;
-    // TODO: material.alphaMode string?
+    if (gltf_material->alphaMode=="BLEND")
+    {
+        vsg_material->blending = true;
+    }
+    else if (gltf_material->alphaMode=="MASK")
+    {
+        // vsg_material->blending = true; // TODO, do we need to enable blending?
+        vsg_material->defines.insert("VSG_ALPHA_TEST");
+        pbrMaterial.alphaMaskCutoff = gltf_material->alphaCutoff;
+    }
 
     if (auto materials_specular = gltf_material->extension<KHR_materials_specular>("KHR_materials_specular"))
     {
@@ -620,8 +625,26 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             vid->instanceCount = 1;
 
             auto indices = vsg_accessors[primitive->indices.value];
-            vid->assignIndices(indices);
-            vid->indexCount = static_cast<uint32_t>(indices->valueCount());
+            if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
+            {
+                // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
+                auto ushort_indices = vsg::ushortArray::create(ubyte_indices->size());
+                auto itr = ushort_indices->begin();
+                for(auto value : *ubyte_indices)
+                {
+                    *(itr++) = static_cast<ushort>(value);
+                }
+
+                vid->assignIndices(ushort_indices);
+                vid->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
+            }
+            else
+            {
+                vid->assignIndices(indices);
+                vid->indexCount = static_cast<uint32_t>(indices->valueCount());
+            }
+
+
 
             draw = vid;
         }
