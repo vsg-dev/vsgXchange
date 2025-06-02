@@ -45,9 +45,12 @@ extern "C"
     #define vsgXchange_ktx
     #define vsgXchange_spv
     #define vsgXchange_cpp
+    #define vsgXchange_gltf
+    #define vsgXchange_3DTiles
 
     /// optional Features
     #cmakedefine vsgXchange_curl
+    #cmakedefine vsgXchange_draco
     #cmakedefine vsgXchange_openexr
     #cmakedefine vsgXchange_freetype
     #cmakedefine vsgXchange_assimp

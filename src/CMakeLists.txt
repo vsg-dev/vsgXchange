@@ -25,14 +25,13 @@ set(SOURCES
     dds/dds.cpp
     images/images.cpp
     bin/bin.cpp
-    gltf/gltf.cpp
-    gltf/SceneGraphBuilder.cpp
-    3DTiles/3DTiles.cpp
-    3DTiles/i3dm.cpp
-    3DTiles/b3dm.cpp
-    3DTiles/cmpt.cpp
-    3DTiles/SceneGraphBuilder.cpp
 )
+
+# add gltf
+include(gltf/build_vars.cmake)
+
+# add 3D Tiles
+include(3DTiles/build_vars.cmake)
 
 # add freetype if available
 include(freetype/build_vars.cmake)
