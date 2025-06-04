@@ -36,6 +36,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/utils/ComputeBounds.h>
 #include <vsg/state/material.h>
 
+#ifdef vsgXchange_draco
+#include "draco/core/decoder_buffer.h"
+#include "draco/compression/decode.h"
+#endif
+
 using namespace vsgXchange;
 
 gltf::SceneGraphBuilder::SceneGraphBuilder()
@@ -131,49 +136,66 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
     vsg::ref_ptr<vsg::Data> vsg_data;
     switch(gltf_accessor->componentType)
     {
-        case(5120): // BYTE
+        case(COMPONENT_TYPE_BYTE):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::byteArray::create(bufferView, gltf_accessor->byteOffset, 1, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::bvec2Array::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::bvec3Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::bvec4Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
-        case(5121): // UNSIGNED_BYTE
+        case(COMPONENT_TYPE_UNSIGNED_BYTE):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ubyteArray::create(bufferView, gltf_accessor->byteOffset, 1, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ubvec2Array::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ubvec3Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ubvec4Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
-        case(5122): // SHORT
+        case(COMPONENT_TYPE_SHORT):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::shortArray::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::svec2Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::svec3Array::create(bufferView, gltf_accessor->byteOffset, 6, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::svec4Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
-        case(5123): // UNSIGNED_SHORT
+        case(COMPONENT_TYPE_UNSIGNED_SHORT):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ushortArray::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::usvec2Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::usvec3Array::create(bufferView, gltf_accessor->byteOffset, 6, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::usvec4Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
-        case(5125): // UNSIGNED_INT
+        case(COMPONENT_TYPE_INT):
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::intArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ivec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ivec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ivec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
+            else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
+            break;
+        case(COMPONENT_TYPE_UNSIGNED_INT):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::uintArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::uivec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::uivec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::uivec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
-        case(5126): // FLOAT
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::byteArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
+        case(COMPONENT_TYPE_FLOAT):
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::floatArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::vec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::vec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::vec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
             //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::mat2Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
             //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::mat3Array::create(bufferView, gltf_accessor->byteOffset, 36, gltf_accessor->count);
             else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::mat4Array::create(bufferView, gltf_accessor->byteOffset, 64, gltf_accessor->count);
+            else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
+            break;
+        case(COMPONENT_TYPE_DOUBLE):
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::doubleArray::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::dvec2Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::dvec3Array::create(bufferView, gltf_accessor->byteOffset, 24, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::dvec4Array::create(bufferView, gltf_accessor->byteOffset, 32, gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::dmat2Array::create(bufferView, gltf_accessor->byteOffset, 32, gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::dmat3Array::create(bufferView, gltf_accessor->byteOffset, 72, gltf_accessor->count);
+            else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::dmat4Array::create(bufferView, gltf_accessor->byteOffset, 128, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
     }
@@ -276,7 +298,7 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
             vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             break;
         default:
-            vsg::warn("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not set, using linear mipmap linear.");
+            vsg::debug("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not set, using linear mipmap linear.");
             vsg_sampler->minFilter = VK_FILTER_LINEAR;
             vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
             break;
@@ -291,7 +313,7 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
             vsg_sampler->magFilter = VK_FILTER_LINEAR;
             break;
         default:
-            vsg::warn("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not set, using default of linear.");
+            vsg::debug("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not set, using default of linear.");
             vsg_sampler->magFilter = VK_FILTER_LINEAR;
             break;
     }
@@ -587,8 +609,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         vsg::info("    }");
 #endif
 
-
-
         vsg::DataList vertexArrays;
 
         auto assignArray = [&](const std::string& attribute_name) -> bool
@@ -871,9 +891,175 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
     return vsg_scene;
 }
 
-vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<gltf::glTF> root, vsg::ref_ptr<const vsg::Options> in_options)
+template<typename T>
+static bool CopyDracoAttributes(const draco::PointAttribute* draco_attribute, void* ptr, draco::PointIndex::ValueType num_points)
 {
-    if (!root) return {};
+    T* dest_ptr = reinterpret_cast<T*>(ptr);
+
+    auto num_components = draco_attribute->num_components();
+    for(draco::PointIndex i(0); i < num_points; ++i)
+    {
+        auto index = draco_attribute->mapped_index(i);
+        if (!draco_attribute->ConvertValue(index, num_components, dest_ptr)) return false;
+
+        dest_ptr += num_components;
+    }
+
+    return true;
+}
+
+
+bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> primitive)
+{
+    if (auto draco_mesh_compression = primitive->extension<KHR_draco_mesh_compression>("KHR_draco_mesh_compression"))
+    {
+#ifdef vsgXchange_draco
+        auto& bufferView = model->bufferViews.values[draco_mesh_compression->bufferView.value];
+        auto& buffer = model->buffers.values[bufferView->buffer.value];
+
+        auto bufferViewData = static_cast<const char*>(buffer->data->dataPointer()) + bufferView->byteOffset;
+        auto bufferViewSize = bufferView->byteLength;
+
+        draco::DecoderBuffer decodeBuffer;
+        decodeBuffer.Init(bufferViewData, bufferViewSize);
+
+        draco::Decoder decoder;
+        auto result = decoder.DecodeMeshFromBuffer(&decodeBuffer);
+
+        auto& mesh = result.value();
+        auto num_points = mesh->num_points();
+
+        // process indices
+        if (primitive->indices)
+        {
+            auto& indices = model->accessors.values[primitive->indices.value];
+
+            // set the indices bufferView to the what will be the index value of bufferView to be created for the indices
+            indices->bufferView.value = static_cast<uint32_t>(model->bufferViews.values.size());
+
+            // hardwire to uint32_t for now
+            uint32_t componentSize =  (num_points < 65536) ? 2 : 4;
+            uint32_t count =  mesh->num_faces() * 3;
+
+            // set up BufferView for the indices
+            auto indexBufferView = gltf::BufferView::create();
+            indexBufferView->buffer.value = static_cast<uint32_t>(model->buffers.values.size());
+            indexBufferView->byteOffset = 0;
+            indexBufferView->byteLength = count * componentSize;
+            model->bufferViews.values.push_back(indexBufferView);
+
+            // set up Buffer for the indices
+            auto indexBuffer = gltf::Buffer::create();
+            indexBuffer->byteLength = indexBufferView->byteLength;
+            indexBuffer->data = vsg::ubyteArray::create(indexBuffer->byteLength);
+            model->buffers.values.push_back(indexBuffer);
+
+            if (componentSize==sizeof(draco::PointIndex))
+            {
+                indices->componentType = COMPONENT_TYPE_UNSIGNED_INT;
+                indices->count = count;
+
+                // compatible size so can just copy data directly
+                memcpy(indexBuffer->data->dataPointer(), &(mesh->face(draco::FaceIndex(0)))[0], indexBuffer->byteLength);
+            }
+            else
+            {
+                indices->componentType = COMPONENT_TYPE_UNSIGNED_SHORT;
+                indices->count = count;
+
+                // copy data across value by value converting to ushort type
+                uint16_t* dest = static_cast<uint16_t*>(indexBuffer->data->dataPointer());
+                for(draco::FaceIndex i(0); i < mesh->num_faces(); ++i)
+                {
+                    const auto& face = mesh->face(i);
+                    *(dest++) = static_cast<uint16_t>(face[0].value());
+                    *(dest++) = static_cast<uint16_t>(face[1].value());
+                    *(dest++) = static_cast<uint16_t>(face[2].value());
+                }
+            }
+        }
+
+        auto& draco_attributes = draco_mesh_compression->attributes.values;
+        auto& primitive_attributes = primitive->attributes.values;
+
+        for(auto& [name, id] : draco_attributes)
+        {
+            if (auto itr = primitive_attributes.find(name); itr != primitive_attributes.end())
+            {
+                auto& primitive_attribute = *itr;
+
+                const auto draco_attribute = mesh->GetAttributeByUniqueId(id.value);
+                auto& accessor = model->accessors.values[primitive_attribute.second.value];
+
+                // update the attribute accessor to the decode entry
+                accessor->bufferView.value = static_cast<uint32_t>(model->bufferViews.values.size());
+                accessor->count = num_points;
+
+                auto dataProperties = accessor->getDataProperties();
+                uint32_t valueSize = dataProperties.componentSize * dataProperties.componentCount;
+
+                // allocate buffer and bufferView for decoded attribute
+                auto attributeBufferView = gltf::BufferView::create();
+                attributeBufferView->buffer.value = static_cast<uint32_t>(model->buffers.values.size());
+                attributeBufferView->byteLength = num_points * valueSize;
+                attributeBufferView->byteOffset = draco_attribute->byte_offset();
+                attributeBufferView->byteStride = draco_attribute->byte_stride();
+                model->bufferViews.values.push_back(attributeBufferView);
+
+                auto attributeBuffer =  gltf::Buffer::create();
+                attributeBuffer->byteLength = attributeBufferView->byteLength;
+                attributeBuffer->data = vsg::ubyteArray::create(attributeBuffer->byteLength);
+                model->buffers.values.push_back(attributeBuffer);
+
+                auto* ptr = attributeBuffer->data->dataPointer();
+
+                // TODO get the attributes from the draco mesh.
+                switch(accessor->componentType)
+                {
+                    case(COMPONENT_TYPE_BYTE):
+                        CopyDracoAttributes<int8_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_UNSIGNED_BYTE):
+                        CopyDracoAttributes<uint8_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_SHORT):
+                        CopyDracoAttributes<int16_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_UNSIGNED_SHORT):
+                        CopyDracoAttributes<uint16_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_INT):
+                        CopyDracoAttributes<int32_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_UNSIGNED_INT):
+                        CopyDracoAttributes<uint32_t>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_FLOAT):
+                        CopyDracoAttributes<float>(draco_attribute, ptr, num_points);
+                        break;
+                    case(COMPONENT_TYPE_DOUBLE):
+                        CopyDracoAttributes<double>(draco_attribute, ptr, num_points);
+                        break;
+                    default:
+                        vsg::info("unsupported type ", dataProperties.componentType);
+                        break;
+                }
+            }
+        }
+
+        return true;
+#else
+        vsg::info("Primitive draco_mesh_compression = ", draco_mesh_compression, " not supported.");
+        return false;
+#endif
+    }
+    return true;
+}
+
+vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options)
+{
+    model = in_model;
+    if (!model) return {};
 
     if (in_options) options = in_options;
 
@@ -886,63 +1072,77 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         if (sharedObjects) sharedObjects->share(shaderSet);
     }
 
-    vsg_buffers.resize(root->buffers.values.size());
-    for(size_t bi = 0; bi<root->buffers.values.size(); ++bi)
+    for(size_t mi=0; mi<model->meshes.values.size(); ++mi)
     {
-        vsg_buffers[bi] = createBuffer(root->buffers.values[bi]);
+        auto mesh = model->meshes.values[mi];
+        for(auto primitive : mesh->primitives.values)
+        {
+            if (!decodePrimitiveIfRequired(primitive))
+            {
+                vsg::info("Reqires draco decompression but no support available.");
+                return {};
+            }
+        }
     }
 
-    vsg_bufferViews.resize(root->bufferViews.values.size());
-    for(size_t bvi = 0; bvi<root->bufferViews.values.size(); ++bvi)
+    vsg_buffers.resize(model->buffers.values.size());
+    for(size_t bi = 0; bi<model->buffers.values.size(); ++bi)
     {
-        vsg_bufferViews[bvi] = createBufferView(root->bufferViews.values[bvi]);
+        vsg_buffers[bi] = createBuffer(model->buffers.values[bi]);
     }
 
-    vsg_accessors.resize(root->accessors.values.size());
-    for(size_t ai = 0; ai<root->accessors.values.size(); ++ai)
+    vsg_bufferViews.resize(model->bufferViews.values.size());
+    for(size_t bvi = 0; bvi<model->bufferViews.values.size(); ++bvi)
     {
-        vsg_accessors[ai] = createAccessor(root->accessors.values[ai]);
+        vsg_bufferViews[bvi] = createBufferView(model->bufferViews.values[bvi]);
     }
 
-    // vsg::info("create cameras = ", root->cameras.values.size());
-    vsg_cameras.resize(root->cameras.values.size());
-    for(size_t ci=0; ci<root->cameras.values.size(); ++ci)
+    vsg_accessors.resize(model->accessors.values.size());
+    for(size_t ai = 0; ai<model->accessors.values.size(); ++ai)
     {
-        vsg_cameras[ci] = createCamera(root->cameras.values[ci]);
+        vsg_accessors[ai] = createAccessor(model->accessors.values[ai]);
     }
 
-    // vsg::info("create skins = ", root->skins.values.size());
-    vsg_skins.resize(root->skins.values.size());
-    for(size_t si=0; si<root->skins.values.size(); ++si)
+    // vsg::info("create cameras = ", model->cameras.values.size());
+    vsg_cameras.resize(model->cameras.values.size());
+    for(size_t ci=0; ci<model->cameras.values.size(); ++ci)
     {
-        auto& gltf_skin = root->skins.values[si];
+        vsg_cameras[ci] = createCamera(model->cameras.values[ci]);
+    }
+
+    // vsg::info("create skins = ", model->skins.values.size());
+    vsg_skins.resize(model->skins.values.size());
+    for(size_t si=0; si<model->skins.values.size(); ++si)
+    {
+        auto& gltf_skin = model->skins.values[si];
+
         auto& vsg_skin = vsg_skins[si];
         vsg_skin = vsg::Node::create();
 
         assign_name_extras(*gltf_skin, *vsg_skin);
     }
 
-    // vsg::info("create samplers = ", root->samplers.values.size());
-    vsg_samplers.resize(root->samplers.values.size());
-    std::vector<uint32_t> maxDimensions(root->samplers.values.size(), 0);
-    for(size_t sai=0; sai<root->samplers.values.size(); ++sai)
+    // vsg::info("create samplers = ", model->samplers.values.size());
+    vsg_samplers.resize(model->samplers.values.size());
+    std::vector<uint32_t> maxDimensions(model->samplers.values.size(), 0);
+    for(size_t sai=0; sai<model->samplers.values.size(); ++sai)
     {
-        vsg_samplers[sai] = createSampler(root->samplers.values[sai]);
+        vsg_samplers[sai] = createSampler(model->samplers.values[sai]);
     }
 
-    // vsg::info("create images = ", root->images.values.size());
-    vsg_images.resize(root->images.values.size());
-    for(size_t ii=0; ii<root->images.values.size(); ++ii)
+    // vsg::info("create images = ", model->images.values.size());
+    vsg_images.resize(model->images.values.size());
+    for(size_t ii=0; ii<model->images.values.size(); ++ii)
     {
-         if (root->images.values[ii]) vsg_images[ii] = createImage(root->images.values[ii]);
+         if (model->images.values[ii]) vsg_images[ii] = createImage(model->images.values[ii]);
     }
 
 
-    // vsg::info("create textures = ", root->textures.values.size());
-    vsg_textures.resize(root->textures.values.size());
-    for(size_t ti=0; ti<root->textures.values.size(); ++ti)
+    // vsg::info("create textures = ", model->textures.values.size());
+    vsg_textures.resize(model->textures.values.size());
+    for(size_t ti=0; ti<model->textures.values.size(); ++ti)
     {
-        auto& gltf_texture = root->textures.values[ti];
+        auto& gltf_texture = model->textures.values[ti];
         auto& si = vsg_textures[ti] = createTexture(gltf_texture);
 
         if (si.sampler && si.image)
@@ -955,7 +1155,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     }
 
     // reset the maxLod's to the be appropriate for the dimensions of the images being used.
-    for(size_t sai=0; sai<root->samplers.values.size(); ++sai)
+    for(size_t sai=0; sai<model->samplers.values.size(); ++sai)
     {
         float maxLod = std::floor(std::log2f(static_cast<float>(maxDimensions[sai])));
         if (vsg_samplers[sai]->maxLod > maxLod)
@@ -965,30 +1165,30 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     }
 
-    // vsg::info("create materials = ", root->materials.values.size());
-    vsg_materials.resize(root->materials.values.size());
-    for(size_t mi=0; mi<root->materials.values.size(); ++mi)
+    // vsg::info("create materials = ", model->materials.values.size());
+    vsg_materials.resize(model->materials.values.size());
+    for(size_t mi=0; mi<model->materials.values.size(); ++mi)
     {
-        vsg_materials[mi] = createMaterial(root->materials.values[mi]);
+        vsg_materials[mi] = createMaterial(model->materials.values[mi]);
     }
 
-    // vsg::info("create meshes = ", root->meshes.values.size());
-    vsg_meshes.resize(root->meshes.values.size());
-    for(size_t mi=0; mi<root->meshes.values.size(); ++mi)
+    // vsg::info("create meshes = ", model->meshes.values.size());
+    vsg_meshes.resize(model->meshes.values.size());
+    for(size_t mi=0; mi<model->meshes.values.size(); ++mi)
     {
-        vsg_meshes[mi] = createMesh(root->meshes.values[mi]);
+        vsg_meshes[mi] = createMesh(model->meshes.values[mi]);
     }
 
-    // vsg::info("create nodes = ", root->nodes.values.size());
-    vsg_nodes.resize(root->nodes.values.size());
-    for(size_t ni=0; ni<root->nodes.values.size(); ++ni)
+    // vsg::info("create nodes = ", model->nodes.values.size());
+    vsg_nodes.resize(model->nodes.values.size());
+    for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
     {
-        vsg_nodes[ni] = createNode(root->nodes.values[ni]);
+        vsg_nodes[ni] = createNode(model->nodes.values[ni]);
     }
 
-    for(size_t ni=0; ni<root->nodes.values.size(); ++ni)
+    for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
     {
-        auto& gltf_node = root->nodes.values[ni];
+        auto& gltf_node = model->nodes.values[ni];
 
         if (!gltf_node->children.values.empty())
         {
@@ -1002,26 +1202,26 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         }
     }
 
-    // vsg::info("scene = ", root->scene);
-    // vsg::info("scenes = ", root->scenes.values.size());
+    // vsg::info("scene = ", model->scene);
+    // vsg::info("scenes = ", model->scenes.values.size());
 
-    vsg_scenes.resize(root->scenes.values.size());
-    for(size_t sci = 0; sci < root->scenes.values.size(); ++sci)
+    vsg_scenes.resize(model->scenes.values.size());
+    for(size_t sci = 0; sci < model->scenes.values.size(); ++sci)
     {
-        vsg_scenes[sci] = createScene(root->scenes.values[sci]);
+        vsg_scenes[sci] = createScene(model->scenes.values[sci]);
     }
 
     // create root node
     if (vsg_scenes.size() > 1)
     {
         auto vsg_switch = vsg::Switch::create();
-        for(size_t sci = 0; sci < root->scenes.values.size(); ++sci)
+        for(size_t sci = 0; sci < model->scenes.values.size(); ++sci)
         {
             auto& vsg_scene = vsg_scenes[sci];
             vsg_switch->addChild(true, vsg_scene);
         }
 
-        vsg_switch->setSingleChildOn(root->scene.value);
+        vsg_switch->setSingleChildOn(model->scene.value);
 
         // vsg::info("Created a scenes with a switch");
 

@@ -141,6 +141,26 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
+        enum ComponentType : uint32_t
+        {
+            COMPONENT_TYPE_UNDEFINED = 0,
+            COMPONENT_TYPE_BYTE = 5120,
+            COMPONENT_TYPE_UNSIGNED_BYTE = 5121,
+            COMPONENT_TYPE_SHORT = 5122,
+            COMPONENT_TYPE_UNSIGNED_SHORT = 5123,
+            COMPONENT_TYPE_INT = 5124,
+            COMPONENT_TYPE_UNSIGNED_INT = 5125,
+            COMPONENT_TYPE_FLOAT = 5126,
+            COMPONENT_TYPE_DOUBLE = 5130
+        };
+
+        struct DataProperties
+        {
+            uint32_t componentType = 0;
+            uint32_t componentSize = 0;
+            uint32_t componentCount = 0;
+        };
+
         struct VSGXCHANGE_DECLSPEC Accessor : public vsg::Inherit<NameExtensionsExtras, Accessor>
         {
             glTFid bufferView;
@@ -152,6 +172,8 @@ namespace vsgXchange
             vsg::ValuesSchema<double> max;
             vsg::ValuesSchema<double> min;
             vsg::ref_ptr<Sparse> sparse;
+
+            DataProperties getDataProperties() const;
 
             void report();
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -360,6 +382,20 @@ namespace vsgXchange
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
+        /// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_draco_mesh_compression
+        struct VSGXCHANGE_DECLSPEC KHR_draco_mesh_compression : public vsg::Inherit<ExtensionsExtras, KHR_draco_mesh_compression>
+        {
+            glTFid bufferView;
+            Attributes attributes;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_draco_mesh_compression::create(*this); }
+
+            void report();
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
         struct VSGXCHANGE_DECLSPEC Node : public vsg::Inherit<NameExtensionsExtras, Node>
         {
             glTFid camera;
@@ -514,6 +550,8 @@ namespace vsgXchange
 
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
 
+            vsg::ref_ptr<glTF> model;
+
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_buffers;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_bufferViews;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_accessors;
@@ -533,6 +571,8 @@ namespace vsgXchange
             void assign_extras(ExtensionsExtras& src, vsg::Object& dest);
             void assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest);
 
+            bool decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> gltf_primitive);
+
             vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
             vsg::ref_ptr<vsg::Data> createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor);
@@ -545,7 +585,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene);
 
-            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> root, vsg::ref_ptr<const vsg::Options> options);
+            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
         };
 
         /// function for extracting components of a uri

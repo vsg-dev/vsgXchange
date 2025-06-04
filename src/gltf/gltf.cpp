@@ -23,10 +23,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsgXchange;
 
-#ifdef vsgXchange_draco
-#include "draco/core/decoder_buffer.h"
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Extensions
@@ -37,6 +33,10 @@ void gltf::Extensions::report()
     for(auto& [name, ext] : values)
     {
         vsg::info("    {", name , ", ", ext->className()," }");
+        if (auto draco_extension = ext->cast<KHR_draco_mesh_compression>())
+        {
+            draco_extension->report();
+        }
     }
     vsg::info("    }");
 }
@@ -224,6 +224,34 @@ void gltf::Accessor::read_object(vsg::JSONParser& parser, const std::string_view
     }
     else NameExtensionsExtras::read_object(parser, property);
 }
+
+gltf::DataProperties gltf::Accessor::getDataProperties() const
+{
+    gltf::DataProperties properties;
+    properties.componentType = componentType;
+    switch(componentType)
+    {
+        case(COMPONENT_TYPE_BYTE):
+        case(COMPONENT_TYPE_UNSIGNED_BYTE): properties.componentSize = 1; break;
+        case(COMPONENT_TYPE_SHORT):
+        case(COMPONENT_TYPE_UNSIGNED_SHORT): properties.componentSize = 2; break;
+        case(COMPONENT_TYPE_INT):
+        case(COMPONENT_TYPE_UNSIGNED_INT): properties.componentSize = 4; break;
+        case(COMPONENT_TYPE_FLOAT): properties.componentSize = 4; break;
+        case(COMPONENT_TYPE_DOUBLE): properties.componentSize = 4; break;
+    }
+
+    if      (type=="SCALAR") properties.componentCount = 1;
+    else if (type=="VEC2")   properties.componentCount = 2;
+    else if (type=="VEC3")   properties.componentCount = 3;
+    else if (type=="VEC4")   properties.componentCount = 4;
+    else if (type=="MAT2")   properties.componentCount = 4;
+    else if (type=="MAT3")   properties.componentCount = 9;
+    else if (type=="MAT4")   properties.componentCount = 16;
+
+    return properties;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -514,6 +542,29 @@ void gltf::Mesh::read_array(vsg::JSONParser& parser, const std::string_view& pro
     if (property == "primitives") parser.read_array(primitives);
     else if (property == "weights") parser.read_array(weights);
     else parser.warning();
+}
+
+void gltf::KHR_draco_mesh_compression::report()
+{
+    vsg::info("KHR_draco_mesh_compression { ");
+    ExtensionsExtras::report();
+    vsg::info("    attributes = {");
+    for(auto& [semantic, id] : attributes.values) vsg::info("        ", semantic, ", ", id);
+    vsg::info("    }");
+    vsg::info("    bufferView = ", bufferView);
+    vsg::info("} ");
+}
+
+void gltf::KHR_draco_mesh_compression::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "bufferView") input >> bufferView;
+    else parser.warning();
+}
+
+void gltf::KHR_draco_mesh_compression::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "attributes") parser.read_object(attributes);
+    else ExtensionsExtras::read_object(parser, property);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1182,6 +1233,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     parser.options = options;
 
     // set up the supported extensions
+    parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
     parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
     parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
 
@@ -1280,6 +1332,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     parser.options = options;
 
     // set up the supported extensions
+    parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
     parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
     parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
 
@@ -1444,7 +1497,7 @@ bool gltf::dataURI(const std::string_view& uri, std::string_view& mimeType, std:
     value = std::string_view(&uri[comma+1], uri.size() - comma -1);
 
     return true;
-};
+}
 
 vsg::Path gltf::mimeTypeToExtension(const std::string_view& mimeType)
 {
@@ -1454,4 +1507,4 @@ vsg::Path gltf::mimeTypeToExtension(const std::string_view& mimeType)
     else if (mimeType=="image/gif") return ".gif";
     else if (mimeType=="image/ktx") return ".ktx";
     return "";
-};
+}
