@@ -23,6 +23,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
+#include <vsg/threading/OperationThreads.h>
+
 #include <vsgXchange/gltf.h>
 
 namespace vsgXchange
@@ -210,7 +212,7 @@ namespace vsgXchange
             void report(vsg::LogOutput& output);
         };
 
-        class BatchTable;
+        struct BatchTable;
 
         struct VSGXCHANGE_DECLSPEC Batch : public vsg::Inherit<vsg::JSONtoMetaDataSchema, Batch>
         {
