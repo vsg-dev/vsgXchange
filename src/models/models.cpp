@@ -11,11 +11,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 </editor-fold> */
 
 #include <vsgXchange/models.h>
+#include <vsgXchange/gltf.h>
 
 using namespace vsgXchange;
 
 models::models()
 {
+    add(gltf::create());
+
 #ifdef vsgXchange_assimp
     add(assimp::create());
 #endif

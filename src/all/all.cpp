@@ -17,6 +17,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/gdal.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
+#include <vsgXchange/gltf.h>
+#include <vsgXchange/bin.h>
+#include <vsgXchange/3d-tiles.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>
@@ -48,6 +51,10 @@ void vsgXchange::init()
     vsg::ObjectFactory::instance()->add<vsgXchange::dds>();
     vsg::ObjectFactory::instance()->add<vsgXchange::ktx>();
 
+    vsg::ObjectFactory::instance()->add<vsgXchange::bin>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::gltf>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::Tiles3D>();
+
     vsg::ObjectFactory::instance()->add<vsgXchange::openexr>();
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
     vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
@@ -66,11 +73,17 @@ all::all()
 
     add(vsg::VSG::create());
     add(vsg::spirv::create());
-    add(vsg::json::create());
     add(vsg::glsl::create());
-    add(vsg::txt::create());
+
+    add(bin::create());
+    add(gltf::create());
+    add(Tiles3D::create());
+
+    add(vsg::json::create());
 
     add(cpp::create());
+
+    add(vsg::txt::create());
 
     add(stbi::create());
     add(dds::create());

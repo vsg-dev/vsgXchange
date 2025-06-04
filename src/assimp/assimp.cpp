@@ -178,9 +178,12 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
         while (!fin.eof())
         {
             fin.read(&buffer[0], buffer.size());
-            const auto bytes_readed = fin.gcount();
-            input.append(&buffer[0], bytes_readed);
+            const auto bytes_read = fin.gcount();
+            if (bytes_read==0) break;
+            input.append(&buffer[0], bytes_read);
         }
+
+        vsg::info("assimp::Implementation::read() input.size() = ", input.size());
 
         if (auto scene = importer.ReadFileFromMemory(input.data(), input.size(), _importFlags); scene)
         {

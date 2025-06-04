@@ -268,11 +268,13 @@ void printHelp(std::ostream& out)
     out << "    vsgconv input_filename output_filename\n";
     out << "    vsgconv input_filename_1 input_filename_2 output_filename\n";
     out << "Options:\n";
-    out << "    --features          # list all ReaderWriters and the formats supported\n";
-    out << "    --features rw_name  # list formats supported by the specified ReaderWriter\n";
-    out << "    --nc --no-compile   # do not compile shaders to SPIRV\n";
-    out << "    --rgb               # leave RGB source data in its original form rather than converting to RGBA\n";
-    out << "    -v --version        # report version\n";
+    out << "    --features            # list all ReaderWriters and the formats supported\n";
+    out << "    --features <rw_name>  # list formats supported by the specified ReaderWriter\n";
+    out << "    --nc --no-compile     # do not compile shaders to SPIRV\n";
+    out << "    --rgb                 # leave RGB source data in its original form rather than converting to RGBA\n";
+    out << "    --ot <count>          # for loading vsg::OperationThreads with <count> threads.\n";
+    out << "    -s                    # report load time stats\n";
+    out << "    -v --version          # report version\n";
 }
 
 int main(int argc, char** argv)
@@ -291,7 +293,13 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    if (uint32_t numOperationThreads = 0; arguments.read("--ot", numOperationThreads)) options->operationThreads = vsg::OperationThreads::create(numOperationThreads);
+
     if (arguments.read("--rgb")) options->mapRGBtoRGBAHint = false;
+
+    bool reportLoadStats = arguments.read("-s");
+
+    if (int log_level = 0; arguments.read("--log-level", log_level)) vsg::Logger::instance()->level = vsg::Logger::Level(log_level);
 
     // read any command line options that the ReaderWriter supports
     arguments.read(options);
@@ -345,6 +353,8 @@ int main(int argc, char** argv)
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
     VsgObjects vsgObjects;
 
+    auto beforeLoad = vsg::clock::now();
+
     // read any input files
     for (int i = 1; i < argc - 1; ++i)
     {
@@ -373,6 +383,10 @@ int main(int argc, char** argv)
     {
         options->sharedObjects->remove(outputFilename, options);
     }
+
+    auto afterLoad = vsg::clock::now();
+    double timeToLoad = std::chrono::duration<double, std::chrono::milliseconds::period>(afterLoad - beforeLoad).count();
+    if (reportLoadStats) std::cout<<"Time to load: "<<timeToLoad<<"ms"<<std::endl;
 
     unsigned int numImages = 0;
     unsigned int numShaders = 0;

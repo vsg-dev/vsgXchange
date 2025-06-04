@@ -13,6 +13,8 @@ set(HEADERS
     ${HEADER_PATH}/freetype.h
     ${HEADER_PATH}/images.h
     ${HEADER_PATH}/models.h
+    ${HEADER_PATH}/gltf.h
+    ${HEADER_PATH}/3DTiles.h
 )
 
 set(SOURCES
@@ -22,7 +24,14 @@ set(SOURCES
     stbi/stbi.cpp
     dds/dds.cpp
     images/images.cpp
+    bin/bin.cpp
 )
+
+# add gltf
+include(gltf/build_vars.cmake)
+
+# add 3D Tiles
+include(3DTiles/build_vars.cmake)
 
 # add freetype if available
 include(freetype/build_vars.cmake)
