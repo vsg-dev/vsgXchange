@@ -19,7 +19,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/models.h>
 #include <vsgXchange/gltf.h>
 #include <vsgXchange/bin.h>
-#include <vsgXchange/3d-tiles.h>
+#include <vsgXchange/3DTiles.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>

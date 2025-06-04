@@ -652,7 +652,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 auto itr = ushort_indices->begin();
                 for(auto value : *ubyte_indices)
                 {
-                    *(itr++) = static_cast<ushort>(value);
+                    *(itr++) = static_cast<uint16_t>(value);
                 }
 
                 vid->assignIndices(ushort_indices);
