@@ -615,14 +615,21 @@ void gltf::EXT_mesh_gpu_instancing::report()
     vsg::info("EXT_mesh_gpu_instancing { ");
     ExtensionsExtras::report();
     vsg::info("    attributes = {");
-    for(auto& [semantic, id] : attributes.values) vsg::info("        ", semantic, ", ", id);
+    if (attributes)
+    {
+        for(auto& [semantic, id] : attributes->values) vsg::info("        ", semantic, ", ", id);
+    }
     vsg::info("    }");
     vsg::info("} ");
 }
 
 void gltf::EXT_mesh_gpu_instancing::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "attributes") parser.read_object(attributes);
+    if (property == "attributes")
+    {
+        if (!attributes) attributes = Attributes::create();
+        parser.read_object(*attributes);
+    }
     else ExtensionsExtras::read_object(parser, property);
 }
 
