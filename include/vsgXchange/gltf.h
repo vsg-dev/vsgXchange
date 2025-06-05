@@ -396,6 +396,18 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        /// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_mesh_gpu_instancing/README.md
+        struct VSGXCHANGE_DECLSPEC EXT_mesh_gpu_instancing : public vsg::Inherit<ExtensionsExtras, EXT_mesh_gpu_instancing>
+        {
+            Attributes attributes;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return EXT_mesh_gpu_instancing::create(*this); }
+
+            void report();
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+        };
+
         struct VSGXCHANGE_DECLSPEC Node : public vsg::Inherit<NameExtensionsExtras, Node>
         {
             glTFid camera;
