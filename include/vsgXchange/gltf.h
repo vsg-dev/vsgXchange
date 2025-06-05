@@ -29,6 +29,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsgXchange/Version.h>
 
+#include <stack>
+
 namespace vsgXchange
 {
 
@@ -399,7 +401,7 @@ namespace vsgXchange
         /// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Vendor/EXT_mesh_gpu_instancing/README.md
         struct VSGXCHANGE_DECLSPEC EXT_mesh_gpu_instancing : public vsg::Inherit<ExtensionsExtras, EXT_mesh_gpu_instancing>
         {
-            Attributes attributes;
+            vsg::ref_ptr<Attributes> attributes;
 
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return EXT_mesh_gpu_instancing::create(*this); }
@@ -577,6 +579,9 @@ namespace vsgXchange
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_nodes;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_scenes;
 
+            vsg::ref_ptr<vsg::DescriptorConfigurator> default_material;
+            vsg::ref_ptr<Attributes> globalInstancedAttributes;
+
             // map used to map gltf attribute names to ShaderSet vertex attribute names
             std::map<std::string, std::string> attributeLookup;
 
@@ -593,7 +598,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::Data> createImage(vsg::ref_ptr<gltf::Image> gltf_image);
             SamplerImage createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture);
             vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh);
+            vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene);
 

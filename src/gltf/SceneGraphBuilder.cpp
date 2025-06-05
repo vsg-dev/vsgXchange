@@ -49,7 +49,11 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"POSITION", "vsg_Vertex"},
         {"NORMAL", "vsg_Normal"},
         {"TEXCOORD_0", "vsg_TexCoord0"},
-        {"COLOR", "vsg_Color"}
+        {"COLOR", "vsg_Color"},
+        {"POSITION", "vsg_Position"},
+        {"TRANSLATION", "vsg_Position"},
+        {"ROTATION", "vsg_Rotation"},
+        {"SCALE", "vsg_Scale"}
     };
 }
 
@@ -539,7 +543,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
     return vsg_material;
 }
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh)
+vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes)
 {
 /*
     struct Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
@@ -584,7 +588,16 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
     for(auto& primitive : gltf_mesh->primitives.values)
     {
-        auto vsg_material = vsg_materials[primitive->material.value];
+        vsg::ref_ptr<vsg::DescriptorConfigurator> vsg_material;
+        if (primitive->material)
+        {
+            vsg_material = vsg_materials[primitive->material.value];
+        }
+        else
+        {
+            vsg::info("Material for primitive not assigned, primitive = ", primitive, ", primitive->material = ", primitive->material);
+            vsg_material = default_material;
+        }
 
         auto config = vsg::GraphicsPipelineConfigurator::create(vsg_material->shaderSet);
         config->descriptorConfigurator = vsg_material;
@@ -611,28 +624,43 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         vsg::DataList vertexArrays;
 
-        auto assignArray = [&](const std::string& attribute_name) -> bool
+        auto assignArray = [&](Attributes& attrib, VkVertexInputRate vertexInputRate, const std::string& attribute_name) -> bool
         {
-            auto array_itr = primitive->attributes.values.find(attribute_name);
-            if (array_itr == primitive->attributes.values.end()) return false;
+            auto array_itr = attrib.values.find(attribute_name);
+            if (array_itr == attrib.values.end()) return false;
 
             auto name_itr = attributeLookup.find(attribute_name);
-            if (name_itr == attributeLookup.end()) return true;
+            if (name_itr == attributeLookup.end()) return false;
 
-            config->assignArray(vertexArrays, name_itr->second, VK_VERTEX_INPUT_RATE_VERTEX, vsg_accessors[array_itr->second.value]);
+            config->assignArray(vertexArrays, name_itr->second, vertexInputRate, vsg_accessors[array_itr->second.value]);
             return true;
         };
 
-        assignArray("POSITION");
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION");
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "NORMAL");
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_0");
 
-        assignArray("NORMAL");
-
-        assignArray("TEXCOORD_0");
-
-        if (!assignArray("COLOR_0"))
+        uint32_t instanceCount = 1;
+        if (instancedAttributes)
         {
-            auto defaultColor = vsg::vec4Value::create(1.0f, 1.0f, 1.0f, 1.0f);
+            for(auto& [name, id] : instancedAttributes->values)
+            {
+                instanceCount = vsg_accessors[id.value]->valueCount();
+            }
+        }
+
+        if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "COLOR_0"))
+        {
+            auto defaultColor = vsg::vec4Array::create(instanceCount, vsg::vec4(1.0f, 1.0f, 1.0f, 1.0f));
             config->assignArray(vertexArrays, "vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, defaultColor);
+        }
+
+
+        if (instancedAttributes)
+        {
+            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "TRANSLATION");
+            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "ROTATION");
+            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "SCALE");
         }
 
         vsg::ref_ptr<vsg::Command> draw;
@@ -642,7 +670,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto vid = vsg::VertexIndexDraw::create();
             assign_extras(*primitive, *vid);
             vid->assignArrays(vertexArrays);
-            vid->instanceCount = 1;
+            vid->instanceCount = instanceCount;
 
             auto indices = vsg_accessors[primitive->indices.value];
             if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
@@ -664,8 +692,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 vid->indexCount = static_cast<uint32_t>(indices->valueCount());
             }
 
-
-
             draw = vid;
         }
         else
@@ -673,7 +699,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto vd = vsg::VertexDraw::create();
             assign_extras(*primitive, *vd);
             vd->assignArrays(vertexArrays);
-            vd->instanceCount = 1;
+            vd->instanceCount = instanceCount;
             vd->vertexCount = vertexArrays.front()->valueCount();
             draw = vd;
         }
@@ -767,6 +793,26 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
 {
     vsg::ref_ptr<vsg::Node> vsg_node;
 
+    vsg::ref_ptr<vsg::Node> vsg_mesh;
+    if (gltf_node->mesh)
+    {
+        vsg_mesh = vsg_meshes[gltf_node->mesh.value];
+        auto gltf_mesh = model->meshes.values[gltf_node->mesh.value];
+        if (auto mesh_gpu_instancing = gltf_node->extension<EXT_mesh_gpu_instancing>("EXT_mesh_gpu_instancing"))
+        {
+            vsg_mesh = createMesh(gltf_mesh, mesh_gpu_instancing->attributes);
+        }
+        else
+        {
+            if (!vsg_meshes[gltf_node->mesh.value])
+            {
+                vsg_meshes[gltf_node->mesh.value] = createMesh(gltf_mesh, globalInstancedAttributes);
+            }
+
+            vsg_mesh = vsg_meshes[gltf_node->mesh.value];
+        }
+    }
+
     bool isTransform = !(gltf_node->matrix.values.empty()) ||
                         !(gltf_node->rotation.values.empty()) ||
                         !(gltf_node->scale.values.empty()) ||
@@ -775,14 +821,14 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     size_t numChildren = gltf_node->children.values.size();
     if (gltf_node->camera) ++numChildren;
     if (gltf_node->skin) ++numChildren;
-    if (gltf_node->mesh) ++numChildren;
+    if (vsg_mesh) ++numChildren;
 
     if (isTransform)
     {
         auto transform = vsg::MatrixTransform::create();
         if (gltf_node->camera) transform->addChild(vsg_cameras[gltf_node->camera.value]);
         else if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
-        else if (gltf_node->mesh) transform->addChild(vsg_meshes[gltf_node->mesh.value]);
+        else if (vsg_mesh) transform->addChild(vsg_mesh);
 
         if (gltf_node->matrix.values.size()==16)
         {
@@ -817,7 +863,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
 
         if (gltf_node->camera) group->addChild(vsg_cameras[gltf_node->camera.value]);
         else if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
-        else if (gltf_node->mesh) group->addChild(vsg_meshes[gltf_node->mesh.value]);
+        else if (vsg_mesh) group->addChild(vsg_mesh);
 
         vsg_node = group;
     }
@@ -825,7 +871,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     {
         if (gltf_node->camera) vsg_node = vsg_cameras[gltf_node->camera.value];
         else if (gltf_node->skin) vsg_node = vsg_skins[gltf_node->skin.value];
-        else if (gltf_node->mesh) vsg_node = vsg_meshes[gltf_node->mesh.value];
+        else if (vsg_mesh) vsg_node = vsg_mesh;
         else vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
     }
 
@@ -1072,6 +1118,21 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         if (sharedObjects) sharedObjects->share(shaderSet);
     }
 
+    if (!default_material)
+    {
+        default_material = vsg::DescriptorConfigurator::create();
+        default_material->shaderSet = shaderSet;
+
+        auto pbrMaterialValue = vsg::PbrMaterialValue::create();
+        auto& pbrMaterial = pbrMaterialValue->value();
+
+        // defaults make surface grey and washed out, so reset them to provide something closer to glTF example viewer.
+        pbrMaterial.metallicFactor = 0.0f;
+        pbrMaterial.roughnessFactor = 0.0f;
+
+        default_material->assignDescriptor("material", pbrMaterialValue);
+    }
+
     for(size_t mi=0; mi<model->meshes.values.size(); ++mi)
     {
         auto mesh = model->meshes.values[mi];
@@ -1173,11 +1234,8 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     }
 
     // vsg::info("create meshes = ", model->meshes.values.size());
+    // populate vsg_meshes in the createNode method.
     vsg_meshes.resize(model->meshes.values.size());
-    for(size_t mi=0; mi<model->meshes.values.size(); ++mi)
-    {
-        vsg_meshes[mi] = createMesh(model->meshes.values[mi]);
-    }
 
     // vsg::info("create nodes = ", model->nodes.values.size());
     vsg_nodes.resize(model->nodes.values.size());
