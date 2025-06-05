@@ -29,8 +29,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsgXchange/Version.h>
 
-#include <stack>
-
 namespace vsgXchange
 {
 
