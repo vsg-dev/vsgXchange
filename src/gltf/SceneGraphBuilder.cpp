@@ -937,6 +937,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
     return vsg_scene;
 }
 
+#ifdef vsgXchange_draco
 template<typename T>
 static bool CopyDracoAttributes(const draco::PointAttribute* draco_attribute, void* ptr, draco::PointIndex::ValueType num_points)
 {
@@ -953,7 +954,7 @@ static bool CopyDracoAttributes(const draco::PointAttribute* draco_attribute, vo
 
     return true;
 }
-
+#endif
 
 bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> primitive)
 {
