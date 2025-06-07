@@ -37,6 +37,10 @@ void gltf::Extensions::report()
         {
             draco_extension->report();
         }
+        else if (auto instancing_extension = ext->cast<EXT_mesh_gpu_instancing>())
+        {
+            instancing_extension->report();
+        }
     }
     vsg::info("    }");
 }
@@ -604,6 +608,29 @@ void gltf::Node::read_number(vsg::JSONParser& parser, const std::string_view& pr
     else if (property=="skin") input >> skin;
     else if (property=="mesh") input >> mesh;
     else parser.warning();
+}
+
+void gltf::EXT_mesh_gpu_instancing::report()
+{
+    vsg::info("EXT_mesh_gpu_instancing { ");
+    ExtensionsExtras::report();
+    vsg::info("    attributes = {");
+    if (attributes)
+    {
+        for(auto& [semantic, id] : attributes->values) vsg::info("        ", semantic, ", ", id);
+    }
+    vsg::info("    }");
+    vsg::info("} ");
+}
+
+void gltf::EXT_mesh_gpu_instancing::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "attributes")
+    {
+        if (!attributes) attributes = Attributes::create();
+        parser.read_object(*attributes);
+    }
+    else ExtensionsExtras::read_object(parser, property);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1236,6 +1263,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
     parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
     parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
+    parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
 
     parser.buffer.resize(fileSize);
     fin.seekg(0);
@@ -1335,6 +1363,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
     parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
     parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
+    parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
 
     parser.buffer.resize(jsonSize);
     fin.read(reinterpret_cast<char*>(parser.buffer.data()), jsonSize);
