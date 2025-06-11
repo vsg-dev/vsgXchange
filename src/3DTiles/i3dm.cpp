@@ -346,8 +346,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         opt->instanceNodeHint = vsg::Options::INSTANCE_TRANSLATIONS | vsg::Options::INSTANCE_ROTATIONS | vsg::Options::INSTANCE_SCALES;
     }
 
-    auto before = vsg::clock::now();
-
     vsg::ref_ptr<vsg::Node> model;
     if (header.gltfFormat==0)
     {
@@ -372,9 +370,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         model = vsg::read_cast<vsg::Node>(binary_fin, opt);
     }
-
-    vsg::info(filename, " time to load ", std::chrono::duration<double, std::chrono::milliseconds::period>(vsg::clock::now() - before).count(), "ms");
-
 
     if (!model) return {};
 
