@@ -379,7 +379,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
     vsg_material->shaderSet = shaderSet;
 
     vsg_material->two_sided = gltf_material->doubleSided;
-    // TODO: vsg_material->defines.insert("VSG_TWO_SIDED_LIGHTING");
+    if (vsg_material->two_sided) vsg_material->defines.insert("VSG_TWO_SIDED_LIGHTING");
 
     auto pbrMaterialValue = vsg::PbrMaterialValue::create();
     auto& pbrMaterial = pbrMaterialValue->value();
@@ -576,8 +576,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // 5, TRIANGLE_STRIP
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN // 6, TRIANGLE_FAN
     };
-
-
 #if 0
     vsg::info("mesh = {");
     vsg::info("    primitives = ", gltf_mesh->primitives.values.size());
@@ -601,7 +599,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         auto config = vsg::GraphicsPipelineConfigurator::create(vsg_material->shaderSet);
         config->descriptorConfigurator = vsg_material;
-        // TODO: if (options) config->assignInheritedState(options->inheritedState);
+        if (options) config->assignInheritedState(options->inheritedState);
 
 #if 0
         vsg::info("    primitive = {");
