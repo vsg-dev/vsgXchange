@@ -1509,6 +1509,10 @@ bool gltf::getFeatures(Features& features) const
     features.extensionFeatureMap[".gltf"] = supported_features;
     features.extensionFeatureMap[".glb"] = supported_features;
 
+    features.optionNameTypeMap[gltf::report] = vsg::type_name<bool>();
+    features.optionNameTypeMap[gltf::culling] = vsg::type_name<bool>();
+    features.optionNameTypeMap[gltf::disable_gltf] = vsg::type_name<bool>();
+
     return true;
 }
 

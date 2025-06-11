@@ -561,6 +561,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
+            int instanceNodeHint = vsg::Options::INSTANCE_NONE;
 
             vsg::ref_ptr<glTF> model;
 
@@ -578,7 +579,6 @@ namespace vsgXchange
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_scenes;
 
             vsg::ref_ptr<vsg::DescriptorConfigurator> default_material;
-            vsg::ref_ptr<Attributes> globalInstancedAttributes;
 
             // map used to map gltf attribute names to ShaderSet vertex attribute names
             std::map<std::string, std::string> attributeLookup;
@@ -587,6 +587,10 @@ namespace vsgXchange
             void assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest);
 
             bool decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> gltf_primitive);
+
+            void flattenTransforms(gltf::Node& node, const vsg::dmat4& transform);
+
+            bool getTransform(gltf::Node& node, vsg::dmat4& transform);
 
             vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
@@ -598,7 +602,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
-            vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene);
+            vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
 
             vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
         };

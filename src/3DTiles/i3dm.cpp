@@ -20,6 +20,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/nodes/InstanceNode.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/utils/CommandLine.h>
+#include <vsg/utils/ComputeBounds.h>
 #include <vsg/ui/UIEvent.h>
 
 #include <fstream>
@@ -335,9 +336,15 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         vsg::decompose(rot_matrix, temp_translation, rotation, temp_scale);
     };
 
+    bool gpuInstancing = vsg::value<bool>(true, Tiles3D::instancing, options);
+
     auto opt = vsg::clone(options);
     opt->extensionHint = ".glb";
     opt->formatCoordinateConventions[".glb"] = vsg::CoordinateConvention::Y_UP;
+    if (gpuInstancing)
+    {
+        opt->instanceNodeHint = vsg::Options::INSTANCE_TRANSLATIONS | vsg::Options::INSTANCE_ROTATIONS | vsg::Options::INSTANCE_SCALES;
+    }
 
     auto before = vsg::clock::now();
 
@@ -372,18 +379,37 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     if (!model) return {};
 
     // if required decorate the model to provide multiple instances, or provide the global translation.
-    bool gpuInstancing = true;
     if (gpuInstancing)
     {
+        auto translations = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
+        auto rotations = vsg::quatArray::create(featureTable->INSTANCES_LENGTH);
+        auto scales = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
+
         auto instanceNode = vsg::InstanceNode::create();
-        instanceNode->translations = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
-        instanceNode->rotations = vsg::quatArray::create(featureTable->INSTANCES_LENGTH);
-        instanceNode->scales = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
+        instanceNode->firstInstance = 0;
+        instanceNode->instanceCount = featureTable->INSTANCES_LENGTH;
+        instanceNode->setTranslations(translations);
+        instanceNode->setRotations(rotations);
+        instanceNode->setScales(scales);
         instanceNode->child = model;
 
-        auto& translations = *(instanceNode->translations);
-        auto& rotations = *(instanceNode->rotations);
-        auto& scales = *(instanceNode->scales);
+        auto child_bound = vsg::visit<vsg::ComputeBounds>(model).bounds;
+        std::vector<vsg::dvec3> corners;
+        if (child_bound)
+        {
+            corners.emplace_back(child_bound.min.x, child_bound.min.y, child_bound.min.z);
+            corners.emplace_back(child_bound.max.x, child_bound.min.y, child_bound.min.z);
+            corners.emplace_back(child_bound.min.x, child_bound.max.y, child_bound.min.z);
+            corners.emplace_back(child_bound.max.x, child_bound.max.y, child_bound.min.z);
+            corners.emplace_back(child_bound.min.x, child_bound.min.y, child_bound.max.z);
+            corners.emplace_back(child_bound.max.x, child_bound.min.y, child_bound.max.z);
+            corners.emplace_back(child_bound.min.x, child_bound.max.y, child_bound.max.z);
+            corners.emplace_back(child_bound.max.x, child_bound.max.y, child_bound.max.z);
+        }
+
+        vsg::dbox transformed_bounds;
+
+        // vsg::info("child_bound = ", child_bound);
 
         for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
         {
@@ -391,10 +417,23 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             vsg::dquat rotation;
             getTransformComponents(i, translation, rotation, scale);
 
-            translations[i] = translation;
-            rotations[i] = rotation;
-            scales[i] = scale;
+            auto matrix = vsg::translate(translation) * vsg::rotate(rotation) * vsg::scale(scale);
+            for(auto& v : corners)
+            {
+                transformed_bounds.add(matrix * v);
+            }
+
+            translations->set(i, vsg::vec3(translation));
+            rotations->set(i, vsg::quat(rotation));
+            scales->set(i, vsg::vec3(scale));
         }
+
+        if (transformed_bounds)
+        {
+            instanceNode->bound.set((transformed_bounds.min + transformed_bounds.max)*0.5, vsg::length(transformed_bounds.min + transformed_bounds.max)*0.5);
+        }
+        // vsg::info("transformed_bounds = ", transformed_bounds);
+        // vsg::info("instanceNode->bounds = ", instanceNode->bound);
 
         if (rtc_center != vsg::dvec3())
         {
