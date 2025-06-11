@@ -51,8 +51,7 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"NORMAL", "vsg_Normal"},
         {"TEXCOORD_0", "vsg_TexCoord0"},
         {"COLOR", "vsg_Color"},
-        {"POSITION", "vsg_Position"},
-        {"TRANSLATION", "vsg_Position"},
+        {"TRANSLATION", "vsg_Translation"},
         {"ROTATION", "vsg_Rotation"},
         {"SCALE", "vsg_Scale"}
     };
@@ -678,7 +677,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         if (!instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
         {
             if ((instanceNodeHint & vsg::Options::INSTANCE_COLORS) != 0) config->enableArray("vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
-            if ((instanceNodeHint & vsg::Options::INSTANCE_TRANSLATIONS) != 0) config->enableArray("vsg_Position", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
+            if ((instanceNodeHint & vsg::Options::INSTANCE_TRANSLATIONS) != 0) config->enableArray("vsg_Translation", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
             if ((instanceNodeHint & vsg::Options::INSTANCE_ROTATIONS) != 0) config->enableArray("vsg_Rotation", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
             if ((instanceNodeHint & vsg::Options::INSTANCE_SCALES) != 0) config->enableArray("vsg_Scale", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
 
