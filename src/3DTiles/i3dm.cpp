@@ -318,11 +318,14 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             double value = featureTable->SCALE.values[i];
             scale.set(value, value, value);
         }
-
-        if (featureTable->SCALE_NON_UNIFORM && i*3 < featureTable->SCALE_NON_UNIFORM.values.size())
+        else if (featureTable->SCALE_NON_UNIFORM && i*3 < featureTable->SCALE_NON_UNIFORM.values.size())
         {
             const auto& values = featureTable->SCALE_NON_UNIFORM.values;
             scale.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
+        }
+        else
+        {
+            scale.set(1.0, 1.0, 1.0);
         }
 
         vsg::dvec3 normal_forward = vsg::cross(normal_up, normal_right);
@@ -376,6 +379,34 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     // if required decorate the model to provide multiple instances, or provide the global translation.
     if (gpuInstancing)
     {
+        // compute the centre of all positions
+        vsg::dvec3 instance_center;
+
+        if (featureTable->POSITION)
+        {
+            for (size_t i = 0; i*3 < featureTable->POSITION.values.size(); ++i)
+            {
+                const auto& values = featureTable->POSITION.values;
+                instance_center += vsg::dvec3(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            }
+            instance_center /= static_cast<double>(featureTable->POSITION.values.size()/3);
+
+            rtc_center += instance_center;
+        }
+        else if (featureTable->POSITION_QUANTIZED)
+        {
+            for (size_t i = 0; i*3 < featureTable->POSITION_QUANTIZED.values.size(); ++i)
+            {
+                const auto& values = featureTable->POSITION_QUANTIZED.values;
+                vsg::dvec3 quantizedPosition(static_cast<double>(values[i*3 + 0]), static_cast<double>(values[i*3 + 1]), static_cast<double>(values[i*3 + 2]));
+                instance_center += quantizeOffset + quantizedPosition * quantizeScale;
+            }
+
+            instance_center /= static_cast<double>(featureTable->POSITION_QUANTIZED.values.size()/3);
+
+            rtc_center += instance_center;
+        }
+
         auto translations = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
         auto rotations = vsg::quatArray::create(featureTable->INSTANCES_LENGTH);
         auto scales = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
@@ -388,52 +419,22 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         instanceNode->setScales(scales);
         instanceNode->child = model;
 
-        auto child_bound = vsg::visit<vsg::ComputeBounds>(model).bounds;
-        std::vector<vsg::dvec3> corners;
-        if (child_bound)
-        {
-            corners.emplace_back(child_bound.min.x, child_bound.min.y, child_bound.min.z);
-            corners.emplace_back(child_bound.max.x, child_bound.min.y, child_bound.min.z);
-            corners.emplace_back(child_bound.min.x, child_bound.max.y, child_bound.min.z);
-            corners.emplace_back(child_bound.max.x, child_bound.max.y, child_bound.min.z);
-            corners.emplace_back(child_bound.min.x, child_bound.min.y, child_bound.max.z);
-            corners.emplace_back(child_bound.max.x, child_bound.min.y, child_bound.max.z);
-            corners.emplace_back(child_bound.min.x, child_bound.max.y, child_bound.max.z);
-            corners.emplace_back(child_bound.max.x, child_bound.max.y, child_bound.max.z);
-        }
-
-        vsg::dbox transformed_bounds;
-
-        // vsg::info("child_bound = ", child_bound);
-
         for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
         {
             vsg::dvec3 translation, scale;
             vsg::dquat rotation;
             getTransformComponents(i, translation, rotation, scale);
 
-            auto matrix = vsg::translate(translation) * vsg::rotate(rotation) * vsg::scale(scale);
-            for(auto& v : corners)
-            {
-                transformed_bounds.add(matrix * v);
-            }
-
-            translations->set(i, vsg::vec3(translation));
+            translations->set(i, vsg::vec3(translation - instance_center));
             rotations->set(i, vsg::quat(rotation));
             scales->set(i, vsg::vec3(scale));
         }
-
-        if (transformed_bounds)
-        {
-            instanceNode->bound.set((transformed_bounds.min + transformed_bounds.max)*0.5, vsg::length(transformed_bounds.min + transformed_bounds.max)*0.5);
-        }
-        // vsg::info("transformed_bounds = ", transformed_bounds);
-        // vsg::info("instanceNode->bounds = ", instanceNode->bound);
 
         if (rtc_center != vsg::dvec3())
         {
             auto transform = vsg::MatrixTransform::create();
             transform->addChild(instanceNode);
+            transform->matrix = vsg::translate(rtc_center);
             model = transform;
         }
         else
