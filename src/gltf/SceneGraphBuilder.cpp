@@ -1066,7 +1066,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
         vsg_scene = vsg_nodes[gltf_scene->nodes.values[0].value];
     }
 
-    bool culling = vsg::value<bool>(true, gltf::culling, options);
+    bool culling = vsg::value<bool>(true, gltf::culling, options) && (instanceNodeHint == vsg::Options::INSTANCE_NONE);
     if (culling)
     {
         auto bounds = vsg::visit<vsg::ComputeBounds>(vsg_scene).bounds;
