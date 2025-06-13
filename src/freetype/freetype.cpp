@@ -61,7 +61,6 @@ namespace vsgXchange
         struct Contour
         {
             std::vector<vsg::vec2> points;
-            std::vector<vsg::vec3> edges;
         };
 
         using Contours = std::list<Contour>;
@@ -775,16 +774,6 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 for (auto& v : points)
                 {
                     extents.add(v);
-                }
-
-                auto& edges = contour.edges;
-                edges.resize(points.size() - 1);
-                for (size_t i = 0; i < edges.size(); ++i)
-                {
-                    vsg::vec2 dv = points[i + 1] - points[i];
-                    float len = vsg::length(dv);
-                    dv /= len;
-                    edges[i].set(dv.x, dv.y, len);
                 }
             }
 
