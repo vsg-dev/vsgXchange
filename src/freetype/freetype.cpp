@@ -765,6 +765,11 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                     return v.x >= min_x && v.x <= max_x &&
                            v.y >= min_y && v.y <= max_y;
                 }
+
+                bool containsY(float y) const
+                {
+                    return y >= min_y && y <= max_y;
+                }
             } extents;
 
             // compute edges and bounding volume
@@ -807,22 +812,18 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         stripContour.points.push_back(end - side);
                         stripContour.points.push_back(start - side);
 
-                        vsg::vec2 min{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-                        vsg::vec2 max{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+                        Extents stripExtents;
                         for (const auto& point : stripContour.points)
                         {
-                            min.x = std::min(min.x, point.x);
-                            min.y = std::min(min.y, point.y);
-                            max.x = std::max(max.x, point.x);
-                            max.y = std::max(max.y, point.y);
+                            stripExtents.add(point);
                         }
 
                         stripContour.points.push_back(stripContour.points.front());
 
-                        int minR = std::max(-delta, static_cast<int>(std::floor(min.y)));
-                        int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(max.y)));
-                        int minC = std::max(-delta, static_cast<int>(std::floor(min.x)));
-                        int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(max.x)));
+                        int minR = std::max(-delta, static_cast<int>(std::floor(stripExtents.min_y)));
+                        int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(stripExtents.max_y)));
+                        int minC = std::max(-delta, static_cast<int>(std::floor(stripExtents.min_x)));
+                        int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(stripExtents.max_x)));
                         scanlineBuffer.resize(maxC - minC);
                         for (int r = minR; r < maxR; ++r)
                         {
@@ -897,22 +898,18 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         stripContour.points.push_back(prev2 + prevDir * t);
                         stripContour.points.push_back(next2);
 
-                        vsg::vec2 min{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-                        vsg::vec2 max{std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+                        Extents stripExtents;
                         for (const auto& point : stripContour.points)
                         {
-                            min.x = std::min(min.x, point.x);
-                            min.y = std::min(min.y, point.y);
-                            max.x = std::max(max.x, point.x);
-                            max.y = std::max(max.y, point.y);
+                            stripExtents.add(point);
                         }
 
                         stripContour.points.push_back(stripContour.points.front());
 
-                        int minR = std::max(-delta, static_cast<int>(std::floor(min.y)));
-                        int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(max.y)));
-                        int minC = std::max(-delta, static_cast<int>(std::floor(min.x)));
-                        int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(max.x)));
+                        int minR = std::max(-delta, static_cast<int>(std::floor(stripExtents.min_y)));
+                        int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(stripExtents.max_y)));
+                        int minC = std::max(-delta, static_cast<int>(std::floor(stripExtents.min_x)));
+                        int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(stripExtents.max_x)));
                         scanlineBuffer.resize(maxC - minC);
                         for (int r = minR; r < maxR; ++r)
                         {
@@ -948,17 +945,20 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 scanlineBuffer.resize(width + 2 * delta);
                 for (int r = -delta; r < static_cast<int>(height + delta); ++r)
                 {
-                    std::size_t index = atlas->index(xpos - delta, ypos + r);
-                    vsg::vec2 rowStart{float(-delta), float(r)};
-                    scanConvertLine(contours, rowStart, scanlineBuffer, scanlineScratchBuffer);
-                    for (int i = 0; i < scanlineBuffer.size(); ++i)
+                    if (extents.containsY(r))
                     {
-                        if (scanlineBuffer[i])
+                        std::size_t index = atlas->index(xpos - delta, ypos + r);
+                        vsg::vec2 rowStart{float(-delta), float(r)};
+                        scanConvertLine(contours, rowStart, scanlineBuffer, scanlineScratchBuffer);
+                        for (int i = 0; i < scanlineBuffer.size(); ++i)
                         {
-                            sdf_type& texel = atlas->at(index);
-                            texel = static_cast<sdf_type>(std::clamp(2 * mid_value - texel, min_value, max_value));
+                            if (scanlineBuffer[i])
+                            {
+                                sdf_type& texel = atlas->at(index);
+                                texel = static_cast<sdf_type>(std::clamp(2 * mid_value - texel, min_value, max_value));
+                            }
+                            ++index;
                         }
-                        ++index;
                     }
                 }
             }
