@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/Switch.h>
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/InstanceDraw.h>
+#include <vsg/nodes/InstanceDrawIndexed.h>
 #include <vsg/maths/transform.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsg/utils/ComputeBounds.h>
@@ -679,13 +680,14 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             if ((instanceNodeHint & vsg::Options::INSTANCE_ROTATIONS) != 0) config->enableArray("vsg_Rotation", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
             if ((instanceNodeHint & vsg::Options::INSTANCE_SCALES) != 0) config->enableArray("vsg_Scale", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
 
-            auto instanceDraw = vsg::InstanceDraw::create();
 
-            assign_extras(*primitive, *instanceDraw);
-            instanceDraw->assignArrays(vertexArrays);
 
             if (primitive->indices)
             {
+                auto instanceDrawIndexed = vsg::InstanceDrawIndexed::create();
+                assign_extras(*primitive, *instanceDrawIndexed);
+                instanceDrawIndexed->assignArrays(vertexArrays);
+
                 auto indices = vsg_accessors[primitive->indices.value];
                 if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
                 {
@@ -697,21 +699,27 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                         *(itr++) = static_cast<uint16_t>(value);
                     }
 
-                    instanceDraw->assignIndices(ushort_indices);
-                    instanceDraw->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
+                    instanceDrawIndexed->assignIndices(ushort_indices);
+                    instanceDrawIndexed->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
                 }
                 else
                 {
-                    instanceDraw->assignIndices(indices);
-                    instanceDraw->indexCount = static_cast<uint32_t>(indices->valueCount());
+                    instanceDrawIndexed->assignIndices(indices);
+                    instanceDrawIndexed->indexCount = static_cast<uint32_t>(indices->valueCount());
                 }
+                draw = instanceDrawIndexed;
             }
             else
             {
-                instanceDraw->indexCount = vertexCount;
+                auto instanceDraw = vsg::InstanceDraw::create();
+                assign_extras(*primitive, *instanceDraw);
+                instanceDraw->assignArrays(vertexArrays);
+
+                assign_extras(*primitive, *instanceDraw);
+                instanceDraw->vertexCount = vertexCount;
+                draw = instanceDraw;
             }
 
-            draw = instanceDraw;
 
         }
         else if (primitive->indices)
