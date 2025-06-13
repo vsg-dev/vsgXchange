@@ -489,6 +489,7 @@ void freetype::Implementation::scanConvertLine(const Contours& local_contours, c
     scratchBuffer.push_back(std::numeric_limits<float>::infinity());
 
     auto itr = scratchBuffer.begin();
+    std::fill(row.begin(), row.end(), false);
     bool in = false;
     for (std::size_t i = 0; i < row.size(); ++i)
     {
@@ -498,7 +499,8 @@ void freetype::Implementation::scanConvertLine(const Contours& local_contours, c
             in = !in;
             ++itr;
         }
-        row[i] = in;
+        if (in)
+            row[i] = true;
     }
 }
 
