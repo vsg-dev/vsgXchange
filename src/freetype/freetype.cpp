@@ -945,7 +945,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 scanlineBuffer.resize(width + 2 * delta);
                 for (int r = -delta; r < static_cast<int>(height + delta); ++r)
                 {
-                    if (extents.containsY(r))
+                    if (extents.containsY(static_cast<float>(r)))
                     {
                         std::size_t index = atlas->index(xpos - delta, ypos + r);
                         vsg::vec2 rowStart{float(-delta), float(r)};
