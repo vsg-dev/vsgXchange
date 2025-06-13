@@ -70,8 +70,7 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Group> createOutlineGeometry(const Contours& contours) const;
         bool generateOutlines(FT_Outline& outline, Contours& contours) const;
         void checkForAndFixDegenerates(Contours& contours) const;
-        float nearest_contour_edge(const Contours& local_contours, const vsg::vec2& v) const;
-        bool outside_contours(const Contours& local_contours, const vsg::vec2& v) const;
+        void scanConvertLine(const Contours& local_contours, const vsg::vec2& lineStart, std::vector<bool>& row, std::vector<float>& scratchBuffer) const;
 
         std::map<vsg::Path, std::string> _supportedFormats;
         mutable std::mutex _mutex;
@@ -435,72 +434,73 @@ void freetype::Implementation::checkForAndFixDegenerates(Contours& contours) con
     }
 }
 
-bool freetype::Implementation::outside_contours(const Contours& local_contours, const vsg::vec2& v) const
+void freetype::Implementation::scanConvertLine(const Contours& local_contours, const vsg::vec2& lineStart, std::vector<bool>& row, std::vector<float>& scratchBuffer) const
 {
-    uint32_t numLeft = 0;
+    scratchBuffer.clear();
+
+    float lineEndX = lineStart.x + row.size() - 1;
+
     for (auto& contour : local_contours)
     {
         auto& points = contour.points;
-        for (size_t i = 0; i < points.size() - 1; ++i)
+        if (points.empty())
+            continue;
+        bool fromBelow = false;
+        if (points[0].y == lineStart.y)
+        {
+            for (auto itr = points.rbegin(); itr != points.rend(); ++itr)
+            {
+                if (itr->y != lineStart.y)
+                {
+                    fromBelow = itr->y < lineStart.y;
+                    break;
+                }
+            }
+        }
+        for (std::size_t i = 0; i < points.size() - 1; ++i)
         {
             auto& p0 = points[i];
             auto& p1 = points[i + 1];
 
-            if (p0 == v || p1 == v)
-            {
-                // std::cout<<"v = "<<v<<" on end point p0="<<p0<<", p1"<<p1<<std::endl;
-                return false;
-            }
+            if (p0.y == p1.y)
+                continue;
 
-            if (p0.y == p1.y) // horizontal
+            if ((p0.y < lineStart.y && p1.y < lineStart.y) || (p0.y > lineStart.y && p1.y > lineStart.y))
+                continue;
+
+            if (p1.y == lineStart.y)
             {
-                if (p0.y == v.y)
-                {
-                    // v same height as segment
-                    if (between_or_equal(p0.x, v.x, p1.x))
-                    {
-                        // std::cout<<"Right on horizontal line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
-                        return false;
-                    }
-                }
+                scratchBuffer.push_back(p1.x);
+                fromBelow = p0.y < lineStart.y;
             }
-            else if (p0.x == p1.x) // vertical
+            else if (p0.y == lineStart.y)
             {
-                if (between_not_equal(p0.y, v.y, p1.y))
-                {
-                    if (v.x == p0.x)
-                    {
-                        // std::cout<<"Right on vertical line v="<<v<<", p0 = "<<p0<<", p1 = "<<p1<<std::endl;
-                        return false;
-                    }
-                    else if (p0.x < v.x)
-                    {
-                        ++numLeft;
-                    }
-                }
+                if (fromBelow == p1.y < lineStart.y)
+                    scratchBuffer.push_back(p0.x);
             }
-            else // diagonal
+            else
             {
-                if (between_not_equal(p0.y, v.y, p1.y))
-                {
-                    if (v.x > p0.x && v.x > p1.x)
-                    {
-                        // segment wholly left of v
-                        ++numLeft;
-                    }
-                    else if (between_or_equal(p0.x, v.x, p1.x))
-                    {
-                        // segment wholly right of v
-                        // need to do intersection test
-                        float r = (v.y - p0.y) / (p1.y - p0.y);
-                        float x_intersection = p0.x + (p1.x - p0.x) * r;
-                        if (x_intersection < v.x) ++numLeft;
-                    }
-                }
+                float intersection = p0.x + (lineStart.y - p0.y) * (p1.x - p0.x) / (p1.y - p0.y);
+                scratchBuffer.push_back(intersection);
             }
         }
     }
-    return (numLeft % 2) == 0;
+
+    std::sort(scratchBuffer.begin(), scratchBuffer.end());
+    scratchBuffer.push_back(std::numeric_limits<float>::infinity());
+
+    auto itr = scratchBuffer.begin();
+    bool in = false;
+    for (std::size_t i = 0; i < row.size(); ++i)
+    {
+        float pos = lineStart.x + i;
+        while (*itr <= pos)
+        {
+            in = !in;
+            ++itr;
+        }
+        row[i] = in;
+    }
 }
 
 vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -706,6 +706,8 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     // initialize charmap to zeros.
     for (auto& c : *charmap) c = 0;
 
+    std::vector<bool> scanlineBuffer;
+    std::vector<float> scanlineScratchBuffer;
     for (auto& glyphQuad : sortedGlyphQuads)
     {
         error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
@@ -832,16 +834,19 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(max.y)));
                         int minC = std::max(-delta, static_cast<int>(std::floor(min.x)));
                         int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(max.x)));
+                        scanlineBuffer.resize(maxC - minC);
                         for (int r = minR; r < maxR; ++r)
                         {
-                            for (int c = minC; c < maxC; ++c)
+                            vsg::vec2 rowStart{float(minC), float(r)};
+                            scanConvertLine(edgeStrip, rowStart, scanlineBuffer, scanlineScratchBuffer);
+                            for (int i = 0; i < scanlineBuffer.size(); ++i)
                             {
-                                vsg::vec2 v{float(c), float(r)};
-                                if (!outside_contours(edgeStrip, v))
+                                if (scanlineBuffer[i])
                                 {
+                                    vsg::vec2 v{float(minC + i), float(r)};
                                     float numerator = (end.y - start.y) * v.x - (end.x - start.x) * v.y + end.x * start.y - end.y * start.x;
                                     float dist2 = numerator * numerator / edgeLength2;
-                                    sdf_type& texel = atlas->at(xpos + c, ypos + r);
+                                    sdf_type& texel = atlas->at(xpos + minC + i, ypos + r);
                                     float existing = invScale * (texel - mid_value) / (max_value - min_value);
                                     existing *= existing;
                                     if (dist2 < existing)
@@ -891,7 +896,10 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         auto nextDir = next - point;
 
                         auto t = (prev2.x - next2.x) * -nextDir.y - (prev2.y - next2.y) * -nextDir.x;
-                        t /= prevDir.x * nextDir.y - prevDir.y * nextDir.x;
+                        auto denom = prevDir.x * nextDir.y - prevDir.y * nextDir.x;
+                        if (denom == 0)
+                            continue;
+                        t /= denom;
 
                         stripContour.points.clear();
                         // shift this a little to avoid numerical stability issues
@@ -916,15 +924,18 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         int maxR = std::min(static_cast<int>(height + delta), static_cast<int>(std::ceil(max.y)));
                         int minC = std::max(-delta, static_cast<int>(std::floor(min.x)));
                         int maxC = std::min(static_cast<int>(width + delta), static_cast<int>(std::ceil(max.x)));
+                        scanlineBuffer.resize(maxC - minC);
                         for (int r = minR; r < maxR; ++r)
                         {
-                            for (int c = minC; c < maxC; ++c)
+                            vsg::vec2 rowStart{float(minC), float(r)};
+                            scanConvertLine(edgeStrip, rowStart, scanlineBuffer, scanlineScratchBuffer);
+                            for (int i = 0; i < scanlineBuffer.size(); ++i)
                             {
-                                vsg::vec2 v{float(c), float(r)};
-                                if (!outside_contours(edgeStrip, v))
+                                if (scanlineBuffer[i])
                                 {
+                                    vsg::vec2 v{float(minC + i), float(r)};
                                     float dist2 = vsg::length2(v - point);
-                                    sdf_type& texel = atlas->at(xpos + c, ypos + r);
+                                    sdf_type& texel = atlas->at(xpos + minC + i, ypos + r);
                                     float existing = invScale * (texel - mid_value) / (max_value - min_value);
                                     existing *= existing;
                                     if (dist2 < existing)
@@ -945,17 +956,20 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                     }
                 }
 
+                scanlineBuffer.resize(width + 2 * delta);
                 for (int r = -delta; r < static_cast<int>(height + delta); ++r)
                 {
                     std::size_t index = atlas->index(xpos - delta, ypos + r);
-                    for (int c = -delta; c < static_cast<int>(width + delta); ++c)
+                    vsg::vec2 rowStart{float(-delta), float(r)};
+                    scanConvertLine(contours, rowStart, scanlineBuffer, scanlineScratchBuffer);
+                    for (int i = 0; i < scanlineBuffer.size(); ++i)
                     {
-                        vsg::vec2 v;
-                        v.set(float(c), float(r));
-
-                        sdf_type& texel = atlas->at(index++);
-                        if (extents.contains(v) && !outside_contours(contours, v))
+                        if (scanlineBuffer[i])
+                        {
+                            sdf_type& texel = atlas->at(index);
                             texel = static_cast<sdf_type>(std::clamp(2 * mid_value - texel, min_value, max_value));
+                        }
+                        ++index;
                     }
                 }
             }
