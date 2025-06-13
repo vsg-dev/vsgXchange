@@ -38,6 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/utils/ComputeBounds.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/state/material.h>
+#include <vsg/state/ViewDependentState.h>
 
 using namespace vsgXchange;
 
@@ -297,7 +298,25 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
         sharedObjects->share(shaderSet);
     }
 
-    auto vsg_tileset = vsg::Group::create();
+    vsg::ref_ptr<vsg::Group> vsg_tileset;
+
+    bool inheritState = options->inheritedState.empty();
+    if (inheritState)
+    {
+        auto stateGroup = vsg::StateGroup::create();
+        auto layout = shaderSet->createPipelineLayout({}, {0, 1});
+
+        uint32_t vds_set = 0;
+        stateGroup->add(vsg::BindViewDescriptorSets::create(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, vds_set));
+
+        options->inheritedState = stateGroup->stateCommands;
+
+        vsg_tileset = stateGroup;
+    }
+    else
+    {
+        vsg_tileset = vsg::Group::create();
+    }
 
     // vsg_tileset->setObject("tileset", tileset);
 

@@ -815,6 +815,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::re
 bool Tiles3D::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {
     bool result = arguments.readAndAssign<bool>(Tiles3D::report, &options);
+    result = arguments.readAndAssign<bool>(Tiles3D::instancing, &options) | result;
     result = arguments.readAndAssign<double>(Tiles3D::pixel_ratio, &options) | result;
     result = arguments.readAndAssign<uint32_t>(Tiles3D::pre_load_level, &options) | result;
     return result;
@@ -829,6 +830,11 @@ bool Tiles3D::getFeatures(Features& features) const
     features.extensionFeatureMap[".cmpt"] = supported_features;
     features.extensionFeatureMap[".i3dm"] = supported_features;
     features.extensionFeatureMap[".pnts"] = supported_features;
+
+    features.optionNameTypeMap[Tiles3D::report] = vsg::type_name<bool>();
+    features.optionNameTypeMap[Tiles3D::instancing] = vsg::type_name<bool>();
+    features.optionNameTypeMap[Tiles3D::pixel_ratio] = vsg::type_name<double>();
+    features.optionNameTypeMap[Tiles3D::pre_load_level] = vsg::type_name<uint32_t>();
 
     return true;
 }

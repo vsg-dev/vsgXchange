@@ -55,6 +55,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
         static constexpr const char* report = "report";                 /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* instancing = "instancing";         /// bool, hint for using vsg::InstanceNode/InstanceDraw for instancing where possible.
         static constexpr const char* pixel_ratio = "pixel_ratio";       /// double, sets the SceneGraphBuilder::pixelErrorToScreenHeightRatio value used for setting LOD ranges.
         static constexpr const char* pre_load_level = "pre_load_level"; /// uint, sets the SceneGraphBuilder::preLoadLevel values to control what LOD level are pre loaded when reading a tileset.
 
