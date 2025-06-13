@@ -33,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/InstanceDraw.h>
 #include <vsg/nodes/InstanceDrawIndexed.h>
+#include <vsg/nodes/Layer.h>
 #include <vsg/maths/transform.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsg/utils/ComputeBounds.h>
@@ -680,8 +681,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             if ((instanceNodeHint & vsg::Options::INSTANCE_ROTATIONS) != 0) config->enableArray("vsg_Rotation", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
             if ((instanceNodeHint & vsg::Options::INSTANCE_SCALES) != 0) config->enableArray("vsg_Scale", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
 
-
-
             if (primitive->indices)
             {
                 auto instanceDrawIndexed = vsg::InstanceDrawIndexed::create();
@@ -797,17 +796,28 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         if (vsg_material->blending)
         {
-            vsg::ComputeBounds computeBounds;
-            draw->accept(computeBounds);
-            vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
-            double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
+            if (instancedAttributes || instanceNodeHint != vsg::Options::INSTANCE_NONE)
+            {
+                auto layer = vsg::Layer::create();
+                layer->binNumber = 10;
+                layer->child = stateGroup;
 
-            auto depthSorted = vsg::DepthSorted::create();
-            depthSorted->binNumber = 10;
-            depthSorted->bound.set(center[0], center[1], center[2], radius);
-            depthSorted->child = stateGroup;
+                nodes.push_back(layer);
+            }
+            else
+            {
+                vsg::ComputeBounds computeBounds;
+                draw->accept(computeBounds);
+                vsg::dvec3 center = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
+                double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.5;
 
-            nodes.push_back(depthSorted);
+                auto depthSorted = vsg::DepthSorted::create();
+                depthSorted->binNumber = 10;
+                depthSorted->bound.set(center[0], center[1], center[2], radius);
+                depthSorted->child = stateGroup;
+
+                nodes.push_back(depthSorted);
+            }
         }
         else
         {
