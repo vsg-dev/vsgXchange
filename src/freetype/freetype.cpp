@@ -892,8 +892,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                         t /= denom;
 
                         stripContour.points.clear();
-                        // shift this a little to avoid numerical stability issues
-                        stripContour.points.push_back(point - (prevNormal + nextNormal) * 0.015625f);
+                        stripContour.points.push_back(point);
                         stripContour.points.push_back(prev2);
                         stripContour.points.push_back(prev2 + prevDir * t);
                         stripContour.points.push_back(next2);
