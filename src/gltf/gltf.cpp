@@ -59,7 +59,7 @@ void gltf::Extensions::read_object(vsg::JSONParser& parser, const std::string_vi
         }
     }
 
-    vsg::info("gltf::Extensions::read_object() property = ", property);
+    vsg::info("gltf::Extensions::read_object() property = ", property, " schema = ", schema);
 
     auto extensionAsMetaData = JSONtoMetaDataSchema::create();
     parser.read_object(*extensionAsMetaData);
@@ -1260,10 +1260,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     parser.options = options;
 
     // set up the supported extensions
-    parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
-    parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
-    parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
-    parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
+    assignExtensions(parser);
 
     parser.buffer.resize(fileSize);
     fin.seekg(0);
@@ -1360,10 +1357,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     parser.options = options;
 
     // set up the supported extensions
-    parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
-    parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
-    parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
-    parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
+    assignExtensions(parser);
 
     parser.buffer.resize(jsonSize);
     fin.read(reinterpret_cast<char*>(parser.buffer.data()), jsonSize);
@@ -1540,4 +1534,14 @@ vsg::Path gltf::mimeTypeToExtension(const std::string_view& mimeType)
     else if (mimeType=="image/gif") return ".gif";
     else if (mimeType=="image/ktx") return ".ktx";
     return "";
+}
+
+void gltf::assignExtensions(vsg::JSONParser& parser) const
+{
+    // set up the supported extensions
+    parser.setObject("KHR_draco_mesh_compression", KHR_draco_mesh_compression::create());
+    parser.setObject("KHR_materials_specular", KHR_materials_specular::create());
+    parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
+    parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
+    parser.setObject("KHR_materials_unlit", KHR_materials_unlit::create());
 }

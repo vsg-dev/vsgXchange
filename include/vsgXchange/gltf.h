@@ -295,6 +295,14 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_unlit
+        struct VSGXCHANGE_DECLSPEC KHR_materials_unlit : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_unlit>
+        {
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_unlit::create(*this); }
+        };
+
+
         // Extensions used in glTF-Sample-Assets/Models
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_anisotropy
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_clearcoat
@@ -305,7 +313,6 @@ namespace vsgXchange
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_pbrSpecularGlossiness
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_sheen
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_transmission
-        // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_unlit
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_volume
 
         struct VSGXCHANGE_DECLSPEC Sampler : public vsg::Inherit<NameExtensionsExtras, Sampler>
@@ -557,7 +564,8 @@ namespace vsgXchange
             };
 
             vsg::ref_ptr<const vsg::Options> options;
-            vsg::ref_ptr<vsg::ShaderSet> shaderSet;
+            vsg::ref_ptr<vsg::ShaderSet> flatShaderSet;
+            vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
             vsg::ref_ptr<vsg::SharedObjects> sharedObjects;
 
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
@@ -599,10 +607,15 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::Sampler> createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler);
             vsg::ref_ptr<vsg::Data> createImage(vsg::ref_ptr<gltf::Image> gltf_image);
             SamplerImage createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture);
+            vsg::ref_ptr<vsg::DescriptorConfigurator> createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
+            vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
+
+            vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet();
+            vsg::ref_ptr<vsg::ShaderSet> getOrCreateFlatShaderSet();
 
             vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
         };
@@ -613,6 +626,7 @@ namespace vsgXchange
         /// function for mapping a mimeType to .extension that can be used with vsgXchange's plugins.
         static vsg::Path mimeTypeToExtension(const std::string_view& mimeType);
 
+        virtual void assignExtensions(vsg::JSONParser& parser) const;
     };
 
     /// output stream support for glTFid
@@ -633,3 +647,4 @@ namespace vsgXchange
 }
 
 EVSG_type_name(vsgXchange::gltf)
+

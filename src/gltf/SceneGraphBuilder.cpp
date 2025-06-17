@@ -352,6 +352,11 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
         vsg_sampler->maxAnisotropy = 16.0f;
     }
 
+    if (sharedObjects)
+    {
+        sharedObjects->share(vsg_sampler);
+    }
+
     // vsg::info("created sampler { ", vsg_sampler->minFilter, ", ", vsg_sampler->magFilter, ", ", vsg_sampler->mipmapMode, ", ",  gltf_sampler->wrapS, ", ", gltf_sampler->wrapT, "}");
 
     return vsg_sampler;
@@ -374,11 +379,11 @@ gltf::SceneGraphBuilder::SamplerImage gltf::SceneGraphBuilder::createTexture(vsg
     return samplerImage;
 }
 
-vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
 {
     auto vsg_material = vsg::DescriptorConfigurator::create();
 
-    vsg_material->shaderSet = shaderSet;
+    vsg_material->shaderSet = getOrCreatePbrShaderSet();
 
     vsg_material->two_sided = gltf_material->doubleSided;
     if (vsg_material->two_sided) vsg_material->defines.insert("VSG_TWO_SIDED_LIGHTING");
@@ -543,6 +548,59 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
     // TODO: VSG -> detailMap
 
     return vsg_material;
+}
+
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+{
+    auto vsg_material = vsg::DescriptorConfigurator::create();
+
+    vsg_material->shaderSet = getOrCreateFlatShaderSet();
+
+    auto phongMaterialValue = vsg::PhongMaterialValue::create();
+    auto& phongMaterial = phongMaterialValue->value();
+
+    if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size()==4)
+    {
+        auto& baseColorFactor = gltf_material->pbrMetallicRoughness.baseColorFactor.values;
+        phongMaterial.diffuse.set(baseColorFactor[0], baseColorFactor[1], baseColorFactor[2], baseColorFactor[3]);
+        // vsg::info("Assigned phongMaterial.diffuse ", pbrMaterial.baseColorFactor);
+    }
+
+    if (gltf_material->pbrMetallicRoughness.baseColorTexture.index)
+    {
+        auto& texture = vsg_textures[gltf_material->pbrMetallicRoughness.baseColorTexture.index.value];
+        if (texture.image)
+        {
+            // vsg::info("Assigned diffuseMap ", texture.image, ", ", texture.sampler);
+            vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+        }
+        else
+        {
+            vsg::warn("Could not assign diffuseMap ", gltf_material->pbrMetallicRoughness.baseColorTexture.index);
+        }
+    }
+
+    if (gltf_material->alphaMode=="BLEND")
+    {
+        vsg_material->blending = true;
+    }
+    else if (gltf_material->alphaMode=="MASK")
+    {
+        // vsg_material->blending = true; // TODO, do we need to enable blending?
+        vsg_material->defines.insert("VSG_ALPHA_TEST");
+        phongMaterial.alphaMaskCutoff = gltf_material->alphaCutoff;
+    }
+
+    vsg_material->assignDescriptor("material", phongMaterialValue);
+
+    return vsg_material;
+}
+
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+{
+    auto vsg_material = vsg::DescriptorConfigurator::create();
+    if (auto materials_unlit = gltf_material->extension<KHR_materials_unlit>("KHR_materials_unlit")) return createUnlitMaterial(gltf_material);
+    else return createPbrMaterial(gltf_material);
 }
 
 vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes)
@@ -862,9 +920,9 @@ bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
     {
         auto& m = node.matrix.values;
         matrix.set(m[0], m[1], m[2], m[3],
-                                m[4], m[5], m[6], m[7],
-                                m[8], m[9], m[10], m[11],
-                                m[12], m[13], m[14], m[15]);
+                   m[4], m[5], m[6], m[7],
+                   m[8], m[9], m[10], m[11],
+                   m[12], m[13], m[14], m[15]);
         return true;
     }
     else if (!(node.rotation.values.empty()) ||
@@ -1266,6 +1324,27 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
     return true;
 }
 
+vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreatePbrShaderSet()
+{
+    if (pbrShaderSet) return pbrShaderSet;
+
+    pbrShaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
+    if (sharedObjects) sharedObjects->share(pbrShaderSet);
+
+    return pbrShaderSet;
+}
+
+vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreateFlatShaderSet()
+{
+    if (flatShaderSet) return flatShaderSet;
+
+    flatShaderSet = vsg::createFlatShadedShaderSet(options);
+    if (sharedObjects) sharedObjects->share(flatShaderSet);
+
+    return flatShaderSet;
+}
+
+
 vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options)
 {
     model = in_model;
@@ -1275,12 +1354,6 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     if (options) sharedObjects = options->sharedObjects;
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
-
-    if (!shaderSet)
-    {
-        shaderSet = vsg::createPhysicsBasedRenderingShaderSet(options);
-        if (sharedObjects) sharedObjects->share(shaderSet);
-    }
 
     instanceNodeHint = options ? options->instanceNodeHint : vsg::Options::INSTANCE_NONE;
 
@@ -1297,7 +1370,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     if (!default_material)
     {
         default_material = vsg::DescriptorConfigurator::create();
-        default_material->shaderSet = shaderSet;
+        default_material->shaderSet = getOrCreatePbrShaderSet();
 
         auto pbrMaterialValue = vsg::PbrMaterialValue::create();
         auto& pbrMaterial = pbrMaterialValue->value();
