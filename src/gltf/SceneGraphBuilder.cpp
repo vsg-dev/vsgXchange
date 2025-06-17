@@ -695,9 +695,18 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         };
 
         assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION");
-        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "NORMAL");
-        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_0");
 
+        if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "NORMAL"))
+        {
+            auto normal = vsg::vec3Value::create(vsg::vec3(0.0f, 0.0f, 1.0f));
+            config->assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_INSTANCE, normal);
+        }
+
+        if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_0"))
+        {
+            auto texcoord = vsg::vec2Value::create(vsg::vec2(0.0f, 0.0f));
+            config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
+        }
 
         uint32_t vertexCount = vertexArrays.front()->valueCount();
         uint32_t instanceCount = 1;
