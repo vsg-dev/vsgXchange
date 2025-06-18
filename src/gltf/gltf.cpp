@@ -1494,6 +1494,7 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
     bool result = arguments.readAndAssign<bool>(gltf::report, &options);
     result = arguments.readAndAssign<bool>(gltf::culling, &options) || result;
     result = arguments.readAndAssign<bool>(gltf::disable_gltf, &options) || result;
+    result = arguments.readAndAssign<bool>(gltf::clone_accessors, &options) || result;
     return result;
 }
 
@@ -1506,6 +1507,7 @@ bool gltf::getFeatures(Features& features) const
     features.optionNameTypeMap[gltf::report] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::culling] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::disable_gltf] = vsg::type_name<bool>();
+    features.optionNameTypeMap[gltf::clone_accessors] = vsg::type_name<bool>();
 
     return true;
 }

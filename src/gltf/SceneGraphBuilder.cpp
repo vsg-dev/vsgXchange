@@ -159,7 +159,7 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
             break;
         case(COMPONENT_TYPE_SHORT):
             if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::shortArray::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::svec2Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::svec2Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::svec3Array::create(bufferView, gltf_accessor->byteOffset, 6, gltf_accessor->count);
             else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::svec4Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
@@ -206,14 +206,14 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
     }
-#if 0
-    // if (vsg_data->storage())
+
+    if (cloneAccessors)
     {
         vsg::info("clonning vsg_data ", vsg_data);
         vsg_data = vsg::clone(vsg_data);
         vsg::info("clonned vsg_data ", vsg_data);
     }
-#endif
+
     return vsg_data;
 }
 
@@ -691,7 +691,18 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto name_itr = attributeLookup.find(attribute_name);
             if (name_itr == attributeLookup.end()) return false;
 
-            config->assignArray(vertexArrays, name_itr->second, vertexInputRate, vsg_accessors[array_itr->second.value]);
+            vsg::ref_ptr<vsg::Data>& array = vsg_accessors[array_itr->second.value];
+            if (attribute_name=="ROTATION")
+            {
+                auto vec4Rotations = array.cast<vsg::vec4Array>();
+                if (vec4Rotations)
+                {
+                    auto quatArray = vsg::quatArray::create(array, 0, 12, vec4Rotations->size());
+                    array = quatArray;
+                }
+            }
+
+            config->assignArray(vertexArrays, name_itr->second, vertexInputRate, array);
             return true;
         };
 
@@ -926,9 +937,9 @@ bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
                    m[12], m[13], m[14], m[15]);
         return true;
     }
-    else if (!(node.rotation.values.empty()) ||
-             !(node.scale.values.empty()) ||
-             !(node.translation.values.empty()))
+    else if (!(node.translation.values.empty()) ||
+             !(node.rotation.values.empty()) ||
+             !(node.scale.values.empty()))
     {
         auto& t = node.translation.values;
         auto& r = node.rotation.values;
@@ -1357,6 +1368,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
     instanceNodeHint = options ? options->instanceNodeHint : vsg::Options::INSTANCE_NONE;
+    cloneAccessors = vsg::value<bool>(false, gltf::clone_accessors, options);
 
     // TODO: need to check that the glTF model is suitable for use of InstanceNode/InstanceDraw
 
