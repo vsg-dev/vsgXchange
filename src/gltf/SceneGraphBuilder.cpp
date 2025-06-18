@@ -406,6 +406,12 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
         {
             // vsg::info("Assigned diffuseMap ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+
+            auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
+            if (auto texture_transform = textureInfo.extension<KHR_texture_transform>("KHR_texture_transform"))
+            {
+                vsg_material->setObject("KHR_texture_transform", texture_transform);
+            }
         }
         else
         {
@@ -528,6 +534,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
         }
     }
 
+
 #if 0
     if (auto materials_ior = gltf_material->extension<KHR_materials_ior>("KHR_materials_ior"))
     {
@@ -574,6 +581,12 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
         {
             // vsg::info("Assigned diffuseMap ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+
+            auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
+            if (auto texture_transform = textureInfo.extension<KHR_texture_transform>("KHR_texture_transform"))
+            {
+                vsg_material->setObject("KHR_texture_transform", texture_transform);
+            }
         }
         else
         {
@@ -662,6 +675,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         config->descriptorConfigurator = vsg_material;
         if (options) config->assignInheritedState(options->inheritedState);
 
+
 #if 0
         vsg::info("    primitive = {");
         vsg::info("        attributes = {");
@@ -691,14 +705,39 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto name_itr = attributeLookup.find(attribute_name);
             if (name_itr == attributeLookup.end()) return false;
 
-            vsg::ref_ptr<vsg::Data>& array = vsg_accessors[array_itr->second.value];
+            vsg::ref_ptr<vsg::Data> array = vsg_accessors[array_itr->second.value];
             if (attribute_name=="ROTATION")
             {
-                auto vec4Rotations = array.cast<vsg::vec4Array>();
-                if (vec4Rotations)
+                if (auto vec4Rotations = array.cast<vsg::vec4Array>())
                 {
                     auto quatArray = vsg::quatArray::create(array, 0, 12, vec4Rotations->size());
                     array = quatArray;
+                }
+            }
+            else if (attribute_name=="TEXCOORD_0")
+            {
+                if (auto texture_transform = vsg_material->getObject<KHR_texture_transform>("KHR_texture_transform"))
+                {
+                    vsg::vec2 offset(0.0f, 0.0f);
+                    vsg::vec2 scale(1.0f, 1.0f);
+                    float rotation = texture_transform->rotation;
+                    if (texture_transform->offset.values.size()>=2) offset.set(texture_transform->offset.values[0],  texture_transform->offset.values[1]);
+                    if (texture_transform->scale.values.size()>=2) scale.set(texture_transform->scale.values[0],  texture_transform->scale.values[1]);
+
+                    if (auto texCoords = array.cast<vsg::vec2Array>())
+                    {
+                        float sin_rotation = std::sin(rotation);
+                        float cos_rotation = std::cos(rotation);
+                        auto transformedTexCoords = vsg::vec2Array::create(texCoords->size());
+                        auto dest_itr = transformedTexCoords->begin();
+                        for(auto& tc : *texCoords)
+                        {
+                            auto& dest_tc = *(dest_itr++);
+                            dest_tc.x = offset.x + (tc.x * scale.x) * cos_rotation + (tc.y * scale.y) * sin_rotation;
+                            dest_tc.y = offset.y + (tc.y * scale.y) * cos_rotation - (tc.x * scale.x) * sin_rotation;
+                        }
+                        array = transformedTexCoords;
+                    }
                 }
             }
 

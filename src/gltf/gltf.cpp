@@ -427,6 +427,21 @@ void gltf::KHR_materials_ior::read_number(vsg::JSONParser& parser, const std::st
     else parser.warning();
 }
 
+void gltf::KHR_texture_transform::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "offset") parser.read_array(offset);
+    else if (property == "scale") parser.read_array(scale);
+    else parser.warning();
+}
+
+void gltf::KHR_texture_transform::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "rotation") input >> rotation;
+    else if (property == "texCoord") input >> texCoord;
+    else parser.warning();
+}
+
+
 void gltf::Material::report()
 {
     vsg::info("Material { ");
@@ -1562,4 +1577,5 @@ void gltf::assignExtensions(vsg::JSONParser& parser) const
     parser.setObject("KHR_materials_ior", KHR_materials_ior::create());
     parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
     parser.setObject("KHR_materials_unlit", KHR_materials_unlit::create());
+    parser.setObject("KHR_texture_transform", KHR_texture_transform::create());
 }

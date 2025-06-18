@@ -242,6 +242,21 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        // https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Khronos/KHR_texture_transform
+        struct VSGXCHANGE_DECLSPEC KHR_texture_transform : public vsg::Inherit<vsg::JSONParser::Schema, KHR_texture_transform>
+        {
+            vsg::ValuesSchema<float> offset;
+            float rotation = 0.0;
+            vsg::ValuesSchema<float> scale;
+            uint32_t texCoord = 0;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_texture_transform::create(*this); }
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
         struct VSGXCHANGE_DECLSPEC PbrMetallicRoughness : public vsg::Inherit<ExtensionsExtras, PbrMetallicRoughness>
         {
             vsg::ValuesSchema<float> baseColorFactor; // default { 1.0, 1.0, 1.0, 1.0 }
@@ -302,7 +317,6 @@ namespace vsgXchange
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_unlit::create(*this); }
         };
-
 
         // Extensions used in glTF-Sample-Assets/Models
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_anisotropy
