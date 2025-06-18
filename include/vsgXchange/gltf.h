@@ -620,6 +620,8 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
         };
 
+        static vsg::Path decodeURI(const std::string_view& uri);
+
         /// function for extracting components of a uri
         static bool dataURI(const std::string_view& uri, std::string_view& mimeType, std::string_view& encoding, std::string_view& value);
 

@@ -931,11 +931,11 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 
     struct ReadFileOperation : public vsg::Inherit<OperationWithLatch, ReadFileOperation>
     {
-        std::string_view filename;
+        vsg::Path filename;
         vsg::ref_ptr<const vsg::Options> options;
         vsg::ref_ptr<vsg::Data>& data;
 
-        ReadFileOperation(const std::string_view& f, vsg::ref_ptr<const vsg::Options> o, vsg::ref_ptr<vsg::Data>& d, vsg::ref_ptr<vsg::Latch> l = {}) :
+        ReadFileOperation(const vsg::Path& f, vsg::ref_ptr<const vsg::Options> o, vsg::ref_ptr<vsg::Data>& d, vsg::ref_ptr<vsg::Latch> l = {}) :
             Inherit(l),
             filename(f),
             options(o),
@@ -943,7 +943,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 
         void run() override
         {
-            data = vsg::read_cast<vsg::Data>(std::string(filename), options);
+            data = vsg::read_cast<vsg::Data>(filename, options);
 
             if (latch) latch->count_down();
         }
@@ -1135,7 +1135,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
             }
             else
             {
-                operations.push_back(ReadFileOperation::create(buffer->uri, options, buffer->data));
+                operations.push_back(ReadFileOperation::create(gltf::decodeURI(buffer->uri), options, buffer->data));
             }
         }
     }
@@ -1155,7 +1155,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                 }
                 else
                 {
-                    operations.push_back(ReadFileOperation::create(image->uri, options, image->data));
+                    operations.push_back(ReadFileOperation::create(gltf::decodeURI(image->uri), options, image->data));
                 }
             }
             else if (image->bufferView)
@@ -1524,6 +1524,22 @@ bool gltf::dataURI(const std::string_view& uri, std::string_view& mimeType, std:
     value = std::string_view(&uri[comma+1], uri.size() - comma -1);
 
     return true;
+}
+
+vsg::Path gltf::decodeURI(const std::string_view& uri)
+{
+    if (uri.empty()) return {};
+
+    std::string decoded_uri(uri);
+
+    std::string::size_type percent_space;
+    while ((percent_space = decoded_uri.find("%20")) != std::string::npos)
+    {
+        decoded_uri[percent_space] = ' ';
+        decoded_uri.erase(percent_space + 1, 2);
+    }
+
+    return decoded_uri;
 }
 
 vsg::Path gltf::mimeTypeToExtension(const std::string_view& mimeType)
