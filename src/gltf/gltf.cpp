@@ -103,7 +103,7 @@ void gltf::NameExtensionsExtras::read_string(vsg::JSONParser& parser, const std:
 
 void gltf::NameExtensionsExtras::report()
 {
-    if (!   name.empty()) vsg::info("    name  = ", name);
+    if (!   name.empty()) vsg::info("    name = ", name);
     ExtensionsExtras::report();
 }
 
