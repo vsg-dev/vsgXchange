@@ -654,7 +654,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         }
         else
         {
-            vsg::info("Material for primitive not assigned, primitive = ", primitive, ", primitive->material = ", primitive->material);
+            vsg::debug("Material for primitive not assigned, primitive = ", primitive, ", primitive->material = ", primitive->material);
             vsg_material = default_material;
         }
 
