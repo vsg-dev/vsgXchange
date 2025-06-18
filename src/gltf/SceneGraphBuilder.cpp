@@ -53,6 +53,7 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"NORMAL", "vsg_Normal"},
         {"TEXCOORD_0", "vsg_TexCoord0"},
         {"COLOR", "vsg_Color"},
+        {"COLOR_0", "vsg_Color"},
         {"TRANSLATION", "vsg_Translation"},
         {"ROTATION", "vsg_Rotation"},
         {"SCALE", "vsg_Scale"}
