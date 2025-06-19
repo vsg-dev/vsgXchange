@@ -274,6 +274,9 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
 {
     auto vsg_sampler = vsg::Sampler::create();
 
+    vsg_sampler->maxAnisotropy = maxAnisotropy;
+    vsg_sampler->anisotropyEnable = (maxAnisotropy > 0.0f) ? VK_TRUE : VK_FALSE;
+
     // assume mipmapping.
     vsg_sampler->minLod = 0.0f;
     vsg_sampler->maxLod = 16.0f;
@@ -350,13 +353,6 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
 
     vsg_sampler->addressModeU = addressMode(gltf_sampler->wrapS);
     vsg_sampler->addressModeV = addressMode(gltf_sampler->wrapT);
-
-    // defaults used by vsgXchange::assimp, TODO: use KHR_materials_anisotropy
-    if (vsg_sampler->maxLod >= 1.0f)
-    {
-        vsg_sampler->anisotropyEnable = VK_TRUE;
-        vsg_sampler->maxAnisotropy = 16.0f;
-    }
 
     if (sharedObjects)
     {
@@ -1422,7 +1418,8 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
 
     instanceNodeHint = options ? options->instanceNodeHint : vsg::Options::INSTANCE_NONE;
-    cloneAccessors = vsg::value<bool>(false, gltf::clone_accessors, options);
+    cloneAccessors = vsg::value<bool>(cloneAccessors, gltf::clone_accessors, options);
+    maxAnisotropy = vsg::value<float>(maxAnisotropy, gltf::maxAnisotropy, options);
 
     // TODO: need to check that the glTF model is suitable for use of InstanceNode/InstanceDraw
 

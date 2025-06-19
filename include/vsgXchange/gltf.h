@@ -51,10 +51,12 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";             /// bool, report parsed glTF to console, defaults to false
-        static constexpr const char* culling = "culling";           /// bool, insert cull nodes, defaults to true
-        static constexpr const char* disable_gltf = "disable_gltf"; /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
-        static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
+        static constexpr const char* report = "report";                     /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* culling = "culling";                   /// bool, insert cull nodes, defaults to true
+        static constexpr const char* disable_gltf = "disable_gltf";         /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
+        static constexpr const char* clone_accessors = "clone_accessors";   /// bool, hint to clone the data associated with accessors, defaults to false
+        static constexpr const char* maxAnisotropy = "maxAnisotropy";       /// float, default setting of vsg::Sampler::maxAnisotropy to use.
+
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -586,6 +588,7 @@ namespace vsgXchange
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
             int instanceNodeHint = vsg::Options::INSTANCE_NONE;
             bool cloneAccessors = false;
+            float maxAnisotropy = 16.0f;
 
             vsg::ref_ptr<glTF> model;
 
