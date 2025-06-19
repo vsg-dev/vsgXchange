@@ -59,7 +59,7 @@ void gltf::Extensions::read_object(vsg::JSONParser& parser, const std::string_vi
         }
     }
 
-    vsg::info("gltf::Extensions::read_object() property = ", property, " schema = ", schema);
+    vsg::info("gltf::Extensions::read_object() ", property, " not supported.");
 
     auto extensionAsMetaData = JSONtoMetaDataSchema::create();
     parser.read_object(*extensionAsMetaData);
@@ -857,6 +857,58 @@ void gltf::Skins::read_array(vsg::JSONParser& parser, const std::string_view& pr
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// KHR_lights_punctual
+//
+void gltf::Spot::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property=="innerConeAngle") input >> innerConeAngle;
+    else if (property=="outerConeAngle") input >> outerConeAngle;
+    else parser.warning();
+}
+
+void gltf::Light::read_string(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property=="type") parser.read_string(type);
+    else NameExtensionsExtras::read_string(parser, property);
+}
+
+void gltf::Light::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property=="intensity") input >> intensity;
+    else if (property=="range") input >> range;
+    else parser.warning();
+}
+
+void gltf::Light::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "color") parser.read_array(color);
+    else parser.warning();
+}
+
+void gltf::Light::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "spot")
+    {
+        spot = gltf::Spot::create();
+        parser.read_object(*spot);
+    }
+    else NameExtensionsExtras::read_object(parser, property);
+}
+
+void gltf::KHR_lights_punctual::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property=="light") input >> light;
+    else parser.warning();
+}
+
+void gltf::KHR_lights_punctual::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "lights") parser.read_array(lights);
+    else parser.warning();
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // glTF
 //
 void gltf::glTF::report()
@@ -1580,4 +1632,5 @@ void gltf::assignExtensions(vsg::JSONParser& parser) const
     parser.setObject("EXT_mesh_gpu_instancing", EXT_mesh_gpu_instancing::create());
     parser.setObject("KHR_materials_unlit", KHR_materials_unlit::create());
     parser.setObject("KHR_texture_transform", KHR_texture_transform::create());
+    parser.setObject("KHR_lights_punctual", KHR_lights_punctual::create());
 }

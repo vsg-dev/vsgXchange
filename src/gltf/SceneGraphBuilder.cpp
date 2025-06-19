@@ -34,6 +34,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/InstanceDraw.h>
 #include <vsg/nodes/InstanceDrawIndexed.h>
 #include <vsg/nodes/Layer.h>
+#include <vsg/lighting/DirectionalLight.h>
+#include <vsg/lighting/PointLight.h>
+#include <vsg/lighting/SpotLight.h>
 #include <vsg/maths/transform.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsg/utils/ComputeBounds.h>
@@ -241,8 +244,6 @@ vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<glt
         double halfHeight = orthographic->ymag; // TODO: figure how to mapto GLU/VSG style orthographic
         vsg_camera->projectionMatrix = vsg::Orthographic::create(-halfWidth, halfWidth, -halfHeight, halfHeight, orthographic->znear, orthographic->zfar);
     }
-
-    vsg::info("Assigned camera");
 
     vsg_camera->name = gltf_camera->name;
     assign_extras(*gltf_camera, *vsg_camera);
@@ -1011,9 +1012,58 @@ bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
     }
 }
 
+vsg::ref_ptr<vsg::Light> gltf::SceneGraphBuilder::createLight(vsg::ref_ptr<gltf::Light> gltf_light)
+{
+    bool range_set = gltf_light->range != std::numeric_limits<float>::max();
+
+    vsg::ref_ptr<vsg::Light> vsg_light;
+    if (gltf_light->type=="directional")
+    {
+        auto directionalLight = vsg::DirectionalLight::create();
+        vsg_light = directionalLight;
+    }
+    else if (gltf_light->type=="point")
+    {
+        auto pointLight = vsg::PointLight::create();
+        if (range_set) pointLight->radius = gltf_light->range;
+        vsg_light = pointLight;
+    }
+    else if (gltf_light->type=="spot")
+    {
+        auto spotLight = vsg::SpotLight::create();
+        if (range_set) spotLight->radius = gltf_light->range;
+        vsg_light = spotLight;
+        if (gltf_light->spot)
+        {
+            spotLight->innerAngle = gltf_light->spot->innerConeAngle;
+            spotLight->outerAngle = gltf_light->spot->outerConeAngle;
+        }
+    }
+    else
+    {
+        return {};
+    }
+
+    vsg_light->name = gltf_light->name;
+    vsg_light->intensity = gltf_light->intensity;
+    if (gltf_light->color.values.size() >= 3) vsg_light->color.set(gltf_light->color.values[0], gltf_light->color.values[1], gltf_light->color.values[2]);
+
+    return vsg_light;
+}
+
 vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node)
 {
     vsg::ref_ptr<vsg::Node> vsg_node;
+
+    vsg::ref_ptr<vsg::Light> vsg_light;
+    if (auto khr_lights = gltf_node->extension<KHR_lights_punctual>("KHR_lights_punctual"))
+    {
+        auto id = khr_lights->light;
+        if (id && id.value < vsg_lights.size())
+        {
+            vsg_light = vsg_lights[id.value];
+        }
+    }
 
     vsg::ref_ptr<vsg::Node> vsg_mesh;
     if (gltf_node->mesh)
@@ -1044,13 +1094,15 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     if (gltf_node->camera) ++numChildren;
     if (gltf_node->skin) ++numChildren;
     if (vsg_mesh) ++numChildren;
+    if (vsg_light) ++numChildren;
 
     if (isTransform)
     {
         auto transform = vsg::MatrixTransform::create();
         if (gltf_node->camera) transform->addChild(vsg_cameras[gltf_node->camera.value]);
-        else if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
-        else if (vsg_mesh) transform->addChild(vsg_mesh);
+        if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
+        if (vsg_light) transform->addChild(vsg_light);
+        if (vsg_mesh) transform->addChild(vsg_mesh);
 
         if (gltf_node->matrix.values.size()==16)
         {
@@ -1084,8 +1136,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         auto group = vsg::Group::create();
 
         if (gltf_node->camera) group->addChild(vsg_cameras[gltf_node->camera.value]);
-        else if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
-        else if (vsg_mesh) group->addChild(vsg_mesh);
+        if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
+        if (vsg_light) group->addChild(vsg_light);
+        if (vsg_mesh) group->addChild(vsg_mesh);
 
         vsg_node = group;
     }
@@ -1094,6 +1147,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         if (gltf_node->camera) vsg_node = vsg_cameras[gltf_node->camera.value];
         else if (gltf_node->skin) vsg_node = vsg_skins[gltf_node->skin.value];
         else if (vsg_mesh) vsg_node = vsg_mesh;
+        else if (vsg_light) vsg_node = vsg_light;
         else vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
     }
 
@@ -1564,6 +1618,17 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     // vsg::info("create meshes = ", model->meshes.values.size());
     // populate vsg_meshes in the createNode method.
     vsg_meshes.resize(model->meshes.values.size());
+
+
+    if (auto khr_lights = model->extension<KHR_lights_punctual>("KHR_lights_punctual"))
+    {
+        vsg_lights.resize(khr_lights->lights.values.size());
+        for(size_t li = 0; li < khr_lights->lights.values.size(); ++li)
+        {
+            vsg_lights[li] = createLight(khr_lights->lights.values[li]);
+        }
+    }
+
 
     // vsg::info("create nodes = ", model->nodes.values.size());
     vsg_nodes.resize(model->nodes.values.size());

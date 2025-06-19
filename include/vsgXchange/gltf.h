@@ -539,6 +539,40 @@ namespace vsgXchange
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
+        struct VSGXCHANGE_DECLSPEC  Spot : public vsg::Inherit<ExtensionsExtras, Spot>
+        {
+            double innerConeAngle = 0.0;
+            double outerConeAngle = 0.7853981633974483;
+
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
+        struct VSGXCHANGE_DECLSPEC  Light : public vsg::Inherit<NameExtensionsExtras, Light>
+        {
+            vsg::ValuesSchema<float> color;
+            float intensity = 1.0f;
+            vsg::ref_ptr<Spot> spot;
+            std::string type;
+            float range = std::numeric_limits<float>::max();
+
+            void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+        };
+
+        struct VSGXCHANGE_DECLSPEC KHR_lights_punctual : vsg::Inherit<ExtensionsExtras, KHR_lights_punctual>
+        {
+            vsg::ObjectsSchema<Light> lights;
+            glTFid light;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_lights_punctual::create(*this); }
+
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+        };
+
         struct VSGXCHANGE_DECLSPEC glTF : public vsg::Inherit<ExtensionsExtras, glTF>
         {
             vsg::StringsSchema extensionsUsed;
@@ -602,6 +636,7 @@ namespace vsgXchange
             std::vector<SamplerImage> vsg_textures;
             std::vector<vsg::ref_ptr<vsg::DescriptorConfigurator>> vsg_materials;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_meshes;
+            std::vector<vsg::ref_ptr<vsg::Light>> vsg_lights;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_nodes;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_scenes;
 
@@ -630,6 +665,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
+            vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
 
