@@ -707,7 +707,20 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto name_itr = attributeLookup.find(attribute_name);
             if (name_itr == attributeLookup.end()) return false;
 
+            if (array_itr->second.value >= vsg_accessors.size())
+            {
+                vsg::warn("gltf::SceneGraphBuilder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), array index out of range.");
+                return false;
+            }
+
             vsg::ref_ptr<vsg::Data> array = vsg_accessors[array_itr->second.value];
+            if (!array)
+            {
+                vsg::warn("gltf::SceneGraphBuilder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), required array null.");
+                return false;
+            }
+
+
             if (attribute_name=="ROTATION")
             {
                 if (auto vec4Rotations = array.cast<vsg::vec4Array>())
@@ -743,11 +756,16 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 }
             }
 
+
             config->assignArray(vertexArrays, name_itr->second, vertexInputRate, array);
             return true;
         };
 
-        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION");
+        if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION"))
+        {
+            vsg::warn("gltf::SceneGraphBuilder::createMesh() error no vertex array assigned.");
+            return {};
+        }
 
         if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "NORMAL"))
         {
@@ -808,6 +826,12 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 instanceDrawIndexed->assignArrays(vertexArrays);
 
                 auto indices = vsg_accessors[primitive->indices.value];
+                if (!indices)
+                {
+                    vsg::warn("gltf::SceneGraphBuilder::createMesh() error required indices array null.");
+                    return {};
+                }
+
                 if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
                 {
                     // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
@@ -849,6 +873,12 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             vid->instanceCount = instanceCount;
 
             auto indices = vsg_accessors[primitive->indices.value];
+            if (!indices)
+            {
+                vsg::warn("gltf::SceneGraphBuilder::createMesh() error required indices array null.");
+                return {};
+            }
+
             if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
             {
                 // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
