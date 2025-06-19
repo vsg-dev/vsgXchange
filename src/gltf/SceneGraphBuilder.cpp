@@ -140,69 +140,74 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
 
     auto bufferView = vsg_bufferViews[gltf_accessor->bufferView.value];
 
+    auto stride = [&](uint32_t s) -> uint32_t
+    {
+        return std::max(bufferView->properties.stride, s);
+    };
+
     vsg::ref_ptr<vsg::Data> vsg_data;
     switch(gltf_accessor->componentType)
     {
         case(COMPONENT_TYPE_BYTE):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::byteArray::create(bufferView, gltf_accessor->byteOffset, 1, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::bvec2Array::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::bvec3Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::bvec4Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::byteArray::create(bufferView, gltf_accessor->byteOffset, stride(1), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::bvec2Array::create(bufferView, gltf_accessor->byteOffset, stride(2), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::bvec3Array::create(bufferView, gltf_accessor->byteOffset, stride(3), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::bvec4Array::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_UNSIGNED_BYTE):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ubyteArray::create(bufferView, gltf_accessor->byteOffset, 1, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ubvec2Array::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ubvec3Array::create(bufferView, gltf_accessor->byteOffset, 3, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ubvec4Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ubyteArray::create(bufferView, gltf_accessor->byteOffset, stride(1), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ubvec2Array::create(bufferView, gltf_accessor->byteOffset, stride(2), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ubvec3Array::create(bufferView, gltf_accessor->byteOffset, stride(3), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ubvec4Array::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_SHORT):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::shortArray::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::svec2Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::svec3Array::create(bufferView, gltf_accessor->byteOffset, 6, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::svec4Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::shortArray::create(bufferView, gltf_accessor->byteOffset, stride(2), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::svec2Array::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::svec3Array::create(bufferView, gltf_accessor->byteOffset, stride(6), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::svec4Array::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_UNSIGNED_SHORT):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ushortArray::create(bufferView, gltf_accessor->byteOffset, 2, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::usvec2Array::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::usvec3Array::create(bufferView, gltf_accessor->byteOffset, 6, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::usvec4Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::ushortArray::create(bufferView, gltf_accessor->byteOffset, stride(2), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::usvec2Array::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::usvec3Array::create(bufferView, gltf_accessor->byteOffset, stride(6), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::usvec4Array::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_INT):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::intArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ivec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ivec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ivec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::intArray::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::ivec2Array::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::ivec3Array::create(bufferView, gltf_accessor->byteOffset, stride(12), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::ivec4Array::create(bufferView, gltf_accessor->byteOffset, stride(16), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_UNSIGNED_INT):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::uintArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::uivec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::uivec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::uivec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::uintArray::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::uivec2Array::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::uivec3Array::create(bufferView, gltf_accessor->byteOffset, stride(12), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::uivec4Array::create(bufferView, gltf_accessor->byteOffset, stride(16), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_FLOAT):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::floatArray::create(bufferView, gltf_accessor->byteOffset, 4, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::vec2Array::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::vec3Array::create(bufferView, gltf_accessor->byteOffset, 12, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::vec4Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
-            //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::mat2Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
-            //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::mat3Array::create(bufferView, gltf_accessor->byteOffset, 36, gltf_accessor->count);
-            else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::mat4Array::create(bufferView, gltf_accessor->byteOffset, 64, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::floatArray::create(bufferView, gltf_accessor->byteOffset, stride(4), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::vec2Array::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::vec3Array::create(bufferView, gltf_accessor->byteOffset, stride(12), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::vec4Array::create(bufferView, gltf_accessor->byteOffset, stride(16), gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::mat2Array::create(bufferView, gltf_accessor->byteOffset, stride(16), gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::mat3Array::create(bufferView, gltf_accessor->byteOffset, stride(36), gltf_accessor->count);
+            else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::mat4Array::create(bufferView, gltf_accessor->byteOffset, stride(64), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
         case(COMPONENT_TYPE_DOUBLE):
-            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::doubleArray::create(bufferView, gltf_accessor->byteOffset, 8, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::dvec2Array::create(bufferView, gltf_accessor->byteOffset, 16, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::dvec3Array::create(bufferView, gltf_accessor->byteOffset, 24, gltf_accessor->count);
-            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::dvec4Array::create(bufferView, gltf_accessor->byteOffset, 32, gltf_accessor->count);
-            //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::dmat2Array::create(bufferView, gltf_accessor->byteOffset, 32, gltf_accessor->count);
-            //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::dmat3Array::create(bufferView, gltf_accessor->byteOffset, 72, gltf_accessor->count);
-            else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::dmat4Array::create(bufferView, gltf_accessor->byteOffset, 128, gltf_accessor->count);
+            if      (gltf_accessor->type=="SCALAR") vsg_data = vsg::doubleArray::create(bufferView, gltf_accessor->byteOffset, stride(8), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC2")   vsg_data = vsg::dvec2Array::create(bufferView, gltf_accessor->byteOffset, stride(16), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC3")   vsg_data = vsg::dvec3Array::create(bufferView, gltf_accessor->byteOffset, stride(24), gltf_accessor->count);
+            else if (gltf_accessor->type=="VEC4")   vsg_data = vsg::dvec4Array::create(bufferView, gltf_accessor->byteOffset, stride(32), gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT2")   vsg_data = vsg::dmat2Array::create(bufferView, gltf_accessor->byteOffset, stride(32), gltf_accessor->count);
+            //else if (gltf_accessor->type=="MAT3")   vsg_data = vsg::dmat3Array::create(bufferView, gltf_accessor->byteOffset, stride(72), gltf_accessor->count);
+            else if (gltf_accessor->type=="MAT4")   vsg_data = vsg::dmat4Array::create(bufferView, gltf_accessor->byteOffset, stride(128), gltf_accessor->count);
             else vsg::warn("Unsupported gltf_accessor->componentType = ", gltf_accessor->componentType);
             break;
     }
@@ -1205,11 +1210,12 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
     bool culling = vsg::value<bool>(true, gltf::culling, options) && (instanceNodeHint == vsg::Options::INSTANCE_NONE);
     if (culling)
     {
-        auto bounds = vsg::visit<vsg::ComputeBounds>(vsg_scene).bounds;
-        vsg::dsphere bs((bounds.max + bounds.min) * 0.5, vsg::length(bounds.max - bounds.min) * 0.5);
-
-        auto cullNode = vsg::CullNode::create(bs, vsg_scene);
-        vsg_scene = cullNode;
+        if (auto bounds = vsg::visit<vsg::ComputeBounds>(vsg_scene).bounds)
+        {
+            vsg::dsphere bs((bounds.max + bounds.min) * 0.5, vsg::length(bounds.max - bounds.min) * 0.5);
+            auto cullNode = vsg::CullNode::create(bs, vsg_scene);
+            vsg_scene = cullNode;
+        }
     }
 
     // assign meta data

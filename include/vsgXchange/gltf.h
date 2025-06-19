@@ -200,7 +200,7 @@ namespace vsgXchange
             glTFid buffer;
             uint32_t byteOffset = 0;
             uint32_t byteLength = 0;
-            uint32_t byteStride = 4;
+            uint32_t byteStride = 1;
             uint32_t target = 0;
 
             void report();
