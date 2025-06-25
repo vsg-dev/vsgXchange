@@ -29,7 +29,7 @@ using namespace vsgXchange;
 //
 void gltf::Extensions::report(vsg::LogOutput& output)
 {
-    output.open("extensions = {");
+    output.enter("extensions = {");
     for(auto& [name, ext] : values)
     {
         output("{", name , ", ", ext->className()," }");
@@ -42,7 +42,7 @@ void gltf::Extensions::report(vsg::LogOutput& output)
             instancing_extension->report(output);
         }
     }
-    output.close();
+    output.leave();
 }
 
 void gltf::Extensions::read_object(vsg::JSONParser& parser, const std::string_view& property)
@@ -114,11 +114,11 @@ void gltf::NameExtensionsExtras::report(vsg::LogOutput& output)
 
 void gltf::SparseIndices::report(vsg::LogOutput& output)
 {
-    output.open("indices {");
+    output.enter("indices {");
     output("bufferView: ", bufferView);
     output("byteOffset: ", byteOffset);
     output("componentType: ", componentType);
-    output.close();
+    output.leave();
 }
 
 void gltf::SparseIndices::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -131,10 +131,10 @@ void gltf::SparseIndices::read_number(vsg::JSONParser& parser, const std::string
 
 void gltf::SparseValues::report(vsg::LogOutput& output)
 {
-    output.open("values {");
+    output.enter("values {");
     output("bufferView: ", bufferView);
     output("byteOffset: ", byteOffset);
-    output.close();
+    output.leave();
 }
 
 void gltf::SparseValues::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -151,7 +151,7 @@ void gltf::Sparse::report(vsg::LogOutput& output)
     output("count = ", count);
     if (indices) indices->report(output);
     if (values) values->report(output);
-    output.close();
+    output.leave();
 }
 
 void gltf::Sparse::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -177,7 +177,7 @@ void gltf::Sparse::read_object(vsg::JSONParser& parser, const std::string_view& 
 
 void gltf::Accessor::report(vsg::LogOutput& output)
 {
-    output.open("Accessor {");
+    output.enter("Accessor {");
     NameExtensionsExtras::report(output);
     output("bufferView: ", bufferView);
     output("byteOffset: ", byteOffset);
@@ -188,7 +188,7 @@ void gltf::Accessor::report(vsg::LogOutput& output)
     for(auto& value : min.values) { output("min : ", value); }
     for(auto& value : max.values) { output("max : ", value); }
     if (sparse) sparse->report(output);
-    output.close();
+    output.leave();
 }
 
 void gltf::Accessor::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -263,10 +263,10 @@ gltf::DataProperties gltf::Accessor::getDataProperties() const
 //
 void gltf::Asset::report(vsg::LogOutput& output)
 {
-    output.open("Asset = {");
+    output.enter("Asset = {");
     ExtensionsExtras::report(output);
     output("copyright = ", copyright, ", generator = ", generator, ", version = ", version, ", minVersion = ", minVersion, " } ", this);
-    output.close("} ", this);
+    output.leave("} ", this);
 }
 
 void gltf::Asset::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -284,14 +284,14 @@ void gltf::Asset::read_string(vsg::JSONParser& parser, const std::string_view& p
 //
 void gltf::BufferView::report(vsg::LogOutput& output)
 {
-    output.open("BufferView { ");
+    output.enter("BufferView { ");
     NameExtensionsExtras::report(output);
     output("buffer: ", buffer);
     output("byteOffset: ", byteOffset);
     output("byteLength: ", byteLength);
     output("byteStride: ", byteStride);
     output("target: ", target);
-    output.close();
+    output.leave();
 }
 
 
@@ -311,12 +311,12 @@ void gltf::BufferView::read_number(vsg::JSONParser& parser, const std::string_vi
 //
 void gltf::Buffer::report(vsg::LogOutput& output)
 {
-    output.open("Buffer { ");
+    output.enter("Buffer { ");
     NameExtensionsExtras::report(output);
     if (uri.size() < 128) output("uri: ", uri, " data: ", data);
     else output("uri: first 128 bytes [ ", std::string_view(uri.data(), 128), " ] data: ", data);
     output("byteLength: ", byteLength);
-    output.close();
+    output.leave();
 }
 
 void gltf::Buffer::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -337,13 +337,13 @@ void gltf::Buffer::read_number(vsg::JSONParser& parser, const std::string_view& 
 //
 void gltf::Image::report(vsg::LogOutput& output)
 {
-    output.open("Image { ");
+    output.enter("Image { ");
     NameExtensionsExtras::report(output);
     if (uri.size() < 128) output("uri: ", uri, " data: ", data);
     else output("uri: first 128 bytes [ ", std::string_view(uri.data(), 128), " ] data: ", data);
     output("mimeType: ", mimeType);
     output("bufferView: ", bufferView);
-    output.close("}");
+    output.leave("}");
 }
 
 void gltf::Image::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -444,7 +444,7 @@ void gltf::KHR_texture_transform::read_number(vsg::JSONParser& parser, const std
 
 void gltf::Material::report(vsg::LogOutput& output)
 {
-    output.open("Material {");
+    output.enter("Material {");
     NameExtensionsExtras::report(output);
     output("pbrMetallicRoughness.baseColorFactor = ", pbrMetallicRoughness.baseColorFactor.values.size(), " }" );
     output("pbrMetallicRoughness.baseColorTexture = { ", pbrMetallicRoughness.baseColorTexture.index, ", ", pbrMetallicRoughness.baseColorTexture.texCoord, " }" );
@@ -454,13 +454,13 @@ void gltf::Material::report(vsg::LogOutput& output)
     output("normalTexture = { ", normalTexture.index, ", ", normalTexture.texCoord, " }");
     output("occlusionTexture = { ", occlusionTexture.index, ", ", occlusionTexture.texCoord, " }");
     output("emissiveTexture = { ", emissiveTexture.index, ", ", emissiveTexture.texCoord, " }");
-    output.open("emissiveFactor : ", emissiveFactor.values.size(), " {");
+    output.enter("emissiveFactor : ", emissiveFactor.values.size(), " {");
     for(auto value : emissiveFactor.values) output(" ", value);
-    output.close();
+    output.leave();
     output("alphaMode : ", alphaMode);
     output("alphaCutoff : ", alphaCutoff);
     output("doubleSided : ", doubleSided);
-    output.close();
+    output.leave();
 }
 
 void gltf::Material::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -507,23 +507,23 @@ void gltf::Attributes::read_number(vsg::JSONParser&, const std::string_view& pro
 
 void gltf::Primitive::report(vsg::LogOutput& output)
 {
-    output.open("Primitive { ");
+    output.enter("Primitive { ");
     ExtensionsExtras::report(output);
-    output.open("attributes = {");
+    output.enter("attributes = {");
     for(auto& [semantic, id] : attributes.values) output("    ", semantic, ", ", id);
-    output.close();
+    output.leave();
     output("indices = ", indices);
     output("material = ", material);
     output("mode = ", mode);
-    output.open("targets = [");
+    output.enter("targets = [");
     for(auto& value : targets.values)
     {
-        output.open();
+        output.enter();
         for(auto& [semantic, id] : value->values) output("        ", semantic, ", ", id);
-        output.close();
+        output.leave();
     }
-    output.close("]");
-    output.close();
+    output.leave("]");
+    output.leave();
 }
 
 void gltf::Primitive::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -548,12 +548,12 @@ void gltf::Primitive::read_object(vsg::JSONParser& parser, const std::string_vie
 
 void gltf::Mesh::report(vsg::LogOutput& output)
 {
-    output.open("Mesh {");
+    output.enter("Mesh {");
     NameExtensionsExtras::report(output);
     output("primitives: ", primitives.values);
     for(auto& primitive : primitives.values) primitive->report(output);
     output("weights: ", weights.values);
-    output.close();
+    output.leave();
 }
 
 void gltf::Mesh::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -565,13 +565,13 @@ void gltf::Mesh::read_array(vsg::JSONParser& parser, const std::string_view& pro
 
 void gltf::KHR_draco_mesh_compression::report(vsg::LogOutput& output)
 {
-    output.open("KHR_draco_mesh_compression {");
+    output.enter("KHR_draco_mesh_compression {");
     ExtensionsExtras::report(output);
-    output.open("attributes = {");
+    output.enter("attributes = {");
     for(auto& [semantic, id] : attributes.values) output("    ", semantic, ", ", id);
-    output.close();
+    output.leave();
     output("bufferView = ", bufferView);
-    output.close();
+    output.leave();
 }
 
 void gltf::KHR_draco_mesh_compression::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -592,18 +592,18 @@ void gltf::KHR_draco_mesh_compression::read_object(vsg::JSONParser& parser, cons
 //
 void gltf::Node::report(vsg::LogOutput& output)
 {
-    output.open("Node {");
+    output.enter("Node {");
     NameExtensionsExtras::report(output);
     if (camera) output("camera: ", camera);
     if (skin) output("skin: ", skin);
     if (mesh) output("mesh: ", mesh);
-    output("children: ", children.values.size());
-    output("matrix: ", matrix.values.size());
-    output("rotation: ", rotation.values.size());
-    output("scale: ", scale.values.size());
+    output("children: ", children.values.size(), ", values = ", children.values);
+    output("matrix: ", matrix.values.size(), ", values = ", matrix.values);
+    output("rotation: ", rotation.values.size(), " values = ", rotation.values);
+    output("scale: ", scale.values.size(), " values = ", scale.values);
     output("translation: ", translation.values.size());
     output("weights: ", weights.values.size());
-    output.close();
+    output.leave();
 }
 
 void gltf::Node::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -627,15 +627,15 @@ void gltf::Node::read_number(vsg::JSONParser& parser, const std::string_view& pr
 
 void gltf::EXT_mesh_gpu_instancing::report(vsg::LogOutput& output)
 {
-    output.open("EXT_mesh_gpu_instancing {");
+    output.enter("EXT_mesh_gpu_instancing {");
     ExtensionsExtras::report(output);
-    output.open("attributes = {");
+    output.enter("attributes = {");
     if (attributes)
     {
         for(auto& [semantic, id] : attributes->values) output(semantic, ", ", id);
     }
-    output.close();
-    output.close();
+    output.leave();
+    output.leave();
 }
 
 void gltf::EXT_mesh_gpu_instancing::read_object(vsg::JSONParser& parser, const std::string_view& property)
@@ -654,13 +654,13 @@ void gltf::EXT_mesh_gpu_instancing::read_object(vsg::JSONParser& parser, const s
 //
 void gltf::Sampler::report(vsg::LogOutput& output)
 {
-    output.open("Sampler {");
+    output.enter("Sampler {");
     NameExtensionsExtras::report(output);
     output("minFilter: ", minFilter);
     output("magFilter: ", magFilter);
     output("wrapS: ", wrapS);
     output("wrapT: ", wrapT);
-    output.close();
+    output.leave();
 }
 
 void gltf::Sampler::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -680,10 +680,10 @@ void gltf::Sampler::read_number(vsg::JSONParser& parser, const std::string_view&
 //
 void gltf::Scene::report(vsg::LogOutput& output)
 {
-    output.open("Scene = {");
+    output.enter("Scene = {");
     NameExtensionsExtras::report(output);
     output("nodes = ", nodes.values.size());
-    output.close("} ", this);
+    output.leave("} ", this);
 }
 
 void gltf::Scene::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -698,10 +698,10 @@ void gltf::Scene::read_array(vsg::JSONParser& parser, const std::string_view& pr
 //
 void gltf::Texture::report(vsg::LogOutput& output)
 {
-    output.open("Texture = {");
+    output.enter("Texture = {");
     NameExtensionsExtras::report(output);
     output("sampler = ", sampler, ", ", source);
-    output.close("} ", this);
+    output.leave("} ", this);
 }
 
 void gltf::Texture::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -717,10 +717,10 @@ void gltf::Texture::read_number(vsg::JSONParser& parser, const std::string_view&
 //
 void gltf::AnimationTarget::report(vsg::LogOutput& output)
 {
-    output.open("AnimationTarget {");
+    output.enter("AnimationTarget {");
     output("node = ", node);
     output("path = ", path);
-    output.close();
+    output.leave();
 }
 
 void gltf::AnimationTarget::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -737,10 +737,10 @@ void gltf::AnimationTarget::read_number(vsg::JSONParser& parser, const std::stri
 
 void gltf::AnimationChannel::report(vsg::LogOutput& output)
 {
-    output.open("AnimationChannel {");
+    output.enter("AnimationChannel {");
     output("sampler = ", sampler);
     target.report(output);
-    output.close();
+    output.leave();
 }
 
 void gltf::AnimationChannel::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -757,13 +757,13 @@ void gltf::AnimationChannel::read_object(vsg::JSONParser& parser, const std::str
 
 void gltf::AnimationSampler::report(vsg::LogOutput& out)
 {
-    out.open("AnimationSampler {");
+    out.enter("AnimationSampler {");
 
     out("input = ", input);
     out("interpolation = ", interpolation);
     out("output = ", output);
 
-    out.close();
+    out.leave();
 }
 
 void gltf::AnimationSampler::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -781,31 +781,31 @@ void gltf::AnimationSampler::read_number(vsg::JSONParser& parser, const std::str
 
 void gltf::Animation::report(vsg::LogOutput& output)
 {
-    output.open("Animation {");
+    output.enter("Animation {");
     NameExtensionsExtras::report(output);
     output("channels.size() = ", channels.values.size());
     if (!channels.values.empty())
     {
-        output.open();
+        output.enter();
         for(auto& channel : channels.values)
         {
             channel->report(output);
         }
-        output.close();
+        output.leave();
     }
 
     output("samplers.size() = ", samplers.values.size());
     if (!samplers.values.empty())
     {
-        output.open();
+        output.enter();
         for(auto& sampler : samplers.values)
         {
             sampler->report(output);
         }
-        output.close();
+        output.leave();
     }
 
-    output.close();
+    output.leave();
 }
 
 void gltf::Animation::read_array(vsg::JSONParser& parser, const std::string_view& property)
@@ -849,11 +849,11 @@ void gltf::Perspective::read_number(vsg::JSONParser& parser, const std::string_v
 
 void gltf::Camera::report(vsg::LogOutput& output)
 {
-    output.open("Camera {");
+    output.enter("Camera {");
     vsg::info("type = ", type);
     if (perspective) perspective->report(output);
     if (orthographic) orthographic->report(output);
-    output.close();
+    output.leave();
 }
 
 void gltf::Camera::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -883,11 +883,11 @@ void gltf::Camera::read_object(vsg::JSONParser& parser, const std::string_view& 
 //
 void gltf::Skins::report(vsg::LogOutput& output)
 {
-    output.open("Skins {");
+    output.enter("Skins {");
     output("inverseBindMatrices = ", inverseBindMatrices);
     output("skeleton = ", skeleton);
     output("joints = ", joints.values.size());
-    output.close();
+    output.leave();
 }
 
 void gltf::Skins::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
@@ -961,7 +961,7 @@ void gltf::KHR_lights_punctual::read_array(vsg::JSONParser& parser, const std::s
 //
 void gltf::glTF::report(vsg::LogOutput& output)
 {
-    output.open("glTF {");
+    output.enter("glTF {");
     if (asset) asset->report(output);
     accessors.report(output);
     bufferViews.report(output);
@@ -977,7 +977,7 @@ void gltf::glTF::report(vsg::LogOutput& output)
     cameras.report(output);
     output("scene = ", scene);
     scenes.report(output);
-    output.close("}");
+    output.leave("}");
 }
 
 void gltf::glTF::read_array(vsg::JSONParser& parser, const std::string_view& property)
