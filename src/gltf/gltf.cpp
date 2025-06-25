@@ -715,6 +715,14 @@ void gltf::Texture::read_number(vsg::JSONParser& parser, const std::string_view&
 //
 // Animation
 //
+void gltf::AnimationTarget::report(vsg::LogOutput& output)
+{
+    output.open("AnimationTarget {");
+    output("node = ", node);
+    output("path = ", path);
+    output.close();
+}
+
 void gltf::AnimationTarget::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
     if (property=="path") parser.read_string(path);
@@ -727,6 +735,14 @@ void gltf::AnimationTarget::read_number(vsg::JSONParser& parser, const std::stri
     else parser.warning();
 }
 
+void gltf::AnimationChannel::report(vsg::LogOutput& output)
+{
+    output.open("AnimationChannel {");
+    output("sampler = ", sampler);
+    target.report(output);
+    output.close();
+}
+
 void gltf::AnimationChannel::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
     if (property=="sampler") input >> sampler;
@@ -737,6 +753,17 @@ void gltf::AnimationChannel::read_object(vsg::JSONParser& parser, const std::str
 {
     if (property=="target") parser.read_object(target);
     else ExtensionsExtras::read_object(parser, property);
+}
+
+void gltf::AnimationSampler::report(vsg::LogOutput& out)
+{
+    out.open("AnimationSampler {");
+
+    out("input = ", input);
+    out("interpolation = ", interpolation);
+    out("output = ", output);
+
+    out.close();
 }
 
 void gltf::AnimationSampler::read_string(vsg::JSONParser& parser, const std::string_view& property)
@@ -756,7 +783,28 @@ void gltf::Animation::report(vsg::LogOutput& output)
 {
     output.open("Animation {");
     NameExtensionsExtras::report(output);
-    output("channels.size() = ", channels.values.size(), ", samplers.size() = ", samplers.values.size());
+    output("channels.size() = ", channels.values.size());
+    if (!channels.values.empty())
+    {
+        output.open();
+        for(auto& channel : channels.values)
+        {
+            channel->report(output);
+        }
+        output.close();
+    }
+
+    output("samplers.size() = ", samplers.values.size());
+    if (!samplers.values.empty())
+    {
+        output.open();
+        for(auto& sampler : samplers.values)
+        {
+            sampler->report(output);
+        }
+        output.close();
+    }
+
     output.close();
 }
 
@@ -925,8 +973,8 @@ void gltf::glTF::report(vsg::LogOutput& output)
     samplers.report(output);
     textures.report(output);
     animations.report(output);
-    cameras.report(output);
     skins.report(output);
+    cameras.report(output);
     output("scene = ", scene);
     scenes.report(output);
     output.close("}");

@@ -464,6 +464,7 @@ namespace vsgXchange
             glTFid node;
             std::string path;
 
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -473,6 +474,7 @@ namespace vsgXchange
             glTFid sampler;
             AnimationTarget target;
 
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -483,6 +485,7 @@ namespace vsgXchange
             std::string interpolation;
             glTFid output;
 
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -493,6 +496,17 @@ namespace vsgXchange
             vsg::ObjectsSchema<AnimationSampler> samplers;
 
             void report(vsg::LogOutput& output);
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+        };
+
+        struct VSGXCHANGE_DECLSPEC Skins : public vsg::Inherit<NameExtensionsExtras, Skins>
+        {
+            glTFid inverseBindMatrices;
+            glTFid skeleton;
+            vsg::ValuesSchema<glTFid> joints;
+
+            void report(vsg::LogOutput& output);
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -527,17 +541,6 @@ namespace vsgXchange
             void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
-        };
-
-        struct VSGXCHANGE_DECLSPEC Skins : public vsg::Inherit<NameExtensionsExtras, Skins>
-        {
-            glTFid inverseBindMatrices;
-            glTFid skeleton;
-            vsg::ValuesSchema<glTFid> joints;
-
-            void report(vsg::LogOutput& output);
-            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
-            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
         struct VSGXCHANGE_DECLSPEC  Spot : public vsg::Inherit<ExtensionsExtras, Spot>
