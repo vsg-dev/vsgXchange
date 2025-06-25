@@ -79,7 +79,7 @@ namespace vsgXchange
         {
             std::map<std::string, vsg::ref_ptr<vsg::JSONParser::Schema>> values;
 
-            void report();
+            void report(vsg::LogOutput& output);
 
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -91,7 +91,7 @@ namespace vsgXchange
             vsg::ref_ptr<Extensions> extensions;
             vsg::ref_ptr<Extras> extras;
 
-            void report();
+            void report(vsg::LogOutput& output);
 
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
 
@@ -110,7 +110,7 @@ namespace vsgXchange
         {
             std::string name;
 
-            void report();
+            void report(vsg::LogOutput& output);
 
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -121,7 +121,7 @@ namespace vsgXchange
             uint32_t byteOffset = 0;
             uint32_t componentType = 0;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -130,7 +130,7 @@ namespace vsgXchange
             glTFid bufferView;
             uint32_t byteOffset = 0;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -140,7 +140,7 @@ namespace vsgXchange
             vsg::ref_ptr<SparseIndices> indices;
             vsg::ref_ptr<SparseValues> values;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -179,7 +179,7 @@ namespace vsgXchange
 
             DataProperties getDataProperties() const;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
@@ -194,7 +194,7 @@ namespace vsgXchange
             std::string generator;
             std::string minVersion;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -206,7 +206,7 @@ namespace vsgXchange
             uint32_t byteStride = 1;
             uint32_t target = 0;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -218,7 +218,7 @@ namespace vsgXchange
             // loaded from uri
             vsg::ref_ptr<vsg::Data> data;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -232,7 +232,7 @@ namespace vsgXchange
             // loaded from uri
             vsg::ref_ptr<vsg::Data> data;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -344,7 +344,7 @@ namespace vsgXchange
             // extensions
             // extras
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -353,7 +353,7 @@ namespace vsgXchange
             glTFid sampler;
             glTFid source;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -368,7 +368,7 @@ namespace vsgXchange
             float alphaCutoff = 0.5f;
             bool doubleSided = false;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -392,7 +392,7 @@ namespace vsgXchange
             uint32_t mode = 4;
             vsg::ObjectsSchema<Attributes> targets;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -403,7 +403,7 @@ namespace vsgXchange
             vsg::ObjectsSchema<Primitive> primitives;
             vsg::ValuesSchema<double> weights;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -416,7 +416,7 @@ namespace vsgXchange
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_draco_mesh_compression::create(*this); }
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -429,7 +429,7 @@ namespace vsgXchange
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return EXT_mesh_gpu_instancing::create(*this); }
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -445,7 +445,7 @@ namespace vsgXchange
             vsg::ValuesSchema<double> translation;
             vsg::ValuesSchema<double> weights;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -455,7 +455,7 @@ namespace vsgXchange
         {
             vsg::ValuesSchema<glTFid> nodes;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -492,7 +492,7 @@ namespace vsgXchange
             vsg::ObjectsSchema<AnimationChannel> channels;
             vsg::ObjectsSchema<AnimationSampler> samplers;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
@@ -503,7 +503,7 @@ namespace vsgXchange
             double znear = 1.0;
             double zfar = 1000.0;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -514,7 +514,7 @@ namespace vsgXchange
             double znear = 1.0;
             double zfar = 1000.0;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
@@ -524,7 +524,7 @@ namespace vsgXchange
             vsg::ref_ptr<Perspective> perspective;
             std::string type;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -535,7 +535,7 @@ namespace vsgXchange
             glTFid skeleton;
             vsg::ValuesSchema<glTFid> joints;
 
-            void report();
+            void report(vsg::LogOutput& output);
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
         };
@@ -598,7 +598,7 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
 
-            void report();
+            void report(vsg::LogOutput& output);
 
             virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
         };
