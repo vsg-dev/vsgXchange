@@ -176,6 +176,20 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
     auto model = vsg::read_cast<vsg::Node>(binary_fin, opt);
 
+    if (featureTable && featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size()==3)
+    {
+        vsg::dvec3 rtc_center;
+        rtc_center.x = featureTable->RTC_CENTER.values[0];
+        rtc_center.y = featureTable->RTC_CENTER.values[1];
+        rtc_center.z = featureTable->RTC_CENTER.values[2];
+
+        auto transform = vsg::MatrixTransform::create();
+        transform->matrix = vsg::translate(rtc_center);
+        transform->addChild(model);
+
+        model = transform;
+    }
+
     if (model && filename) model->setValue("b3dm", filename);
 
     return model;
