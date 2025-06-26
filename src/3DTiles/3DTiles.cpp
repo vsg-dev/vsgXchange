@@ -49,13 +49,11 @@ void Tiles3D::BoundingVolume::read_array(vsg::JSONParser& parser, const std::str
 
 void Tiles3D::BoundingVolume::report(vsg::LogOutput& output)
 {
-    output("BoundingVolume {");
-    output.in();
+    output.enter("BoundingVolume {");
     output("box = ", box.values);
     output("region = ", region.values);
     output("sphere = ", sphere.values);
-    output.out();
-    output("}");
+    output.leave();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,12 +78,10 @@ void Tiles3D::Content::read_string(vsg::JSONParser& parser, const std::string_vi
 
 void Tiles3D::Content::report(vsg::LogOutput& output)
 {
-    output("Content {");
-    output.in();
+    output.enter("Content {");
     if (boundingVolume) boundingVolume->report(output);
     output("uri = ", uri);
-    output.out();
-    output("}");
+    output.leave();
 }
 
 
@@ -141,8 +137,7 @@ void Tiles3D::Tile::read_string(vsg::JSONParser& parser, const std::string_view&
 
 void Tiles3D::Tile::report(vsg::LogOutput& output)
 {
-    output("Tile {");
-    output.in();
+    output.enter("Tile {");
 
     output("geometricError = ", geometricError);
     output("refine = ", refine);
@@ -154,18 +149,15 @@ void Tiles3D::Tile::report(vsg::LogOutput& output)
     if (children.values.empty()) output("children {}");
     else
     {
-        output("children {");
-        output.in();
+        output.enter("children {");
         for(auto& child : children.values)
         {
             child->report(output);
         }
-        output.out();
-        output("}");
+        output.leave();
     }
 
-    output.out();
-    output("}");
+    output.leave();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,15 +178,12 @@ void Tiles3D::Properties::read_object(vsg::JSONParser& parser, const std::string
 
 void Tiles3D::Properties::report(vsg::LogOutput& output)
 {
-    output("Properties {");
-    output.in();
-
+    output.enter("Properties {");
     for(auto& [name, property] : properties)
     {
         output(name, " { minimum = ", property.minimum, ", maximum = ", property.maximum, " }");
     }
-    output.out();
-    output("}");
+    output.leave();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -215,8 +204,7 @@ void Tiles3D::Asset::read_number(vsg::JSONParser&, const std::string_view& prope
 
 void Tiles3D::Asset::report(vsg::LogOutput& output)
 {
-    output("Asset {");
-    output.in();
+    output.enter("Asset {");
     output("version = ", version);
     output("tilesetVersion = ", tilesetVersion);
     if (!strings.empty())
@@ -234,8 +222,7 @@ void Tiles3D::Asset::report(vsg::LogOutput& output)
         }
     }
     output("extras = ", extras);
-    output.out();
-    output("}");
+    output.leave();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,8 +265,7 @@ void Tiles3D::Tileset::read_number(vsg::JSONParser& parser, const std::string_vi
 
 void Tiles3D::Tileset::report(vsg::LogOutput& output)
 {
-    output("Tileset {");
-    output.in();
+    output.enter("Tileset {");
 
     if (asset) asset->report(output);
     if (properties) properties->report(output);
@@ -290,8 +276,7 @@ void Tiles3D::Tileset::report(vsg::LogOutput& output)
 
     if (root) root->report(output);
 
-    output.out();
-    output("}");
+    output.leave();
 }
 
 void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
@@ -596,31 +581,26 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
 
     for(auto& [name, batch] : batches)
     {
-        output("batch ", name, " {");
-
-        output.in();
+        output.enter("batch ", name, " {");
 
         if (batch->object)
         {
-            output("object = ", batch->object);
-            output.in();
+            output.enter("object = ", batch->object);
 
             batch->object->accept(pv);
 
-            output.out();
+            output.leave();
         }
         else if (batch->objects)
         {
-            output("objects = ", batch->objects);
-
-            output.in();
+            output.enter("objects = ", batch->objects);
 
             for(auto& child : batch->objects->children)
             {
                 output("child = ", child);
             }
 
-            output.out();
+            output.leave();
         }
         else
         {
@@ -629,9 +609,7 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
             output("type = ", batch->type);
         }
 
-        output.out();
-
-        output("}");
+        output.leave();
     }
  }
 
