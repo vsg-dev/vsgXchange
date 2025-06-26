@@ -1683,6 +1683,59 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         }
     }
 
+#if 0
+    vsg::LogOutput log;
+    log("model->animations.values.size() = ", model->animations.values.size());
+    for(auto& animation : model->animations.values)
+    {
+        // animation->report(log);
+
+        vsg::ref_ptr<AnimationChannel> translation_channel;
+        vsg::ref_ptr<AnimationChannel> rotation_channel;
+        vsg::ref_ptr<AnimationChannel> scale_channel;
+        vsg::ref_ptr<AnimationChannel> weights_channel;
+        vsg::ref_ptr<AnimationChannel> string_channel;
+
+        for(auto& channel : animation->channels.values)
+        {
+            if (channel->target.path == "translation") translation_channel = channel;
+            else if (channel->target.path == "rotation") rotation_channel = channel;
+            else if (channel->target.path == "scale") scale_channel = channel;
+            else if (channel->target.path == "weights") weights_channel = channel;
+            else if (channel->target.path == "string") string_channel = channel;
+            else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+
+            log.enter("channel {");
+            log("sampler = ", channel->sampler);
+            channel->target.report(log);
+            log.leave();
+        }
+
+        vsg::info("translation_channel = ", translation_channel, ", rotation_channel = ", rotation_channel, ", scale_channel = ", scale_channel, ", weights_channel = ", weights_channel);
+        if (string_channel) vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported string_channel.");
+
+        for(auto& sampler : animation->samplers.values)
+        {
+            auto input_accessor = model->accessors.values[sampler->input.value];
+            auto output_accessor = model->accessors.values[sampler->output.value];
+
+            log.enter("sampler {");
+
+            log("interpolation  = ", sampler->interpolation);
+
+            log.enter("input ", sampler->input, " {");
+            input_accessor->report(log);
+            log.leave();
+
+            log.enter("output ", sampler->output, " {");
+            output_accessor->report(log);
+            log.leave();
+
+            log.leave();
+        }
+    }
+#endif
+
     // vsg::info("scene = ", model->scene);
     // vsg::info("scenes = ", model->scenes.values.size());
 
