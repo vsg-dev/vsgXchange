@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsgXchange/3DTiles.h>
 
 #include <vsg/io/read.h>
+#include <vsg/app/EllipsoidModel.h>
 #include <vsg/nodes/Group.h>
 #include <vsg/nodes/MatrixTransform.h>
 #include <vsg/nodes/VertexIndexDraw.h>
@@ -327,6 +328,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
             vsg_tileset->addChild(vsg_root);
         }
     }
+
+    vsg_tileset->setObject("EllipsoidModel", vsg::EllipsoidModel::create());
 
     return vsg_tileset;
 }
