@@ -205,6 +205,8 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
     bool usePagedLOD = level > preLoadLevel;
 
+    bool refineAdd = (tile->refine=="ADD");
+
     if (tile->children.values.empty())
     {
         if (local_subgraph)
@@ -227,6 +229,11 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         if (tile->geometricError > 0.0)
         {
             minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
+        }
+
+        if (refineAdd)
+        {
+            vsg::warn("Tiles3D::SceneGraphBuilder::createTile(", tile, ", ", level, ") refine = ", tile->refine, " not yet implemented for PagedLOD.");
         }
 
         auto plod = vsg::PagedLOD::create();
@@ -254,7 +261,10 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
         }
 
-        // vsg::info("tile->geometricError = ", tile->geometricError, ", minimumScreenHeightRatio = ", minimumScreenHeightRatio);
+        if (refineAdd)
+        {
+            vsg::warn("Tiles3D::SceneGraphBuilder::createTile(", tile, ", ", level, ") refine = ", tile->refine, " not yet implemented for LOD.");
+        }
 
         auto lod = vsg::LOD::create();
         lod->bound = bound;
