@@ -109,6 +109,15 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     // vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size(), ", ", operationThreads);
 
     auto group = vsg::Group::create();
+
+    if (tile->refine=="ADD")
+    {
+        if (auto local_subgraph = tile->getRefObject<vsg::Node>("local_subgraph"))
+        {
+            group->addChild(local_subgraph);
+        }
+    }
+
     if (operationThreads && tile->children.values.size() > 1)
     {
         struct ReadTileOperation : public vsg::Inherit<vsg::Operation, ReadTileOperation>
@@ -205,7 +214,11 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
     bool usePagedLOD = level > preLoadLevel;
 
-    bool refineAdd = (tile->refine=="ADD");
+    if (tile->refine=="ADD" && local_subgraph)
+    {
+        // need to pass on Tile local_subgraph to the SceneGraphBuilder::readTileChildren(..) so assign it to Tile as meta data
+        tile->setObject("local_subgraph", local_subgraph);
+    }
 
     if (tile->children.values.empty())
     {
@@ -231,11 +244,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
         }
 
-        if (refineAdd)
-        {
-            vsg::warn("Tiles3D::SceneGraphBuilder::createTile(", tile, ", ", level, ") refine = ", tile->refine, " not yet implemented for PagedLOD.");
-        }
-
         auto plod = vsg::PagedLOD::create();
         plod->bound = bound;
         plod->children[0] = vsg::PagedLOD::Child{minimumScreenHeightRatio, {}};
@@ -259,11 +267,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         if (tile->geometricError > 0.0)
         {
             minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
-        }
-
-        if (refineAdd)
-        {
-            vsg::warn("Tiles3D::SceneGraphBuilder::createTile(", tile, ", ", level, ") refine = ", tile->refine, " not yet implemented for LOD.");
         }
 
         auto lod = vsg::LOD::create();
