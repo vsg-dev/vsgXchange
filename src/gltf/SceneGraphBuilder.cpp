@@ -253,22 +253,22 @@ vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<glt
 
 vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createImage(vsg::ref_ptr<gltf::Image> gltf_image)
 {
+    vsg::ref_ptr<vsg::Data> vsg_image;
     if (gltf_image->data)
     {
-        // vsg::info("createImage(", gltf_image, ") gltf_image->data = ", gltf_image->data);
-        return gltf_image->data;
+        vsg_image = gltf_image->data;
     }
     else if (gltf_image->bufferView)
     {
-        auto data = vsg_bufferViews[gltf_image->bufferView.value];
-        // vsg::info("createImage(", gltf_image, ") bufferView = ", gltf_image->bufferView, ", vsg_bufferView = ", data);
-        return data;
+        vsg_image = vsg_bufferViews[gltf_image->bufferView.value];
     }
     else
     {
-        vsg::info("createImage(", gltf_image, ") uri = ", gltf_image->uri, ", nothing to create vsg::Data image from.");
+        vsg::warn("createImage(", gltf_image, ") uri = ", gltf_image->uri, ", nothing to create vsg::Data image from.");
         return {};
     }
+
+    return vsg_image;
 }
 
 vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler)
@@ -660,8 +660,10 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
     std::vector<vsg::ref_ptr<vsg::Node>> nodes;
 
+    vsg::info("createMesh(", gltf_mesh, ") gltf_mesh->primitives.values.size() = ", gltf_mesh->primitives.values.size());
     for(auto& primitive : gltf_mesh->primitives.values)
     {
+        vsg::info("    primitive = ", primitive);
         vsg::ref_ptr<vsg::DescriptorConfigurator> vsg_material;
         if (primitive->material)
         {
@@ -672,6 +674,18 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             vsg::debug("Material for primitive not assigned, primitive = ", primitive, ", primitive->material = ", primitive->material);
             vsg_material = default_material;
         }
+
+        for(auto& ds : vsg_material->descriptorSets)
+        {
+            if (ds)
+            {
+                for(auto& discriptor : ds->descriptors)
+                {
+                    vsg::info("      discriptor = ", discriptor);
+                }
+            }
+        }
+
 
         auto config = vsg::GraphicsPipelineConfigurator::create(vsg_material->shaderSet);
         config->descriptorConfigurator = vsg_material;
@@ -731,6 +745,18 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             }
             else if (attribute_name=="TEXCOORD_0")
             {
+                bool flipYAxis = false;
+                if (flipYAxis)
+                {
+                    if (auto texCoords = array.cast<vsg::vec2Array>())
+                    {
+                        for(auto& tc : *texCoords)
+                        {
+                            tc.y = 1.0f - tc.y;
+                        }
+                    }
+                }
+
                 if (auto texture_transform = vsg_material->getObject<KHR_texture_transform>("KHR_texture_transform"))
                 {
                     vsg::vec2 offset(0.0f, 0.0f);

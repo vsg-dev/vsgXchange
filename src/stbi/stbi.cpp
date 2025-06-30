@@ -78,15 +78,20 @@ static void writeToStream(void* context, void* data, int size)
     reinterpret_cast<std::ostream*>(context)->write(reinterpret_cast<const char*>(data), size);
 }
 
-static void process_image_format(vsg::ref_ptr<const vsg::Options> options, VkFormat& format)
+static void process_image_properities(vsg::ref_ptr<const vsg::Options> options, vsg::Data::Properties& properties, const vsg::Path& filename = {})
 {
     if (!options) return;
 
     vsg::CoordinateSpace coordinateSpace;
     if (options->getValue(stbi::image_format, coordinateSpace))
     {
-        if (coordinateSpace==vsg::CoordinateSpace::sRGB) format = vsg::uNorm_to_sRGB(format);
-        else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) format = vsg::sRGB_to_uNorm(format);
+        if (coordinateSpace==vsg::CoordinateSpace::sRGB) properties.format = vsg::uNorm_to_sRGB(properties.format);
+        else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) properties.format = vsg::sRGB_to_uNorm(properties.format);
+    }
+
+    if (auto itr = options->formatOriginConventions.find(filename.empty() ? options->extensionHint :  vsg::lowerCaseFileExtension(filename)); itr != options->formatOriginConventions.end())
+    {
+        properties.origin = itr->second;
     }
 }
 
@@ -197,7 +202,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const vsg::Path& filename, vsg::ref_ptr<con
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
-        process_image_format(options, vsg_data->properties.format);
+        process_image_properities(options, vsg_data->properties, filename);
         return vsg_data;
     }
 
@@ -223,7 +228,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(std::istream& fin, vsg::ref_ptr<const vsg::
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
-        process_image_format(options, vsg_data->properties.format);
+        process_image_properities(options, vsg_data->properties);
         return vsg_data;
     }
 
@@ -239,7 +244,7 @@ vsg::ref_ptr<vsg::Object> stbi::read(const uint8_t* ptr, size_t size, vsg::ref_p
     if (pixels)
     {
         auto vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(pixels), vsg::Data::Properties{VK_FORMAT_R8G8B8A8_SRGB});
-        process_image_format(options, vsg_data->properties.format);
+        process_image_properities(options, vsg_data->properties);
         return vsg_data;
     }
 

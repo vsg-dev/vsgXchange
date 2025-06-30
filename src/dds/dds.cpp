@@ -162,7 +162,7 @@ namespace
         return vsg_data;
     }
 
-    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile& ddsFile)
+    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile& ddsFile, vsg::ref_ptr<const vsg::Options> options)
     {
         const auto width = ddsFile.GetWidth();
         const auto height = ddsFile.GetHeight();
@@ -182,15 +182,14 @@ namespace
 
         if (auto it = kFormatMap.find(format); it != kFormatMap.end())
         {
+            vsg::ref_ptr<vsg::Data> vsg_data;
             if (isCompressed)
             {
-                return readCompressed(ddsFile, it->second);
+                vsg_data = readCompressed(ddsFile, it->second);
             }
             else
             {
                 auto raw = allocateAndCopyToContiguousBlock(ddsFile);
-
-                vsg::ref_ptr<vsg::Data> vsg_data;
 
                 vsg::Data::Properties layout;
                 layout.format = it->second;
@@ -266,8 +265,17 @@ namespace
 
                 //std::cout << "* Finish: " << valueCount * valueSize << ", " << vsg_data->dataSize() << std::endl;
 
-                return vsg_data;
             }
+
+            if (vsg_data && options)
+            {
+                if (auto itr = options->formatOriginConventions.find(".dds"); itr != options->formatOriginConventions.end())
+                {
+                    vsg_data->properties.origin = itr->second;
+                }
+            }
+
+            return vsg_data;
         }
         else
         {
@@ -297,7 +305,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
     std::ifstream ifs(filenameToUse, std::ios_base::binary);
     if (const auto result = ddsFile.Load(ifs); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
@@ -322,7 +330,7 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(fin); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
@@ -347,7 +355,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_pt
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
