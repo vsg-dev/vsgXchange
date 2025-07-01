@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/io/JSONParser.h>
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/lighting/Light.h>
+#include <vsg/animation/AnimationGroup.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsgXchange/Version.h>
 
@@ -643,6 +644,7 @@ namespace vsgXchange
             std::vector<vsg::ref_ptr<vsg::Light>> vsg_lights;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_nodes;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_scenes;
+            vsg::Animations vsg_animations;
 
             vsg::ref_ptr<vsg::DescriptorConfigurator> default_material;
 
@@ -671,6 +673,7 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
             vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
             vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
+            vsg::ref_ptr<vsg::Animation> createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
 
             vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet();

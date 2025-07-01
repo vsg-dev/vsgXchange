@@ -31,9 +31,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/DepthSorted.h>
 #include <vsg/nodes/Switch.h>
 #include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/InstanceDraw.h>
 #include <vsg/nodes/InstanceDrawIndexed.h>
 #include <vsg/nodes/Layer.h>
+#include <vsg/animation/AnimationGroup.h>
 #include <vsg/lighting/DirectionalLight.h>
 #include <vsg/lighting/PointLight.h>
 #include <vsg/lighting/SpotLight.h>
@@ -41,6 +43,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsg/utils/ComputeBounds.h>
 #include <vsg/state/material.h>
+
+#include <vsg/io/write.h>
 
 #ifdef vsgXchange_draco
 #include "draco/core/decoder_buffer.h"
@@ -1081,6 +1085,63 @@ vsg::ref_ptr<vsg::Light> gltf::SceneGraphBuilder::createLight(vsg::ref_ptr<gltf:
     return vsg_light;
 }
 
+vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation)
+{
+    vsg::LogOutput log;
+
+    auto vsg_animation = vsg::Animation::create();
+    vsg_animation->name = gltf_animation->name;
+
+    // gltf_animation->report(log);
+
+    vsg::ref_ptr<AnimationChannel> translation_channel;
+    vsg::ref_ptr<AnimationChannel> rotation_channel;
+    vsg::ref_ptr<AnimationChannel> scale_channel;
+    vsg::ref_ptr<AnimationChannel> weights_channel;
+    vsg::ref_ptr<AnimationChannel> string_channel;
+
+    for(auto& channel : gltf_animation->channels.values)
+    {
+        if (channel->target.path == "translation") translation_channel = channel;
+        else if (channel->target.path == "rotation") rotation_channel = channel;
+        else if (channel->target.path == "scale") scale_channel = channel;
+        else if (channel->target.path == "weights") weights_channel = channel;
+        else if (channel->target.path == "string") string_channel = channel;
+        else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+
+        log.enter("channel {");
+        log("sampler = ", channel->sampler);
+        channel->target.report(log);
+        log.leave();
+    }
+
+    vsg::info("translation_channel = ", translation_channel, ", rotation_channel = ", rotation_channel, ", scale_channel = ", scale_channel, ", weights_channel = ", weights_channel);
+    if (string_channel) vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported string_channel.");
+
+    for(auto& sampler : gltf_animation->samplers.values)
+    {
+        auto input_accessor = model->accessors.values[sampler->input.value];
+        auto output_accessor = model->accessors.values[sampler->output.value];
+
+        log.enter("sampler {");
+
+        log("interpolation  = ", sampler->interpolation);
+
+        log.enter("input ", sampler->input, " {");
+        input_accessor->report(log);
+        log.leave();
+
+        log.enter("output ", sampler->output, " {");
+        output_accessor->report(log);
+        log.leave();
+
+        log.leave();
+    }
+
+    return vsg_animation;
+}
+
+
 vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node)
 {
     vsg::ref_ptr<vsg::Node> vsg_node;
@@ -1258,45 +1319,72 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
         return {};
     }
 
-    vsg::ref_ptr<vsg::Node> vsg_scene;
 
+    vsg::Group::Children children;
+    for(auto& id : gltf_scene->nodes.values)
+    {
+        if (vsg_nodes[id.value]) children.push_back(vsg_nodes[id.value]);
+    }
+
+
+    // add transform node if required
     if (requiresRootTransformNode)
     {
-        auto mt = vsg::MatrixTransform::create(rootTransform);
+        auto transform = vsg::MatrixTransform::create(rootTransform);
+        transform->children.swap(children);
 
-        for(auto& id : gltf_scene->nodes.values)
-        {
-            mt->addChild(vsg_nodes[id.value]);
-        }
-
-        vsg_scene = mt;
+        children.clear();
+        children.push_back(transform);
     }
-    else
 
-    if (gltf_scene->nodes.values.size()>1)
+    // add animation group if required.
+    if (!vsg_animations.empty())
     {
-         auto group = vsg::Group::create();
-        for(auto& id : gltf_scene->nodes.values)
-        {
-            group->addChild(vsg_nodes[id.value]);
-        }
-        vsg_scene = group;
-    }
-    else
-    {
-        vsg_scene = vsg_nodes[gltf_scene->nodes.values[0].value];
+        auto animationGroup = vsg::AnimationGroup::create();
+        animationGroup->animations = vsg_animations;
+
+        animationGroup->children.swap(children);
+
+        children.clear();
+        children.push_back(animationGroup);
     }
 
+    // All culling node if required.
     bool culling = vsg::value<bool>(true, gltf::culling, options) && (instanceNodeHint == vsg::Options::INSTANCE_NONE);
     if (culling)
     {
-        if (auto bounds = vsg::visit<vsg::ComputeBounds>(vsg_scene).bounds)
+        if (auto bounds = vsg::visit<vsg::ComputeBounds>(children).bounds)
         {
             vsg::dsphere bs((bounds.max + bounds.min) * 0.5, vsg::length(bounds.max - bounds.min) * 0.5);
-            auto cullNode = vsg::CullNode::create(bs, vsg_scene);
-            vsg_scene = cullNode;
+            if (children.size()==1)
+            {
+                auto cullNode = vsg::CullNode::create(bs, children[0]);
+
+                children.clear();
+                children.push_back(cullNode);
+            }
+            else
+            {
+                auto cullGroup = vsg::CullGroup::create(bs);
+                cullGroup->children.swap(children);
+
+                children.clear();
+                children.push_back(cullGroup);
+            }
         }
     }
+
+    if (children.size() > 1)
+    {
+        auto group = vsg::Group::create();
+        group->children.swap(children);
+        children.clear();
+        children.push_back(group);
+    }
+
+    if (children.empty()) return {};
+
+    vsg::ref_ptr<vsg::Node> vsg_scene = children[0];
 
     // assign meta data
     assign_name_extras(*gltf_scene, *vsg_scene);
@@ -1683,58 +1771,12 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         }
     }
 
-#if 0
-    vsg::LogOutput log;
-    log("model->animations.values.size() = ", model->animations.values.size());
-    for(auto& animation : model->animations.values)
+    // set up animations
+    vsg_animations.resize(model->animations.values.size());
+    for(size_t ai=0; ai<model->animations.values.size(); ++ai)
     {
-        // animation->report(log);
-
-        vsg::ref_ptr<AnimationChannel> translation_channel;
-        vsg::ref_ptr<AnimationChannel> rotation_channel;
-        vsg::ref_ptr<AnimationChannel> scale_channel;
-        vsg::ref_ptr<AnimationChannel> weights_channel;
-        vsg::ref_ptr<AnimationChannel> string_channel;
-
-        for(auto& channel : animation->channels.values)
-        {
-            if (channel->target.path == "translation") translation_channel = channel;
-            else if (channel->target.path == "rotation") rotation_channel = channel;
-            else if (channel->target.path == "scale") scale_channel = channel;
-            else if (channel->target.path == "weights") weights_channel = channel;
-            else if (channel->target.path == "string") string_channel = channel;
-            else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
-
-            log.enter("channel {");
-            log("sampler = ", channel->sampler);
-            channel->target.report(log);
-            log.leave();
-        }
-
-        vsg::info("translation_channel = ", translation_channel, ", rotation_channel = ", rotation_channel, ", scale_channel = ", scale_channel, ", weights_channel = ", weights_channel);
-        if (string_channel) vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported string_channel.");
-
-        for(auto& sampler : animation->samplers.values)
-        {
-            auto input_accessor = model->accessors.values[sampler->input.value];
-            auto output_accessor = model->accessors.values[sampler->output.value];
-
-            log.enter("sampler {");
-
-            log("interpolation  = ", sampler->interpolation);
-
-            log.enter("input ", sampler->input, " {");
-            input_accessor->report(log);
-            log.leave();
-
-            log.enter("output ", sampler->output, " {");
-            output_accessor->report(log);
-            log.leave();
-
-            log.leave();
-        }
+        vsg_animations[ai] = createAnimation(model->animations.values[ai]);
     }
-#endif
 
     // vsg::info("scene = ", model->scene);
     // vsg::info("scenes = ", model->scenes.values.size());
