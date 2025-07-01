@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/InstanceDrawIndexed.h>
 #include <vsg/nodes/Layer.h>
 #include <vsg/animation/AnimationGroup.h>
+#include <vsg/animation/TransformSampler.h>
 #include <vsg/lighting/DirectionalLight.h>
 #include <vsg/lighting/PointLight.h>
 #include <vsg/lighting/SpotLight.h>
@@ -1094,29 +1095,38 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
 
     // gltf_animation->report(log);
 
-    vsg::ref_ptr<AnimationChannel> translation_channel;
-    vsg::ref_ptr<AnimationChannel> rotation_channel;
-    vsg::ref_ptr<AnimationChannel> scale_channel;
-    vsg::ref_ptr<AnimationChannel> weights_channel;
-    vsg::ref_ptr<AnimationChannel> string_channel;
+    struct NodeChannels
+    {
+        vsg::ref_ptr<AnimationChannel> translation;
+        vsg::ref_ptr<AnimationChannel> rotation;
+        vsg::ref_ptr<AnimationChannel> scale;
+        vsg::ref_ptr<AnimationChannel> weights;
+    };
+
+    std::map<uint32_t, NodeChannels> nodeChannels;
 
     for(auto& channel : gltf_animation->channels.values)
     {
-        if (channel->target.path == "translation") translation_channel = channel;
-        else if (channel->target.path == "rotation") rotation_channel = channel;
-        else if (channel->target.path == "scale") scale_channel = channel;
-        else if (channel->target.path == "weights") weights_channel = channel;
-        else if (channel->target.path == "string") string_channel = channel;
-        else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+        auto node_id = channel->target.node.value;
 
-        log.enter("channel {");
-        log("sampler = ", channel->sampler);
-        channel->target.report(log);
-        log.leave();
+        if (channel->target.path == "translation") nodeChannels[node_id].translation = channel;
+        else if (channel->target.path == "rotation") nodeChannels[node_id].rotation = channel;
+        else if (channel->target.path == "scale") nodeChannels[node_id].scale = channel;
+        else if (channel->target.path == "weights") nodeChannels[node_id].weights = channel;
+        else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
     }
 
-    vsg::info("translation_channel = ", translation_channel, ", rotation_channel = ", rotation_channel, ", scale_channel = ", scale_channel, ", weights_channel = ", weights_channel);
-    if (string_channel) vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported string_channel.");
+    for(auto& [node_id, channels] : nodeChannels)
+    {
+        if (channels.translation || channels.rotation || channels.scale)
+        {
+            auto transformSampler = vsg::TransformSampler::create();
+
+            transformSampler->object = vsg_nodes[node_id];
+
+            vsg_animation->samplers.push_back(transformSampler);
+        }
+    }
 
     for(auto& sampler : gltf_animation->samplers.values)
     {
