@@ -1214,6 +1214,13 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
 
             auto transformSampler = vsg::TransformSampler::create();
 
+            auto node = vsg_nodes[node_id];
+            auto mt = node.cast<vsg::MatrixTransform>();
+            if (mt)
+            {
+                vsg::decompose(mt->matrix, transformSampler->position, transformSampler->rotation, transformSampler->scale);
+            }
+
             transformSampler->keyframes = keyframes;
             transformSampler->object = vsg_nodes[node_id];
 
