@@ -1120,32 +1120,105 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
     {
         if (channels.translation || channels.rotation || channels.scale)
         {
+            auto keyframes = vsg::TransformKeyframes::create();
+
+            if (channels.translation)
+            {
+                auto samplerID = channels.translation->sampler.value;
+                auto sampler = gltf_animation->samplers.values[samplerID];
+                auto vsg_input = vsg_accessors[sampler->input.value];
+                auto vsg_output = vsg_accessors[sampler->output.value];
+
+                auto timeValues = vsg_input.cast<vsg::floatArray>();
+                auto translationValues = vsg_output.cast<vsg::vec3Array>();
+
+                if (timeValues && translationValues)
+                {
+                    size_t count = std::min(vsg_input->valueCount(), vsg_output->valueCount());
+
+                    auto& translations = keyframes->positions;
+                    translations.resize(count);
+
+                    for(size_t i=0; i<count; ++i)
+                    {
+                        const auto& t = translationValues->at(i);
+                        translations[i].time = timeValues->at(i);
+                        translations[i].value.set(t.x, t.y, t.z);
+                    }
+                }
+                else
+                {
+                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported translation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                }
+            }
+
+            if (channels.rotation)
+            {
+                auto samplerID = channels.rotation->sampler.value;
+                auto sampler = gltf_animation->samplers.values[samplerID];
+                auto vsg_input = vsg_accessors[sampler->input.value];
+                auto vsg_output = vsg_accessors[sampler->output.value];
+
+                auto timeValues = vsg_input.cast<vsg::floatArray>();
+                auto rotationValues = vsg_output.cast<vsg::vec4Array>();
+
+                if (timeValues && rotationValues)
+                {
+                    size_t count = std::min(vsg_input->valueCount(), vsg_output->valueCount());
+
+                    auto& rotations = keyframes->rotations;
+                    rotations.resize(count);
+
+                    for(size_t i=0; i<count; ++i)
+                    {
+                        const auto& q = rotationValues->at(i);
+                        rotations[i].time = timeValues->at(i);
+                        rotations[i].value.set(q.x, q.y, q.z, q.w);
+                    }
+                }
+                else
+                {
+                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported rotation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                }
+            }
+
+            if (channels.scale)
+            {
+                auto samplerID = channels.scale->sampler.value;
+                auto sampler = gltf_animation->samplers.values[samplerID];
+                auto vsg_input = vsg_accessors[sampler->input.value];
+                auto vsg_output = vsg_accessors[sampler->output.value];
+
+                auto timeValues = vsg_input.cast<vsg::floatArray>();
+                auto scaleValues = vsg_output.cast<vsg::vec3Array>();
+
+                if (timeValues && scaleValues)
+                {
+                    size_t count = std::min(vsg_input->valueCount(), vsg_output->valueCount());
+
+                    auto& scales = keyframes->scales;
+                    scales.resize(count);
+
+                    for(size_t i=0; i<count; ++i)
+                    {
+                        const auto& s = scaleValues->at(i);
+                        scales[i].time = timeValues->at(i);
+                        scales[i].value.set(s.x, s.y, s.z);
+                    }
+                }
+                else
+                {
+                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported scale types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                }
+            }
+
             auto transformSampler = vsg::TransformSampler::create();
 
+            transformSampler->keyframes = keyframes;
             transformSampler->object = vsg_nodes[node_id];
 
             vsg_animation->samplers.push_back(transformSampler);
         }
-    }
-
-    for(auto& sampler : gltf_animation->samplers.values)
-    {
-        auto input_accessor = model->accessors.values[sampler->input.value];
-        auto output_accessor = model->accessors.values[sampler->output.value];
-
-        log.enter("sampler {");
-
-        log("interpolation  = ", sampler->interpolation);
-
-        log.enter("input ", sampler->input, " {");
-        input_accessor->report(log);
-        log.leave();
-
-        log.enter("output ", sampler->output, " {");
-        output_accessor->report(log);
-        log.leave();
-
-        log.leave();
     }
 
     return vsg_animation;
