@@ -1323,7 +1323,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
 
     size_t numChildren = gltf_node->children.values.size();
     if (gltf_node->camera) ++numChildren;
-    //if (gltf_node->skin) ++numChildren;
     if (vsg_mesh) ++numChildren;
     if (vsg_light) ++numChildren;
 
@@ -1331,7 +1330,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     {
         auto joint = vsg::Joint::create();
         if (gltf_node->camera) joint->addChild(vsg_cameras[gltf_node->camera.value]);
-        // if (gltf_node->skin) joint->addChild(vsg_skins[gltf_node->skin.value]);
         if (vsg_light) joint->addChild(vsg_light);
         if (vsg_mesh) joint->addChild(vsg_mesh);
 
@@ -1366,7 +1364,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     {
         auto transform = vsg::MatrixTransform::create();
         if (gltf_node->camera) transform->addChild(vsg_cameras[gltf_node->camera.value]);
-        // if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
         if (vsg_light) transform->addChild(vsg_light);
         if (vsg_mesh) transform->addChild(vsg_mesh);
 
@@ -1402,7 +1399,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         auto group = vsg::Group::create();
 
         if (gltf_node->camera) group->addChild(vsg_cameras[gltf_node->camera.value]);
-        //if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
         if (vsg_light) group->addChild(vsg_light);
         if (vsg_mesh) group->addChild(vsg_mesh);
 
@@ -1411,7 +1407,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     else
     {
         if (gltf_node->camera) vsg_node = vsg_cameras[gltf_node->camera.value];
-        //else if (gltf_node->skin) vsg_node = vsg_skins[gltf_node->skin.value];
         else if (vsg_mesh) vsg_node = vsg_mesh;
         else if (vsg_light) vsg_node = vsg_light;
         else vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
