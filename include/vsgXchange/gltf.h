@@ -635,7 +635,7 @@ namespace vsgXchange
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_bufferViews;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_accessors;
             std::vector<vsg::ref_ptr<vsg::Camera>> vsg_cameras;
-            std::vector<vsg::ref_ptr<vsg::Node>> vsg_skins;
+            std::vector<vsg::ref_ptr<vsg::JointSampler>> vsg_skins;
             std::vector<vsg::ref_ptr<vsg::Sampler>> vsg_samplers;
             std::vector<vsg::ref_ptr<vsg::Data>> vsg_images;
             std::vector<SamplerImage> vsg_textures;
@@ -644,7 +644,14 @@ namespace vsgXchange
             std::vector<vsg::ref_ptr<vsg::Light>> vsg_lights;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_nodes;
             std::vector<vsg::ref_ptr<vsg::Node>> vsg_scenes;
+            std::vector<bool> vsg_joints;
             vsg::Animations vsg_animations;
+
+            struct MeshExtras
+            {
+                vsg::ref_ptr<gltf::Attributes> instancedAttributes;
+                vsg::ref_ptr<vsg::JointSampler> jointSampler;
+            };
 
             vsg::ref_ptr<vsg::DescriptorConfigurator> default_material;
 
@@ -670,9 +677,9 @@ namespace vsgXchange
             vsg::ref_ptr<vsg::DescriptorConfigurator> createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes = {});
+            vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& extras = {});
             vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
-            vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node);
+            vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode);
             vsg::ref_ptr<vsg::Animation> createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation);
             vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
 

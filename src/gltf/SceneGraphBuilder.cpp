@@ -37,6 +37,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/Layer.h>
 #include <vsg/animation/AnimationGroup.h>
 #include <vsg/animation/TransformSampler.h>
+#include <vsg/animation/Joint.h>
+#include <vsg/animation/JointSampler.h>
 #include <vsg/lighting/DirectionalLight.h>
 #include <vsg/lighting/PointLight.h>
 #include <vsg/lighting/SpotLight.h>
@@ -62,6 +64,8 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"TEXCOORD_0", "vsg_TexCoord0"},
         {"COLOR", "vsg_Color"},
         {"COLOR_0", "vsg_Color"},
+        {"JOINTS_0", "vsg_JointIndices"},
+        {"WEIGHTS_0", "vsg_JointWeights"},
         {"TRANSLATION", "vsg_Translation"},
         {"ROTATION", "vsg_Rotation"},
         {"SCALE", "vsg_Scale"}
@@ -87,7 +91,10 @@ void gltf::SceneGraphBuilder::assign_name_extras(NameExtensionsExtras& src, vsg:
 {
     if (!src.name.empty())
     {
-        dest.setValue("name", src.name);
+        if (auto joint = dest.cast<vsg::Joint>()) joint->name = src.name;
+        else if (auto animation = dest.cast<vsg::Animation>()) animation->name = src.name;
+        else if (auto animationSampler = dest.cast<vsg::AnimationSampler>()) animationSampler->name = src.name;
+        else dest.setValue("name", src.name);
     }
 
     if (src.extras)
@@ -624,7 +631,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
     else return createPbrMaterial(gltf_material);
 }
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, vsg::ref_ptr<gltf::Attributes> instancedAttributes)
+vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& meshExtras)
 {
 /*
     struct Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
@@ -682,6 +689,10 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         config->descriptorConfigurator = vsg_material;
         if (options) config->assignInheritedState(options->inheritedState);
 
+        if (meshExtras.jointSampler)
+        {
+            vsg_material->assignDescriptor("jointMatrices", meshExtras.jointSampler->jointMatrices);
+        }
 
 #if 0
         vsg::info("    primitive = {");
@@ -759,6 +770,30 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                         array = transformedTexCoords;
                     }
                 }
+            }else if (attribute_name=="JOINTS_0")
+            {
+                if (auto ushortCoords = array.cast<vsg::usvec4Array>())
+                {
+                    auto intCoords = vsg::ivec4Array::create(ushortCoords->size());
+                    auto dest_itr = intCoords->begin();
+                    for(auto& usc : *ushortCoords)
+                    {
+                        *(dest_itr++) = vsg::ivec4(usc[0], usc[1], usc[2], usc[3]);
+                    }
+
+                    array = intCoords;
+                }
+                else if (auto ubyteCoords = array.cast<vsg::ubvec4Array>())
+                {
+                    auto intCoords = vsg::ivec4Array::create(ubyteCoords->size());
+                    auto dest_itr = intCoords->begin();
+                    for(auto& ubc : *ubyteCoords)
+                    {
+                        *(dest_itr++) = vsg::ivec4(ubc[0], ubc[1], ubc[2], ubc[3]);
+                    }
+
+                    array = intCoords;
+                }
             }
 
 
@@ -786,9 +821,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         uint32_t vertexCount = vertexArrays.front()->valueCount();
         uint32_t instanceCount = 1;
-        if (instancedAttributes)
+        if (meshExtras.instancedAttributes)
         {
-            for(auto& [name, id] : instancedAttributes->values)
+            for(auto& [name, id] : meshExtras.instancedAttributes->values)
             {
                 instanceCount = vsg_accessors[id.value]->valueCount();
             }
@@ -808,16 +843,22 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             }
         }
 
-        if (instancedAttributes)
+        if (meshExtras.jointSampler)
         {
-            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "TRANSLATION");
-            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "ROTATION");
-            assignArray(*instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "SCALE");
+            assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "JOINTS_0");
+            assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "WEIGHTS_0");
+        }
+
+        if (meshExtras.instancedAttributes)
+        {
+            assignArray(*meshExtras.instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "TRANSLATION");
+            assignArray(*meshExtras.instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "ROTATION");
+            assignArray(*meshExtras.instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "SCALE");
         }
 
         vsg::ref_ptr<vsg::Node> draw;
 
-        if (!instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
+        if (!meshExtras.instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
         {
             if ((instanceNodeHint & vsg::Options::INSTANCE_COLORS) != 0) config->enableArray("vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
             if ((instanceNodeHint & vsg::Options::INSTANCE_TRANSLATIONS) != 0) config->enableArray("vsg_Translation", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
@@ -951,7 +992,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         if (vsg_material->blending)
         {
-            if (instancedAttributes || instanceNodeHint != vsg::Options::INSTANCE_NONE)
+            if (meshExtras.instancedAttributes || instanceNodeHint != vsg::Options::INSTANCE_NONE)
             {
                 auto layer = vsg::Layer::create();
                 layer->binNumber = 10;
@@ -1215,10 +1256,13 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
             auto transformSampler = vsg::TransformSampler::create();
 
             auto node = vsg_nodes[node_id];
-            auto mt = node.cast<vsg::MatrixTransform>();
-            if (mt)
+            if (auto mt = node.cast<vsg::MatrixTransform>())
             {
                 vsg::decompose(mt->matrix, transformSampler->position, transformSampler->rotation, transformSampler->scale);
+            }
+            else if (auto joint = node.cast<vsg::Joint>())
+            {
+                vsg::decompose(joint->matrix, transformSampler->position, transformSampler->rotation, transformSampler->scale);
             }
 
             transformSampler->keyframes = keyframes;
@@ -1232,7 +1276,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
 }
 
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node)
+vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode)
 {
     vsg::ref_ptr<vsg::Node> vsg_node;
 
@@ -1246,24 +1290,30 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         }
     }
 
+    MeshExtras meshExtras;
+
+    if (gltf_node->skin)
+    {
+        meshExtras.jointSampler = vsg_skins[gltf_node->skin.value];
+    }
+
     vsg::ref_ptr<vsg::Node> vsg_mesh;
     if (gltf_node->mesh)
     {
         vsg_mesh = vsg_meshes[gltf_node->mesh.value];
         auto gltf_mesh = model->meshes.values[gltf_node->mesh.value];
+
         if (auto mesh_gpu_instancing = gltf_node->extension<EXT_mesh_gpu_instancing>("EXT_mesh_gpu_instancing"))
         {
-            vsg_mesh = createMesh(gltf_mesh, mesh_gpu_instancing->attributes);
+            meshExtras.instancedAttributes = mesh_gpu_instancing->attributes;
         }
-        else
-        {
-            if (!vsg_meshes[gltf_node->mesh.value])
-            {
-                vsg_meshes[gltf_node->mesh.value] = createMesh(gltf_mesh);
-            }
 
-            vsg_mesh = vsg_meshes[gltf_node->mesh.value];
+        if (!vsg_meshes[gltf_node->mesh.value])
+        {
+            vsg_meshes[gltf_node->mesh.value] = createMesh(gltf_mesh, meshExtras);
         }
+
+        vsg_mesh = vsg_meshes[gltf_node->mesh.value];
     }
 
     bool isTransform = !(gltf_node->matrix.values.empty()) ||
@@ -1273,15 +1323,50 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
 
     size_t numChildren = gltf_node->children.values.size();
     if (gltf_node->camera) ++numChildren;
-    if (gltf_node->skin) ++numChildren;
+    //if (gltf_node->skin) ++numChildren;
     if (vsg_mesh) ++numChildren;
     if (vsg_light) ++numChildren;
 
-    if (isTransform)
+    if (jointNode)
+    {
+        auto joint = vsg::Joint::create();
+        if (gltf_node->camera) joint->addChild(vsg_cameras[gltf_node->camera.value]);
+        // if (gltf_node->skin) joint->addChild(vsg_skins[gltf_node->skin.value]);
+        if (vsg_light) joint->addChild(vsg_light);
+        if (vsg_mesh) joint->addChild(vsg_mesh);
+
+        if (gltf_node->matrix.values.size()==16)
+        {
+            auto& m = gltf_node->matrix.values;
+            joint->matrix.set(m[0], m[1], m[2], m[3],
+                                  m[4], m[5], m[6], m[7],
+                                  m[8], m[9], m[10], m[11],
+                                  m[12], m[13], m[14], m[15]);
+        }
+        else
+        {
+            auto& t = gltf_node->translation.values;
+            auto& r = gltf_node->rotation.values;
+            auto& s = gltf_node->scale.values;
+
+            vsg::dvec3 vsg_t(0.0, 0.0, 0.0);
+            vsg::dquat vsg_r;
+            vsg::dvec3 vsg_s(1.0, 1.0, 1.0);
+
+            if (t.size()>=3) vsg_t.set(t[0], t[1], t[2]);
+            if (r.size()>=4) vsg_r.set(r[0], r[1], r[2], r[3]);
+            if (s.size()>=3) vsg_s.set(s[0], s[1], s[2]);
+
+            joint->matrix = vsg::translate(vsg_t) * vsg::rotate(vsg_r) * vsg::scale(vsg_s);
+        }
+
+        vsg_node = joint;
+    }
+    else if (isTransform)
     {
         auto transform = vsg::MatrixTransform::create();
         if (gltf_node->camera) transform->addChild(vsg_cameras[gltf_node->camera.value]);
-        if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
+        // if (gltf_node->skin) transform->addChild(vsg_skins[gltf_node->skin.value]);
         if (vsg_light) transform->addChild(vsg_light);
         if (vsg_mesh) transform->addChild(vsg_mesh);
 
@@ -1317,7 +1402,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         auto group = vsg::Group::create();
 
         if (gltf_node->camera) group->addChild(vsg_cameras[gltf_node->camera.value]);
-        if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
+        //if (gltf_node->skin) group->addChild(vsg_skins[gltf_node->skin.value]);
         if (vsg_light) group->addChild(vsg_light);
         if (vsg_mesh) group->addChild(vsg_mesh);
 
@@ -1326,7 +1411,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     else
     {
         if (gltf_node->camera) vsg_node = vsg_cameras[gltf_node->camera.value];
-        else if (gltf_node->skin) vsg_node = vsg_skins[gltf_node->skin.value];
+        //else if (gltf_node->skin) vsg_node = vsg_skins[gltf_node->skin.value];
         else if (vsg_mesh) vsg_node = vsg_mesh;
         else if (vsg_light) vsg_node = vsg_light;
         else vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
@@ -1409,13 +1494,11 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
         return {};
     }
 
-
     vsg::Group::Children children;
     for(auto& id : gltf_scene->nodes.values)
     {
         if (vsg_nodes[id.value]) children.push_back(vsg_nodes[id.value]);
     }
-
 
     // add transform node if required
     if (requiresRootTransformNode)
@@ -1761,16 +1844,15 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         vsg_cameras[ci] = createCamera(model->cameras.values[ci]);
     }
 
-    // vsg::info("create skins = ", model->skins.values.size());
-    vsg_skins.resize(model->skins.values.size());
+    // set which nodes are joints
+    vsg_joints.resize(model->nodes.values.size(), false);
     for(size_t si=0; si<model->skins.values.size(); ++si)
     {
         auto& gltf_skin = model->skins.values[si];
-
-        auto& vsg_skin = vsg_skins[si];
-        vsg_skin = vsg::Node::create();
-
-        assign_name_extras(*gltf_skin, *vsg_skin);
+        for(auto joint : gltf_skin->joints.values)
+        {
+            vsg_joints[joint.value] = true;
+        }
     }
 
     // vsg::info("create samplers = ", model->samplers.values.size());
@@ -1813,7 +1895,6 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         {
             vsg_samplers[sai]->maxLod = maxLod;
         }
-
     }
 
     // vsg::info("create materials = ", model->materials.values.size());
@@ -1837,12 +1918,46 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         }
     }
 
+    //vsg::info("create skins = ", model->skins.values.size(), ", model->nodes.values.size() = ", model->nodes.values.size());
+    vsg_skins.resize(model->skins.values.size());
+    for(size_t si=0; si<model->skins.values.size(); ++si)
+    {
+        auto& gltf_skin = model->skins.values[si];
+
+        auto jointSampler = vsg::JointSampler::create();
+        jointSampler->jointMatrices = vsg::mat4Array::create(gltf_skin->joints.values.size());
+        jointSampler->jointMatrices->properties.dataVariance = vsg::DYNAMIC_DATA;
+        jointSampler->offsetMatrices.resize(gltf_skin->joints.values.size());
+
+        auto& offsetMatrices = jointSampler->offsetMatrices;
+        auto inverseBindMatrices = vsg_accessors[gltf_skin->inverseBindMatrices.value];
+        if (auto floatMatrices =  inverseBindMatrices.cast<vsg::mat4Array>())
+        {
+            for(size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
+            {
+                offsetMatrices[i] = floatMatrices->at(i);
+            }
+        }
+        else if (auto doubleMatrices =  inverseBindMatrices.cast<vsg::dmat4Array>())
+        {
+            for(size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
+            {
+                offsetMatrices[i] = doubleMatrices->at(i);
+            }
+        }
+
+        //vsg::info("skin inverseBindMatrices = ", inverseBindMatrices, ", gltf_skin->joints.values.size() = ", gltf_skin->joints.values.size() );
+
+        vsg_skins[si] = jointSampler;
+        assign_name_extras(*gltf_skin, *jointSampler);
+    }
+
 
     // vsg::info("create nodes = ", model->nodes.values.size());
     vsg_nodes.resize(model->nodes.values.size());
     for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
     {
-        vsg_nodes[ni] = createNode(model->nodes.values[ni]);
+        vsg_nodes[ni] = createNode(model->nodes.values[ni], vsg_joints[ni]);
     }
 
     for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
@@ -1851,13 +1966,47 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
         if (!gltf_node->children.values.empty())
         {
-            auto vsg_group = vsg_nodes[ni].cast<vsg::Group>();
-            for(auto id : gltf_node->children.values)
+
+            if (auto vsg_group = vsg_nodes[ni].cast<vsg::Group>())
             {
-                auto vsg_child = vsg_nodes[id.value];
-                if (vsg_child) vsg_group->addChild(vsg_child);
-                else vsg::info("Unassigned vsg_child");
+                for(auto id : gltf_node->children.values)
+                {
+                    if (auto vsg_child = vsg_nodes[id.value]) vsg_group->addChild(vsg_child);
+                    else vsg::info("Unassigned vsg_child");
+                }
             }
+            else if (auto vsg_joint = vsg_nodes[ni].cast<vsg::Joint>())
+            {
+                for(auto id : gltf_node->children.values)
+                {
+                    if (auto vsg_child = vsg_nodes[id.value]) vsg_joint->addChild(vsg_child);
+                    else vsg::info("Unassigned vsg_child");
+                }
+            }
+        }
+    }
+
+    //
+    for(size_t si=0; si<model->skins.values.size(); ++si)
+    {
+        auto& gltf_skin = model->skins.values[si];
+
+
+        for(size_t i=0; i<gltf_skin->joints.values.size(); ++i)
+        {
+            if (auto joint = vsg_nodes[gltf_skin->joints.values[i].value].cast<vsg::Joint>())
+            {
+                joint->index = i;
+            }
+        }
+
+        if (gltf_skin->skeleton)
+        {
+            vsg_skins[si]->subgraph = vsg_nodes[gltf_skin->skeleton.value];
+        }
+        else if (!gltf_skin->joints.values.empty())
+        {
+            vsg_skins[si]->subgraph = vsg_nodes[gltf_skin->joints.values[0].value];
         }
     }
 
@@ -1866,6 +2015,12 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     for(size_t ai=0; ai<model->animations.values.size(); ++ai)
     {
         vsg_animations[ai] = createAnimation(model->animations.values[ai]);
+
+        // for now just add JointSampler to all animations, do need to check that animation is associted with samplers joints.
+        for(auto& jointSampler : vsg_skins)
+        {
+            vsg_animations[ai]->samplers.push_back(jointSampler);
+        }
     }
 
     // vsg::info("scene = ", model->scene);
