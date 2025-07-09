@@ -24,10 +24,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 </editor-fold> */
 
 #include <vsg/app/Camera.h>
+#include <vsg/animation/AnimationGroup.h>
+#include <vsg/animation/JointSampler.h>
 #include <vsg/io/JSONParser.h>
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/lighting/Light.h>
-#include <vsg/animation/AnimationGroup.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 #include <vsgXchange/Version.h>
 
