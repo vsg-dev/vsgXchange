@@ -348,7 +348,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    vsg::Path outputFilename = arguments[argc - 1];
+    vsg::Path outputFilename;
+    if (!arguments.read("-o", outputFilename))
+    {
+        outputFilename = arguments[argc - 1];
+        --argc;
+    }
 
     using VsgObjects = std::vector<vsg::ref_ptr<vsg::Object>>;
     VsgObjects vsgObjects;
@@ -356,7 +361,7 @@ int main(int argc, char** argv)
     auto beforeLoad = vsg::clock::now();
 
     // read any input files
-    for (int i = 1; i < argc - 1; ++i)
+    for (int i = 1; i < argc; ++i)
     {
         vsg::Path filename = arguments[i];
 
