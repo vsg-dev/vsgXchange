@@ -62,6 +62,9 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"POSITION", "vsg_Vertex"},
         {"NORMAL", "vsg_Normal"},
         {"TEXCOORD_0", "vsg_TexCoord0"},
+        {"TEXCOORD_1", "vsg_TexCoord1"},
+        {"TEXCOORD_2", "vsg_TexCoord2"},
+        {"TEXCOORD_3", "vsg_TexCoord3"},
         {"COLOR", "vsg_Color"},
         {"COLOR_0", "vsg_Color"},
         {"JOINTS_0", "vsg_JointIndices"},
@@ -406,6 +409,9 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     auto pbrMaterialValue = vsg::PbrMaterialValue::create();
     auto& pbrMaterial = pbrMaterialValue->value();
 
+    auto texCoordIndicesValue = vsg::TexCoordIndicesValue::create();
+    auto& texCoordIndices = texCoordIndicesValue->value();
+
     if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size()==4)
     {
         auto& baseColorFactor = gltf_material->pbrMetallicRoughness.baseColorFactor.values;
@@ -415,13 +421,14 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
 
     if (gltf_material->pbrMetallicRoughness.baseColorTexture.index)
     {
-        auto& texture = vsg_textures[gltf_material->pbrMetallicRoughness.baseColorTexture.index.value];
+        auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
             // vsg::info("Assigned diffuseMap ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+            texCoordIndices.diffuseMap = textureInfo.texCoord;
 
-            auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
             if (auto texture_transform = textureInfo.extension<KHR_texture_transform>("KHR_texture_transform"))
             {
                 vsg_material->setObject("KHR_texture_transform", texture_transform);
@@ -429,7 +436,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
         }
         else
         {
-            vsg::warn("Could not assign diffuseMap ", gltf_material->pbrMetallicRoughness.baseColorTexture.index);
+            vsg::warn("Could not assign diffuseMap ", textureInfo.index);
         }
     }
 
@@ -438,15 +445,17 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
 
     if (gltf_material->pbrMetallicRoughness.metallicRoughnessTexture.index)
     {
-        auto& texture = vsg_textures[gltf_material->pbrMetallicRoughness.metallicRoughnessTexture.index.value];
+        auto& textureInfo = gltf_material->pbrMetallicRoughness.metallicRoughnessTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
             // vsg::info("Assigned metallicRoughnessTexture ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("mrMap", texture.image, texture.sampler);
+            texCoordIndices.mrMap = textureInfo.texCoord;
         }
         else
         {
-            vsg::warn("Could not assign metallicRoughnessTexture ", gltf_material->pbrMetallicRoughness.metallicRoughnessTexture.index);
+            vsg::warn("Could not assign metallicRoughnessTexture ", textureInfo.index);
         }
     }
 
@@ -456,15 +465,17 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     {
         // TODO: gltf_material->normalTexture.scale
 
-        auto& texture = vsg_textures[gltf_material->normalTexture.index.value];
+        auto& textureInfo = gltf_material->normalTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
             // vsg::info("Assigned normalTexture ", texture.image, ", ", texture.sampler, ", scale = ", gltf_material->normalTexture.scale);
             vsg_material->assignTexture("normalMap", texture.image, texture.sampler);
+            texCoordIndices.normalMap = textureInfo.texCoord;
         }
         else
         {
-            vsg::warn("Could not assign normalTexture ", gltf_material->normalTexture.index);
+            vsg::warn("Could not assign normalTexture ", textureInfo.index);
         }
     }
 
@@ -472,29 +483,33 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     {
         // TODO: gltf_material->occlusionTexture.strength
 
-        auto& texture = vsg_textures[gltf_material->occlusionTexture.index.value];
+        auto& textureInfo = gltf_material->occlusionTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
-            // vsg::info("Assigned occlusionTexture ", texture.image, ", ", texture.sampler, ", strength = ", gltf_material->occlusionTexture.strength);
+            // vsg::info("Assigned occlusionTexture ", texture.image, ", ", texture.sampler, ", strength = ", textureInfo.strength);
             vsg_material->assignTexture("aoMap", texture.image, texture.sampler);
+            texCoordIndices.aoMap = textureInfo.texCoord;
         }
         else
         {
-            vsg::warn("Could not assign occlusionTexture ", gltf_material->occlusionTexture.index);
+            vsg::warn("Could not assign occlusionTexture ", textureInfo.index);
         }
     }
 
     if (gltf_material->emissiveTexture.index)
     {
-        auto& texture = vsg_textures[gltf_material->emissiveTexture.index.value];
+        auto& textureInfo = gltf_material->emissiveTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
             // vsg::info("Assigned emissiveTexture ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("emissiveMap", texture.image, texture.sampler);
+            texCoordIndices.emissiveMap = textureInfo.texCoord;
         }
         else
         {
-            vsg::warn("Could not assign emissiveTexture ", gltf_material->emissiveTexture.index);
+            vsg::warn("Could not assign emissiveTexture ", textureInfo.index);
         }
     }
 
@@ -565,6 +580,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
 #endif
 
     vsg_material->assignDescriptor("material", pbrMaterialValue);
+    vsg_material->assignDescriptor("texCoordIndices", texCoordIndicesValue);
 
     // TODO: vsg_material->defines.insert("VSG_WORKFLOW_SPECGLOSS");
     // TODO: VSG -> detailMap
@@ -745,7 +761,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                     array = quatArray;
                 }
             }
-            else if (attribute_name=="TEXCOORD_0")
+            else if (attribute_name=="TEXCOORD_0" || attribute_name=="TEXCOORD_1" || attribute_name=="TEXCOORD_2" || attribute_name=="TEXCOORD_3")
             {
                 if (auto texture_transform = vsg_material->getObject<KHR_texture_transform>("KHR_texture_transform"))
                 {
@@ -818,6 +834,10 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto texcoord = vsg::vec2Value::create(vsg::vec2(0.0f, 0.0f));
             config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
         }
+
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_1");
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_2");
+        assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_3");
 
         uint32_t vertexCount = vertexArrays.front()->valueCount();
         uint32_t instanceCount = 1;
