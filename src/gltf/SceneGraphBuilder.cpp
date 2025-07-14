@@ -597,6 +597,9 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
     auto phongMaterialValue = vsg::PhongMaterialValue::create();
     auto& phongMaterial = phongMaterialValue->value();
 
+    auto texCoordIndicesValue = vsg::TexCoordIndicesValue::create();
+    auto& texCoordIndices = texCoordIndicesValue->value();
+
     if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size()==4)
     {
         auto& baseColorFactor = gltf_material->pbrMetallicRoughness.baseColorFactor.values;
@@ -606,13 +609,14 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
 
     if (gltf_material->pbrMetallicRoughness.baseColorTexture.index)
     {
-        auto& texture = vsg_textures[gltf_material->pbrMetallicRoughness.baseColorTexture.index.value];
+        auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
+        auto& texture = vsg_textures[textureInfo.index.value];
         if (texture.image)
         {
             // vsg::info("Assigned diffuseMap ", texture.image, ", ", texture.sampler);
             vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+            texCoordIndices.diffuseMap = textureInfo.texCoord;
 
-            auto& textureInfo = gltf_material->pbrMetallicRoughness.baseColorTexture;
             if (auto texture_transform = textureInfo.extension<KHR_texture_transform>("KHR_texture_transform"))
             {
                 vsg_material->setObject("KHR_texture_transform", texture_transform);
