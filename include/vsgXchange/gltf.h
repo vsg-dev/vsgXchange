@@ -670,6 +670,7 @@ namespace vsgXchange
 
             vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
+            vsg::ref_ptr<vsg::Data> createArray(const std::string& type, uint32_t componentType, glTFid bufferView, uint32_t offset, uint32_t count);
             vsg::ref_ptr<vsg::Data> createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor);
             vsg::ref_ptr<vsg::Camera> createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera);
             vsg::ref_ptr<vsg::Sampler> createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler);
