@@ -305,6 +305,24 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+
+        /// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
+        struct VSGXCHANGE_DECLSPEC KHR_materials_pbrSpecularGlossiness : public vsg::Inherit<ExtensionsExtras, KHR_materials_pbrSpecularGlossiness>
+        {
+            vsg::ValuesSchema<float> diffuseFactor;
+            TextureInfo diffuseTexture;
+            vsg::ValuesSchema<float> specularFactor;
+            float glossinessFactor = 1.0;
+            TextureInfo specularGlossinessTexture;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_pbrSpecularGlossiness::create(*this); }
+
+            void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
         /// index of refraction : https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_ior
         struct VSGXCHANGE_DECLSPEC KHR_materials_ior : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_ior>
         {

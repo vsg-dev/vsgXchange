@@ -598,6 +598,52 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     }
 
 
+    if (auto materials_pbrSpecularGlossiness = gltf_material->extension<KHR_materials_pbrSpecularGlossiness>("KHR_materials_pbrSpecularGlossiness"))
+    {
+
+        if (materials_pbrSpecularGlossiness->diffuseFactor.values.size() >= 3)
+        {
+            auto& diffuseFactor = materials_pbrSpecularGlossiness->diffuseFactor.values;
+            pbrMaterial.diffuseFactor.set(diffuseFactor[0], diffuseFactor[1], diffuseFactor[2], 1.0);
+        }
+
+        if (materials_pbrSpecularGlossiness->specularFactor.values.size() >= 3)
+        {
+            auto& specularFactor = materials_pbrSpecularGlossiness->specularFactor.values;
+            pbrMaterial.specularFactor.set(specularFactor[0], specularFactor[1], specularFactor[2], 1.0);
+        }
+
+        if (materials_pbrSpecularGlossiness->diffuseTexture.index)
+        {
+            auto& texture = vsg_textures[materials_pbrSpecularGlossiness->diffuseTexture.index.value];
+            if (texture.image)
+            {
+                vsg_material->assignTexture("diffuseMap", texture.image, texture.sampler);
+            }
+            else
+            {
+                vsg::warn("Could not assign diffuseTexture ", materials_pbrSpecularGlossiness->diffuseTexture.index);
+            }
+        }
+
+        if (materials_pbrSpecularGlossiness->specularGlossinessTexture.index)
+        {
+            auto& texture = vsg_textures[materials_pbrSpecularGlossiness->specularGlossinessTexture.index.value];
+            if (texture.image)
+            {
+                vsg_material->assignTexture("specularMap", texture.image, texture.sampler);
+            }
+            else
+            {
+                vsg::warn("Could not assign specularTexture ", materials_pbrSpecularGlossiness->specularGlossinessTexture.index);
+            }
+        }
+
+        pbrMaterial.specularFactor.a = materials_pbrSpecularGlossiness->glossinessFactor;
+
+        vsg_material->defines.insert("VSG_WORKFLOW_SPECGLOSS");
+    }
+
 #if 0
     if (auto materials_ior = gltf_material->extension<KHR_materials_ior>("KHR_materials_ior"))
     {

@@ -421,6 +421,26 @@ void gltf::KHR_materials_specular::read_number(vsg::JSONParser& parser, const st
     else parser.warning();
 }
 
+void gltf::KHR_materials_pbrSpecularGlossiness::read_array(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "diffuseFactor") parser.read_array(diffuseFactor);
+    else if (property == "specularFactor") parser.read_array(specularFactor);
+    else parser.warning();
+}
+
+void gltf::KHR_materials_pbrSpecularGlossiness::read_object(vsg::JSONParser& parser, const std::string_view& property)
+{
+    if (property == "diffuseTexture") parser.read_object(diffuseTexture);
+    else if (property == "specularGlossinessTexture") parser.read_object(specularGlossinessTexture);
+    else parser.warning();
+}
+
+void gltf::KHR_materials_pbrSpecularGlossiness::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "glossinessFactor") input >> glossinessFactor;
+    else parser.warning();
+}
+
 void gltf::KHR_materials_ior::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
     if (property=="ior") input >> ior;
@@ -1683,4 +1703,5 @@ void gltf::assignExtensions(vsg::JSONParser& parser) const
     parser.setObject("KHR_materials_unlit", KHR_materials_unlit::create());
     parser.setObject("KHR_texture_transform", KHR_texture_transform::create());
     parser.setObject("KHR_lights_punctual", KHR_lights_punctual::create());
+    parser.setObject("KHR_materials_pbrSpecularGlossiness", KHR_materials_pbrSpecularGlossiness::create());
 }
