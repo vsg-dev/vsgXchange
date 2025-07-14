@@ -644,6 +644,11 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
         vsg_material->defines.insert("VSG_WORKFLOW_SPECGLOSS");
     }
 
+    if (auto materials_emissive_strength = gltf_material->extension<KHR_materials_emissive_strength>("KHR_materials_emissive_strength"))
+    {
+        pbrMaterial.emissiveFactor.a = materials_emissive_strength->emissiveStrength;
+    }
+
 #if 0
     if (auto materials_ior = gltf_material->extension<KHR_materials_ior>("KHR_materials_ior"))
     {

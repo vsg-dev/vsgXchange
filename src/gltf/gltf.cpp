@@ -441,6 +441,12 @@ void gltf::KHR_materials_pbrSpecularGlossiness::read_number(vsg::JSONParser& par
     else parser.warning();
 }
 
+void gltf::KHR_materials_emissive_strength::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
+{
+    if (property == "emissiveStrength") input >> emissiveStrength;
+    else parser.warning();
+}
+
 void gltf::KHR_materials_ior::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
     if (property=="ior") input >> ior;
@@ -1704,4 +1710,5 @@ void gltf::assignExtensions(vsg::JSONParser& parser) const
     parser.setObject("KHR_texture_transform", KHR_texture_transform::create());
     parser.setObject("KHR_lights_punctual", KHR_lights_punctual::create());
     parser.setObject("KHR_materials_pbrSpecularGlossiness", KHR_materials_pbrSpecularGlossiness::create());
+    parser.setObject("KHR_materials_emissive_strength", KHR_materials_emissive_strength::create());
 }

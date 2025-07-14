@@ -251,7 +251,7 @@ namespace vsgXchange
         struct VSGXCHANGE_DECLSPEC KHR_texture_transform : public vsg::Inherit<vsg::JSONParser::Schema, KHR_texture_transform>
         {
             vsg::ValuesSchema<float> offset;
-            float rotation = 0.0;
+            float rotation = 0.0f;
             vsg::ValuesSchema<float> scale;
             uint32_t texCoord = 0;
 
@@ -266,8 +266,8 @@ namespace vsgXchange
         {
             vsg::ValuesSchema<float> baseColorFactor; // default { 1.0, 1.0, 1.0, 1.0 }
             TextureInfo baseColorTexture;
-            float metallicFactor = 1.0;
-            float roughnessFactor = 1.0;
+            float metallicFactor = 1.0f;
+            float roughnessFactor = 1.0f;
             TextureInfo metallicRoughnessTexture;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -277,14 +277,14 @@ namespace vsgXchange
 
         struct VSGXCHANGE_DECLSPEC NormalTextureInfo : public vsg::Inherit<TextureInfo, NormalTextureInfo>
         {
-            float scale = 1.0;
+            float scale = 1.0f;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
         struct VSGXCHANGE_DECLSPEC OcclusionTextureInfo : public vsg::Inherit<TextureInfo, OcclusionTextureInfo>
         {
-            float strength = 1.0;
+            float strength = 1.0f;
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
@@ -292,7 +292,7 @@ namespace vsgXchange
         /// https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_specular
         struct VSGXCHANGE_DECLSPEC KHR_materials_specular : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_specular>
         {
-            float specularFactor = 1.0;
+            float specularFactor = 1.0f;
             TextureInfo specularTexture;
             vsg::ValuesSchema<float> specularColorFactor;
             TextureInfo specularColorTexture;
@@ -312,7 +312,7 @@ namespace vsgXchange
             vsg::ValuesSchema<float> diffuseFactor;
             TextureInfo diffuseTexture;
             vsg::ValuesSchema<float> specularFactor;
-            float glossinessFactor = 1.0;
+            float glossinessFactor = 1.0f;
             TextureInfo specularGlossinessTexture;
 
             // extention prototype will be cloned when it's used.
@@ -323,10 +323,21 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
+        // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_emissive_strength
+        struct VSGXCHANGE_DECLSPEC KHR_materials_emissive_strength : public vsg::Inherit<ExtensionsExtras, KHR_materials_emissive_strength>
+        {
+            float emissiveStrength = 1.0f;
+
+            // extention prototype will be cloned when it's used.
+            vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_emissive_strength::create(*this); }
+
+            void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
+        };
+
         /// index of refraction : https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_ior
         struct VSGXCHANGE_DECLSPEC KHR_materials_ior : public vsg::Inherit<vsg::JSONParser::Schema, KHR_materials_ior>
         {
-            float ior = 1.5;
+            float ior = 1.5f;
 
             // extention prototype will be cloned when it's used.
             vsg::ref_ptr<vsg::Object> clone(const vsg::CopyOp&) const override { return KHR_materials_ior::create(*this); }
@@ -346,7 +357,6 @@ namespace vsgXchange
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_clearcoat
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_diffuse_transmission
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_dispersion
-        // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_emissive_strength
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_iridescence
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_sheen
         // https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_materials_transmission
