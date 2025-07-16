@@ -637,7 +637,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path&, vsg::ref_ptr<con
     uint32_t lod_level = 0;
     non_const_options->getValue("level", lod_level);
 
-    if (tile && builder) return builder->readTileChildren(tile, lod_level);
+    std::string inherited_refine;
+    non_const_options->getValue("refine", inherited_refine);
+
+    if (tile && builder) return builder->readTileChildren(tile, lod_level, inherited_refine);
     else return {};
 }
 
