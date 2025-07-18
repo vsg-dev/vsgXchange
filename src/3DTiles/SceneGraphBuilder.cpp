@@ -111,7 +111,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     auto group = vsg::Group::create();
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
-    vsg::info(this, " readTileChildren() tile = ", tile, ", level = ", level, ", tile->refine = ", tile->refine, ",  inherited_refine = ", inherited_refine, ", refine = ", refine);
+
     if (refine=="ADD")
     {
         if (auto local_subgraph = tile->getRefObject<vsg::Node>("local_subgraph"))
@@ -219,9 +219,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     bool usePagedLOD = level > preLoadLevel;
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
-    vsg::info(this, " createTile() tile = ", tile, ", level = ", level, ", tile->refine = ", tile->refine, ",  inherited_refine = ", inherited_refine, ", refine = ", refine);
-
-    if (refine.empty()) throw "refine empty";
 
     if (refine=="ADD" && local_subgraph)
     {
