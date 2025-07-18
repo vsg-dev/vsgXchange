@@ -597,8 +597,6 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         charcode = FT_Get_First_Char(face, &glyph_index);
         while (glyph_index != 0)
         {
-            charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
-
             error = FT_Load_Glyph(face, glyph_index, load_flags);
             if (error) continue;
 
@@ -613,32 +611,10 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
             if (charcode == 32) hasSpace = true;
 
             sortedGlyphQuads.insert(quad);
+            
+            charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
         }
-    }
-
-    if (!hasSpace)
-    {
-        FT_ULong charcode = 32;
-        FT_UInt glyph_index = FT_Get_Char_Index(face, charcode);
-
-        if (glyph_index != 0)
-        {
-            error = FT_Load_Glyph(face, glyph_index, load_flags);
-
-            if (!error)
-            {
-                GlyphQuad quad{
-                    charcode,
-                    glyph_index,
-                    static_cast<unsigned int>(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
-                    static_cast<unsigned int>(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))};
-
-                sortedGlyphQuads.insert(quad);
-
-                hasSpace = true;
-            }
-        }
-    }
+    }    
 
     double total_width = 0.0;
     double total_height = 0.0;
