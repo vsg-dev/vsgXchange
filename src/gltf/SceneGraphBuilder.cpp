@@ -1103,11 +1103,15 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         {
             if (meshExtras.instancedAttributes || instanceNodeHint != vsg::Options::INSTANCE_NONE)
             {
+#if 0
                 auto layer = vsg::Layer::create();
                 layer->binNumber = 10;
                 layer->child = stateGroup;
 
                 nodes.push_back(layer);
+#else
+                nodes.push_back(stateGroup);
+#endif
             }
             else
             {

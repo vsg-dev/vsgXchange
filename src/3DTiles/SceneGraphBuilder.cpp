@@ -104,13 +104,15 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
     }
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
     // vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size(), ", ", operationThreads);
 
     auto group = vsg::Group::create();
 
-    if (tile->refine=="ADD")
+    const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
+
+    if (refine=="ADD")
     {
         if (auto local_subgraph = tile->getRefObject<vsg::Node>("local_subgraph"))
         {
@@ -126,18 +128,20 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
             vsg::ref_ptr<Tiles3D::Tile> tileToCreate;
             vsg::ref_ptr<vsg::Node>& subgraph;
             uint32_t level;
+            std::string rto_inherited_refine;
             vsg::ref_ptr<vsg::Latch> latch;
 
-            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, vsg::ref_ptr<vsg::Latch> in_latch) :
+            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, vsg::ref_ptr<vsg::Latch> in_latch) :
                 builder(in_builder),
                 tileToCreate(in_tile),
                 subgraph(in_subgraph),
                 level(in_level),
+                rto_inherited_refine(in_inherited_refine),
                 latch(in_latch) {}
 
             void run() override
             {
-                subgraph = builder->createTile(tileToCreate, level);
+                subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine);
                 // vsg::info("Tiles3D::SceneGraphBuilder::readTileChildren() createTile() ", subgraph);
                 if (latch) latch->count_down();
             }
@@ -149,7 +153,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         auto itr = children.begin();
         for(auto child : tile->children.values)
         {
-            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level+1, latch), vsg::INSERT_FRONT);
+            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level+1, refine, latch), vsg::INSERT_FRONT);
         }
 
         // use this thread to read the files as well
@@ -171,7 +175,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     {
         for(auto child : tile->children.values)
         {
-            if (auto vsg_child = createTile(child, level+1))
+            if (auto vsg_child = createTile(child, level+1, refine))
             {
                 group->addChild(vsg_child);
             }
@@ -182,7 +186,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     else return group;
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
 #if 0
     vsg::info("Tiles3D::createTile() {");
@@ -214,7 +218,9 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
     bool usePagedLOD = level > preLoadLevel;
 
-    if (tile->refine=="ADD" && local_subgraph)
+    const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
+
+    if (refine=="ADD" && local_subgraph)
     {
         // need to pass on Tile local_subgraph to the SceneGraphBuilder::readTileChildren(..) so assign it to Tile as meta data
         tile->setObject("local_subgraph", local_subgraph);
@@ -255,13 +261,14 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         load_options->setObject("tile", tile);
         load_options->setObject("builder", vsg::ref_ptr<SceneGraphBuilder>(this));
         load_options->setValue("level", level);
+        load_options->setValue("refine", refine);
         plod->options = load_options;
 
         return plod;
     }
     else // use LOD
     {
-        auto highres_subgraph = readTileChildren(tile, level);
+        auto highres_subgraph = readTileChildren(tile, level, refine);
 
         double minimumScreenHeightRatio = 0.5;
         if (tile->geometricError > 0.0)
@@ -336,7 +343,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     if (tileset->root)
     {
-        if (auto vsg_root = createTile(tileset->root, 0))
+        if (auto vsg_root = createTile(tileset->root, 0, tileset->root->refine))
         {
             vsg_tileset->addChild(vsg_root);
         }
