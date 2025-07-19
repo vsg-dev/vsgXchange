@@ -586,6 +586,9 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
 
     std::multiset<GlyphQuad> sortedGlyphQuads;
 
+    bool hasSpace = false;
+    FT_ULong charcodeSpace = 32;
+
     // collect all the sizes of the glyphs
     FT_ULong max_charcode = 0;
     {
@@ -606,11 +609,38 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 static_cast<unsigned int>(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
                 static_cast<unsigned int>(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))};
 
+            if (charcode == charcodeSpace) hasSpace = true;
+
             sortedGlyphQuads.insert(quad);
             
             charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
         }
     }
+
+
+    if (!hasSpace)
+    {
+        FT_UInt glyph_index = FT_Get_Char_Index(face, charcodeSpace);
+
+        error = FT_Load_Glyph(face, glyph_index, load_flags);
+        if (!error)
+        {
+            GlyphQuad quad{
+                charcodeSpace,
+                glyph_index,
+                static_cast<unsigned int>(ceil(float(face->glyph->metrics.width) * freetype_pixel_size_scale)),
+                static_cast<unsigned int>(ceil(float(face->glyph->metrics.height) * freetype_pixel_size_scale))};
+
+            sortedGlyphQuads.insert(quad);
+
+            hasSpace = true;
+        }
+        else
+        {
+            vsg::warn("freetype::Implementation::read(..) No space glyph.");
+        }
+    }
+
 
     double total_width = 0.0;
     double total_height = 0.0;
