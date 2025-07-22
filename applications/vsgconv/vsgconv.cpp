@@ -302,7 +302,7 @@ int main(int argc, char** argv)
     if (int log_level = 0; arguments.read("--log-level", log_level)) vsg::Logger::instance()->level = vsg::Logger::Level(log_level);
 
     // read any command line options that the ReaderWriter supports
-    arguments.read(options);
+    options->readOptions(arguments);
 
     if (arguments.read({"-v", "--version"}))
     {
