@@ -14,6 +14,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/stream.h>
+#include <vsg/utils/CoordinateSpace.h>
+#include <vsg/utils/CommandLine.h>
 
 #include <cstring>
 
@@ -112,6 +114,19 @@ namespace
         return -1;
     }
 
+
+    static void process_image_format(vsg::ref_ptr<const vsg::Options> options, VkFormat& format)
+    {
+        if (!options) return;
+
+        vsg::CoordinateSpace coordinateSpace;
+        if (options->getValue(vsgXchange::dds::image_format, coordinateSpace))
+        {
+            if (coordinateSpace==vsg::CoordinateSpace::sRGB) format = vsg::uNorm_to_sRGB(format);
+            else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) format = vsg::sRGB_to_uNorm(format);
+        }
+    }
+
     vsg::ref_ptr<vsg::Data> readCompressed(tinyddsloader::DDSFile& ddsFile, VkFormat targetFormat)
     {
         const auto width = ddsFile.GetWidth();
@@ -162,7 +177,7 @@ namespace
         return vsg_data;
     }
 
-    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile& ddsFile)
+    vsg::ref_ptr<vsg::Data> readDds(tinyddsloader::DDSFile& ddsFile, vsg::ref_ptr<const vsg::Options> options)
     {
         const auto width = ddsFile.GetWidth();
         const auto height = ddsFile.GetHeight();
@@ -182,15 +197,15 @@ namespace
 
         if (auto it = kFormatMap.find(format); it != kFormatMap.end())
         {
+            vsg::ref_ptr<vsg::Data> vsg_data;
             if (isCompressed)
             {
-                return readCompressed(ddsFile, it->second);
+                vsg_data = readCompressed(ddsFile, it->second);
             }
             else
             {
                 auto raw = allocateAndCopyToContiguousBlock(ddsFile);
 
-                vsg::ref_ptr<vsg::Data> vsg_data;
 
                 vsg::Data::Properties layout;
                 layout.format = it->second;
@@ -263,11 +278,11 @@ namespace
                     std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  not supported." << std::endl;
                     break;
                 }
-
-                //std::cout << "* Finish: " << valueCount * valueSize << ", " << vsg_data->dataSize() << std::endl;
-
-                return vsg_data;
             }
+
+            if (options && vsg_data) process_image_format(options, vsg_data->properties.format);
+
+            return vsg_data;
         }
         else
         {
@@ -276,6 +291,7 @@ namespace
 
         return {};
     }
+
 } // namespace
 
 using namespace vsgXchange;
@@ -297,7 +313,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const vsg::Path& filename, vsg::ref_ptr<cons
     std::ifstream ifs(filenameToUse, std::ios_base::binary);
     if (const auto result = ddsFile.Load(ifs); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
@@ -322,7 +338,7 @@ vsg::ref_ptr<vsg::Object> dds::read(std::istream& fin, vsg::ref_ptr<const vsg::O
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(fin); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
@@ -347,7 +363,7 @@ vsg::ref_ptr<vsg::Object> dds::read(const uint8_t* ptr, size_t size, vsg::ref_pt
     tinyddsloader::DDSFile ddsFile;
     if (const auto result = ddsFile.Load(ptr, size); result == tinyddsloader::Success)
     {
-        return readDds(ddsFile);
+        return readDds(ddsFile, options);
     }
     else
     {
@@ -371,5 +387,14 @@ bool dds::getFeatures(Features& features) const
     {
         features.extensionFeatureMap[ext] = static_cast<vsg::ReaderWriter::FeatureMask>(vsg::ReaderWriter::READ_FILENAME | vsg::ReaderWriter::READ_ISTREAM | vsg::ReaderWriter::READ_MEMORY);
     }
+
+    features.optionNameTypeMap[dds::image_format] = vsg::type_name<vsg::CoordinateSpace>();
+
     return true;
+}
+
+bool dds::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
+{
+    bool result = arguments.readAndAssign<vsg::CoordinateSpace>(dds::image_format, &options);
+    return result;
 }

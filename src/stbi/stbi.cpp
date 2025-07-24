@@ -85,6 +85,7 @@ static void process_image_format(vsg::ref_ptr<const vsg::Options> options, VkFor
     vsg::CoordinateSpace coordinateSpace;
     if (options->getValue(stbi::image_format, coordinateSpace))
     {
+        vsg::info("stbi coordinateSpace = ", coordinateSpace);
         if (coordinateSpace==vsg::CoordinateSpace::sRGB) format = vsg::uNorm_to_sRGB(format);
         else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) format = vsg::sRGB_to_uNorm(format);
     }

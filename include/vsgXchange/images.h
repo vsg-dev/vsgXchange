@@ -75,6 +75,11 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
+        // vsg::Options::setValue(str, value) supported options:
+        static constexpr const char* image_format = "image_format"; /// Override read image format (8bit RGB/RGBA default to sRGB) to be specified class of CoordinateSpace (sRGB or LINEAR).
+
+        bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
+
     private:
         std::set<vsg::Path> _supportedExtensions;
     };
