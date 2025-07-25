@@ -3,7 +3,7 @@ Utility library for converting 3rd party images, models and fonts formats to/fro
 
 ## Provides builtin support for:
 
-vsgXchange contains source code that can directly read a [range of 3d models, shader and image formats](#file-formats-supported-by-built-in-readerwriters).
+vsgXchange contains source code that can directly read a [range of 3d model, shader and image formats](#file-formats-supported-by-built-in-readerwriters).
 * reading KTX, DDS, JPEG, PNG, GIF, BMP, TGA and PSD image formats as vsg::Data objects.
 * reading GLSL shader files as vsg::ShaderStage objects.
 * reading and writing SPIRV shader files as vsg::ShaderModule.
