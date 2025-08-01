@@ -608,6 +608,10 @@ namespace vsgXchange
 
         struct VSGXCHANGE_DECLSPEC glTF : public vsg::Inherit<ExtensionsExtras, glTF>
         {
+            // filename that the glTF was read from.
+            vsg::Path filename;
+
+            // data structures read by the parser
             vsg::StringsSchema extensionsUsed;
             vsg::StringsSchema extensionsRequired;
             vsg::ref_ptr<Asset> asset;

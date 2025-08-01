@@ -1416,6 +1416,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
     if (parser.buffer[parser.pos]=='{')
     {
         auto root = gltf::glTF::create();
+        root->filename = filename;
 
         parser.read_object(*root);
 
@@ -1525,6 +1526,8 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
     if (parser.buffer[parser.pos]=='{')
     {
         auto root = gltf::glTF::create();
+        root->filename = filename;
+
         parser.read_object(*root);
 
         if (!parser.warnings.empty())
