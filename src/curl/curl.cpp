@@ -222,7 +222,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
         long response_code = 0;
         result = curl_easy_getinfo(_curl, CURLINFO_RESPONSE_CODE, &response_code);
 
-        if (result == 0 && response_code >= 200 && response_code<300) // successful responses.
+        if (result == 0 && response_code >= 200 && response_code < 300) // successful responses.
         {
             // success
             auto local_options = vsg::clone(options);
@@ -250,7 +250,6 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
                     fout << sstr.rdbuf();
                 }
             }
-
         }
         else
         {
@@ -259,7 +258,7 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     }
     else
     {
-        object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", result = ", result, ", ",curl_easy_strerror(result)));
+        object = vsg::ReadError::create(vsg::make_string("vsgXchange::curl could not read file ", filename, ", result = ", result, ", ", curl_easy_strerror(result)));
     }
 
     if (_curl) curl_easy_cleanup(_curl);

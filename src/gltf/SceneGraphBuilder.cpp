@@ -23,35 +23,35 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsgXchange/gltf.h>
 
-#include <vsg/nodes/Group.h>
-#include <vsg/nodes/MatrixTransform.h>
-#include <vsg/nodes/VertexDraw.h>
-#include <vsg/nodes/VertexIndexDraw.h>
-#include <vsg/nodes/StateGroup.h>
-#include <vsg/nodes/DepthSorted.h>
-#include <vsg/nodes/Switch.h>
-#include <vsg/nodes/CullNode.h>
-#include <vsg/nodes/CullGroup.h>
-#include <vsg/nodes/InstanceDraw.h>
-#include <vsg/nodes/InstanceDrawIndexed.h>
-#include <vsg/nodes/Layer.h>
 #include <vsg/animation/AnimationGroup.h>
-#include <vsg/animation/TransformSampler.h>
 #include <vsg/animation/Joint.h>
 #include <vsg/animation/JointSampler.h>
+#include <vsg/animation/TransformSampler.h>
 #include <vsg/lighting/DirectionalLight.h>
 #include <vsg/lighting/PointLight.h>
 #include <vsg/lighting/SpotLight.h>
 #include <vsg/maths/transform.h>
-#include <vsg/utils/GraphicsPipelineConfigurator.h>
-#include <vsg/utils/ComputeBounds.h>
+#include <vsg/nodes/CullGroup.h>
+#include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/DepthSorted.h>
+#include <vsg/nodes/Group.h>
+#include <vsg/nodes/InstanceDraw.h>
+#include <vsg/nodes/InstanceDrawIndexed.h>
+#include <vsg/nodes/Layer.h>
+#include <vsg/nodes/MatrixTransform.h>
+#include <vsg/nodes/StateGroup.h>
+#include <vsg/nodes/Switch.h>
+#include <vsg/nodes/VertexDraw.h>
+#include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/material.h>
+#include <vsg/utils/ComputeBounds.h>
+#include <vsg/utils/GraphicsPipelineConfigurator.h>
 
 #include <vsg/io/write.h>
 
 #ifdef vsgXchange_draco
-#include "draco/core/decoder_buffer.h"
-#include "draco/compression/decode.h"
+#    include "draco/compression/decode.h"
+#    include "draco/core/decoder_buffer.h"
 #endif
 
 using namespace vsgXchange;
@@ -71,8 +71,7 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"WEIGHTS_0", "vsg_JointWeights"},
         {"TRANSLATION", "vsg_Translation"},
         {"ROTATION", "vsg_Rotation"},
-        {"SCALE", "vsg_Scale"}
-    };
+        {"SCALE", "vsg_Scale"}};
 }
 
 void gltf::SceneGraphBuilder::assign_extras(ExtensionsExtras& src, vsg::Object& dest)
@@ -94,10 +93,14 @@ void gltf::SceneGraphBuilder::assign_name_extras(NameExtensionsExtras& src, vsg:
 {
     if (!src.name.empty())
     {
-        if (auto joint = dest.cast<vsg::Joint>()) joint->name = src.name;
-        else if (auto animation = dest.cast<vsg::Animation>()) animation->name = src.name;
-        else if (auto animationSampler = dest.cast<vsg::AnimationSampler>()) animationSampler->name = src.name;
-        else dest.setValue("name", src.name);
+        if (auto joint = dest.cast<vsg::Joint>())
+            joint->name = src.name;
+        else if (auto animation = dest.cast<vsg::Animation>())
+            animation->name = src.name;
+        else if (auto animationSampler = dest.cast<vsg::AnimationSampler>())
+            animationSampler->name = src.name;
+        else
+            dest.setValue("name", src.name);
     }
 
     if (src.extras)
@@ -135,10 +138,10 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createBufferView(vsg::ref_ptr<g
     }
 
     // TODO: decide whether we need to do anything with the BufferView.target
-    auto vsg_buffer =  vsg::ubyteArray::create(vsg_buffers[gltf_bufferView->buffer.value],
-                                               gltf_bufferView->byteOffset,
-                                               gltf_bufferView->byteStride,
-                                               gltf_bufferView->byteLength / gltf_bufferView->byteStride);
+    auto vsg_buffer = vsg::ubyteArray::create(vsg_buffers[gltf_bufferView->buffer.value],
+                                              gltf_bufferView->byteOffset,
+                                              gltf_bufferView->byteStride,
+                                              gltf_bufferView->byteLength / gltf_bufferView->byteStride);
     return vsg_buffer;
 }
 
@@ -148,75 +151,116 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createArray(const std::string& 
 
     auto vsg_bufferView = vsg_bufferViews[bufferView.value];
 
-    auto stride = [&](uint32_t s) -> uint32_t
-    {
+    auto stride = [&](uint32_t s) -> uint32_t {
         return std::max(vsg_bufferView->properties.stride, s);
     };
 
-    switch(componentType)
+    switch (componentType)
     {
-        case(COMPONENT_TYPE_BYTE):
-            if      (type=="SCALAR") vsg_data = vsg::byteArray::create(vsg_bufferView, offset, stride(1), count);
-            else if (type=="VEC2")   vsg_data = vsg::bvec2Array::create(vsg_bufferView, offset, stride(2), count);
-            else if (type=="VEC3")   vsg_data = vsg::bvec3Array::create(vsg_bufferView, offset, stride(3), count);
-            else if (type=="VEC4")   vsg_data = vsg::bvec4Array::create(vsg_bufferView, offset, stride(4), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_UNSIGNED_BYTE):
-            if      (type=="SCALAR") vsg_data = vsg::ubyteArray::create(vsg_bufferView, offset, stride(1), count);
-            else if (type=="VEC2")   vsg_data = vsg::ubvec2Array::create(vsg_bufferView, offset, stride(2), count);
-            else if (type=="VEC3")   vsg_data = vsg::ubvec3Array::create(vsg_bufferView, offset, stride(3), count);
-            else if (type=="VEC4")   vsg_data = vsg::ubvec4Array::create(vsg_bufferView, offset, stride(4), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_SHORT):
-            if      (type=="SCALAR") vsg_data = vsg::shortArray::create(vsg_bufferView, offset, stride(2), count);
-            else if (type=="VEC2")   vsg_data = vsg::svec2Array::create(vsg_bufferView, offset, stride(4), count);
-            else if (type=="VEC3")   vsg_data = vsg::svec3Array::create(vsg_bufferView, offset, stride(6), count);
-            else if (type=="VEC4")   vsg_data = vsg::svec4Array::create(vsg_bufferView, offset, stride(8), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_UNSIGNED_SHORT):
-            if      (type=="SCALAR") vsg_data = vsg::ushortArray::create(vsg_bufferView, offset, stride(2), count);
-            else if (type=="VEC2")   vsg_data = vsg::usvec2Array::create(vsg_bufferView, offset, stride(4), count);
-            else if (type=="VEC3")   vsg_data = vsg::usvec3Array::create(vsg_bufferView, offset, stride(6), count);
-            else if (type=="VEC4")   vsg_data = vsg::usvec4Array::create(vsg_bufferView, offset, stride(8), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_INT):
-            if      (type=="SCALAR") vsg_data = vsg::intArray::create(vsg_bufferView, offset, stride(4), count);
-            else if (type=="VEC2")   vsg_data = vsg::ivec2Array::create(vsg_bufferView, offset, stride(8), count);
-            else if (type=="VEC3")   vsg_data = vsg::ivec3Array::create(vsg_bufferView, offset, stride(12), count);
-            else if (type=="VEC4")   vsg_data = vsg::ivec4Array::create(vsg_bufferView, offset, stride(16), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_UNSIGNED_INT):
-            if      (type=="SCALAR") vsg_data = vsg::uintArray::create(vsg_bufferView, offset, stride(4), count);
-            else if (type=="VEC2")   vsg_data = vsg::uivec2Array::create(vsg_bufferView, offset, stride(8), count);
-            else if (type=="VEC3")   vsg_data = vsg::uivec3Array::create(vsg_bufferView, offset, stride(12), count);
-            else if (type=="VEC4")   vsg_data = vsg::uivec4Array::create(vsg_bufferView, offset, stride(16), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_FLOAT):
-            if      (type=="SCALAR") vsg_data = vsg::floatArray::create(vsg_bufferView, offset, stride(4), count);
-            else if (type=="VEC2")   vsg_data = vsg::vec2Array::create(vsg_bufferView, offset, stride(8), count);
-            else if (type=="VEC3")   vsg_data = vsg::vec3Array::create(vsg_bufferView, offset, stride(12), count);
-            else if (type=="VEC4")   vsg_data = vsg::vec4Array::create(vsg_bufferView, offset, stride(16), count);
-            //else if (type=="MAT2")   vsg_data = vsg::mat2Array::create(vsg_bufferView, offset, stride(16), count);
-            //else if (type=="MAT3")   vsg_data = vsg::mat3Array::create(vsg_bufferView, offset, stride(36), count);
-            else if (type=="MAT4")   vsg_data = vsg::mat4Array::create(vsg_bufferView, offset, stride(64), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
-        case(COMPONENT_TYPE_DOUBLE):
-            if      (type=="SCALAR") vsg_data = vsg::doubleArray::create(vsg_bufferView, offset, stride(8), count);
-            else if (type=="VEC2")   vsg_data = vsg::dvec2Array::create(vsg_bufferView, offset, stride(16), count);
-            else if (type=="VEC3")   vsg_data = vsg::dvec3Array::create(vsg_bufferView, offset, stride(24), count);
-            else if (type=="VEC4")   vsg_data = vsg::dvec4Array::create(vsg_bufferView, offset, stride(32), count);
-            //else if (type=="MAT2")   vsg_data = vsg::dmat2Array::create(vsg_bufferView, offset, stride(32), count);
-            //else if (type=="MAT3")   vsg_data = vsg::dmat3Array::create(vsg_bufferView, offset, stride(72), count);
-            else if (type=="MAT4")   vsg_data = vsg::dmat4Array::create(vsg_bufferView, offset, stride(128), count);
-            else vsg::warn("Unsupported componentType = ", componentType);
-            break;
+    case (COMPONENT_TYPE_BYTE):
+        if (type == "SCALAR")
+            vsg_data = vsg::byteArray::create(vsg_bufferView, offset, stride(1), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::bvec2Array::create(vsg_bufferView, offset, stride(2), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::bvec3Array::create(vsg_bufferView, offset, stride(3), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::bvec4Array::create(vsg_bufferView, offset, stride(4), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_UNSIGNED_BYTE):
+        if (type == "SCALAR")
+            vsg_data = vsg::ubyteArray::create(vsg_bufferView, offset, stride(1), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::ubvec2Array::create(vsg_bufferView, offset, stride(2), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::ubvec3Array::create(vsg_bufferView, offset, stride(3), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::ubvec4Array::create(vsg_bufferView, offset, stride(4), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_SHORT):
+        if (type == "SCALAR")
+            vsg_data = vsg::shortArray::create(vsg_bufferView, offset, stride(2), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::svec2Array::create(vsg_bufferView, offset, stride(4), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::svec3Array::create(vsg_bufferView, offset, stride(6), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::svec4Array::create(vsg_bufferView, offset, stride(8), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_UNSIGNED_SHORT):
+        if (type == "SCALAR")
+            vsg_data = vsg::ushortArray::create(vsg_bufferView, offset, stride(2), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::usvec2Array::create(vsg_bufferView, offset, stride(4), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::usvec3Array::create(vsg_bufferView, offset, stride(6), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::usvec4Array::create(vsg_bufferView, offset, stride(8), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_INT):
+        if (type == "SCALAR")
+            vsg_data = vsg::intArray::create(vsg_bufferView, offset, stride(4), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::ivec2Array::create(vsg_bufferView, offset, stride(8), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::ivec3Array::create(vsg_bufferView, offset, stride(12), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::ivec4Array::create(vsg_bufferView, offset, stride(16), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_UNSIGNED_INT):
+        if (type == "SCALAR")
+            vsg_data = vsg::uintArray::create(vsg_bufferView, offset, stride(4), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::uivec2Array::create(vsg_bufferView, offset, stride(8), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::uivec3Array::create(vsg_bufferView, offset, stride(12), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::uivec4Array::create(vsg_bufferView, offset, stride(16), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_FLOAT):
+        if (type == "SCALAR")
+            vsg_data = vsg::floatArray::create(vsg_bufferView, offset, stride(4), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::vec2Array::create(vsg_bufferView, offset, stride(8), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::vec3Array::create(vsg_bufferView, offset, stride(12), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::vec4Array::create(vsg_bufferView, offset, stride(16), count);
+        //else if (type=="MAT2")   vsg_data = vsg::mat2Array::create(vsg_bufferView, offset, stride(16), count);
+        //else if (type=="MAT3")   vsg_data = vsg::mat3Array::create(vsg_bufferView, offset, stride(36), count);
+        else if (type == "MAT4")
+            vsg_data = vsg::mat4Array::create(vsg_bufferView, offset, stride(64), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
+    case (COMPONENT_TYPE_DOUBLE):
+        if (type == "SCALAR")
+            vsg_data = vsg::doubleArray::create(vsg_bufferView, offset, stride(8), count);
+        else if (type == "VEC2")
+            vsg_data = vsg::dvec2Array::create(vsg_bufferView, offset, stride(16), count);
+        else if (type == "VEC3")
+            vsg_data = vsg::dvec3Array::create(vsg_bufferView, offset, stride(24), count);
+        else if (type == "VEC4")
+            vsg_data = vsg::dvec4Array::create(vsg_bufferView, offset, stride(32), count);
+        //else if (type=="MAT2")   vsg_data = vsg::dmat2Array::create(vsg_bufferView, offset, stride(32), count);
+        //else if (type=="MAT3")   vsg_data = vsg::dmat3Array::create(vsg_bufferView, offset, stride(72), count);
+        else if (type == "MAT4")
+            vsg_data = vsg::dmat4Array::create(vsg_bufferView, offset, stride(128), count);
+        else
+            vsg::warn("Unsupported componentType = ", componentType);
+        break;
     }
 
     if (cloneAccessors)
@@ -253,14 +297,14 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
 
         if (auto uint_indices = vsg_indices.cast<vsg::uintArray>())
         {
-            for(size_t i = 0; i < uint_indices->size(); ++i)
+            for (size_t i = 0; i < uint_indices->size(); ++i)
             {
                 std::memcpy(vsg_data->dataPointer(uint_indices->at(i)), vsg_values->dataPointer(i), vsg_data->valueSize());
             }
         }
         else if (auto ushort_indices = vsg_indices.cast<vsg::ushortArray>())
         {
-            for(size_t i = 0; i < ushort_indices->size(); ++i)
+            for (size_t i = 0; i < ushort_indices->size(); ++i)
             {
                 std::memcpy(vsg_data->dataPointer(ushort_indices->at(i)), vsg_values->dataPointer(i), vsg_data->valueSize());
             }
@@ -273,7 +317,6 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
 
     return vsg_data;
 }
-
 
 vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera)
 {
@@ -289,7 +332,7 @@ vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<glt
     if (gltf_camera->orthographic)
     {
         auto orthographic = gltf_camera->orthographic;
-        double halfWidth = orthographic->xmag; // TODO: figure how to map to GLU/VSG style orthographic
+        double halfWidth = orthographic->xmag;  // TODO: figure how to map to GLU/VSG style orthographic
         double halfHeight = orthographic->ymag; // TODO: figure how to mapto GLU/VSG style orthographic
         vsg_camera->projectionMatrix = vsg::Orthographic::create(-halfWidth, halfWidth, -halfHeight, halfHeight, orthographic->znear, orthographic->zfar);
     }
@@ -332,71 +375,69 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
     vsg_sampler->maxLod = 16.0f;
 
     // See https://docs.vulkan.org/spec/latest/chapters/samplers.html for suggestions on mapping from OpenGL style to Vulkan
-    switch(gltf_sampler->minFilter)
+    switch (gltf_sampler->minFilter)
     {
-        case(9728) : // NEAREST
-            vsg_sampler->minFilter = VK_FILTER_NEAREST;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            vsg_sampler->minLod = 0.0f;
-            vsg_sampler->maxLod = 0.25f;
-            break;
-        case(9729) : // LINEAR
-            vsg_sampler->minFilter = VK_FILTER_LINEAR;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            vsg_sampler->minLod = 0.0f;
-            vsg_sampler->maxLod = 0.25f;
-            break;
-        case(9984) : // NEAREST_MIPMAP_NEAREST
-            vsg_sampler->minFilter = VK_FILTER_NEAREST;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            break;
-        case(9985) : // LINEAR_MIPMAP_NEAREST
-            vsg_sampler->minFilter = VK_FILTER_LINEAR;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            break;
-        case(9986) : // NEAREST_MIPMAP_LINEAR
-            vsg_sampler->minFilter = VK_FILTER_NEAREST;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
-        case(9987) : // LINEAR_MIPMAP_LINEAR
-            vsg_sampler->minFilter = VK_FILTER_LINEAR;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
-        default:
-            vsg::debug("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not set, using linear mipmap linear.");
-            vsg_sampler->minFilter = VK_FILTER_LINEAR;
-            vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
+    case (9728): // NEAREST
+        vsg_sampler->minFilter = VK_FILTER_NEAREST;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        vsg_sampler->minLod = 0.0f;
+        vsg_sampler->maxLod = 0.25f;
+        break;
+    case (9729): // LINEAR
+        vsg_sampler->minFilter = VK_FILTER_LINEAR;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        vsg_sampler->minLod = 0.0f;
+        vsg_sampler->maxLod = 0.25f;
+        break;
+    case (9984): // NEAREST_MIPMAP_NEAREST
+        vsg_sampler->minFilter = VK_FILTER_NEAREST;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        break;
+    case (9985): // LINEAR_MIPMAP_NEAREST
+        vsg_sampler->minFilter = VK_FILTER_LINEAR;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        break;
+    case (9986): // NEAREST_MIPMAP_LINEAR
+        vsg_sampler->minFilter = VK_FILTER_NEAREST;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        break;
+    case (9987): // LINEAR_MIPMAP_LINEAR
+        vsg_sampler->minFilter = VK_FILTER_LINEAR;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        break;
+    default:
+        vsg::debug("gltf_sampler->minFilter value of ", gltf_sampler->minFilter, " not set, using linear mipmap linear.");
+        vsg_sampler->minFilter = VK_FILTER_LINEAR;
+        vsg_sampler->mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        break;
     }
 
-    switch(gltf_sampler->magFilter)
+    switch (gltf_sampler->magFilter)
     {
-        case(9728) :
-            vsg_sampler->magFilter = VK_FILTER_NEAREST;
-            break;
-        case(9729) :
-            vsg_sampler->magFilter = VK_FILTER_LINEAR;
-            break;
-        default:
-            vsg::debug("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not set, using default of linear.");
-            vsg_sampler->magFilter = VK_FILTER_LINEAR;
-            break;
+    case (9728):
+        vsg_sampler->magFilter = VK_FILTER_NEAREST;
+        break;
+    case (9729):
+        vsg_sampler->magFilter = VK_FILTER_LINEAR;
+        break;
+    default:
+        vsg::debug("gltf_sampler->magFilter value of ", gltf_sampler->magFilter, " not set, using default of linear.");
+        vsg_sampler->magFilter = VK_FILTER_LINEAR;
+        break;
     }
 
-
-    auto addressMode = [](uint32_t wrap) -> VkSamplerAddressMode
-    {
-        switch(wrap)
+    auto addressMode = [](uint32_t wrap) -> VkSamplerAddressMode {
+        switch (wrap)
         {
-            case(33071) : // CLAMP_TO_EDGE
-                return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-            case(33648) : // MIRRORED_REPEAT
-                return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-            case(10497) : // REPEAT
-                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-            default:
-                vsg::warn("gltf_sampler->wrap* value of ", wrap, " not supported.");
-                break;
+        case (33071): // CLAMP_TO_EDGE
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case (33648): // MIRRORED_REPEAT
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case (10497): // REPEAT
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        default:
+            vsg::warn("gltf_sampler->wrap* value of ", wrap, " not supported.");
+            break;
         }
         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
     };
@@ -446,7 +487,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     auto texCoordIndicesValue = vsg::TexCoordIndicesValue::create();
     auto& texCoordIndices = texCoordIndicesValue->value();
 
-    if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size()==4)
+    if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size() == 4)
     {
         auto& baseColorFactor = gltf_material->pbrMetallicRoughness.baseColorFactor.values;
         pbrMaterial.baseColorFactor.set(baseColorFactor[0], baseColorFactor[1], baseColorFactor[2], baseColorFactor[3]);
@@ -547,18 +588,17 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
         }
     }
 
-    if (gltf_material->emissiveFactor.values.size()>=3)
+    if (gltf_material->emissiveFactor.values.size() >= 3)
     {
         pbrMaterial.emissiveFactor.set(gltf_material->emissiveFactor.values[0], gltf_material->emissiveFactor.values[1], gltf_material->emissiveFactor.values[2], 1.0);
         // vsg::info("Set pbrMaterial.emissiveFactor = ", pbrMaterial.emissiveFactor);
     }
 
-
-    if (gltf_material->alphaMode=="BLEND")
+    if (gltf_material->alphaMode == "BLEND")
     {
         vsg_material->blending = true;
     }
-    else if (gltf_material->alphaMode=="MASK")
+    else if (gltf_material->alphaMode == "MASK")
     {
         // vsg_material->blending = true; // TODO, do we need to enable blending?
         vsg_material->defines.insert("VSG_ALPHA_TEST");
@@ -596,7 +636,6 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
             vsg::info("Not assigned yet: specularColorTexture = ", materials_specular->specularColorTexture.index, ", ", materials_specular->specularColorTexture.texCoord);
         }
     }
-
 
     if (auto materials_pbrSpecularGlossiness = gltf_material->extension<KHR_materials_pbrSpecularGlossiness>("KHR_materials_pbrSpecularGlossiness"))
     {
@@ -685,7 +724,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
     auto texCoordIndicesValue = vsg::TexCoordIndicesValue::create();
     auto& texCoordIndices = texCoordIndicesValue->value();
 
-    if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size()==4)
+    if (gltf_material->pbrMetallicRoughness.baseColorFactor.values.size() == 4)
     {
         auto& baseColorFactor = gltf_material->pbrMetallicRoughness.baseColorFactor.values;
         phongMaterial.diffuse.set(baseColorFactor[0], baseColorFactor[1], baseColorFactor[2], baseColorFactor[3]);
@@ -713,11 +752,11 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
         }
     }
 
-    if (gltf_material->alphaMode=="BLEND")
+    if (gltf_material->alphaMode == "BLEND")
     {
         vsg_material->blending = true;
     }
-    else if (gltf_material->alphaMode=="MASK")
+    else if (gltf_material->alphaMode == "MASK")
     {
         // vsg_material->blending = true; // TODO, do we need to enable blending?
         vsg_material->defines.insert("VSG_ALPHA_TEST");
@@ -732,13 +771,15 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
 vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
 {
     auto vsg_material = vsg::DescriptorConfigurator::create();
-    if (auto materials_unlit = gltf_material->extension<KHR_materials_unlit>("KHR_materials_unlit")) return createUnlitMaterial(gltf_material);
-    else return createPbrMaterial(gltf_material);
+    if (auto materials_unlit = gltf_material->extension<KHR_materials_unlit>("KHR_materials_unlit"))
+        return createUnlitMaterial(gltf_material);
+    else
+        return createPbrMaterial(gltf_material);
 }
 
 vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& meshExtras)
 {
-/*
+    /*
     struct Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
     {
         std::map<std::string, glTFid> values;
@@ -761,13 +802,13 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 */
 
     const VkPrimitiveTopology topologyLookup[] = {
-            VK_PRIMITIVE_TOPOLOGY_POINT_LIST, // 0, POINTS
-            VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // 1, LINES
-            VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // 2, LINE_LOOP, need special handling
-            VK_PRIMITIVE_TOPOLOGY_LINE_STRIP, // 3, LINE_STRIP
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, // 4, TRIANGLES
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // 5, TRIANGLE_STRIP
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN // 6, TRIANGLE_FAN
+        VK_PRIMITIVE_TOPOLOGY_POINT_LIST,     // 0, POINTS
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST,      // 1, LINES
+        VK_PRIMITIVE_TOPOLOGY_LINE_LIST,      // 2, LINE_LOOP, need special handling
+        VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,     // 3, LINE_STRIP
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,  // 4, TRIANGLES
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // 5, TRIANGLE_STRIP
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN    // 6, TRIANGLE_FAN
     };
 #if 0
     vsg::info("mesh = {");
@@ -777,7 +818,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
     std::vector<vsg::ref_ptr<vsg::Node>> nodes;
 
-    for(auto& primitive : gltf_mesh->primitives.values)
+    for (auto& primitive : gltf_mesh->primitives.values)
     {
         vsg::ref_ptr<vsg::DescriptorConfigurator> vsg_material;
         if (primitive->material)
@@ -820,8 +861,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         vsg::DataList vertexArrays;
 
-        auto assignArray = [&](Attributes& attrib, VkVertexInputRate vertexInputRate, const std::string& attribute_name) -> bool
-        {
+        auto assignArray = [&](Attributes& attrib, VkVertexInputRate vertexInputRate, const std::string& attribute_name) -> bool {
             auto array_itr = attrib.values.find(attribute_name);
             if (array_itr == attrib.values.end()) return false;
 
@@ -841,8 +881,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 return false;
             }
 
-
-            if (attribute_name=="ROTATION")
+            if (attribute_name == "ROTATION")
             {
                 if (auto vec4Rotations = array.cast<vsg::vec4Array>())
                 {
@@ -850,15 +889,15 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                     array = quatArray;
                 }
             }
-            else if (attribute_name=="TEXCOORD_0" || attribute_name=="TEXCOORD_1" || attribute_name=="TEXCOORD_2" || attribute_name=="TEXCOORD_3")
+            else if (attribute_name == "TEXCOORD_0" || attribute_name == "TEXCOORD_1" || attribute_name == "TEXCOORD_2" || attribute_name == "TEXCOORD_3")
             {
                 if (auto texture_transform = vsg_material->getObject<KHR_texture_transform>("KHR_texture_transform"))
                 {
                     vsg::vec2 offset(0.0f, 0.0f);
                     vsg::vec2 scale(1.0f, 1.0f);
                     float rotation = texture_transform->rotation;
-                    if (texture_transform->offset.values.size()>=2) offset.set(texture_transform->offset.values[0],  texture_transform->offset.values[1]);
-                    if (texture_transform->scale.values.size()>=2) scale.set(texture_transform->scale.values[0],  texture_transform->scale.values[1]);
+                    if (texture_transform->offset.values.size() >= 2) offset.set(texture_transform->offset.values[0], texture_transform->offset.values[1]);
+                    if (texture_transform->scale.values.size() >= 2) scale.set(texture_transform->scale.values[0], texture_transform->scale.values[1]);
 
                     if (auto texCoords = array.cast<vsg::vec2Array>())
                     {
@@ -866,7 +905,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                         float cos_rotation = std::cos(rotation);
                         auto transformedTexCoords = vsg::vec2Array::create(texCoords->size());
                         auto dest_itr = transformedTexCoords->begin();
-                        for(auto& tc : *texCoords)
+                        for (auto& tc : *texCoords)
                         {
                             auto& dest_tc = *(dest_itr++);
                             dest_tc.x = offset.x + (tc.x * scale.x) * cos_rotation + (tc.y * scale.y) * sin_rotation;
@@ -875,13 +914,14 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                         array = transformedTexCoords;
                     }
                 }
-            }else if (attribute_name=="JOINTS_0")
+            }
+            else if (attribute_name == "JOINTS_0")
             {
                 if (auto ushortCoords = array.cast<vsg::usvec4Array>())
                 {
                     auto intCoords = vsg::ivec4Array::create(ushortCoords->size());
                     auto dest_itr = intCoords->begin();
-                    for(auto& usc : *ushortCoords)
+                    for (auto& usc : *ushortCoords)
                     {
                         *(dest_itr++) = vsg::ivec4(usc[0], usc[1], usc[2], usc[3]);
                     }
@@ -892,7 +932,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 {
                     auto intCoords = vsg::ivec4Array::create(ubyteCoords->size());
                     auto dest_itr = intCoords->begin();
-                    for(auto& ubc : *ubyteCoords)
+                    for (auto& ubc : *ubyteCoords)
                     {
                         *(dest_itr++) = vsg::ivec4(ubc[0], ubc[1], ubc[2], ubc[3]);
                     }
@@ -900,7 +940,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                     array = intCoords;
                 }
             }
-
 
             config->assignArray(vertexArrays, name_itr->second, vertexInputRate, array);
             return true;
@@ -932,7 +971,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         uint32_t instanceCount = 1;
         if (meshExtras.instancedAttributes)
         {
-            for(auto& [name, id] : meshExtras.instancedAttributes->values)
+            for (auto& [name, id] : meshExtras.instancedAttributes->values)
             {
                 instanceCount = vsg_accessors[id.value]->valueCount();
             }
@@ -992,7 +1031,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                     // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
                     auto ushort_indices = vsg::ushortArray::create(ubyte_indices->size());
                     auto itr = ushort_indices->begin();
-                    for(auto value : *ubyte_indices)
+                    for (auto value : *ubyte_indices)
                     {
                         *(itr++) = static_cast<uint16_t>(value);
                     }
@@ -1017,8 +1056,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 instanceDraw->vertexCount = vertexCount;
                 draw = instanceDraw;
             }
-
-
         }
         else if (primitive->indices)
         {
@@ -1039,7 +1076,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
                 auto ushort_indices = vsg::ushortArray::create(ubyte_indices->size());
                 auto itr = ushort_indices->begin();
-                for(auto value : *ubyte_indices)
+                for (auto value : *ubyte_indices)
                 {
                     *(itr++) = static_cast<uint16_t>(value);
                 }
@@ -1132,8 +1169,6 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
         {
             nodes.push_back(stateGroup);
         }
-
-
     }
 
     if (nodes.empty())
@@ -1143,7 +1178,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
     }
 
     vsg::ref_ptr<vsg::Node> vsg_mesh;
-    if (nodes.size()==1)
+    if (nodes.size() == 1)
     {
         // vsg::info("Mesh with single primtiive");
         vsg_mesh = nodes.front();
@@ -1152,7 +1187,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
     {
         // vsg::info("Mesh with multiple primtiives - could possible use vsg::Geomterty.");
         auto group = vsg::Group::create();
-        for(auto node : nodes)
+        for (auto node : nodes)
         {
             group->addChild(node);
         }
@@ -1167,7 +1202,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
 bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
 {
-    if (node.matrix.values.size()==16)
+    if (node.matrix.values.size() == 16)
     {
         auto& m = node.matrix.values;
         matrix.set(m[0], m[1], m[2], m[3],
@@ -1188,9 +1223,9 @@ bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
         vsg::dquat vsg_r;
         vsg::dvec3 vsg_s(1.0, 1.0, 1.0);
 
-        if (t.size()>=3) vsg_t.set(t[0], t[1], t[2]);
-        if (r.size()>=4) vsg_r.set(r[0], r[1], r[2], r[3]);
-        if (s.size()>=3) vsg_s.set(s[0], s[1], s[2]);
+        if (t.size() >= 3) vsg_t.set(t[0], t[1], t[2]);
+        if (r.size() >= 4) vsg_r.set(r[0], r[1], r[2], r[3]);
+        if (s.size() >= 3) vsg_s.set(s[0], s[1], s[2]);
 
         matrix = vsg::translate(vsg_t) * vsg::rotate(vsg_r) * vsg::scale(vsg_s);
         return true;
@@ -1206,18 +1241,18 @@ vsg::ref_ptr<vsg::Light> gltf::SceneGraphBuilder::createLight(vsg::ref_ptr<gltf:
     bool range_set = gltf_light->range != std::numeric_limits<float>::max();
 
     vsg::ref_ptr<vsg::Light> vsg_light;
-    if (gltf_light->type=="directional")
+    if (gltf_light->type == "directional")
     {
         auto directionalLight = vsg::DirectionalLight::create();
         vsg_light = directionalLight;
     }
-    else if (gltf_light->type=="point")
+    else if (gltf_light->type == "point")
     {
         auto pointLight = vsg::PointLight::create();
         if (range_set) pointLight->radius = gltf_light->range;
         vsg_light = pointLight;
     }
-    else if (gltf_light->type=="spot")
+    else if (gltf_light->type == "spot")
     {
         auto spotLight = vsg::SpotLight::create();
         if (range_set) spotLight->radius = gltf_light->range;
@@ -1259,18 +1294,23 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
 
     std::map<uint32_t, NodeChannels> nodeChannels;
 
-    for(auto& channel : gltf_animation->channels.values)
+    for (auto& channel : gltf_animation->channels.values)
     {
         auto node_id = channel->target.node.value;
 
-        if (channel->target.path == "translation") nodeChannels[node_id].translation = channel;
-        else if (channel->target.path == "rotation") nodeChannels[node_id].rotation = channel;
-        else if (channel->target.path == "scale") nodeChannels[node_id].scale = channel;
-        else if (channel->target.path == "weights") nodeChannels[node_id].weights = channel;
-        else vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+        if (channel->target.path == "translation")
+            nodeChannels[node_id].translation = channel;
+        else if (channel->target.path == "rotation")
+            nodeChannels[node_id].rotation = channel;
+        else if (channel->target.path == "scale")
+            nodeChannels[node_id].scale = channel;
+        else if (channel->target.path == "weights")
+            nodeChannels[node_id].weights = channel;
+        else
+            vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
     }
 
-    for(auto& [node_id, channels] : nodeChannels)
+    for (auto& [node_id, channels] : nodeChannels)
     {
         if (channels.translation || channels.rotation || channels.scale)
         {
@@ -1293,7 +1333,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                     auto& translations = keyframes->positions;
                     translations.resize(count);
 
-                    for(size_t i=0; i<count; ++i)
+                    for (size_t i = 0; i < count; ++i)
                     {
                         const auto& t = translationValues->at(i);
                         translations[i].time = timeValues->at(i);
@@ -1323,7 +1363,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                     auto& rotations = keyframes->rotations;
                     rotations.resize(count);
 
-                    for(size_t i=0; i<count; ++i)
+                    for (size_t i = 0; i < count; ++i)
                     {
                         const auto& q = rotationValues->at(i);
                         rotations[i].time = timeValues->at(i);
@@ -1353,7 +1393,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                     auto& scales = keyframes->scales;
                     scales.resize(count);
 
-                    for(size_t i=0; i<count; ++i)
+                    for (size_t i = 0; i < count; ++i)
                     {
                         const auto& s = scaleValues->at(i);
                         scales[i].time = timeValues->at(i);
@@ -1387,7 +1427,6 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
 
     return vsg_animation;
 }
-
 
 vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode)
 {
@@ -1430,9 +1469,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     }
 
     bool isTransform = !(gltf_node->matrix.values.empty()) ||
-                        !(gltf_node->rotation.values.empty()) ||
-                        !(gltf_node->scale.values.empty()) ||
-                        !(gltf_node->translation.values.empty());
+                       !(gltf_node->rotation.values.empty()) ||
+                       !(gltf_node->scale.values.empty()) ||
+                       !(gltf_node->translation.values.empty());
 
     size_t numChildren = gltf_node->children.values.size();
     if (gltf_node->camera) ++numChildren;
@@ -1446,13 +1485,13 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         if (vsg_light) joint->addChild(vsg_light);
         if (vsg_mesh) joint->addChild(vsg_mesh);
 
-        if (gltf_node->matrix.values.size()==16)
+        if (gltf_node->matrix.values.size() == 16)
         {
             auto& m = gltf_node->matrix.values;
             joint->matrix.set(m[0], m[1], m[2], m[3],
-                                  m[4], m[5], m[6], m[7],
-                                  m[8], m[9], m[10], m[11],
-                                  m[12], m[13], m[14], m[15]);
+                              m[4], m[5], m[6], m[7],
+                              m[8], m[9], m[10], m[11],
+                              m[12], m[13], m[14], m[15]);
         }
         else
         {
@@ -1464,9 +1503,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
             vsg::dquat vsg_r;
             vsg::dvec3 vsg_s(1.0, 1.0, 1.0);
 
-            if (t.size()>=3) vsg_t.set(t[0], t[1], t[2]);
-            if (r.size()>=4) vsg_r.set(r[0], r[1], r[2], r[3]);
-            if (s.size()>=3) vsg_s.set(s[0], s[1], s[2]);
+            if (t.size() >= 3) vsg_t.set(t[0], t[1], t[2]);
+            if (r.size() >= 4) vsg_r.set(r[0], r[1], r[2], r[3]);
+            if (s.size() >= 3) vsg_s.set(s[0], s[1], s[2]);
 
             joint->matrix = vsg::translate(vsg_t) * vsg::rotate(vsg_r) * vsg::scale(vsg_s);
         }
@@ -1480,7 +1519,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
         if (vsg_light) transform->addChild(vsg_light);
         if (vsg_mesh) transform->addChild(vsg_mesh);
 
-        if (gltf_node->matrix.values.size()==16)
+        if (gltf_node->matrix.values.size() == 16)
         {
             auto& m = gltf_node->matrix.values;
             transform->matrix.set(m[0], m[1], m[2], m[3],
@@ -1498,9 +1537,9 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
             vsg::dquat vsg_r;
             vsg::dvec3 vsg_s(1.0, 1.0, 1.0);
 
-            if (t.size()>=3) vsg_t.set(t[0], t[1], t[2]);
-            if (r.size()>=4) vsg_r.set(r[0], r[1], r[2], r[3]);
-            if (s.size()>=3) vsg_s.set(s[0], s[1], s[2]);
+            if (t.size() >= 3) vsg_t.set(t[0], t[1], t[2]);
+            if (r.size() >= 4) vsg_r.set(r[0], r[1], r[2], r[3]);
+            if (s.size() >= 3) vsg_s.set(s[0], s[1], s[2]);
 
             transform->matrix = vsg::translate(vsg_t) * vsg::rotate(vsg_r) * vsg::scale(vsg_s);
         }
@@ -1519,17 +1558,20 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     }
     else
     {
-        if (gltf_node->camera) vsg_node = vsg_cameras[gltf_node->camera.value];
-        else if (vsg_mesh) vsg_node = vsg_mesh;
-        else if (vsg_light) vsg_node = vsg_light;
-        else vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
+        if (gltf_node->camera)
+            vsg_node = vsg_cameras[gltf_node->camera.value];
+        else if (vsg_mesh)
+            vsg_node = vsg_mesh;
+        else if (vsg_light)
+            vsg_node = vsg_light;
+        else
+            vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
     }
 
     assign_name_extras(*gltf_node, *vsg_node);
 
     return vsg_node;
 }
-
 
 void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dmat4& inheritedTransform)
 {
@@ -1562,14 +1604,14 @@ void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dma
     if (node.mesh)
     {
         auto mesh = model->meshes.values[node.mesh.value];
-        for(auto primitive : mesh->primitives.values)
+        for (auto primitive : mesh->primitives.values)
         {
             if (auto position_itr = primitive->attributes.values.find("POSITION"); position_itr != primitive->attributes.values.end())
             {
                 auto data = vsg_accessors[position_itr->second.value];
                 auto vertices = data.cast<vsg::vec3Array>();
 
-                for(auto& v : *vertices)
+                for (auto& v : *vertices)
                 {
                     v = accumulatedTransform * vsg::dvec3(v);
                 }
@@ -1579,7 +1621,7 @@ void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dma
                 auto data = vsg_accessors[normal_itr->second.value];
                 auto normals = data.cast<vsg::vec3Array>();
 
-                for(auto& n : *normals)
+                for (auto& n : *normals)
                 {
                     n = vsg::dvec3(n) * inverse_accumulatedTransform;
                 }
@@ -1587,7 +1629,7 @@ void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dma
         }
     }
 
-    for(auto& id : node.children.values)
+    for (auto& id : node.children.values)
     {
         auto child = model->nodes.values[id.value];
         flattenTransforms(*child, accumulatedTransform);
@@ -1603,7 +1645,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
     }
 
     vsg::Group::Children children;
-    for(auto& id : gltf_scene->nodes.values)
+    for (auto& id : gltf_scene->nodes.values)
     {
         if (vsg_nodes[id.value]) children.push_back(vsg_nodes[id.value]);
     }
@@ -1637,7 +1679,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::
         if (auto bounds = vsg::visit<vsg::ComputeBounds>(children).bounds)
         {
             vsg::dsphere bs((bounds.max + bounds.min) * 0.5, vsg::length(bounds.max - bounds.min) * 0.5);
-            if (children.size()==1)
+            if (children.size() == 1)
             {
                 auto cullNode = vsg::CullNode::create(bs, children[0]);
 
@@ -1680,7 +1722,7 @@ static bool CopyDracoAttributes(const draco::PointAttribute* draco_attribute, vo
     T* dest_ptr = reinterpret_cast<T*>(ptr);
 
     auto num_components = draco_attribute->num_components();
-    for(draco::PointIndex i(0); i < num_points; ++i)
+    for (draco::PointIndex i(0); i < num_points; ++i)
     {
         auto index = draco_attribute->mapped_index(i);
         if (!draco_attribute->ConvertValue(index, num_components, dest_ptr)) return false;
@@ -1721,8 +1763,8 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
             indices->bufferView.value = static_cast<uint32_t>(model->bufferViews.values.size());
 
             // hardwire to uint32_t for now
-            uint32_t componentSize =  (num_points < 65536) ? 2 : 4;
-            uint32_t count =  mesh->num_faces() * 3;
+            uint32_t componentSize = (num_points < 65536) ? 2 : 4;
+            uint32_t count = mesh->num_faces() * 3;
 
             // set up BufferView for the indices
             auto indexBufferView = gltf::BufferView::create();
@@ -1737,7 +1779,7 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
             indexBuffer->data = vsg::ubyteArray::create(indexBuffer->byteLength);
             model->buffers.values.push_back(indexBuffer);
 
-            if (componentSize==sizeof(draco::PointIndex))
+            if (componentSize == sizeof(draco::PointIndex))
             {
                 indices->componentType = COMPONENT_TYPE_UNSIGNED_INT;
                 indices->count = count;
@@ -1752,7 +1794,7 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
 
                 // copy data across value by value converting to ushort type
                 uint16_t* dest = static_cast<uint16_t*>(indexBuffer->data->dataPointer());
-                for(draco::FaceIndex i(0); i < mesh->num_faces(); ++i)
+                for (draco::FaceIndex i(0); i < mesh->num_faces(); ++i)
                 {
                     const auto& face = mesh->face(i);
                     *(dest++) = static_cast<uint16_t>(face[0].value());
@@ -1765,7 +1807,7 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
         auto& draco_attributes = draco_mesh_compression->attributes.values;
         auto& primitive_attributes = primitive->attributes.values;
 
-        for(auto& [name, id] : draco_attributes)
+        for (auto& [name, id] : draco_attributes)
         {
             if (auto itr = primitive_attributes.find(name); itr != primitive_attributes.end())
             {
@@ -1789,7 +1831,7 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
                 attributeBufferView->byteStride = draco_attribute->byte_stride();
                 model->bufferViews.values.push_back(attributeBufferView);
 
-                auto attributeBuffer =  gltf::Buffer::create();
+                auto attributeBuffer = gltf::Buffer::create();
                 attributeBuffer->byteLength = attributeBufferView->byteLength;
                 attributeBuffer->data = vsg::ubyteArray::create(attributeBuffer->byteLength);
                 model->buffers.values.push_back(attributeBuffer);
@@ -1797,35 +1839,35 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
                 auto* ptr = attributeBuffer->data->dataPointer();
 
                 // TODO get the attributes from the draco mesh.
-                switch(accessor->componentType)
+                switch (accessor->componentType)
                 {
-                    case(COMPONENT_TYPE_BYTE):
-                        CopyDracoAttributes<int8_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_UNSIGNED_BYTE):
-                        CopyDracoAttributes<uint8_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_SHORT):
-                        CopyDracoAttributes<int16_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_UNSIGNED_SHORT):
-                        CopyDracoAttributes<uint16_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_INT):
-                        CopyDracoAttributes<int32_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_UNSIGNED_INT):
-                        CopyDracoAttributes<uint32_t>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_FLOAT):
-                        CopyDracoAttributes<float>(draco_attribute, ptr, num_points);
-                        break;
-                    case(COMPONENT_TYPE_DOUBLE):
-                        CopyDracoAttributes<double>(draco_attribute, ptr, num_points);
-                        break;
-                    default:
-                        vsg::info("unsupported type ", dataProperties.componentType);
-                        break;
+                case (COMPONENT_TYPE_BYTE):
+                    CopyDracoAttributes<int8_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_UNSIGNED_BYTE):
+                    CopyDracoAttributes<uint8_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_SHORT):
+                    CopyDracoAttributes<int16_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_UNSIGNED_SHORT):
+                    CopyDracoAttributes<uint16_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_INT):
+                    CopyDracoAttributes<int32_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_UNSIGNED_INT):
+                    CopyDracoAttributes<uint32_t>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_FLOAT):
+                    CopyDracoAttributes<float>(draco_attribute, ptr, num_points);
+                    break;
+                case (COMPONENT_TYPE_DOUBLE):
+                    CopyDracoAttributes<double>(draco_attribute, ptr, num_points);
+                    break;
+                default:
+                    vsg::info("unsupported type ", dataProperties.componentType);
+                    break;
                 }
             }
         }
@@ -1858,7 +1900,6 @@ vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreateFlatShaderSet()
 
     return flatShaderSet;
 }
-
 
 vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options)
 {
@@ -1899,10 +1940,10 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         default_material->assignDescriptor("material", pbrMaterialValue);
     }
 
-    for(size_t mi=0; mi<model->meshes.values.size(); ++mi)
+    for (size_t mi = 0; mi < model->meshes.values.size(); ++mi)
     {
         auto mesh = model->meshes.values[mi];
-        for(auto primitive : mesh->primitives.values)
+        for (auto primitive : mesh->primitives.values)
         {
             if (!decodePrimitiveIfRequired(primitive))
             {
@@ -1913,19 +1954,19 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     }
 
     vsg_buffers.resize(model->buffers.values.size());
-    for(size_t bi = 0; bi<model->buffers.values.size(); ++bi)
+    for (size_t bi = 0; bi < model->buffers.values.size(); ++bi)
     {
         vsg_buffers[bi] = createBuffer(model->buffers.values[bi]);
     }
 
     vsg_bufferViews.resize(model->bufferViews.values.size());
-    for(size_t bvi = 0; bvi<model->bufferViews.values.size(); ++bvi)
+    for (size_t bvi = 0; bvi < model->bufferViews.values.size(); ++bvi)
     {
         vsg_bufferViews[bvi] = createBufferView(model->bufferViews.values[bvi]);
     }
 
     vsg_accessors.resize(model->accessors.values.size());
-    for(size_t ai = 0; ai<model->accessors.values.size(); ++ai)
+    for (size_t ai = 0; ai < model->accessors.values.size(); ++ai)
     {
         vsg_accessors[ai] = createAccessor(model->accessors.values[ai]);
     }
@@ -1935,10 +1976,10 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         requiresRootTransformNode = false;
         //vsg::info("Need to flatten all transforms");
 
-        for(size_t sci = 0; sci < model->scenes.values.size(); ++sci)
+        for (size_t sci = 0; sci < model->scenes.values.size(); ++sci)
         {
             auto gltf_scene = model->scenes.values[sci];
-            for(auto& id : gltf_scene->nodes.values)
+            for (auto& id : gltf_scene->nodes.values)
             {
                 flattenTransforms(*(model->nodes.values[id.value]), rootTransform);
             }
@@ -1947,17 +1988,17 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     // vsg::info("create cameras = ", model->cameras.values.size());
     vsg_cameras.resize(model->cameras.values.size());
-    for(size_t ci=0; ci<model->cameras.values.size(); ++ci)
+    for (size_t ci = 0; ci < model->cameras.values.size(); ++ci)
     {
         vsg_cameras[ci] = createCamera(model->cameras.values[ci]);
     }
 
     // set which nodes are joints
     vsg_joints.resize(model->nodes.values.size(), false);
-    for(size_t si=0; si<model->skins.values.size(); ++si)
+    for (size_t si = 0; si < model->skins.values.size(); ++si)
     {
         auto& gltf_skin = model->skins.values[si];
-        for(auto joint : gltf_skin->joints.values)
+        for (auto joint : gltf_skin->joints.values)
         {
             vsg_joints[joint.value] = true;
         }
@@ -1966,22 +2007,21 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     // vsg::info("create samplers = ", model->samplers.values.size());
     vsg_samplers.resize(model->samplers.values.size());
     std::vector<uint32_t> maxDimensions(model->samplers.values.size(), 0);
-    for(size_t sai=0; sai<model->samplers.values.size(); ++sai)
+    for (size_t sai = 0; sai < model->samplers.values.size(); ++sai)
     {
         vsg_samplers[sai] = createSampler(model->samplers.values[sai]);
     }
 
     // vsg::info("create images = ", model->images.values.size());
     vsg_images.resize(model->images.values.size());
-    for(size_t ii=0; ii<model->images.values.size(); ++ii)
+    for (size_t ii = 0; ii < model->images.values.size(); ++ii)
     {
-         if (model->images.values[ii]) vsg_images[ii] = createImage(model->images.values[ii]);
+        if (model->images.values[ii]) vsg_images[ii] = createImage(model->images.values[ii]);
     }
-
 
     // vsg::info("create textures = ", model->textures.values.size());
     vsg_textures.resize(model->textures.values.size());
-    for(size_t ti=0; ti<model->textures.values.size(); ++ti)
+    for (size_t ti = 0; ti < model->textures.values.size(); ++ti)
     {
         auto& gltf_texture = model->textures.values[ti];
         auto& si = vsg_textures[ti] = createTexture(gltf_texture);
@@ -1996,7 +2036,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     }
 
     // reset the maxLod's to the be appropriate for the dimensions of the images being used.
-    for(size_t sai=0; sai<model->samplers.values.size(); ++sai)
+    for (size_t sai = 0; sai < model->samplers.values.size(); ++sai)
     {
         float maxLod = std::floor(std::log2f(static_cast<float>(maxDimensions[sai])));
         if (vsg_samplers[sai]->maxLod > maxLod)
@@ -2007,7 +2047,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     // vsg::info("create materials = ", model->materials.values.size());
     vsg_materials.resize(model->materials.values.size());
-    for(size_t mi=0; mi<model->materials.values.size(); ++mi)
+    for (size_t mi = 0; mi < model->materials.values.size(); ++mi)
     {
         vsg_materials[mi] = createMaterial(model->materials.values[mi]);
     }
@@ -2016,11 +2056,10 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     // populate vsg_meshes in the createNode method.
     vsg_meshes.resize(model->meshes.values.size());
 
-
     if (auto khr_lights = model->extension<KHR_lights_punctual>("KHR_lights_punctual"))
     {
         vsg_lights.resize(khr_lights->lights.values.size());
-        for(size_t li = 0; li < khr_lights->lights.values.size(); ++li)
+        for (size_t li = 0; li < khr_lights->lights.values.size(); ++li)
         {
             vsg_lights[li] = createLight(khr_lights->lights.values[li]);
         }
@@ -2028,7 +2067,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     //vsg::info("create skins = ", model->skins.values.size(), ", model->nodes.values.size() = ", model->nodes.values.size());
     vsg_skins.resize(model->skins.values.size());
-    for(size_t si=0; si<model->skins.values.size(); ++si)
+    for (size_t si = 0; si < model->skins.values.size(); ++si)
     {
         auto& gltf_skin = model->skins.values[si];
 
@@ -2039,16 +2078,16 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
         auto& offsetMatrices = jointSampler->offsetMatrices;
         auto inverseBindMatrices = vsg_accessors[gltf_skin->inverseBindMatrices.value];
-        if (auto floatMatrices =  inverseBindMatrices.cast<vsg::mat4Array>())
+        if (auto floatMatrices = inverseBindMatrices.cast<vsg::mat4Array>())
         {
-            for(size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
+            for (size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
             {
                 offsetMatrices[i] = floatMatrices->at(i);
             }
         }
-        else if (auto doubleMatrices =  inverseBindMatrices.cast<vsg::dmat4Array>())
+        else if (auto doubleMatrices = inverseBindMatrices.cast<vsg::dmat4Array>())
         {
-            for(size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
+            for (size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
             {
                 offsetMatrices[i] = doubleMatrices->at(i);
             }
@@ -2060,15 +2099,14 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         assign_name_extras(*gltf_skin, *jointSampler);
     }
 
-
     // vsg::info("create nodes = ", model->nodes.values.size());
     vsg_nodes.resize(model->nodes.values.size());
-    for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
+    for (size_t ni = 0; ni < model->nodes.values.size(); ++ni)
     {
         vsg_nodes[ni] = createNode(model->nodes.values[ni], vsg_joints[ni]);
     }
 
-    for(size_t ni=0; ni<model->nodes.values.size(); ++ni)
+    for (size_t ni = 0; ni < model->nodes.values.size(); ++ni)
     {
         auto& gltf_node = model->nodes.values[ni];
 
@@ -2077,30 +2115,33 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
             if (auto vsg_group = vsg_nodes[ni].cast<vsg::Group>())
             {
-                for(auto id : gltf_node->children.values)
+                for (auto id : gltf_node->children.values)
                 {
-                    if (auto vsg_child = vsg_nodes[id.value]) vsg_group->addChild(vsg_child);
-                    else vsg::info("Unassigned vsg_child");
+                    if (auto vsg_child = vsg_nodes[id.value])
+                        vsg_group->addChild(vsg_child);
+                    else
+                        vsg::info("Unassigned vsg_child");
                 }
             }
             else if (auto vsg_joint = vsg_nodes[ni].cast<vsg::Joint>())
             {
-                for(auto id : gltf_node->children.values)
+                for (auto id : gltf_node->children.values)
                 {
-                    if (auto vsg_child = vsg_nodes[id.value]) vsg_joint->addChild(vsg_child);
-                    else vsg::info("Unassigned vsg_child");
+                    if (auto vsg_child = vsg_nodes[id.value])
+                        vsg_joint->addChild(vsg_child);
+                    else
+                        vsg::info("Unassigned vsg_child");
                 }
             }
         }
     }
 
     //
-    for(size_t si=0; si<model->skins.values.size(); ++si)
+    for (size_t si = 0; si < model->skins.values.size(); ++si)
     {
         auto& gltf_skin = model->skins.values[si];
 
-
-        for(size_t i=0; i<gltf_skin->joints.values.size(); ++i)
+        for (size_t i = 0; i < gltf_skin->joints.values.size(); ++i)
         {
             if (auto joint = vsg_nodes[gltf_skin->joints.values[i].value].cast<vsg::Joint>())
             {
@@ -2120,12 +2161,12 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     // set up animations
     vsg_animations.resize(model->animations.values.size());
-    for(size_t ai=0; ai<model->animations.values.size(); ++ai)
+    for (size_t ai = 0; ai < model->animations.values.size(); ++ai)
     {
         vsg_animations[ai] = createAnimation(model->animations.values[ai]);
 
         // for now just add JointSampler to all animations, do need to check that animation is associted with samplers joints.
-        for(auto& jointSampler : vsg_skins)
+        for (auto& jointSampler : vsg_skins)
         {
             vsg_animations[ai]->samplers.push_back(jointSampler);
         }
@@ -2135,7 +2176,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     // vsg::info("scenes = ", model->scenes.values.size());
 
     vsg_scenes.resize(model->scenes.values.size());
-    for(size_t sci = 0; sci < model->scenes.values.size(); ++sci)
+    for (size_t sci = 0; sci < model->scenes.values.size(); ++sci)
     {
         vsg_scenes[sci] = createScene(model->scenes.values[sci], requiresRootTransformNode, rootTransform);
     }
@@ -2144,7 +2185,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
     if (vsg_scenes.size() > 1)
     {
         auto vsg_switch = vsg::Switch::create();
-        for(size_t sci = 0; sci < model->scenes.values.size(); ++sci)
+        for (size_t sci = 0; sci < model->scenes.values.size(); ++sci)
         {
             auto& vsg_scene = vsg_scenes[sci];
             vsg_switch->addChild(true, vsg_scene);
@@ -2156,7 +2197,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
         return vsg_switch;
     }
-    else if (vsg_scenes.size()==1)
+    else if (vsg_scenes.size() == 1)
     {
         // vsg::info("Created a single scene");
         return vsg_scenes.front();
@@ -2167,4 +2208,3 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
         return {};
     }
 }
-

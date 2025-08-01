@@ -23,8 +23,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
-#include <vsg/io/ReaderWriter.h>
 #include <vsg/io/JSONParser.h>
+#include <vsg/io/ReaderWriter.h>
 #include <vsgXchange/Version.h>
 
 namespace vsgXchange
@@ -47,7 +47,6 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
     };
 
-}
+} // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::bin)
-

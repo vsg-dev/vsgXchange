@@ -23,23 +23,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vsgXchange/3DTiles.h>
 
-#include <vsg/io/read.h>
 #include <vsg/app/EllipsoidModel.h>
-#include <vsg/nodes/Group.h>
-#include <vsg/nodes/MatrixTransform.h>
-#include <vsg/nodes/VertexIndexDraw.h>
-#include <vsg/nodes/StateGroup.h>
-#include <vsg/nodes/DepthSorted.h>
-#include <vsg/nodes/Switch.h>
-#include <vsg/nodes/CullNode.h>
-#include <vsg/nodes/LOD.h>
-#include <vsg/nodes/PagedLOD.h>
+#include <vsg/io/read.h>
 #include <vsg/maths/transform.h>
-#include <vsg/utils/GraphicsPipelineConfigurator.h>
-#include <vsg/utils/ComputeBounds.h>
-#include <vsg/threading/OperationThreads.h>
-#include <vsg/state/material.h>
+#include <vsg/nodes/CullNode.h>
+#include <vsg/nodes/DepthSorted.h>
+#include <vsg/nodes/Group.h>
+#include <vsg/nodes/LOD.h>
+#include <vsg/nodes/MatrixTransform.h>
+#include <vsg/nodes/PagedLOD.h>
+#include <vsg/nodes/StateGroup.h>
+#include <vsg/nodes/Switch.h>
+#include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/ViewDependentState.h>
+#include <vsg/state/material.h>
+#include <vsg/threading/OperationThreads.h>
+#include <vsg/utils/ComputeBounds.h>
+#include <vsg/utils/GraphicsPipelineConfigurator.h>
 
 using namespace vsgXchange;
 
@@ -49,7 +49,7 @@ Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
 
 vsg::dmat4 Tiles3D::SceneGraphBuilder::createMatrix(const std::vector<double>& m)
 {
-    if (m.size()==16)
+    if (m.size() == 16)
     {
         return vsg::dmat4(m[0], m[1], m[2], m[3],
                           m[4], m[5], m[6], m[7],
@@ -66,7 +66,7 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
 {
     if (boundingVolume)
     {
-        if (boundingVolume->box.values.size()==12)
+        if (boundingVolume->box.values.size() == 12)
         {
             const auto& v = boundingVolume->box.values;
             vsg::dvec3 axis_x(v[3], v[4], v[5]);
@@ -74,18 +74,18 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
             vsg::dvec3 axis_z(v[9], v[10], v[11]);
             return vsg::dsphere(v[0], v[1], v[2], vsg::length(axis_x + axis_y + axis_z));
         }
-        else if (boundingVolume->region.values.size()==6)
+        else if (boundingVolume->region.values.size() == 6)
         {
             const auto& v = boundingVolume->region.values;
             double west = v[0], south = v[1], east = v[2], north = v[3], low = v[4], high = v[5];
-            auto centerECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south+north)*0.5, vsg::degrees(west+east)*0.5, (high+low)*0.5));
+            auto centerECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south + north) * 0.5, vsg::degrees(west + east) * 0.5, (high + low) * 0.5));
             auto southWestLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(south), vsg::degrees(west), low));
             auto northEastLowECEF = ellipsoidModel->convertLatLongAltitudeToECEF(vsg::dvec3(vsg::degrees(north), vsg::degrees(east), low));
 
             // TODO: do we need to track the accumulated transform?
             return vsg::dsphere(centerECEF, std::max(vsg::length(southWestLowECEF - centerECEF), vsg::length(northEastLowECEF - centerECEF)));
         }
-        else if (boundingVolume->sphere.values.size()==4)
+        else if (boundingVolume->sphere.values.size() == 4)
         {
             const auto& v = boundingVolume->box.values;
             return vsg::dsphere(v[0], v[1], v[2], v[3]);
@@ -112,7 +112,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
 
-    if (refine=="ADD")
+    if (refine == "ADD")
     {
         if (auto local_subgraph = tile->getRefObject<vsg::Node>("local_subgraph"))
         {
@@ -151,9 +151,9 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
 
         std::vector<vsg::ref_ptr<vsg::Node>> children(tile->children.values.size());
         auto itr = children.begin();
-        for(auto child : tile->children.values)
+        for (auto child : tile->children.values)
         {
-            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level+1, refine, latch), vsg::INSERT_FRONT);
+            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level + 1, refine, latch), vsg::INSERT_FRONT);
         }
 
         // use this thread to read the files as well
@@ -162,28 +162,31 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         // wait till all the read operations have completed
         latch->wait();
 
-        for(auto& child : children)
+        for (auto& child : children)
         {
             if (child)
             {
                 group->addChild(child);
             }
-            else vsg::info("Failed to read child");
+            else
+                vsg::info("Failed to read child");
         }
     }
     else
     {
-        for(auto child : tile->children.values)
+        for (auto child : tile->children.values)
         {
-            if (auto vsg_child = createTile(child, level+1, refine))
+            if (auto vsg_child = createTile(child, level + 1, refine))
             {
                 group->addChild(vsg_child);
             }
         }
     }
 
-    if (group->children.size() == 1) return group->children[0];
-    else return group;
+    if (group->children.size() == 1)
+        return group->children[0];
+    else
+        return group;
 }
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
@@ -220,7 +223,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
 
-    if (refine=="ADD" && local_subgraph)
+    if (refine == "ADD" && local_subgraph)
     {
         // need to pass on Tile local_subgraph to the SceneGraphBuilder::readTileChildren(..) so assign it to Tile as meta data
         tile->setObject("local_subgraph", local_subgraph);
@@ -298,8 +301,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 {
     if (!tileset) return {};
 
-    if (in_options) options = vsg::clone(in_options);
-    else options = vsg::Options::create();
+    if (in_options)
+        options = vsg::clone(in_options);
+    else
+        options = vsg::Options::create();
 
     if (options)
     {
@@ -353,4 +358,3 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     return vsg_tileset;
 }
-

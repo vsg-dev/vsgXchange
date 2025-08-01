@@ -148,7 +148,6 @@ namespace vsgXchange
         vsg::CoordinateSpace targetVertexColorSpace = vsg::CoordinateSpace::LINEAR;
         vsg::CoordinateSpace targetMaterialCoordinateSpace = vsg::CoordinateSpace::LINEAR;
 
-
         // TODO flatShadedShaderSet?
         vsg::ref_ptr<vsg::ShaderSet> pbrShaderSet;
         vsg::ref_ptr<vsg::ShaderSet> phongShaderSet;

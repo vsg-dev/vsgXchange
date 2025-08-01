@@ -62,8 +62,6 @@ namespace vsgXchange
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
     public:
-
-
         /// https://github.com/CesiumGS/3d-tiles/blob/1.0/specification/schema/boundingVolume.schema.json
         struct VSGXCHANGE_DECLSPEC BoundingVolume : public vsg::Inherit<gltf::ExtensionsExtras, BoundingVolume>
         {
@@ -178,8 +176,10 @@ namespace vsgXchange
 
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override
             {
-                if (property=="byteOffset") input >> byteOffset;
-                else parser.warning();
+                if (property == "byteOffset")
+                    input >> byteOffset;
+                else
+                    parser.warning();
             }
 
             void assign(vsg::ubyteArray& binary, uint32_t count)
@@ -187,7 +187,7 @@ namespace vsgXchange
                 if (!values.empty() || byteOffset == invalidOffset) return;
 
                 T* ptr = reinterpret_cast<T*>(binary.data() + byteOffset);
-                for(uint32_t i=0; i<count; ++i)
+                for (uint32_t i = 0; i < count; ++i)
                 {
                     values.push_back(*(ptr++));
                 }
@@ -195,7 +195,6 @@ namespace vsgXchange
 
             explicit operator bool() const noexcept { return !values.empty(); }
         };
-
 
         struct VSGXCHANGE_DECLSPEC b3dm_FeatureTable : public vsg::Inherit<gltf::ExtensionsExtras, b3dm_FeatureTable>
         {
@@ -281,7 +280,6 @@ namespace vsgXchange
         };
 
     public:
-
         class VSGXCHANGE_DECLSPEC SceneGraphBuilder : public vsg::Inherit<vsg::Object, SceneGraphBuilder>
         {
         public:
@@ -305,6 +303,6 @@ namespace vsgXchange
         };
     };
 
-}
+} // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::Tiles3D)

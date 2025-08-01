@@ -10,16 +10,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
+#include <vsgXchange/3DTiles.h>
 #include <vsgXchange/all.h>
+#include <vsgXchange/bin.h>
 #include <vsgXchange/cpp.h>
 #include <vsgXchange/curl.h>
 #include <vsgXchange/freetype.h>
 #include <vsgXchange/gdal.h>
+#include <vsgXchange/gltf.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
-#include <vsgXchange/gltf.h>
-#include <vsgXchange/bin.h>
-#include <vsgXchange/3DTiles.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>

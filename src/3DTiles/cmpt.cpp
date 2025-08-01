@@ -33,7 +33,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
     // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Composite/README.adoc
     struct Header
     {
-        char magic[4] = {0,0,0,0};
+        char magic[4] = {0, 0, 0, 0};
         uint32_t version = 0;
         uint32_t byteLength = 0;
         uint32_t tilesLength = 0;
@@ -41,7 +41,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
 
     struct InnerHeader
     {
-        char magic[4] = {0,0,0,0};
+        char magic[4] = {0, 0, 0, 0};
         uint32_t version = 0;
         uint32_t byteLength = 0;
     };
@@ -74,7 +74,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
     auto group = vsg::Group::create();
     std::list<InnerHeader> innerHeaders;
     uint32_t pos = 0;
-    for(uint32_t i=0; i < header.tilesLength; ++i)
+    for (uint32_t i = 0; i < header.tilesLength; ++i)
     {
         InnerHeader* tile = reinterpret_cast<InnerHeader*>(&binary[pos]);
         innerHeaders.push_back(*tile);
@@ -83,10 +83,12 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
         pos += tile->byteLength;
 
         std::string ext = ".";
-        for(int c = 0; c<4; ++c)
+        for (int c = 0; c < 4; ++c)
         {
-            if (tile->magic[c] != 0) ext.push_back(tile->magic[c]);
-            else break;
+            if (tile->magic[c] != 0)
+                ext.push_back(tile->magic[c]);
+            else
+                break;
         }
 
         auto opt = vsg::clone(options);
@@ -116,7 +118,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
         output("tilesLength = ", header.tilesLength);
 
         output("innerHeaders.size() = ", innerHeaders.size());
-        for(auto& innerHeader : innerHeaders)
+        for (auto& innerHeader : innerHeaders)
         {
             output("   {", innerHeader.magic, ", ", innerHeader.version, ", ", innerHeader.byteLength, " }");
         }
@@ -124,8 +126,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_cmpt(std::istream& fin, vsg::ref_ptr<con
 
     vsg::ref_ptr<vsg::Node> model;
 
-    if (group->children.size()==1) model = group->children[0];
-    else if (!group->children.empty()) model = group;
+    if (group->children.size() == 1)
+        model = group->children[0];
+    else if (!group->children.empty())
+        model = group;
 
     if (model && filename) model->setValue("b3dm", filename);
 

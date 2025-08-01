@@ -44,7 +44,8 @@ void Tiles3D::BoundingVolume::read_array(vsg::JSONParser& parser, const std::str
     {
         parser.read_array(sphere);
     }
-    else parser.warning();
+    else
+        parser.warning();
 }
 
 void Tiles3D::BoundingVolume::report(vsg::LogOutput& output)
@@ -67,13 +68,16 @@ void Tiles3D::Content::read_object(vsg::JSONParser& parser, const std::string_vi
         boundingVolume = BoundingVolume::create();
         parser.read_object(*boundingVolume);
     }
-    else ExtensionsExtras::read_object(parser, property);
+    else
+        ExtensionsExtras::read_object(parser, property);
 }
 
 void Tiles3D::Content::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "uri") parser.read_string(uri);
-    else parser.warning();
+    if (property == "uri")
+        parser.read_string(uri);
+    else
+        parser.warning();
 }
 
 void Tiles3D::Content::report(vsg::LogOutput& output)
@@ -83,7 +87,6 @@ void Tiles3D::Content::report(vsg::LogOutput& output)
     output("uri = ", uri);
     output.leave();
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -99,7 +102,8 @@ void Tiles3D::Tile::read_array(vsg::JSONParser& parser, const std::string_view& 
     {
         parser.read_array(children);
     }
-    else parser.warning();
+    else
+        parser.warning();
 }
 
 void Tiles3D::Tile::read_object(vsg::JSONParser& parser, const std::string_view& property)
@@ -119,20 +123,24 @@ void Tiles3D::Tile::read_object(vsg::JSONParser& parser, const std::string_view&
         content = Content::create();
         parser.read_object(*content);
     }
-    else ExtensionsExtras::read_object(parser, property);
+    else
+        ExtensionsExtras::read_object(parser, property);
 }
-
 
 void Tiles3D::Tile::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property == "geometricError") input >> geometricError;
-    else parser.warning();
+    if (property == "geometricError")
+        input >> geometricError;
+    else
+        parser.warning();
 }
 
 void Tiles3D::Tile::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "refine") parser.read_string(refine);
-    else parser.warning();
+    if (property == "refine")
+        parser.read_string(refine);
+    else
+        parser.warning();
 }
 
 void Tiles3D::Tile::report(vsg::LogOutput& output)
@@ -146,11 +154,12 @@ void Tiles3D::Tile::report(vsg::LogOutput& output)
     if (boundingVolume) boundingVolume->report(output);
     if (viewerRequestVolume) viewerRequestVolume->report(output);
 
-    if (children.values.empty()) output("children {}");
+    if (children.values.empty())
+        output("children {}");
     else
     {
         output.enter("children {");
-        for(auto& child : children.values)
+        for (auto& child : children.values)
         {
             child->report(output);
         }
@@ -166,9 +175,12 @@ void Tiles3D::Tile::report(vsg::LogOutput& output)
 //
 void Tiles3D::PropertyRange::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property == "minimum") input >> minimum;
-    else if (property == "maximum") input >> maximum;
-    else parser.warning();
+    if (property == "minimum")
+        input >> minimum;
+    else if (property == "maximum")
+        input >> maximum;
+    else
+        parser.warning();
 }
 
 void Tiles3D::Properties::read_object(vsg::JSONParser& parser, const std::string_view& property)
@@ -179,7 +191,7 @@ void Tiles3D::Properties::read_object(vsg::JSONParser& parser, const std::string
 void Tiles3D::Properties::report(vsg::LogOutput& output)
 {
     output.enter("Properties {");
-    for(auto& [name, property] : properties)
+    for (auto& [name, property] : properties)
     {
         output(name, " { minimum = ", property.minimum, ", maximum = ", property.maximum, " }");
     }
@@ -192,9 +204,12 @@ void Tiles3D::Properties::report(vsg::LogOutput& output)
 //
 void Tiles3D::Asset::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "version") parser.read_string(version);
-    else if (property == "tilesetVersion") parser.read_string(tilesetVersion);
-    else parser.read_string(strings[std::string(property)]);
+    if (property == "version")
+        parser.read_string(version);
+    else if (property == "tilesetVersion")
+        parser.read_string(tilesetVersion);
+    else
+        parser.read_string(strings[std::string(property)]);
 }
 
 void Tiles3D::Asset::read_number(vsg::JSONParser&, const std::string_view& property, std::istream& input)
@@ -209,14 +224,14 @@ void Tiles3D::Asset::report(vsg::LogOutput& output)
     output("tilesetVersion = ", tilesetVersion);
     if (!strings.empty())
     {
-        for(auto& [name, value] : strings)
+        for (auto& [name, value] : strings)
         {
             output(name, " = ", value);
         }
     }
     if (!numbers.empty())
     {
-        for(auto& [name, value] : numbers)
+        for (auto& [name, value] : numbers)
         {
             output(name, " = ", value);
         }
@@ -231,9 +246,12 @@ void Tiles3D::Asset::report(vsg::LogOutput& output)
 //
 void Tiles3D::Tileset::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "extensionsUsed") parser.read_array(extensionsUsed);
-    else if (property == "extensionsRequired") parser.read_array(extensionsRequired);
-    else parser.warning();
+    if (property == "extensionsUsed")
+        parser.read_array(extensionsUsed);
+    else if (property == "extensionsRequired")
+        parser.read_array(extensionsRequired);
+    else
+        parser.warning();
 }
 
 void Tiles3D::Tileset::read_object(vsg::JSONParser& parser, const std::string_view& property)
@@ -253,15 +271,17 @@ void Tiles3D::Tileset::read_object(vsg::JSONParser& parser, const std::string_vi
         root = Tile::create();
         parser.read_object(*root);
     }
-    else ExtensionsExtras::read_object(parser, property);
+    else
+        ExtensionsExtras::read_object(parser, property);
 }
 
 void Tiles3D::Tileset::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property == "geometricError") input >> geometricError;
-    else parser.warning();
+    if (property == "geometricError")
+        input >> geometricError;
+    else
+        parser.warning();
 }
-
 
 void Tiles3D::Tileset::report(vsg::LogOutput& output)
 {
@@ -292,7 +312,7 @@ void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         tileStack.push(root);
     }
 
-    while(!tileStack.empty())
+    while (!tileStack.empty())
     {
         ++tileCount;
         auto tile = tileStack.top();
@@ -309,7 +329,7 @@ void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                 vsg::info("uri = ", tile->content->uri, ", unable to load.");
             }
         }
-        for(auto child : tile->children.values)
+        for (auto child : tile->children.values)
         {
             tileStack.push(child);
         }
@@ -326,7 +346,7 @@ void Tiles3D::Tileset::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
 //
 void Tiles3D::Batch::read_number(vsg::JSONParser&, std::istream& input)
 {
-    if (componentType=="UNSIGNED_INT")
+    if (componentType == "UNSIGNED_INT")
     {
         uint32_t value;
         input >> value;
@@ -344,15 +364,20 @@ void Tiles3D::Batch::read_number(vsg::JSONParser&, std::istream& input)
 
 void Tiles3D::Batch::read_string(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property == "componentType") parser.read_string(componentType);
-    else if (property == "type") parser.read_string(type);
-    else parser.warning();
+    if (property == "componentType")
+        parser.read_string(componentType);
+    else if (property == "type")
+        parser.read_string(type);
+    else
+        parser.warning();
 }
 
 void Tiles3D::Batch::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property == "byteOffset") input >> byteOffset;
-    else parser.warning();
+    if (property == "byteOffset")
+        input >> byteOffset;
+    else
+        parser.warning();
 }
 
 void Tiles3D::Batch::convert(BatchTable& batchTable)
@@ -376,10 +401,12 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
         auto first_child = objects->children.front();
         size_t numDifferent = 0;
         size_t numSame = 0;
-        for(auto& child : objects->children)
+        for (auto& child : objects->children)
         {
-            if (first_child->type_info() != child->type_info()) ++numDifferent;
-            else ++numSame;
+            if (first_child->type_info() != child->type_info())
+                ++numDifferent;
+            else
+                ++numSame;
         }
 
         if (numDifferent == 0)
@@ -387,24 +414,27 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
 
             struct ValuesToArray : public vsg::ConstVisitor
             {
-                ValuesToArray(vsg::Objects::Children& in_children) : children(in_children) {}
+                ValuesToArray(vsg::Objects::Children& in_children) :
+                    children(in_children) {}
 
                 vsg::Objects::Children children;
                 vsg::ref_ptr<vsg::Data> array;
 
                 void apply(const vsg::Object& value) override
                 {
-                    vsg::warn("Tiles3D::Batch::convert() unhandled type ",  value.className());
+                    vsg::warn("Tiles3D::Batch::convert() unhandled type ", value.className());
                 }
 
                 void apply(const vsg::stringValue&) override
                 {
                     auto strings = vsg::stringArray::create(children.size());
                     auto itr = strings->begin();
-                    for(auto& child : children)
+                    for (auto& child : children)
                     {
-                        if (auto sv = child.cast<vsg::stringValue>()) *itr = sv->value();
-                        else vsg::warn("Unable to convert to stringValue ", child);
+                        if (auto sv = child.cast<vsg::stringValue>())
+                            *itr = sv->value();
+                        else
+                            vsg::warn("Unable to convert to stringValue ", child);
                         ++itr;
                     }
 
@@ -415,10 +445,12 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
                 {
                     auto floats = vsg::floatArray::create(children.size());
                     auto itr = floats->begin();
-                    for(auto& child : children)
+                    for (auto& child : children)
                     {
-                        if (auto sv = child.cast<vsg::floatValue>()) *itr = sv->value();
-                        else vsg::warn("Unable to convert to floatValue ", child);
+                        if (auto sv = child.cast<vsg::floatValue>())
+                            *itr = sv->value();
+                        else
+                            vsg::warn("Unable to convert to floatValue ", child);
                         ++itr;
                     }
 
@@ -429,10 +461,12 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
                 {
                     auto doubles = vsg::doubleArray::create(children.size());
                     auto itr = doubles->begin();
-                    for(auto& child : children)
+                    for (auto& child : children)
                     {
-                        if (auto sv = child.cast<vsg::doubleValue>()) *itr = sv->value();
-                        else vsg::warn("Unable to convert to doubleValue ", child);
+                        if (auto sv = child.cast<vsg::doubleValue>())
+                            *itr = sv->value();
+                        else
+                            vsg::warn("Unable to convert to doubleValue ", child);
                         ++itr;
                     }
 
@@ -458,55 +492,90 @@ void Tiles3D::Batch::convert(BatchTable& batchTable)
             // mixed data so the best we can do it just use the vsg::Objects object for access
             object = objects;
         }
-
     }
     else if (type == "SCALAR")
     {
-        if (componentType=="BYTE") object = vsg::byteArray::create(batchTable.binary, byteOffset, 1, batchTable.length);
-        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubyteArray::create(batchTable.binary, byteOffset, 1, batchTable.length);
-        else if (componentType=="SHORT") object = vsg::shortArray::create(batchTable.binary, byteOffset, 2, batchTable.length);
-        else if (componentType=="UNSIGNED_SHORT") object = vsg::ushortArray::create(batchTable.binary, byteOffset, 2, batchTable.length);
-        else if (componentType=="INT") object = vsg::intArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="UNSIGNED_INT") object = vsg::uintArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="FLOAT") object = vsg::floatArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="DOUBLE") object = vsg::doubleArray::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else vsg::warn("Unsupported Tiles3D::Batch SCALAR componentType = ", componentType);
+        if (componentType == "BYTE")
+            object = vsg::byteArray::create(batchTable.binary, byteOffset, 1, batchTable.length);
+        else if (componentType == "UNSIGNED_BYTE")
+            object = vsg::ubyteArray::create(batchTable.binary, byteOffset, 1, batchTable.length);
+        else if (componentType == "SHORT")
+            object = vsg::shortArray::create(batchTable.binary, byteOffset, 2, batchTable.length);
+        else if (componentType == "UNSIGNED_SHORT")
+            object = vsg::ushortArray::create(batchTable.binary, byteOffset, 2, batchTable.length);
+        else if (componentType == "INT")
+            object = vsg::intArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "UNSIGNED_INT")
+            object = vsg::uintArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "FLOAT")
+            object = vsg::floatArray::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "DOUBLE")
+            object = vsg::doubleArray::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else
+            vsg::warn("Unsupported Tiles3D::Batch SCALAR componentType = ", componentType);
     }
     else if (type == "VEC2")
     {
-        if (componentType=="BYTE") object = vsg::bvec2Array::create(batchTable.binary, byteOffset, 2, batchTable.length);
-        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec2Array::create(batchTable.binary, byteOffset, 2, batchTable.length);
-        else if (componentType=="SHORT") object = vsg::svec2Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec2Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="INT") object = vsg::ivec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else if (componentType=="UNSIGNED_INT") object = vsg::uivec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else if (componentType=="FLOAT") object = vsg::vec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else if (componentType=="DOUBLE") object = vsg::dvec2Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
-        else vsg::warn("Unsupported Tiles3D::Batch VEC2 componentType = ", componentType);
+        if (componentType == "BYTE")
+            object = vsg::bvec2Array::create(batchTable.binary, byteOffset, 2, batchTable.length);
+        else if (componentType == "UNSIGNED_BYTE")
+            object = vsg::ubvec2Array::create(batchTable.binary, byteOffset, 2, batchTable.length);
+        else if (componentType == "SHORT")
+            object = vsg::svec2Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "UNSIGNED_SHORT")
+            object = vsg::usvec2Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "INT")
+            object = vsg::ivec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else if (componentType == "UNSIGNED_INT")
+            object = vsg::uivec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else if (componentType == "FLOAT")
+            object = vsg::vec2Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else if (componentType == "DOUBLE")
+            object = vsg::dvec2Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
+        else
+            vsg::warn("Unsupported Tiles3D::Batch VEC2 componentType = ", componentType);
     }
     else if (type == "VEC3")
     {
-        if (componentType=="BYTE") object = vsg::bvec3Array::create(batchTable.binary, byteOffset, 3, batchTable.length);
-        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec3Array::create(batchTable.binary, byteOffset, 3, batchTable.length);
-        else if (componentType=="SHORT") object = vsg::svec3Array::create(batchTable.binary, byteOffset, 6, batchTable.length);
-        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec3Array::create(batchTable.binary, byteOffset, 6, batchTable.length);
-        else if (componentType=="INT") object = vsg::ivec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
-        else if (componentType=="UNSIGNED_INT") object = vsg::uivec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
-        else if (componentType=="FLOAT") object = vsg::vec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
-        else if (componentType=="DOUBLE") object = vsg::dvec3Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
-        else vsg::warn("Unsupported Tiles3D::Batch VEC3 componentType = ", componentType);
+        if (componentType == "BYTE")
+            object = vsg::bvec3Array::create(batchTable.binary, byteOffset, 3, batchTable.length);
+        else if (componentType == "UNSIGNED_BYTE")
+            object = vsg::ubvec3Array::create(batchTable.binary, byteOffset, 3, batchTable.length);
+        else if (componentType == "SHORT")
+            object = vsg::svec3Array::create(batchTable.binary, byteOffset, 6, batchTable.length);
+        else if (componentType == "UNSIGNED_SHORT")
+            object = vsg::usvec3Array::create(batchTable.binary, byteOffset, 6, batchTable.length);
+        else if (componentType == "INT")
+            object = vsg::ivec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
+        else if (componentType == "UNSIGNED_INT")
+            object = vsg::uivec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
+        else if (componentType == "FLOAT")
+            object = vsg::vec3Array::create(batchTable.binary, byteOffset, 12, batchTable.length);
+        else if (componentType == "DOUBLE")
+            object = vsg::dvec3Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
+        else
+            vsg::warn("Unsupported Tiles3D::Batch VEC3 componentType = ", componentType);
     }
     else if (type == "VEC4")
     {
-        if (componentType=="BYTE") object = vsg::bvec4Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="UNSIGNED_BYTE") object = vsg::ubvec4Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
-        else if (componentType=="SHORT") object = vsg::svec4Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else if (componentType=="UNSIGNED_SHORT") object = vsg::usvec4Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
-        else if (componentType=="INT") object = vsg::ivec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
-        else if (componentType=="UNSIGNED_INT") object = vsg::uivec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
-        else if (componentType=="FLOAT") object = vsg::vec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
-        else if (componentType=="DOUBLE") object = vsg::dvec4Array::create(batchTable.binary, byteOffset, 32, batchTable.length);
-        else vsg::warn("Unsupported Tiles3D::Batch VEC4 componentType = ", componentType);
+        if (componentType == "BYTE")
+            object = vsg::bvec4Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "UNSIGNED_BYTE")
+            object = vsg::ubvec4Array::create(batchTable.binary, byteOffset, 4, batchTable.length);
+        else if (componentType == "SHORT")
+            object = vsg::svec4Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else if (componentType == "UNSIGNED_SHORT")
+            object = vsg::usvec4Array::create(batchTable.binary, byteOffset, 8, batchTable.length);
+        else if (componentType == "INT")
+            object = vsg::ivec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
+        else if (componentType == "UNSIGNED_INT")
+            object = vsg::uivec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
+        else if (componentType == "FLOAT")
+            object = vsg::vec4Array::create(batchTable.binary, byteOffset, 16, batchTable.length);
+        else if (componentType == "DOUBLE")
+            object = vsg::dvec4Array::create(batchTable.binary, byteOffset, 32, batchTable.length);
+        else
+            vsg::warn("Unsupported Tiles3D::Batch VEC4 componentType = ", componentType);
     }
     else
     {
@@ -523,7 +592,7 @@ void Tiles3D::BatchTable::read_array(vsg::JSONParser& parser, const std::string_
     auto batch = Batch::create();
 
     // for batchID hint that the type should be uint.
-    if (property=="batchId") batch->componentType = "UNSIGNED_INT";
+    if (property == "batchId") batch->componentType = "UNSIGNED_INT";
 
     parser.read_array(*batch);
     batches[std::string(property)] = batch;
@@ -538,7 +607,7 @@ void Tiles3D::BatchTable::read_object(vsg::JSONParser& parser, const std::string
 
 void Tiles3D::BatchTable::convert()
 {
-    for(auto itr = batches.begin(); itr != batches.end(); ++itr) itr->second->convert(*this);
+    for (auto itr = batches.begin(); itr != batches.end(); ++itr) itr->second->convert(*this);
 }
 
 void Tiles3D::BatchTable::report(vsg::LogOutput& output)
@@ -546,7 +615,8 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
     struct PrintValues : public vsg::ConstVisitor
     {
         vsg::LogOutput& out;
-        PrintValues(vsg::LogOutput& o) : out(o) {}
+        PrintValues(vsg::LogOutput& o) :
+            out(o) {}
 
         void apply(const vsg::stringValue& v) override
         {
@@ -565,21 +635,21 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
 
         void apply(const vsg::stringArray& strings) override
         {
-            for(auto value : strings) out(value);
+            for (auto value : strings) out(value);
         }
 
         void apply(const vsg::intArray& ints) override
         {
-            for(auto value : ints) out(value);
+            for (auto value : ints) out(value);
         }
 
         void apply(const vsg::doubleArray& doubles) override
         {
-            for(auto value : doubles) out(value);
+            for (auto value : doubles) out(value);
         }
     } pv(output);
 
-    for(auto& [name, batch] : batches)
+    for (auto& [name, batch] : batches)
     {
         output.enter("batch ", name, " {");
 
@@ -595,7 +665,7 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
         {
             output.enter("objects = ", batch->objects);
 
-            for(auto& child : batch->objects->children)
+            for (auto& child : batch->objects->children)
             {
                 output("child = ", child);
             }
@@ -611,8 +681,7 @@ void Tiles3D::BatchTable::report(vsg::LogOutput& output)
 
         output.leave();
     }
- }
-
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -640,8 +709,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path&, vsg::ref_ptr<con
     std::string inherited_refine;
     non_const_options->getValue("refine", inherited_refine);
 
-    if (tile && builder) return builder->readTileChildren(tile, lod_level, inherited_refine);
-    else return {};
+    if (tile && builder)
+        return builder->readTileChildren(tile, lod_level, inherited_refine);
+    else
+        return {};
 }
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<const vsg::Options> options, const vsg::Path& filename) const
@@ -651,7 +722,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();
 
-    if (fileSize==0) return {};
+    if (fileSize == 0) return {};
 
     vsg::JSONParser parser;
     parser.options = options;
@@ -666,7 +737,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     parser.pos = parser.buffer.find_first_not_of(" \t\r\n", 0);
     if (parser.pos == std::string::npos) return {};
 
-    if (parser.buffer[parser.pos]=='{')
+    if (parser.buffer[parser.pos] == '{')
     {
         auto tileset = Tiles3D::Tileset::create();
 
@@ -677,7 +748,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             if (level != vsg::Logger::LOGGER_OFF)
             {
                 vsg::warn("3DTiles parsing failure : ", filename);
-                for(auto& warning : parser.warnings) vsg::log(level, warning);
+                for (auto& warning : parser.warnings) vsg::log(level, warning);
             }
             return {};
         }
@@ -693,9 +764,12 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             {
                 std::string gltfUpAxis = itr->second;
                 vsg::CoordinateConvention upAxis = vsg::CoordinateConvention::Y_UP;
-                if (gltfUpAxis=="X") upAxis = vsg::CoordinateConvention::X_UP;
-                else if (gltfUpAxis=="Y") upAxis = vsg::CoordinateConvention::Y_UP;
-                else if (gltfUpAxis=="Z") upAxis = vsg::CoordinateConvention::Z_UP;
+                if (gltfUpAxis == "X")
+                    upAxis = vsg::CoordinateConvention::X_UP;
+                else if (gltfUpAxis == "Y")
+                    upAxis = vsg::CoordinateConvention::Y_UP;
+                else if (gltfUpAxis == "Z")
+                    upAxis = vsg::CoordinateConvention::Z_UP;
 
                 opt->formatCoordinateConventions[".gltf"] = upAxis;
                 opt->formatCoordinateConventions[".glb"] = upAxis;
@@ -729,10 +803,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_pnts(std::istream&, vsg::ref_ptr<const v
 
 vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::Path ext  = vsg::lowerCaseFileExtension(filename);
+    vsg::Path ext = vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
 
-    if (ext==".tiles") return read_tiles(filename, options);
+    if (ext == ".tiles") return read_tiles(filename, options);
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse) return {};
@@ -744,11 +818,16 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
 
     // vsg::info("Tiles3D::read(", filename, ", ", options, ") &fin = ", &fin);
 
-    if (ext==".json") return read_json(fin, opt, filename);
-    else if (ext==".b3dm") return read_b3dm(fin, opt, filename);
-    else if (ext==".cmpt") return read_cmpt(fin, opt, filename);
-    else if (ext==".i3dm") return read_i3dm(fin, opt, filename);
-    else if (ext==".pnts") return read_pnts(fin, opt, filename);
+    if (ext == ".json")
+        return read_json(fin, opt, filename);
+    else if (ext == ".b3dm")
+        return read_b3dm(fin, opt, filename);
+    else if (ext == ".cmpt")
+        return read_cmpt(fin, opt, filename);
+    else if (ext == ".i3dm")
+        return read_i3dm(fin, opt, filename);
+    else if (ext == ".pnts")
+        return read_pnts(fin, opt, filename);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -761,11 +840,16 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(std::istream& fin, vsg::ref_ptr<const vs
     if (!options || !options->extensionHint) return {};
     if (!supportedExtension(options->extensionHint)) return {};
 
-    if (options->extensionHint==".json") return read_json(fin, options);
-    else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
-    else if (options->extensionHint==".cmpt") return read_cmpt(fin, options);
-    else if (options->extensionHint==".i3dm") return read_i3dm(fin, options);
-    else if (options->extensionHint==".pnts") return read_pnts(fin, options);
+    if (options->extensionHint == ".json")
+        return read_json(fin, options);
+    else if (options->extensionHint == ".b3dm")
+        return read_b3dm(fin, options);
+    else if (options->extensionHint == ".cmpt")
+        return read_cmpt(fin, options);
+    else if (options->extensionHint == ".i3dm")
+        return read_i3dm(fin, options);
+    else if (options->extensionHint == ".pnts")
+        return read_pnts(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
@@ -780,18 +864,22 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const uint8_t* ptr, size_t size, vsg::re
 
     vsg::mem_stream fin(ptr, size);
 
-    if (options->extensionHint==".json") return read_json(fin, options);
-    else if (options->extensionHint==".b3dm") return read_b3dm(fin, options);
-    else if (options->extensionHint==".cmpt") return read_cmpt(fin, options);
-    else if (options->extensionHint==".i3dm") return read_i3dm(fin, options);
-    else if (options->extensionHint==".pnts") return read_pnts(fin, options);
+    if (options->extensionHint == ".json")
+        return read_json(fin, options);
+    else if (options->extensionHint == ".b3dm")
+        return read_b3dm(fin, options);
+    else if (options->extensionHint == ".cmpt")
+        return read_cmpt(fin, options);
+    else if (options->extensionHint == ".i3dm")
+        return read_i3dm(fin, options);
+    else if (options->extensionHint == ".pnts")
+        return read_pnts(fin, options);
     else
     {
         vsg::warn("Tiles3D::read() unhandled file type ", options->extensionHint);
         return {};
     }
 }
-
 
 bool Tiles3D::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
 {

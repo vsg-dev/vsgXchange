@@ -10,8 +10,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/models.h>
 #include <vsgXchange/gltf.h>
+#include <vsgXchange/models.h>
 
 using namespace vsgXchange;
 

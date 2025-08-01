@@ -179,7 +179,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
         {
             fin.read(&buffer[0], buffer.size());
             const auto bytes_read = fin.gcount();
-            if (bytes_read==0) break;
+            if (bytes_read == 0) break;
             input.append(&buffer[0], bytes_read);
         }
 

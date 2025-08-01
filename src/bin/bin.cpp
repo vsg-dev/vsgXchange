@@ -23,8 +23,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 using namespace vsgXchange;
 
-
-
 bin::bin()
 {
 }
@@ -34,7 +32,7 @@ vsg::ref_ptr<vsg::Object> bin::_read(std::istream& fin) const
     fin.seekg(0, fin.end);
     size_t fileSize = fin.tellg();
 
-    if (fileSize==0) return {};
+    if (fileSize == 0) return {};
 
     auto data = vsg::ubyteArray::create(fileSize);
 
@@ -44,10 +42,9 @@ vsg::ref_ptr<vsg::Object> bin::_read(std::istream& fin) const
     return data;
 }
 
-
 vsg::ref_ptr<vsg::Object> bin::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
-    vsg::Path ext  = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
+    vsg::Path ext = (options && options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
     if (!supportedExtension(ext)) return {};
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);

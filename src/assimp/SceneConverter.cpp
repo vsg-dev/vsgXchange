@@ -841,7 +841,6 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         config->assignArray(vertexArrays, "vsg_TexCoord0", VK_VERTEX_INPUT_RATE_INSTANCE, texcoord);
     }
 
-
     vsg::AttributeBinding& colorBinding = config->shaderSet->getAttributeBinding("vsg_Color");
     targetVertexColorSpace = colorBinding.coordinateSpace;
 
@@ -1048,7 +1047,6 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     }
 
     vsg::debug("vsgXchange::assimp sourceVertexColorSpace = ", sourceVertexColorSpace, ", sourceMaterialColorSpace = ", sourceMaterialColorSpace);
-
 
     std::string name = scene->mName.C_Str();
 

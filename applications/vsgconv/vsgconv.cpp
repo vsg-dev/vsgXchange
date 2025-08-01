@@ -391,7 +391,7 @@ int main(int argc, char** argv)
 
     auto afterLoad = vsg::clock::now();
     double timeToLoad = std::chrono::duration<double, std::chrono::milliseconds::period>(afterLoad - beforeLoad).count();
-    if (reportLoadStats) std::cout<<"Time to load: "<<timeToLoad<<"ms"<<std::endl;
+    if (reportLoadStats) std::cout << "Time to load: " << timeToLoad << "ms" << std::endl;
 
     unsigned int numImages = 0;
     unsigned int numShaders = 0;

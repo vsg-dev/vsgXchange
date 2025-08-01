@@ -612,11 +612,10 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
             if (charcode == charcodeSpace) hasSpace = true;
 
             sortedGlyphQuads.insert(quad);
-            
+
             charcode = FT_Get_Next_Char(face, charcode, &glyph_index);
         }
     }
-
 
     if (!hasSpace)
     {
@@ -640,7 +639,6 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
             vsg::warn("freetype::Implementation::read(..) No space glyph.");
         }
     }
-
 
     double total_width = 0.0;
     double total_height = 0.0;

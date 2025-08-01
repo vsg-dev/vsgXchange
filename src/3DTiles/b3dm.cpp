@@ -30,20 +30,26 @@ using namespace vsgXchange;
 //
 void Tiles3D::b3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
-    else parser.warning();
+    if (property == "RTC_CENTER")
+        parser.read_array(RTC_CENTER);
+    else
+        parser.warning();
 }
 
 void Tiles3D::b3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="RTC_CENTER") parser.read_object(RTC_CENTER);
-    else parser.warning();
+    if (property == "RTC_CENTER")
+        parser.read_object(RTC_CENTER);
+    else
+        parser.warning();
 }
 
 void Tiles3D::b3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property=="BATCH_LENGTH") input >> BATCH_LENGTH;
-    else parser.warning();
+    if (property == "BATCH_LENGTH")
+        input >> BATCH_LENGTH;
+    else
+        parser.warning();
 }
 
 void Tiles3D::b3dm_FeatureTable::convert()
@@ -73,7 +79,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
     // https://github.com/CesiumGS/3d-tiles/tree/1.0/specification/TileFormats/Batched3DModel
     struct Header
     {
-        char magic[4] = {0,0,0,0};
+        char magic[4] = {0, 0, 0, 0};
         uint32_t version = 0;
         uint32_t byteLength = 0;
         uint32_t featureTableJSONByteLength = 0;
@@ -127,7 +133,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         parser.buffer.resize(header.batchTableJSONByteLength);
         fin.read(parser.buffer.data(), header.batchTableJSONByteLength);
 
-        if (header.batchTableBinaryLength > 0 )
+        if (header.batchTableBinaryLength > 0)
         {
             batchTable->binary = vsg::ubyteArray::create(header.batchTableBinaryLength);
             fin.read(reinterpret_cast<char*>(batchTable->binary->dataPointer()), header.batchTableBinaryLength);
@@ -137,7 +143,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
         batchTable->length = featureTable->BATCH_LENGTH;
         batchTable->convert();
-   }
+    }
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
@@ -158,7 +164,6 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
         if (batchTable) batchTable->report(output);
     }
 
-
     uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
     uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
@@ -176,7 +181,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
     auto model = vsg::read_cast<vsg::Node>(binary_fin, opt);
 
-    if (featureTable && featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size()==3)
+    if (featureTable && featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size() == 3)
     {
         vsg::dvec3 rtc_center;
         rtc_center.x = featureTable->RTC_CENTER.values[0];
@@ -194,4 +199,3 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_b3dm(std::istream& fin, vsg::ref_ptr<con
 
     return model;
 }
-

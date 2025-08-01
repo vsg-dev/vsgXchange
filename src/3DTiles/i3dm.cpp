@@ -16,12 +16,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/mem_stream.h>
 #include <vsg/io/read.h>
 #include <vsg/io/write.h>
-#include <vsg/nodes/MatrixTransform.h>
 #include <vsg/nodes/InstanceNode.h>
+#include <vsg/nodes/MatrixTransform.h>
 #include <vsg/threading/OperationThreads.h>
+#include <vsg/ui/UIEvent.h>
 #include <vsg/utils/CommandLine.h>
 #include <vsg/utils/ComputeBounds.h>
-#include <vsg/ui/UIEvent.h>
 
 #include <fstream>
 #include <iostream>
@@ -35,53 +35,82 @@ using namespace vsgXchange;
 //
 void Tiles3D::i3dm_FeatureTable::read_array(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="POSITION") parser.read_array(POSITION);
-    else if (property=="POSITION_QUANTIZED") parser.read_array(POSITION_QUANTIZED);
-    else if (property=="NORMAL_UP") parser.read_array(NORMAL_UP);
-    else if (property=="NORMAL_RIGHT") parser.read_array(NORMAL_RIGHT);
-    else if (property=="NORMAL_UP_OCT32P") parser.read_array(NORMAL_UP_OCT32P);
-    else if (property=="NORMAL_RIGHT_OCT32P") parser.read_array(NORMAL_RIGHT_OCT32P);
-    else if (property=="SCALE") parser.read_array(SCALE);
-    else if (property=="SCALE_NON_UNIFORM") parser.read_array(SCALE_NON_UNIFORM);
-    else if (property=="RTC_CENTER") parser.read_array(RTC_CENTER);
-    else if (property=="QUANTIZED_VOLUME_OFFSET") parser.read_array(QUANTIZED_VOLUME_OFFSET);
-    else if (property=="QUANTIZED_VOLUME_SCALE") parser.read_array(QUANTIZED_VOLUME_SCALE);
-    else if (property=="BATCH_ID") parser.read_array(BATCH_ID);
-    else parser.warning();
+    if (property == "POSITION")
+        parser.read_array(POSITION);
+    else if (property == "POSITION_QUANTIZED")
+        parser.read_array(POSITION_QUANTIZED);
+    else if (property == "NORMAL_UP")
+        parser.read_array(NORMAL_UP);
+    else if (property == "NORMAL_RIGHT")
+        parser.read_array(NORMAL_RIGHT);
+    else if (property == "NORMAL_UP_OCT32P")
+        parser.read_array(NORMAL_UP_OCT32P);
+    else if (property == "NORMAL_RIGHT_OCT32P")
+        parser.read_array(NORMAL_RIGHT_OCT32P);
+    else if (property == "SCALE")
+        parser.read_array(SCALE);
+    else if (property == "SCALE_NON_UNIFORM")
+        parser.read_array(SCALE_NON_UNIFORM);
+    else if (property == "RTC_CENTER")
+        parser.read_array(RTC_CENTER);
+    else if (property == "QUANTIZED_VOLUME_OFFSET")
+        parser.read_array(QUANTIZED_VOLUME_OFFSET);
+    else if (property == "QUANTIZED_VOLUME_SCALE")
+        parser.read_array(QUANTIZED_VOLUME_SCALE);
+    else if (property == "BATCH_ID")
+        parser.read_array(BATCH_ID);
+    else
+        parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::read_object(vsg::JSONParser& parser, const std::string_view& property)
 {
-    if (property=="POSITION") { parser.read_object(POSITION); }
-    else if (property=="POSITION_QUANTIZED") parser.read_object(POSITION_QUANTIZED);
-    else if (property=="NORMAL_UP") parser.read_object(NORMAL_UP);
-    else if (property=="NORMAL_RIGHT") parser.read_object(NORMAL_RIGHT);
-    else if (property=="NORMAL_UP_OCT32P") parser.read_object(NORMAL_UP_OCT32P);
-    else if (property=="NORMAL_RIGHT_OCT32P") parser.read_object(NORMAL_RIGHT_OCT32P);
-    else if (property=="SCALE") parser.read_object(SCALE);
-    else if (property=="SCALE_NON_UNIFORM") parser.read_object(SCALE_NON_UNIFORM);
-    else if (property=="RTC_CENTER") parser.read_object(RTC_CENTER);
-    else if (property=="QUANTIZED_VOLUME_OFFSET") parser.read_object(QUANTIZED_VOLUME_OFFSET);
-    else if (property=="QUANTIZED_VOLUME_SCALE") parser.read_object(QUANTIZED_VOLUME_SCALE);
-    else if (property=="BATCH_ID") parser.read_object(BATCH_ID);
-    else parser.warning();
+    if (property == "POSITION") { parser.read_object(POSITION); }
+    else if (property == "POSITION_QUANTIZED")
+        parser.read_object(POSITION_QUANTIZED);
+    else if (property == "NORMAL_UP")
+        parser.read_object(NORMAL_UP);
+    else if (property == "NORMAL_RIGHT")
+        parser.read_object(NORMAL_RIGHT);
+    else if (property == "NORMAL_UP_OCT32P")
+        parser.read_object(NORMAL_UP_OCT32P);
+    else if (property == "NORMAL_RIGHT_OCT32P")
+        parser.read_object(NORMAL_RIGHT_OCT32P);
+    else if (property == "SCALE")
+        parser.read_object(SCALE);
+    else if (property == "SCALE_NON_UNIFORM")
+        parser.read_object(SCALE_NON_UNIFORM);
+    else if (property == "RTC_CENTER")
+        parser.read_object(RTC_CENTER);
+    else if (property == "QUANTIZED_VOLUME_OFFSET")
+        parser.read_object(QUANTIZED_VOLUME_OFFSET);
+    else if (property == "QUANTIZED_VOLUME_SCALE")
+        parser.read_object(QUANTIZED_VOLUME_SCALE);
+    else if (property == "BATCH_ID")
+        parser.read_object(BATCH_ID);
+    else
+        parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input)
 {
-    if (property=="INSTANCES_LENGTH") input >> INSTANCES_LENGTH;
-    else parser.warning();
+    if (property == "INSTANCES_LENGTH")
+        input >> INSTANCES_LENGTH;
+    else
+        parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value)
 {
-    if (property=="EAST_NORTH_UP") EAST_NORTH_UP = value;
-    else parser.warning();
+    if (property == "EAST_NORTH_UP")
+        EAST_NORTH_UP = value;
+    else
+        parser.warning();
 }
 
 void Tiles3D::i3dm_FeatureTable::convert()
 {
-    if (INSTANCES_LENGTH==0 || !binary) return;
+    if (INSTANCES_LENGTH == 0 || !binary) return;
 
     POSITION.assign(*binary, 3 * INSTANCES_LENGTH);
     POSITION_QUANTIZED.assign(*binary, 3 * INSTANCES_LENGTH);
@@ -128,7 +157,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     // https://github.com/CesiumGS/3d-tiles/blob/main/specification/TileFormats/Instanced3DModel/README.adoc
     struct Header
     {
-        char magic[4] = {0,0,0,0};
+        char magic[4] = {0, 0, 0, 0};
         uint32_t version = 0;
         uint32_t byteLength = 0;
         uint32_t featureTableJSONByteLength = 0;
@@ -185,7 +214,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         parser.buffer.resize(header.batchTableJSONByteLength);
         fin.read(parser.buffer.data(), header.batchTableJSONByteLength);
 
-        if (header.batchTableBinaryLength > 0 )
+        if (header.batchTableBinaryLength > 0)
         {
             batchTable->binary = vsg::ubyteArray::create(header.batchTableBinaryLength);
             fin.read(reinterpret_cast<char*>(batchTable->binary->dataPointer()), header.batchTableBinaryLength);
@@ -198,7 +227,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         batchTable->length = featureTable->INSTANCES_LENGTH;
         batchTable->convert();
-   }
+    }
 
     if (vsg::value<bool>(false, gltf::report, options))
     {
@@ -223,21 +252,20 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
     vsg::dvec3 quantizeOffset(0.0, 0, 0.0);
     vsg::dvec3 quantizeScale(1.0, 1.0, 1.0);
-    if (featureTable->QUANTIZED_VOLUME_OFFSET && featureTable->QUANTIZED_VOLUME_OFFSET.values.size()==3)
+    if (featureTable->QUANTIZED_VOLUME_OFFSET && featureTable->QUANTIZED_VOLUME_OFFSET.values.size() == 3)
     {
         const auto& values = featureTable->QUANTIZED_VOLUME_OFFSET.values;
         quantizeOffset.set(values[0], values[1], values[2]);
     }
 
-    if (featureTable->QUANTIZED_VOLUME_SCALE && featureTable->QUANTIZED_VOLUME_SCALE.values.size()==3)
+    if (featureTable->QUANTIZED_VOLUME_SCALE && featureTable->QUANTIZED_VOLUME_SCALE.values.size() == 3)
     {
         const auto& values = featureTable->QUANTIZED_VOLUME_SCALE.values;
         quantizeScale.set(values[0], values[1], values[2]);
         quantizeScale /= 65535.0;
     }
 
-    auto convert_oct32 = [](uint16_t x, uint16_t y) -> vsg::dvec3
-    {
+    auto convert_oct32 = [](uint16_t x, uint16_t y) -> vsg::dvec3 {
         const double oct32_multiplier = (2.0 / 65535.0);
         vsg::dvec2 e(static_cast<double>(x) * oct32_multiplier - 1.0, static_cast<double>(y) * oct32_multiplier - 1.0);
         vsg::dvec3 v(e.x, e.y, 1.0 - std::abs(e.x) - std::abs(e.y));
@@ -250,24 +278,23 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     };
 
     vsg::dvec3 rtc_center;
-    if (featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size()==3)
+    if (featureTable->RTC_CENTER && featureTable->RTC_CENTER.values.size() == 3)
     {
         rtc_center.x = featureTable->RTC_CENTER.values[0];
         rtc_center.y = featureTable->RTC_CENTER.values[1];
         rtc_center.z = featureTable->RTC_CENTER.values[2];
     }
 
-    auto getTransformComponents = [&](uint32_t i, vsg::dvec3& translation, vsg::dquat& rotation, vsg::dvec3& scale) -> void
-    {
-        if (featureTable->POSITION && i*3 < featureTable->POSITION.values.size())
+    auto getTransformComponents = [&](uint32_t i, vsg::dvec3& translation, vsg::dquat& rotation, vsg::dvec3& scale) -> void {
+        if (featureTable->POSITION && i * 3 < featureTable->POSITION.values.size())
         {
             const auto& values = featureTable->POSITION.values;
-            translation.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            translation.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
         }
-        else if (featureTable->POSITION_QUANTIZED && i*3 < featureTable->POSITION_QUANTIZED.values.size())
+        else if (featureTable->POSITION_QUANTIZED && i * 3 < featureTable->POSITION_QUANTIZED.values.size())
         {
             const auto& values = featureTable->POSITION_QUANTIZED.values;
-            vsg::dvec3 quantizedPosition(static_cast<double>(values[i*3 + 0]), static_cast<double>(values[i*3 + 1]), static_cast<double>(values[i*3 + 2]));
+            vsg::dvec3 quantizedPosition(static_cast<double>(values[i * 3 + 0]), static_cast<double>(values[i * 3 + 1]), static_cast<double>(values[i * 3 + 2]));
             translation = quantizeOffset + quantizedPosition * quantizeScale;
         }
 
@@ -291,26 +318,26 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             }
         }
 
-        if (featureTable->NORMAL_UP && i*3 < featureTable->NORMAL_UP.values.size())
+        if (featureTable->NORMAL_UP && i * 3 < featureTable->NORMAL_UP.values.size())
         {
             const auto& values = featureTable->NORMAL_UP.values;
-            normal_up.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            normal_up.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
         }
-        else if (featureTable->NORMAL_UP_OCT32P && i*2 < featureTable->NORMAL_UP_OCT32P.values.size())
+        else if (featureTable->NORMAL_UP_OCT32P && i * 2 < featureTable->NORMAL_UP_OCT32P.values.size())
         {
             const auto& values = featureTable->NORMAL_UP_OCT32P.values;
-            normal_up = convert_oct32(values[i*2 + 0], values[i*2 + 1]);
+            normal_up = convert_oct32(values[i * 2 + 0], values[i * 2 + 1]);
         }
 
-        if (featureTable->NORMAL_RIGHT && i*3 < featureTable->NORMAL_RIGHT.values.size())
+        if (featureTable->NORMAL_RIGHT && i * 3 < featureTable->NORMAL_RIGHT.values.size())
         {
             const auto& values = featureTable->NORMAL_RIGHT.values;
-            normal_right.set(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+            normal_right.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
         }
-        else if (featureTable->NORMAL_RIGHT_OCT32P && i*2 < featureTable->NORMAL_RIGHT_OCT32P.values.size())
+        else if (featureTable->NORMAL_RIGHT_OCT32P && i * 2 < featureTable->NORMAL_RIGHT_OCT32P.values.size())
         {
             const auto& values = featureTable->NORMAL_RIGHT_OCT32P.values;
-            normal_right = convert_oct32(values[i*2 + 0], values[i*2 + 1]);
+            normal_right = convert_oct32(values[i * 2 + 0], values[i * 2 + 1]);
         }
 
         if (featureTable->SCALE && i < featureTable->SCALE.values.size())
@@ -318,7 +345,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             double value = featureTable->SCALE.values[i];
             scale.set(value, value, value);
         }
-        else if (featureTable->SCALE_NON_UNIFORM && i*3 < featureTable->SCALE_NON_UNIFORM.values.size())
+        else if (featureTable->SCALE_NON_UNIFORM && i * 3 < featureTable->SCALE_NON_UNIFORM.values.size())
         {
             const auto& values = featureTable->SCALE_NON_UNIFORM.values;
             scale.set(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
@@ -333,7 +360,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         vsg::dmat4 rot_matrix(normal_right.x, normal_right.y, normal_right.z, 0.0,
                               normal_forward.x, normal_forward.y, normal_forward.z, 0.0,
                               normal_up.x, normal_up.y, normal_up.z, 0.0,
-                               0.0, 0.0, 0.0, 1.0);
+                              0.0, 0.0, 0.0, 1.0);
 
         vsg::dvec3 temp_translation, temp_scale;
         vsg::decompose(rot_matrix, temp_translation, rotation, temp_scale);
@@ -350,7 +377,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     }
 
     vsg::ref_ptr<vsg::Node> model;
-    if (header.gltfFormat==0)
+    if (header.gltfFormat == 0)
     {
         std::string uri;
         uri.resize(size_of_gltfField);
@@ -358,7 +385,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         fin.read(uri.data(), size_of_gltfField);
 
         // trim trailing null characters
-        while(uri.back()<=32) uri.pop_back();
+        while (uri.back() <= 32) uri.pop_back();
 
         // load model
         model = vsg::read_cast<vsg::Node>(uri, opt);
@@ -384,25 +411,25 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
 
         if (featureTable->POSITION)
         {
-            for (size_t i = 0; i*3 < featureTable->POSITION.values.size(); ++i)
+            for (size_t i = 0; i * 3 < featureTable->POSITION.values.size(); ++i)
             {
                 const auto& values = featureTable->POSITION.values;
-                instance_center += vsg::dvec3(values[i*3 + 0], values[i*3 + 1], values[i*3 + 2]);
+                instance_center += vsg::dvec3(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
             }
-            instance_center /= static_cast<double>(featureTable->POSITION.values.size()/3);
+            instance_center /= static_cast<double>(featureTable->POSITION.values.size() / 3);
 
             rtc_center += instance_center;
         }
         else if (featureTable->POSITION_QUANTIZED)
         {
-            for (size_t i = 0; i*3 < featureTable->POSITION_QUANTIZED.values.size(); ++i)
+            for (size_t i = 0; i * 3 < featureTable->POSITION_QUANTIZED.values.size(); ++i)
             {
                 const auto& values = featureTable->POSITION_QUANTIZED.values;
-                vsg::dvec3 quantizedPosition(static_cast<double>(values[i*3 + 0]), static_cast<double>(values[i*3 + 1]), static_cast<double>(values[i*3 + 2]));
+                vsg::dvec3 quantizedPosition(static_cast<double>(values[i * 3 + 0]), static_cast<double>(values[i * 3 + 1]), static_cast<double>(values[i * 3 + 2]));
                 instance_center += quantizeOffset + quantizedPosition * quantizeScale;
             }
 
-            instance_center /= static_cast<double>(featureTable->POSITION_QUANTIZED.values.size()/3);
+            instance_center /= static_cast<double>(featureTable->POSITION_QUANTIZED.values.size() / 3);
 
             rtc_center += instance_center;
         }
@@ -419,7 +446,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         instanceNode->setScales(scales);
         instanceNode->child = model;
 
-        for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
+        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
         {
             vsg::dvec3 translation, scale;
             vsg::dquat rotation;
@@ -445,7 +472,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     else
     {
         auto group = vsg::Group::create();
-        for(uint32_t i=0; i<featureTable->INSTANCES_LENGTH; ++i)
+        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
         {
             vsg::dvec3 translation, scale;
             vsg::dquat rotation;
@@ -458,8 +485,10 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
             group->addChild(transform);
         }
 
-        if (group->children.size()==1) model = group->children[0];
-        else if (!group->children.empty()) model = group;
+        if (group->children.size() == 1)
+            model = group->children[0];
+        else if (!group->children.empty())
+            model = group;
     }
 
     if (filename) model->setValue("i3dm", filename);

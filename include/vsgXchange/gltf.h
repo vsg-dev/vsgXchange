@@ -23,9 +23,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
-#include <vsg/app/Camera.h>
 #include <vsg/animation/AnimationGroup.h>
 #include <vsg/animation/JointSampler.h>
+#include <vsg/app/Camera.h>
 #include <vsg/io/JSONParser.h>
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/lighting/Light.h>
@@ -54,17 +54,15 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";                     /// bool, report parsed glTF to console, defaults to false
-        static constexpr const char* culling = "culling";                   /// bool, insert cull nodes, defaults to true
-        static constexpr const char* disable_gltf = "disable_gltf";         /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
-        static constexpr const char* clone_accessors = "clone_accessors";   /// bool, hint to clone the data associated with accessors, defaults to false
-        static constexpr const char* maxAnisotropy = "maxAnisotropy";       /// float, default setting of vsg::Sampler::maxAnisotropy to use.
-
+        static constexpr const char* report = "report";                   /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* culling = "culling";                 /// bool, insert cull nodes, defaults to true
+        static constexpr const char* disable_gltf = "disable_gltf";       /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
+        static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
+        static constexpr const char* maxAnisotropy = "maxAnisotropy";     /// float, default setting of vsg::Sampler::maxAnisotropy to use.
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
     public:
-
         struct glTFid
         {
             static const uint32_t invalid_value = std::numeric_limits<uint32_t>::max();
@@ -75,7 +73,6 @@ namespace vsgXchange
 
             explicit operator bool() const noexcept { return valid(); }
         };
-
 
         struct VSGXCHANGE_DECLSPEC Extensions : public vsg::Inherit<vsg::JSONtoMetaDataSchema, Extensions>
         {
@@ -103,8 +100,10 @@ namespace vsgXchange
                 if (!extensions) return {};
 
                 auto itr = extensions->values.find(name);
-                if (itr != extensions->values.end()) return itr->second.cast<T>();
-                else return {};
+                if (itr != extensions->values.end())
+                    return itr->second.cast<T>();
+                else
+                    return {};
             }
         };
 
@@ -305,7 +304,6 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
-
         /// https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness
         struct VSGXCHANGE_DECLSPEC KHR_materials_pbrSpecularGlossiness : public vsg::Inherit<ExtensionsExtras, KHR_materials_pbrSpecularGlossiness>
         {
@@ -403,7 +401,6 @@ namespace vsgXchange
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
             void read_bool(vsg::JSONParser& parser, const std::string_view& property, bool value) override;
-
         };
 
         struct VSGXCHANGE_DECLSPEC Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
@@ -478,7 +475,6 @@ namespace vsgXchange
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
-
 
         struct VSGXCHANGE_DECLSPEC Scene : public vsg::Inherit<NameExtensionsExtras, Scene>
         {
@@ -572,7 +568,7 @@ namespace vsgXchange
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
         };
 
-        struct VSGXCHANGE_DECLSPEC  Spot : public vsg::Inherit<ExtensionsExtras, Spot>
+        struct VSGXCHANGE_DECLSPEC Spot : public vsg::Inherit<ExtensionsExtras, Spot>
         {
             double innerConeAngle = 0.0;
             double outerConeAngle = 0.7853981633974483;
@@ -580,7 +576,7 @@ namespace vsgXchange
             void read_number(vsg::JSONParser& parser, const std::string_view& property, std::istream& input) override;
         };
 
-        struct VSGXCHANGE_DECLSPEC  Light : public vsg::Inherit<NameExtensionsExtras, Light>
+        struct VSGXCHANGE_DECLSPEC Light : public vsg::Inherit<NameExtensionsExtras, Light>
         {
             vsg::ValuesSchema<float> color;
             float intensity = 1.0f;
@@ -638,7 +634,6 @@ namespace vsgXchange
 
             virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
         };
-
 
         class VSGXCHANGE_DECLSPEC SceneGraphBuilder : public vsg::Inherit<vsg::Object, SceneGraphBuilder>
         {
@@ -736,8 +731,10 @@ namespace vsgXchange
     /// output stream support for glTFid
     inline std::ostream& operator<<(std::ostream& output, const gltf::glTFid& id)
     {
-        if (id) output << "glTFid("<<id.value<<")";
-        else output << "glTFid(null)";
+        if (id)
+            output << "glTFid(" << id.value << ")";
+        else
+            output << "glTFid(null)";
         return output;
     }
 
@@ -748,7 +745,6 @@ namespace vsgXchange
         return input;
     }
 
-}
+} // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::gltf)
-

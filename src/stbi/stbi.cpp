@@ -14,8 +14,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/Logger.h>
-#include <vsg/utils/CoordinateSpace.h>
 #include <vsg/utils/CommandLine.h>
+#include <vsg/utils/CoordinateSpace.h>
 
 #include <cstring>
 
@@ -85,8 +85,10 @@ static void process_image_format(vsg::ref_ptr<const vsg::Options> options, VkFor
     vsg::CoordinateSpace coordinateSpace;
     if (options->getValue(stbi::image_format, coordinateSpace))
     {
-        if (coordinateSpace==vsg::CoordinateSpace::sRGB) format = vsg::uNorm_to_sRGB(format);
-        else if (coordinateSpace==vsg::CoordinateSpace::LINEAR) format = vsg::sRGB_to_uNorm(format);
+        if (coordinateSpace == vsg::CoordinateSpace::sRGB)
+            format = vsg::uNorm_to_sRGB(format);
+        else if (coordinateSpace == vsg::CoordinateSpace::LINEAR)
+            format = vsg::sRGB_to_uNorm(format);
     }
 }
 
