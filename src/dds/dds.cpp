@@ -48,6 +48,8 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::R8G8_SInt, VK_FORMAT_R8G8_SINT},
         {tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm, VK_FORMAT_BC7_UNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC7_UNorm_SRGB, VK_FORMAT_BC7_SRGB_BLOCK},
+        {tinyddsloader::DDSFile::DXGIFormat::BC6H_UF16, VK_FORMAT_BC6H_UFLOAT_BLOCK},
+        {tinyddsloader::DDSFile::DXGIFormat::BC6H_SF16, VK_FORMAT_BC6H_SFLOAT_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC5_UNorm, VK_FORMAT_BC5_UNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC5_SNorm, VK_FORMAT_BC5_SNORM_BLOCK},
         {tinyddsloader::DDSFile::DXGIFormat::BC4_UNorm, VK_FORMAT_BC4_UNORM_BLOCK},
@@ -163,6 +165,8 @@ namespace
         case VK_FORMAT_BC3_SRGB_BLOCK:
         case VK_FORMAT_BC5_UNORM_BLOCK:
         case VK_FORMAT_BC5_SNORM_BLOCK:
+        case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+        case VK_FORMAT_BC6H_SFLOAT_BLOCK:
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (numArrays > 1)
