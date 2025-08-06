@@ -139,6 +139,8 @@ namespace
 
         auto raw = allocateAndCopyToContiguousBlock(ddsFile);
 
+
+
         vsg::ref_ptr<vsg::Data> vsg_data;
 
         vsg::Data::Properties layout;
@@ -148,6 +150,9 @@ namespace
         layout.blockHeight = 4;
         layout.imageViewType = computeImageViewType(ddsFile);
 
+        uint32_t widthInBlocks = (width + layout.blockWidth -1) / layout.blockWidth;
+        uint32_t heightInBlocks = (height + layout.blockHeight -1) / layout.blockHeight;
+
         switch (targetFormat)
         {
         case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
@@ -155,9 +160,9 @@ namespace
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
             if (numArrays > 1)
-                vsg_data = vsg::block64Array3D::create(width / layout.blockWidth, height / layout.blockHeight, numArrays, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block64*>(raw), layout);
             else
-                vsg_data = vsg::block64Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block64*>(raw), layout);
             break;
         case VK_FORMAT_BC2_UNORM_BLOCK:
         case VK_FORMAT_BC2_SRGB_BLOCK:
@@ -170,9 +175,9 @@ namespace
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (numArrays > 1)
-                vsg_data = vsg::block128Array3D::create(width / layout.blockWidth, height / layout.blockHeight, numArrays, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block128*>(raw), layout);
             else
-                vsg_data = vsg::block128Array2D::create(width / layout.blockWidth, height / layout.blockHeight, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block128*>(raw), layout);
             break;
         default:
             std::cerr << "dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
