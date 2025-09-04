@@ -18,6 +18,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/nodes/Group.h>
 #include <vsg/state/ShaderStage.h>
 #include <vsg/text/Font.h>
+#include <vsg/threading/OperationThreads.h>
 #include <vsg/utils/CommandLine.h>
 
 #include <ft2build.h>
@@ -27,6 +28,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <chrono>
 #include <iostream>
 #include <set>
+#include <thread>
+#include <unordered_map>
+#include <utility>
 
 namespace vsgXchange
 {
@@ -547,12 +551,34 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     init();
     if (!_library) return {};
 
-    FT_Face face;
-    FT_Long face_index = 0;
+    FT_UInt pixel_size = 48;
+    FT_UInt freetype_pixel_size = pixel_size;
+    float freetype_pixel_size_scale = float(pixel_size) / (64.0f * float(freetype_pixel_size));
 
-    // Windows workaround for no wchar_t support in Freetype, convert vsg::Path's std::wstring to UTF8 std::string
-    std::string filenameToUse_string = filenameToUse.string();
-    int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face);
+    // create and initialize a new freetype face
+    auto const createNewFace = [&]{
+        FT_Face face;
+        FT_Long face_index = 0;
+        // Windows workaround for no wchar_t support in Freetype, convert vsg::Path's std::wstring to UTF8 std::string
+        std::string filenameToUse_string = filenameToUse.string();
+        int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face);
+        if (error)
+        {
+            face = nullptr;
+        }
+        else
+        {
+            error = FT_Set_Pixel_Sizes(face, freetype_pixel_size, freetype_pixel_size);
+            if (error)
+            {
+                FT_Done_Face(face);
+                face = nullptr;
+            }
+        }
+        return std::make_pair(error,face);
+    };
+
+    auto[error,face] = createNewFace();
     if (error == FT_Err_Unknown_File_Format)
     {
         std::cout << "Warning: FreeType unable to read font file : " << filenameToUse << ", error = " << FT_Err_Unknown_File_Format << std::endl;
@@ -562,14 +588,6 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     {
         std::cout << "Warning: FreeType unable to read font file : " << filenameToUse << ", error = " << error << std::endl;
         return {};
-    }
-
-    FT_UInt pixel_size = 48;
-    FT_UInt freetype_pixel_size = pixel_size;
-    float freetype_pixel_size_scale = float(pixel_size) / (64.0f * float(freetype_pixel_size));
-
-    {
-        error = FT_Set_Pixel_Sizes(face, freetype_pixel_size, freetype_pixel_size);
     }
 
     FT_Int32 load_flags = FT_LOAD_NO_BITMAP;
@@ -737,26 +755,18 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     // initialize charmap to zeros.
     for (auto& c : *charmap) c = 0;
 
-    for (auto& glyphQuad : sortedGlyphQuads)
-    {
-        error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
-        if (error) continue;
+    auto const generateContours = [&](FT_Face faceData, GlyphQuad const& glyphQuad, unsigned int glyphXpos, unsigned int glyphYpos) {
+        error = FT_Load_Glyph(faceData, glyphQuad.glyph_index, load_flags);
+        if (error) return;
 
         unsigned int width = glyphQuad.width;
         unsigned int height = glyphQuad.height;
-        auto metrics = face->glyph->metrics;
-
-        if ((xpos + width + texel_margin) > atlas->width())
-        {
-            // glyph doesn't fit in present row so shift to next row.
-            xpos = texel_margin;
-            ypos = ytop;
-        }
+        auto metrics = faceData->glyph->metrics;
 
         if (useOutline)
         {
             Contours contours;
-            generateOutlines(face->glyph->outline, contours);
+            generateOutlines(faceData->glyph->outline, contours);
 
             // scale and offset the outline geometry
             vsg::vec2 offset(float(metrics.horiBearingX) * freetype_pixel_size_scale, float(metrics.horiBearingY) * freetype_pixel_size_scale);
@@ -823,7 +833,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 int delta = quad_margin - 2;
                 for (int r = -delta; r < static_cast<int>(height + delta); ++r)
                 {
-                    std::size_t index = atlas->index(xpos - delta, ypos + r);
+                    std::size_t index = atlas->index(glyphXpos - delta, glyphYpos + r);
                     for (int c = -delta; c < static_cast<int>(width + delta); ++c)
                     {
                         vsg::vec2 v;
@@ -858,15 +868,15 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         }
         else
         {
-            if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
+            if (faceData->glyph->format != FT_GLYPH_FORMAT_BITMAP)
             {
-                error = FT_Render_Glyph(face->glyph, render_mode);
-                if (error) continue;
+                error = FT_Render_Glyph(faceData->glyph, render_mode);
+                if (error) return;
             }
 
-            if (face->glyph->format != FT_GLYPH_FORMAT_BITMAP) continue;
+            if (faceData->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
 
-            const FT_Bitmap& bitmap = face->glyph->bitmap;
+            const FT_Bitmap& bitmap = faceData->glyph->bitmap;
 
             // copy pixels
             if (computeSDF)
@@ -874,7 +884,7 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 int delta = quad_margin - 2;
                 for (int r = -delta; r < static_cast<int>(bitmap.rows + delta); ++r)
                 {
-                    std::size_t index = atlas->index(xpos - delta, ypos + r);
+                    std::size_t index = atlas->index(glyphXpos - delta, glyphYpos + r);
                     for (int c = -delta; c < static_cast<int>(bitmap.width + delta); ++c)
                     {
                         atlas->at(index++) = nearest_edge(bitmap, c, r, quad_margin);
@@ -886,13 +896,103 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
                 const unsigned char* ptr = bitmap.buffer;
                 for (unsigned int r = 0; r < bitmap.rows; ++r)
                 {
-                    std::size_t index = atlas->index(xpos, ypos + r);
+                    std::size_t index = atlas->index(glyphXpos, glyphYpos + r);
                     for (unsigned int c = 0; c < bitmap.width; ++c)
                     {
                         atlas->at(index++) = *ptr++;
                     }
                 }
             }
+        }
+    };
+
+    // setup a thread storage if generating contour generation tasks concurrently
+    auto operationThreads{options
+        ? options->operationThreads
+        : vsg::ref_ptr<vsg::OperationThreads>{}};
+
+    using ThreadFaceData = std::unordered_map<std::thread::id,FT_Face>;
+    ThreadFaceData threadFaceData;
+
+    if (operationThreads)
+    {
+        for (auto const& thread : operationThreads->threads)
+        {
+            auto [freetype_error,freetype_face]{createNewFace()};
+            threadFaceData.emplace(thread.get_id(), freetype_face);
+        }
+    }
+
+    struct ContourOperation : public vsg::Inherit<vsg::Operation, ContourOperation>
+    {
+        using GenerateContours = std::function<void(
+            FT_Face faceData,
+            GlyphQuad const& glyphQuad,
+            unsigned int glyphXpos,
+            unsigned int glyphYpos)>;
+
+        GlyphQuad const&               glyphQuad;
+        unsigned int const             glyphXpos;
+        unsigned int const             glyphYpos;
+        GenerateContours const         generateContours;
+        ThreadFaceData const&          threadFaceData;
+        vsg::ref_ptr<vsg::Latch> const latch;
+
+        ContourOperation(
+            GlyphQuad const&         in_glyphQuad,
+            unsigned int             in_glyphXpos,
+            unsigned int             in_glyphYpos,
+            GenerateContours const&  in_generateContours,
+            ThreadFaceData const&    in_threadFaceData,
+            vsg::ref_ptr<vsg::Latch> in_latch)
+            : glyphQuad(in_glyphQuad)
+            , glyphXpos(in_glyphXpos)
+            , glyphYpos(in_glyphYpos)
+            , generateContours(in_generateContours)
+            , threadFaceData(in_threadFaceData)
+            , latch(in_latch)
+        {
+        }
+
+        void run() override
+        {
+            auto const faceData = threadFaceData.at(std::this_thread::get_id());
+            generateContours(faceData, glyphQuad, glyphXpos, glyphYpos);
+            if (latch)
+                latch->count_down();
+        }
+    };
+
+    auto latch = operationThreads
+        ? vsg::Latch::create(static_cast<int>(sortedGlyphQuads.size()))
+        : vsg::ref_ptr<vsg::Latch>{};
+
+    for (auto& glyphQuad : sortedGlyphQuads)
+    {
+        error = FT_Load_Glyph(face, glyphQuad.glyph_index, load_flags);
+        if (error) continue;
+
+        unsigned int width = glyphQuad.width;
+        unsigned int height = glyphQuad.height;
+        auto metrics = face->glyph->metrics;
+
+        if ((xpos + width + texel_margin) > atlas->width())
+        {
+            // glyph doesn't fit in present row so shift to next row.
+            xpos = texel_margin;
+            ypos = ytop;
+        }
+
+        if (operationThreads)
+        {
+            // submit the task to generate contours concurrently
+            auto operation = ContourOperation::create(glyphQuad, xpos, ypos, generateContours, threadFaceData, latch);
+            operationThreads->add(operation);
+        }
+        else
+        {
+            // generate contours serially
+            generateContours(face, glyphQuad, xpos, ypos);
         }
 
         vsg::vec4 uvrect(
@@ -928,6 +1028,21 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     font->height = float(face->height) * freetype_pixel_size_scale / float(pixel_size);
     font->glyphMetrics = glyphMetrics;
     font->charmap = charmap;
+
+    FT_Done_Face(face);
+
+    if (operationThreads)
+    {
+        // wait for all tasks to finish
+        latch->wait();
+
+        // cleanup thread storage
+        for (auto& [_,faceData] : threadFaceData)
+        {
+            if (faceData)
+                FT_Done_Face(faceData);
+        }
+    }
 
     return font;
 }
