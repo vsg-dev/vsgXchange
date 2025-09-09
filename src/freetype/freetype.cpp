@@ -561,21 +561,37 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         FT_Long face_index = 0;
         // Windows workaround for no wchar_t support in Freetype, convert vsg::Path's std::wstring to UTF8 std::string
         std::string filenameToUse_string = filenameToUse.string();
-        int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face);
-        if (error)
+        if (int error = FT_New_Face(_library, filenameToUse_string.c_str(), face_index, &face); error)
+            return std::make_pair(error,FT_Face{nullptr});
+        if (!face->charmap)
         {
-            face = nullptr;
-        }
-        else
-        {
-            error = FT_Set_Pixel_Sizes(face, freetype_pixel_size, freetype_pixel_size);
-            if (error)
+            // A charmap wasn't selected; select one preferring Unicode encoding first, otherwise
+            // if not found use the first encoding. Note: some fonts like Microsoft's symbol.ttf
+            // font only contain Apple Roman and Microsoft Symbol encodings (in that order) however
+            // for some reason the Microsoft Symbol encodings appear to be missing a lot of glyphs
+            // so selecting the first charmap with Apple Roman encoding, is preferred.
+            FT_CharMap preferredCharmap = face->charmaps[0];
+            for (FT_Long c = 0; c < face->num_charmaps; ++c)
+            {
+                if (face->charmaps[c]->encoding == FT_ENCODING_UNICODE)
+                {
+                    preferredCharmap = face->charmaps[c];
+                    break;
+                }
+            }
+            if (int error = FT_Set_Charmap(face, preferredCharmap); error)
             {
                 FT_Done_Face(face);
-                face = nullptr;
+                return std::make_pair(error,FT_Face{nullptr});
             }
         }
-        return std::make_pair(error,face);
+        if (int error = FT_Set_Pixel_Sizes(face, freetype_pixel_size, freetype_pixel_size); error)
+        {
+            FT_Done_Face(face);
+            return std::make_pair(error,FT_Face{nullptr});
+        }
+
+        return std::make_pair(FT_Error{FT_Err_Ok},face);
     };
 
     auto[error,face] = createNewFace();
@@ -756,8 +772,8 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
     for (auto& c : *charmap) c = 0;
 
     auto const generateContours = [&](FT_Face faceData, GlyphQuad const& glyphQuad, unsigned int glyphXpos, unsigned int glyphYpos) {
-        error = FT_Load_Glyph(faceData, glyphQuad.glyph_index, load_flags);
-        if (error) return;
+        if (FT_Load_Glyph(faceData, glyphQuad.glyph_index, load_flags) != 0)
+            return;
 
         unsigned int width = glyphQuad.width;
         unsigned int height = glyphQuad.height;
@@ -870,8 +886,8 @@ vsg::ref_ptr<vsg::Object> freetype::Implementation::read(const vsg::Path& filena
         {
             if (faceData->glyph->format != FT_GLYPH_FORMAT_BITMAP)
             {
-                error = FT_Render_Glyph(faceData->glyph, render_mode);
-                if (error) return;
+                if (FT_Render_Glyph(faceData->glyph, render_mode) != 0)
+                    return;
             }
 
             if (faceData->glyph->format != FT_GLYPH_FORMAT_BITMAP) return;
