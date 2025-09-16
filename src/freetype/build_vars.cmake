@@ -9,8 +9,12 @@ if(${vsgXchange_freetype})
     set(SOURCES ${SOURCES}
         freetype/freetype.cpp
     )
-    set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
-    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
+    if(TARGET Freetype::Freetype)
+        set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} Freetype::Freetype)
+    else()
+        set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${FREETYPE_INCLUDE_DIRS})
+        set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} ${FREETYPE_LIBRARIES})
+    endif() 
     set(EXTRA_DEFINES ${EXTRA_DEFINES} USE_FREETYPE)
 
     if(NOT BUILD_SHARED_LIBS)
