@@ -12,7 +12,7 @@ if(${vsgXchange_GDAL})
         gdal/GDAL.cpp
     )
 
-    if(TARGET Freetype::Freetype)
+    if(TARGET GDAL::GDAL)
         set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} GDAL::GDAL)
     else()
         set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${GDAL_INCLUDE_DIR})
