@@ -12,11 +12,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/images.h>
 
+#include <vsg/core/Array.h>
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/stream.h>
 #include <vsg/utils/CommandLine.h>
 #include <vsg/utils/CoordinateSpace.h>
-#include <vsg/core/Array.h>
 
 #include <cstring>
 
@@ -84,7 +84,7 @@ namespace
 
         auto raw = new uint8_t[totalSize];
 
-        auto mipmapData = vsg::uivec4Array::create(numMipMaps*numArrays);
+        auto mipmapData = vsg::uivec4Array::create(numMipMaps * numArrays);
         auto mipmapItr = mipmapData->begin();
 
         uint32_t offset = 0;
@@ -149,7 +149,6 @@ namespace
 
         auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile);
 
-
         vsg::ref_ptr<vsg::Data> vsg_data;
 
         vsg::Data::Properties layout;
@@ -159,8 +158,8 @@ namespace
         layout.blockHeight = 4;
         layout.imageViewType = computeImageViewType(ddsFile);
 
-        uint32_t widthInBlocks = (width + layout.blockWidth -1) / layout.blockWidth;
-        uint32_t heightInBlocks = (height + layout.blockHeight -1) / layout.blockHeight;
+        uint32_t widthInBlocks = (width + layout.blockWidth - 1) / layout.blockWidth;
+        uint32_t heightInBlocks = (height + layout.blockHeight - 1) / layout.blockHeight;
 
         switch (targetFormat)
         {
@@ -193,7 +192,10 @@ namespace
             break;
         }
 
-        if (vsg_data) vsg_data->setObject("mipmapData", mipmapData);
+        if (vsg_data && mipmapData)
+        {
+            vsg_data->setObject("mipmapData", mipmapData);
+        }
 
         return vsg_data;
     }
@@ -299,9 +301,11 @@ namespace
                     break;
                 }
 
-                if (vsg_data) vsg_data->setObject("mipmapData", mipmapData);
+                if (vsg_data && mipmapData)
+                {
+                    vsg_data->setObject("mipmapData", mipmapData);
+                }
             }
-
 
             if (options && vsg_data) process_image_format(options, vsg_data->properties.format);
 
