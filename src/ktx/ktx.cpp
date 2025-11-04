@@ -18,12 +18,34 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <ktx.h>
 #include <ktxvulkan.h>
-#include <texture.h>
-#include <vk_format.h>
+// #include <texture.h>
+// #include <vk_format.h>
 
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+
+// https://docs.vulkan.org/samples/latest/samples/performance/texture_compression_basisu/README.html
+// https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md
+
+namespace vsgXchange
+{
+
+    class ktx::Implementation
+    {
+    public:
+        Implementation();
+
+        vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options = {}) const;
+        vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const;
+        vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const;
+
+        bool getFeatures(Features& features) const;
+
+        std::set<vsg::Path> _supportedExtensions;
+    };
+
+} // namespace vsgXchange
 
 namespace
 {
@@ -40,44 +62,82 @@ namespace
         }
     }
 
-    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& /*filename*/)
+    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture2* texture, const vsg::Path& filename)
     {
         uint32_t width = texture->baseWidth;
         uint32_t height = texture->baseHeight;
         uint32_t depth = texture->baseDepth;
-        const auto numMipMaps = texture->numLevels;
-        const auto numLayers = texture->numLayers;
-        const auto textureData = ktxTexture_GetData(texture);
-        const auto format = ktxTexture_GetVkFormat(texture);
+        uint32_t numComponents = static_cast<uint32_t>(ktxTexture2_GetNumComponents(texture));
 
-        ktxFormatSize formatSize;
-        vkGetFormatSize(format, &formatSize);
-
-        if (formatSize.blockSizeInBits != texture->_protected->_formatSize.blockSizeInBits)
-        {
 #if 0
-            auto before_valueSize = ktxTexture_GetElementSize(texture);
-
-            vkGetFormatSize( format, &(texture->_protected->_formatSize) );
-
-            auto after_valueSize = ktxTexture_GetElementSize(texture);
-
-            std::cout<<"ktx::read("<<filename<<") Fallback : format = "<<format<<", before_valueSize = "<<before_valueSize<<" after_valueSize = "<<after_valueSize<<std::endl;
+        vsg::info("\nreadKtx(", texture, ", ", filename, ")");
+        vsg::info("   vkFormat = ", texture->vkFormat);
+        vsg::info("   pDfd = ", texture->pDfd);
+        vsg::info("   supercompressionScheme = ", texture->supercompressionScheme, ", ", ktxSupercompressionSchemeString(texture->supercompressionScheme));
+        vsg::info("   isVideo = ", texture->isVideo);
+        vsg::info("   duration = ", texture->duration);
+        vsg::info("   timescale = ", texture->timescale);
+        vsg::info("   loopcount = ", texture->loopcount);
+        vsg::info("   generateMipmaps = ", texture->generateMipmaps);
+        vsg::info("   numLayers = ", texture->numLayers);
+        vsg::info("   numFaces = ", texture->numFaces);
+        vsg::info("   numLevels = ", texture->numLevels);
+        vsg::info("   numComponents = ", numComponents);
 #endif
-            throw vsg::Exception{"Mismatched ktxFormatSize.blockSize and ktxTexture_GetElementSize(texture)."};
+        if (ktxTexture2_NeedsTranscoding(texture))
+        {
+            ktx_transcode_fmt_e fmt = KTX_TTF_RGBA32; // TODO value?
+            switch(numComponents)
+            {
+                case(1): fmt = KTX_TTF_BC4_R; break;
+                case(2): fmt = KTX_TTF_BC5_RG; break;
+                case(3): fmt = KTX_TTF_BC1_RGB; break; // KTX_TTF_ETC1_RGB?
+                case(4):
+                default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
+            }
+
+            ktx_transcode_flags transcodeFlags = 0;
+
+            if (auto error_code = ktxTexture2_TranscodeBasis(texture, fmt, transcodeFlags); error_code != KTX_SUCCESS)
+            {
+                vsg::warn("vsgXchange::ktx : unabled to transcode ", filename, ", error_code = ", ktxErrorString(error_code));
+                return {};
+            }
+
         }
 
-        auto valueSize = ktxTexture_GetElementSize(texture);
+        // see ~/3rdParty/cesium-native/CesiumGltfReader/src/ImageDecoder.cpp
+
+        ktx_size_t bufSize = ktxTexture_GetDataSizeUncompressed(ktxTexture(texture));
+
+        ktx_uint8_t* textureData = ktxTexture_GetData(ktxTexture(texture));
+        ktx_size_t pixelDataSize = ktxTexture_GetDataSize(ktxTexture(texture));
+
+        if (texture->vkFormat==VK_FORMAT_UNDEFINED)
+        {
+            vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
+            return {};
+        }
+
+        const auto numMipMaps = texture->numLevels;
+        const auto numLayers = texture->numLayers;
+        VkFormat format = static_cast<VkFormat>(texture->vkFormat);
 
         vsg::Data::Properties layout;
         layout.format = format;
-        layout.blockWidth = texture->_protected->_formatSize.blockWidth;
-        layout.blockHeight = texture->_protected->_formatSize.blockHeight;
-        layout.blockDepth = texture->_protected->_formatSize.blockDepth;
+
+        auto formatTraits = vsg::getFormatTraits(format);
+
+        layout.blockWidth = formatTraits.blockWidth;
+        layout.blockHeight = formatTraits.blockHeight;
+        layout.blockDepth = formatTraits.blockDepth;
+
         layout.maxNumMipmaps = numMipMaps;
         layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
                                              ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
                                              ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
+
+        uint32_t valueSize = formatTraits.size;
 
         width /= layout.blockWidth;
         height /= layout.blockHeight;
@@ -118,7 +178,7 @@ namespace
             {
                 for (uint32_t face = 0; face < texture->numFaces; ++face)
                 {
-                    if (ktx_size_t ktxOffset = 0; ktxTexture_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
+                    if (ktx_size_t ktxOffset = 0; ktxTexture2_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
                     {
                         std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
                     }
@@ -171,7 +231,11 @@ namespace
             {
             case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
             case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
-            default: throw vsg::Exception{"Unsupported compressed format."};
+            default:
+            {
+                vsg::warn("Unsupported compressed format, valueSize = ", valueSize);
+                return {};
+            }
             }
         }
 
@@ -234,12 +298,50 @@ namespace
 
 using namespace vsgXchange;
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// KTX ReaderWriter facade
+//
 ktx::ktx() :
+    _implementation(new ktx::Implementation())
+{
+}
+
+ktx::~ktx()
+{
+    delete _implementation;
+}
+
+vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(filename, options);
+}
+
+vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(fin, options);
+}
+vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+{
+    return _implementation->read(ptr, size, options);
+}
+
+bool ktx::getFeatures(Features& features) const
+{
+    return _implementation->getFeatures(features);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// KTX ReaderWriter implementation
+//
+ktx::Implementation::Implementation() :
     _supportedExtensions{".ktx", ".ktx2"}
 {
 }
 
-vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (!vsg::compatibleExtension(filename, options, _supportedExtensions)) return {};
 
@@ -249,8 +351,8 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
     auto file = vsg::fopen(filenameToUse, "rb");
     if (!file) return {};
 
-    ktxTexture* texture = nullptr;
-    auto result = ktxTexture_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+    ktxTexture2* texture = nullptr;
+    auto result = ktxTexture2_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
 
     fclose(file);
 
@@ -266,15 +368,19 @@ vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path& filename, vsg::ref_ptr<cons
             std::cout << "ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
         }
 
-        ktxTexture_Destroy(texture);
+        if (texture) ktxTexture2_Destroy(texture);
 
         return data;
+    }
+    else
+    {
+        std::cout << "ktx::read(" << filenameToUse << ") failed, result = " << ktxErrorString(result) << std::endl;
     }
 
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ktx::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
@@ -288,7 +394,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
         input.append(&buffer[0], bytes_readed);
     }
 
-    if (ktxTexture * texture{nullptr}; ktxTexture_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    if (ktxTexture2 * texture{nullptr}; ktxTexture2_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
     {
         vsg::ref_ptr<vsg::Data> data;
         try
@@ -300,7 +406,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
             std::cout << "ktx::read(std::istream&) failed : " << ve.message << std::endl;
         }
 
-        ktxTexture_Destroy(texture);
+        ktxTexture2_Destroy(texture);
 
         return data;
     }
@@ -308,12 +414,12 @@ vsg::ref_ptr<vsg::Object> ktx::read(std::istream& fin, vsg::ref_ptr<const vsg::O
     return {};
 }
 
-vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
-    ktxTexture* texture = nullptr;
-    if (ktxTexture_CreateFromMemory(ptr, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    ktxTexture2* texture = nullptr;
+    if (ktxTexture2_CreateFromMemory(ptr, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
     {
         vsg::ref_ptr<vsg::Data> data;
         try
@@ -325,7 +431,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_pt
             std::cout << "ktx::read(uint_8_t*, size_t) failed : " << ve.message << std::endl;
         }
 
-        ktxTexture_Destroy(texture);
+        ktxTexture2_Destroy(texture);
 
         return data;
     }
@@ -333,7 +439,7 @@ vsg::ref_ptr<vsg::Object> ktx::read(const uint8_t* ptr, size_t size, vsg::ref_pt
     return {};
 }
 
-bool ktx::getFeatures(Features& features) const
+bool ktx::Implementation::getFeatures(Features& features) const
 {
     for (auto& ext : _supportedExtensions)
     {
