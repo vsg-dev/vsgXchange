@@ -43,6 +43,24 @@ namespace vsgXchange
         bool getFeatures(Features& features) const;
 
         std::set<vsg::Path> _supportedExtensions;
+
+
+        template<typename T>
+        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties) const
+        {
+            switch (arrayDimensions)
+            {
+            case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), properties);
+            case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), properties);
+            case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), properties);
+            default: return {};
+            }
+        }
+
+        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, int valueSize) const;
+        vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename) const;
+        vsg::ref_ptr<vsg::Data> readKtx2(ktxTexture2* texture, const vsg::Path& filename) const;
+
     };
 
 } // namespace vsgXchange
@@ -50,249 +68,6 @@ namespace vsgXchange
 namespace
 {
 
-    template<typename T>
-    vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties)
-    {
-        switch (arrayDimensions)
-        {
-        case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), properties);
-        case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), properties);
-        case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), properties);
-        default: return {};
-        }
-    }
-
-    vsg::ref_ptr<vsg::Data> readKtx(ktxTexture2* texture, const vsg::Path& filename)
-    {
-        uint32_t width = texture->baseWidth;
-        uint32_t height = texture->baseHeight;
-        uint32_t depth = texture->baseDepth;
-        uint32_t numComponents = static_cast<uint32_t>(ktxTexture2_GetNumComponents(texture));
-
-#if 0
-        vsg::info("\nreadKtx(", texture, ", ", filename, ")");
-        vsg::info("   vkFormat = ", texture->vkFormat);
-        vsg::info("   pDfd = ", texture->pDfd);
-        vsg::info("   supercompressionScheme = ", texture->supercompressionScheme, ", ", ktxSupercompressionSchemeString(texture->supercompressionScheme));
-        vsg::info("   isVideo = ", texture->isVideo);
-        vsg::info("   duration = ", texture->duration);
-        vsg::info("   timescale = ", texture->timescale);
-        vsg::info("   loopcount = ", texture->loopcount);
-        vsg::info("   generateMipmaps = ", texture->generateMipmaps);
-        vsg::info("   numLayers = ", texture->numLayers);
-        vsg::info("   numFaces = ", texture->numFaces);
-        vsg::info("   numLevels = ", texture->numLevels);
-        vsg::info("   numComponents = ", numComponents);
-#endif
-        if (ktxTexture2_NeedsTranscoding(texture))
-        {
-            ktx_transcode_fmt_e fmt = KTX_TTF_RGBA32; // TODO value?
-            switch(numComponents)
-            {
-                case(1): fmt = KTX_TTF_BC4_R; break;
-                case(2): fmt = KTX_TTF_BC5_RG; break;
-                case(3): fmt = KTX_TTF_BC1_RGB; break; // KTX_TTF_ETC1_RGB?
-                case(4):
-                default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
-            }
-
-            ktx_transcode_flags transcodeFlags = 0;
-
-            if (auto error_code = ktxTexture2_TranscodeBasis(texture, fmt, transcodeFlags); error_code != KTX_SUCCESS)
-            {
-                vsg::warn("vsgXchange::ktx : unabled to transcode ", filename, ", error_code = ", ktxErrorString(error_code));
-                return {};
-            }
-
-        }
-
-        // see ~/3rdParty/cesium-native/CesiumGltfReader/src/ImageDecoder.cpp
-
-        ktx_size_t bufSize = ktxTexture_GetDataSizeUncompressed(ktxTexture(texture));
-
-        ktx_uint8_t* textureData = ktxTexture_GetData(ktxTexture(texture));
-        ktx_size_t pixelDataSize = ktxTexture_GetDataSize(ktxTexture(texture));
-
-        if (texture->vkFormat==VK_FORMAT_UNDEFINED)
-        {
-            vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
-            return {};
-        }
-
-        const auto numMipMaps = texture->numLevels;
-        const auto numLayers = texture->numLayers;
-        VkFormat format = static_cast<VkFormat>(texture->vkFormat);
-
-        vsg::Data::Properties layout;
-        layout.format = format;
-
-        auto formatTraits = vsg::getFormatTraits(format);
-
-        layout.blockWidth = formatTraits.blockWidth;
-        layout.blockHeight = formatTraits.blockHeight;
-        layout.blockDepth = formatTraits.blockDepth;
-
-        layout.maxNumMipmaps = numMipMaps;
-        layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
-                                             ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
-                                             ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
-
-        uint32_t valueSize = formatTraits.size;
-
-        width /= layout.blockWidth;
-        height /= layout.blockHeight;
-        depth /= layout.blockDepth;
-
-        // compute the textureSize.
-        size_t textureSize = 0;
-        {
-            auto mipWidth = width;
-            auto mipHeight = height;
-            auto mipDepth = depth;
-
-            for (uint32_t level = 0; level < numMipMaps; ++level)
-            {
-                const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-                textureSize += faceSize;
-
-                if (mipWidth > 1) mipWidth /= 2;
-                if (mipHeight > 1) mipHeight /= 2;
-                if (mipDepth > 1) mipDepth /= 2;
-            }
-            textureSize *= (texture->numLayers * texture->numFaces);
-        }
-
-        // copy the data and repack into ordering assumed by VSG
-        uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
-
-        size_t offset = 0;
-
-        auto mipWidth = width;
-        auto mipHeight = height;
-        auto mipDepth = depth;
-
-        for (uint32_t level = 0; level < numMipMaps; ++level)
-        {
-            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-            for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
-            {
-                for (uint32_t face = 0; face < texture->numFaces; ++face)
-                {
-                    if (ktx_size_t ktxOffset = 0; ktxTexture2_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
-                    {
-                        std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
-                    }
-
-                    offset += faceSize;
-                }
-            }
-            if (mipWidth > 1) mipWidth /= 2;
-            if (mipHeight > 1) mipHeight /= 2;
-            if (mipDepth > 1) mipDepth /= 2;
-        }
-
-        uint32_t arrayDimensions = 0;
-        switch (texture->numDimensions)
-        {
-        case 1:
-            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-            arrayDimensions = (numLayers == 1) ? 1 : 2;
-            height = numLayers;
-            break;
-
-        case 2:
-            if (texture->isCubemap)
-            {
-                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-                arrayDimensions = 3;
-                depth = 6 * numLayers;
-            }
-            else
-            {
-                layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-                arrayDimensions = (numLayers == 1) ? 2 : 3;
-                depth = numLayers;
-            }
-            break;
-
-        case 3:
-            layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
-            arrayDimensions = 3;
-            break;
-
-        default:
-            throw vsg::Exception{"Invalid number of dimensions."};
-        }
-
-        // create the VSG compressed image objects
-        if (texture->isCompressed)
-        {
-            switch (valueSize)
-            {
-            case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, copiedData, layout);
-            case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, copiedData, layout);
-            default:
-            {
-                vsg::warn("Unsupported compressed format, valueSize = ", valueSize);
-                return {};
-            }
-            }
-        }
-
-        // handle common formats
-        switch (format)
-        {
-        case VK_FORMAT_R8_SRGB:
-        case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8_SRGB:
-        case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8B8_SRGB:
-        case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8B8A8_SRGB:
-        case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-
-        case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-        case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, copiedData, layout);
-        default: break;
-        }
-
-        // create the VSG uncompressed image objects
-        switch (valueSize)
-        {
-        case 1:
-            // int8_t or uint8_t
-            return createImage<uint8_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case 2:
-            // short, ushort, ubvec2, bvec2
-            return createImage<uint16_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case 3:
-            // ubvec3 or bvec3
-            return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, copiedData, layout);
-        case 4:
-            // float, int, uint, usvec2, svec2, ubvec4, bvec4
-            return createImage<uint32_t>(arrayDimensions, width, height, depth, copiedData, layout);
-        case 8:
-            // double, vec2, ivec4, uivec4, svec4, uvec4
-            return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, copiedData, layout);
-        case 16:
-            // dvec2, vec4, ivec4, uivec4
-            return createImage<vsg::vec4>(arrayDimensions, width, height, depth, copiedData, layout);
-        default:
-            throw vsg::Exception{"Unsupported valueSize."};
-        }
-
-        return {};
-    }
 
 } // namespace
 
@@ -341,6 +116,374 @@ ktx::Implementation::Implementation() :
 {
 }
 
+vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties layout, int valueSize) const
+{
+   // create the VSG compressed image objects
+    if (layout.blockWidth != 1 || layout.blockHeight != 1 || layout.blockDepth != 1)
+    {
+        switch (valueSize)
+        {
+        case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, data, layout);
+        case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, data, layout);
+        default:
+        {
+            vsg::warn("vsgXchange::ktx : Unsupported compressed format, valueSize = ", valueSize);
+            return {};
+        }
+        }
+    }
+
+    // handle common formats
+    switch (layout.format)
+    {
+    case VK_FORMAT_R8_SRGB:
+    case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8_SRGB:
+    case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8_SRGB:
+    case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8A8_SRGB:
+    case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, data, layout);
+
+    case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, data, layout);
+    default: break;
+    }
+
+    // create the VSG uncompressed image objects
+    switch (valueSize)
+    {
+    case 1:
+        // int8_t or uint8_t
+        return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout);
+    case 2:
+        // short, ushort, ubvec2, bvec2
+        return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout);
+    case 3:
+        // ubvec3 or bvec3
+        return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout);
+    case 4:
+        // float, int, uint, usvec2, svec2, ubvec4, bvec4
+        return createImage<uint32_t>(arrayDimensions, width, height, depth, data, layout);
+    case 8:
+        // double, vec2, ivec4, uivec4, svec4, uvec4
+        return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout);
+    case 16:
+        // dvec2, vec4, ivec4, uivec4
+        return createImage<vsg::vec4>(arrayDimensions, width, height, depth, data, layout);
+    default: break;
+    }
+
+    vsg::info("Unsupported valueSize = ", valueSize);
+
+    throw vsg::Exception{"Unsupported valueSize."};
+
+    return {};
+}
+
+vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const vsg::Path& filename) const
+{
+    uint32_t width = texture->baseWidth;
+    uint32_t height = texture->baseHeight;
+    uint32_t depth = texture->baseDepth;
+    const auto textureData = ktxTexture_GetData(texture);
+    const auto format = ktxTexture_GetVkFormat(texture);
+
+    if (format==VK_FORMAT_UNDEFINED)
+    {
+        vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
+        return {};
+    }
+#if 0
+    vsg::info("\nreadKtx(", texture, ", ", filename, ")");
+    vsg::info("   generateMipmaps = ", texture->generateMipmaps);
+    vsg::info("   numLayers = ", texture->numLayers);
+    vsg::info("   numFaces = ", texture->numFaces);
+    vsg::info("   numLevels = ", texture->numLevels);
+    vsg::info("   baseWidth = ", texture->baseWidth);
+    vsg::info("   baseHeight = ", texture->baseHeight);
+    vsg::info("   baseDepth = ", texture->baseDepth);
+    vsg::info("   format = ", format);
+#endif
+
+    const auto numMipMaps = texture->numLevels;
+    const auto numLayers = texture->numLayers;
+
+    vsg::Data::Properties layout;
+    layout.format = format;
+
+    auto formatTraits = vsg::getFormatTraits(format);
+
+    layout.blockWidth = formatTraits.blockWidth;
+    layout.blockHeight = formatTraits.blockHeight;
+    layout.blockDepth = formatTraits.blockDepth;
+
+    layout.maxNumMipmaps = numMipMaps;
+    layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
+                                        ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
+                                        ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
+
+    uint32_t valueSize = formatTraits.size;
+
+    width /= layout.blockWidth;
+    height /= layout.blockHeight;
+    depth /= layout.blockDepth;
+
+    // compute the textureSize.
+    size_t textureSize = 0;
+    {
+        auto mipWidth = width;
+        auto mipHeight = height;
+        auto mipDepth = depth;
+
+        for (uint32_t level = 0; level < numMipMaps; ++level)
+        {
+            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
+            textureSize += faceSize;
+
+            if (mipWidth > 1) mipWidth /= 2;
+            if (mipHeight > 1) mipHeight /= 2;
+            if (mipDepth > 1) mipDepth /= 2;
+        }
+        textureSize *= (texture->numLayers * texture->numFaces);
+    }
+
+    // copy the data and repack into ordering assumed by VSG
+    uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
+
+    size_t offset = 0;
+
+    auto mipWidth = width;
+    auto mipHeight = height;
+    auto mipDepth = depth;
+
+    for (uint32_t level = 0; level < numMipMaps; ++level)
+    {
+        const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
+        for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
+        {
+            for (uint32_t face = 0; face < texture->numFaces; ++face)
+            {
+                if (ktx_size_t ktxOffset = 0; ktxTexture_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
+                {
+                    std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
+                }
+
+                offset += faceSize;
+            }
+        }
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+        if (mipDepth > 1) mipDepth /= 2;
+    }
+
+    uint32_t arrayDimensions = 0;
+    switch (texture->numDimensions)
+    {
+    case 1:
+        layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        arrayDimensions = (numLayers == 1) ? 1 : 2;
+        height = numLayers;
+        break;
+
+    case 2:
+        if (texture->isCubemap)
+        {
+            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            arrayDimensions = 3;
+            depth = 6 * numLayers;
+        }
+        else
+        {
+            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            arrayDimensions = (numLayers == 1) ? 2 : 3;
+            depth = numLayers;
+        }
+        break;
+
+    case 3:
+        layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        arrayDimensions = 3;
+        break;
+
+    default:
+        throw vsg::Exception{"Invalid number of dimensions."};
+    }
+
+    return createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+}
+
+vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, const vsg::Path& filename) const
+{
+    uint32_t width = texture->baseWidth;
+    uint32_t height = texture->baseHeight;
+    uint32_t depth = texture->baseDepth;
+    uint32_t numComponents = static_cast<uint32_t>(ktxTexture2_GetNumComponents(texture));
+
+#if 0
+    vsg::info("\nreadKtx(", texture, ", ", filename, ")");
+    vsg::info("   vkFormat = ", texture->vkFormat);
+    vsg::info("   pDfd = ", texture->pDfd);
+    vsg::info("   supercompressionScheme = ", texture->supercompressionScheme, ", ", ktxSupercompressionSchemeString(texture->supercompressionScheme));
+    vsg::info("   isVideo = ", texture->isVideo);
+    vsg::info("   duration = ", texture->duration);
+    vsg::info("   timescale = ", texture->timescale);
+    vsg::info("   loopcount = ", texture->loopcount);
+    vsg::info("   generateMipmaps = ", texture->generateMipmaps);
+    vsg::info("   numLayers = ", texture->numLayers);
+    vsg::info("   numFaces = ", texture->numFaces);
+    vsg::info("   numLevels = ", texture->numLevels);
+    vsg::info("   numComponents = ", numComponents);
+#endif
+    if (ktxTexture2_NeedsTranscoding(texture))
+    {
+        ktx_transcode_fmt_e fmt = KTX_TTF_RGBA32; // TODO value?
+        switch(numComponents)
+        {
+            case(1): fmt = KTX_TTF_BC4_R; break;
+            case(2): fmt = KTX_TTF_BC5_RG; break;
+            case(3): fmt = KTX_TTF_BC1_RGB; break; // KTX_TTF_ETC1_RGB?
+            case(4):
+            default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
+        }
+
+        ktx_transcode_flags transcodeFlags = 0;
+
+        if (auto error_code = ktxTexture2_TranscodeBasis(texture, fmt, transcodeFlags); error_code != KTX_SUCCESS)
+        {
+            vsg::warn("vsgXchange::ktx : unabled to transcode ", filename, ", error_code = ", ktxErrorString(error_code));
+            return {};
+        }
+
+    }
+
+    // see ~/3rdParty/cesium-native/CesiumGltfReader/src/ImageDecoder.cpp
+
+    ktx_uint8_t* textureData = ktxTexture_GetData(ktxTexture(texture));
+    if (texture->vkFormat==VK_FORMAT_UNDEFINED)
+    {
+        vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
+        return {};
+    }
+
+    const auto numMipMaps = texture->numLevels;
+    const auto numLayers = texture->numLayers;
+    VkFormat format = static_cast<VkFormat>(texture->vkFormat);
+
+    vsg::Data::Properties layout;
+    layout.format = format;
+
+    auto formatTraits = vsg::getFormatTraits(format);
+
+    layout.blockWidth = formatTraits.blockWidth;
+    layout.blockHeight = formatTraits.blockHeight;
+    layout.blockDepth = formatTraits.blockDepth;
+
+    layout.maxNumMipmaps = numMipMaps;
+    layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
+                                        ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
+                                        ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
+
+    uint32_t valueSize = formatTraits.size;
+
+    width /= layout.blockWidth;
+    height /= layout.blockHeight;
+    depth /= layout.blockDepth;
+
+    // compute the textureSize.
+    size_t textureSize = 0;
+    {
+        auto mipWidth = width;
+        auto mipHeight = height;
+        auto mipDepth = depth;
+
+        for (uint32_t level = 0; level < numMipMaps; ++level)
+        {
+            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
+            textureSize += faceSize;
+
+            if (mipWidth > 1) mipWidth /= 2;
+            if (mipHeight > 1) mipHeight /= 2;
+            if (mipDepth > 1) mipDepth /= 2;
+        }
+        textureSize *= (texture->numLayers * texture->numFaces);
+    }
+
+    // copy the data and repack into ordering assumed by VSG
+    uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
+
+    size_t offset = 0;
+
+    auto mipWidth = width;
+    auto mipHeight = height;
+    auto mipDepth = depth;
+
+    for (uint32_t level = 0; level < numMipMaps; ++level)
+    {
+        const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
+        for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
+        {
+            for (uint32_t face = 0; face < texture->numFaces; ++face)
+            {
+                if (ktx_size_t ktxOffset = 0; ktxTexture2_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
+                {
+                    std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
+                }
+
+                offset += faceSize;
+            }
+        }
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+        if (mipDepth > 1) mipDepth /= 2;
+    }
+
+    uint32_t arrayDimensions = 0;
+    switch (texture->numDimensions)
+    {
+    case 1:
+        layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_1D : VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+        arrayDimensions = (numLayers == 1) ? 1 : 2;
+        height = numLayers;
+        break;
+
+    case 2:
+        if (texture->isCubemap)
+        {
+            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            arrayDimensions = 3;
+            depth = 6 * numLayers;
+        }
+        else
+        {
+            layout.imageViewType = (numLayers == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+            arrayDimensions = (numLayers == 1) ? 2 : 3;
+            depth = numLayers;
+        }
+        break;
+
+    case 3:
+        layout.imageViewType = VK_IMAGE_VIEW_TYPE_3D;
+        arrayDimensions = 3;
+        break;
+
+    default:
+        throw vsg::Exception{"Invalid number of dimensions."};
+    }
+
+    return createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+}
+
 vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     if (!vsg::compatibleExtension(filename, options, _supportedExtensions)) return {};
@@ -351,25 +494,35 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, v
     auto file = vsg::fopen(filenameToUse, "rb");
     if (!file) return {};
 
-    ktxTexture2* texture = nullptr;
-    auto result = ktxTexture2_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+
+    KTX_error_code result = KTX_SUCCESS;
+    vsg::ref_ptr<vsg::Data> data;
+    try
+    {
+        if (vsg::fileExtension(filename)==".ktx")
+        {
+            ktxTexture* texture = nullptr;
+            result = ktxTexture_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+            if (result == KTX_SUCCESS) data = readKtx(texture, "");
+            if (texture) ktxTexture_Destroy(texture);
+        }
+        else
+        {
+            ktxTexture2* texture = nullptr;
+            result = ktxTexture2_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
+            if (result == KTX_SUCCESS) data = readKtx2(texture, "");
+            if (texture) ktxTexture2_Destroy(texture);
+        }
+    }
+    catch (const vsg::Exception& ve)
+    {
+        std::cout << "ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
+    }
 
     fclose(file);
 
-    if (result == KTX_SUCCESS)
+    if (data)
     {
-        vsg::ref_ptr<vsg::Data> data;
-        try
-        {
-            data = readKtx(texture, filename);
-        }
-        catch (const vsg::Exception& ve)
-        {
-            std::cout << "ktx::read(" << filenameToUse << ") failed : " << ve.message << std::endl;
-        }
-
-        if (texture) ktxTexture2_Destroy(texture);
-
         return data;
     }
     else
@@ -399,7 +552,7 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(std::istream& fin, vsg::ref_
         vsg::ref_ptr<vsg::Data> data;
         try
         {
-            data = readKtx(texture, "");
+            data = readKtx2(texture, "");
         }
         catch (const vsg::Exception& ve)
         {
@@ -424,7 +577,7 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const uint8_t* ptr, size_t s
         vsg::ref_ptr<vsg::Data> data;
         try
         {
-            data = readKtx(texture, "");
+            data = readKtx2(texture, "");
         }
         catch (const vsg::Exception& ve)
         {
