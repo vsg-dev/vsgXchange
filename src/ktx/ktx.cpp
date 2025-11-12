@@ -61,15 +61,32 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename) const;
         vsg::ref_ptr<vsg::Data> readKtx2(ktxTexture2* texture, const vsg::Path& filename) const;
 
+
+        struct Face
+        {
+            int width;
+            int height;
+            int depth;
+            ktx_uint64_t faceLodSize;
+            void* pixels;
+        };
+
+        struct Faces
+        {
+            std::map<int, Face> faces;
+        };
+
+        struct Mipmaps
+        {
+            std::map<int, Faces> mipmaps;
+        };
+
+        static KTX_error_code imageIterator(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata);
+
     };
 
 } // namespace vsgXchange
 
-namespace
-{
-
-
-} // namespace
 
 using namespace vsgXchange;
 
@@ -114,6 +131,13 @@ bool ktx::getFeatures(Features& features) const
 ktx::Implementation::Implementation() :
     _supportedExtensions{".ktx", ".ktx2"}
 {
+}
+
+KTX_error_code ktx::Implementation::imageIterator(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
+{
+    auto& mipmap = reinterpret_cast<Mipmaps*>(userdata)->mipmaps[miplevel];
+    mipmap.faces[face] = Face{width, height, depth, faceLodSize, pixels};
+    return KTX_SUCCESS;
 }
 
 vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties layout, int valueSize) const
@@ -196,7 +220,6 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     uint32_t width = texture->baseWidth;
     uint32_t height = texture->baseHeight;
     uint32_t depth = texture->baseDepth;
-    const auto textureData = ktxTexture_GetData(texture);
     const auto format = ktxTexture_GetVkFormat(texture);
 
     if (format==VK_FORMAT_UNDEFINED)
@@ -215,6 +238,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     vsg::info("   baseDepth = ", texture->baseDepth);
     vsg::info("   format = ", format);
 #endif
+
 
     const auto numMipMaps = texture->numLevels;
     const auto numLayers = texture->numLayers;
@@ -235,27 +259,21 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
 
     uint32_t valueSize = formatTraits.size;
 
-    width /= layout.blockWidth;
-    height /= layout.blockHeight;
-    depth /= layout.blockDepth;
+    width = (width+layout.blockWidth-1)/layout.blockWidth;
+    height = (height+layout.blockHeight-1)/layout.blockHeight;
+    depth = (depth+layout.blockDepth-1)/layout.blockDepth;
+
+    Mipmaps mipmaps;
+    ktxTexture_IterateLevelFaces(texture, imageIterator, &mipmaps);
 
     // compute the textureSize.
     size_t textureSize = 0;
+    for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        auto mipWidth = width;
-        auto mipHeight = height;
-        auto mipDepth = depth;
-
-        for (uint32_t level = 0; level < numMipMaps; ++level)
+        for(auto& [face, faceData] : mipmap.faces)
         {
-            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-            textureSize += faceSize;
-
-            if (mipWidth > 1) mipWidth /= 2;
-            if (mipHeight > 1) mipHeight /= 2;
-            if (mipDepth > 1) mipDepth /= 2;
+            textureSize += faceData.faceLodSize;
         }
-        textureSize *= (texture->numLayers * texture->numFaces);
     }
 
     // copy the data and repack into ordering assumed by VSG
@@ -263,28 +281,18 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
 
     size_t offset = 0;
 
-    auto mipWidth = width;
-    auto mipHeight = height;
-    auto mipDepth = depth;
+    auto mipmapData = vsg::uivec4Array::create(mipmaps.mipmaps.size());
 
-    for (uint32_t level = 0; level < numMipMaps; ++level)
+    for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-        for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
+        const auto& firstFace = mipmap.faces.begin()->second;
+        mipmapData->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        for(auto& [face, faceData] : mipmap.faces)
         {
-            for (uint32_t face = 0; face < texture->numFaces; ++face)
-            {
-                if (ktx_size_t ktxOffset = 0; ktxTexture_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
-                {
-                    std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
-                }
+            std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
 
-                offset += faceSize;
-            }
+            offset += faceData.faceLodSize;
         }
-        if (mipWidth > 1) mipWidth /= 2;
-        if (mipHeight > 1) mipHeight /= 2;
-        if (mipDepth > 1) mipDepth /= 2;
     }
 
     uint32_t arrayDimensions = 0;
@@ -320,7 +328,12 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
         throw vsg::Exception{"Invalid number of dimensions."};
     }
 
-    return createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    if (data)
+    {
+        data->setObject("mipmapData", mipmapData);
+    }
+    return data;
 }
 
 vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, const vsg::Path& filename) const
@@ -369,7 +382,6 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     // see ~/3rdParty/cesium-native/CesiumGltfReader/src/ImageDecoder.cpp
 
-    ktx_uint8_t* textureData = ktxTexture_GetData(ktxTexture(texture));
     if (texture->vkFormat==VK_FORMAT_UNDEFINED)
     {
         vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
@@ -396,27 +408,22 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     uint32_t valueSize = formatTraits.size;
 
-    width /= layout.blockWidth;
-    height /= layout.blockHeight;
-    depth /= layout.blockDepth;
+    width = (width+layout.blockWidth-1)/layout.blockWidth;
+    height = (height+layout.blockHeight-1)/layout.blockHeight;
+    depth = (depth+layout.blockDepth-1)/layout.blockDepth;
+
+    auto texture1 = ktxTexture(texture);
+    Mipmaps mipmaps;
+    ktxTexture_IterateLevelFaces(texture1, imageIterator, &mipmaps);
 
     // compute the textureSize.
     size_t textureSize = 0;
+    for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        auto mipWidth = width;
-        auto mipHeight = height;
-        auto mipDepth = depth;
-
-        for (uint32_t level = 0; level < numMipMaps; ++level)
+        for(auto& [face, faceData] : mipmap.faces)
         {
-            const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-            textureSize += faceSize;
-
-            if (mipWidth > 1) mipWidth /= 2;
-            if (mipHeight > 1) mipHeight /= 2;
-            if (mipDepth > 1) mipDepth /= 2;
+            textureSize += faceData.faceLodSize;
         }
-        textureSize *= (texture->numLayers * texture->numFaces);
     }
 
     // copy the data and repack into ordering assumed by VSG
@@ -424,28 +431,18 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     size_t offset = 0;
 
-    auto mipWidth = width;
-    auto mipHeight = height;
-    auto mipDepth = depth;
+    auto mipmapData = vsg::uivec4Array::create(mipmaps.mipmaps.size());
 
-    for (uint32_t level = 0; level < numMipMaps; ++level)
+    for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        const auto faceSize = std::max(mipWidth * mipHeight * mipDepth * valueSize, valueSize);
-        for (uint32_t layer = 0; layer < texture->numLayers; ++layer)
+        const auto& firstFace = mipmap.faces.begin()->second;
+        mipmapData->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        for(auto& [face, faceData] : mipmap.faces)
         {
-            for (uint32_t face = 0; face < texture->numFaces; ++face)
-            {
-                if (ktx_size_t ktxOffset = 0; ktxTexture2_GetImageOffset(texture, level, layer, face, &ktxOffset) == KTX_SUCCESS)
-                {
-                    std::memcpy(copiedData + offset, textureData + ktxOffset, faceSize);
-                }
+            std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
 
-                offset += faceSize;
-            }
+            offset += faceData.faceLodSize;
         }
-        if (mipWidth > 1) mipWidth /= 2;
-        if (mipHeight > 1) mipHeight /= 2;
-        if (mipDepth > 1) mipDepth /= 2;
     }
 
     uint32_t arrayDimensions = 0;
@@ -481,7 +478,12 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
         throw vsg::Exception{"Invalid number of dimensions."};
     }
 
-    return createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    if (data)
+    {
+        data->setObject("mipmapData", mipmapData);
+    }
+    return data;
 }
 
 vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
@@ -503,14 +505,14 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, v
         {
             ktxTexture* texture = nullptr;
             result = ktxTexture_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-            if (result == KTX_SUCCESS) data = readKtx(texture, "");
+            if (result == KTX_SUCCESS) data = readKtx(texture, filename);
             if (texture) ktxTexture_Destroy(texture);
         }
         else
         {
             ktxTexture2* texture = nullptr;
             result = ktxTexture2_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
-            if (result == KTX_SUCCESS) data = readKtx2(texture, "");
+            if (result == KTX_SUCCESS) data = readKtx2(texture, filename);
             if (texture) ktxTexture2_Destroy(texture);
         }
     }
