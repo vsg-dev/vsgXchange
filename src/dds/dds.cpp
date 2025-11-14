@@ -17,6 +17,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/stream.h>
 #include <vsg/utils/CommandLine.h>
 #include <vsg/utils/CoordinateSpace.h>
+#include <vsg/state/ImageInfo.h>
 
 #include <cstring>
 
@@ -64,10 +65,11 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::R16G16B16A16_Float, VK_FORMAT_R16G16B16A16_SFLOAT},
         {tinyddsloader::DDSFile::DXGIFormat::R32G32B32A32_Float, VK_FORMAT_R32G32B32A32_SFLOAT}};
 
-    std::pair<uint8_t*, vsg::ref_ptr<vsg::Data>> allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile)
+    std::pair<uint8_t*, vsg::ref_ptr<vsg::Data>> allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile, const vsg::Data::Properties& layout)
     {
-        const auto numMipMaps = ddsFile.GetMipCount();
+        const auto numMipMaps = layout.maxNumMipmaps;
         const auto numArrays = ddsFile.GetArraySize();
+
         size_t totalSize = 0;
         for (uint32_t i = 0; i < numMipMaps; ++i)
         {
@@ -75,8 +77,6 @@ namespace
             {
                 const auto data = ddsFile.GetImageData(i, j);
                 totalSize += data->m_memSlicePitch;
-
-                vsg::info("allocateAndCopyToContiguousBlock() i = ", i, ", j = ", j, ",  m_width = ", data->m_width, ", m_height = ", data->m_height, " m_memSlicePitch = ", data->m_memSlicePitch);
             }
         }
 
@@ -84,7 +84,7 @@ namespace
 
         auto raw = new uint8_t[totalSize];
 
-        auto mipmapData = vsg::uivec4Array::create(numMipMaps * numArrays);
+        auto mipmapData = vsg::uivec4Array::create(numMipMaps);
         auto mipmapItr = mipmapData->begin();
 
         uint32_t offset = 0;
@@ -95,14 +95,18 @@ namespace
             {
                 const auto data = ddsFile.GetImageData(i, j);
 
-                std::memcpy(image_ptr, data->m_mem, data->m_memSlicePitch);
+                if (j==0)
+                {
+                    (*mipmapItr++).set(data->m_width, data->m_height, data->m_depth, offset);
+                }
 
-                (*mipmapItr++).set(data->m_width, data->m_height, data->m_depth, offset);
+                std::memcpy(image_ptr, data->m_mem, data->m_memSlicePitch);
 
                 offset += static_cast<uint32_t>(data->m_memSlicePitch);
                 image_ptr += data->m_memSlicePitch;
             }
         }
+
         return {raw, mipmapData};
     }
 
@@ -144,22 +148,26 @@ namespace
     {
         const auto width = ddsFile.GetWidth();
         const auto height = ddsFile.GetHeight();
-        const auto numMipMaps = ddsFile.GetMipCount();
         const auto numArrays = ddsFile.GetArraySize();
 
-        auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile);
+        auto formatTraits = vsg::getFormatTraits(targetFormat);
 
-        vsg::ref_ptr<vsg::Data> vsg_data;
+        uint32_t widthInBlocks = (width + formatTraits.blockWidth - 1) / formatTraits.blockWidth;
+        uint32_t heightInBlocks = (height + formatTraits.blockHeight - 1) / formatTraits.blockHeight;
+
+        uint32_t numMipMaps = ddsFile.GetMipCount();
 
         vsg::Data::Properties layout;
         layout.format = targetFormat;
         layout.maxNumMipmaps = numMipMaps;
-        layout.blockWidth = 4;
-        layout.blockHeight = 4;
+        layout.blockWidth = formatTraits.blockWidth;
+        layout.blockHeight = formatTraits.blockHeight;
+        layout.blockDepth = formatTraits.blockDepth;
         layout.imageViewType = computeImageViewType(ddsFile);
 
-        uint32_t widthInBlocks = (width + layout.blockWidth - 1) / layout.blockWidth;
-        uint32_t heightInBlocks = (height + layout.blockHeight - 1) / layout.blockHeight;
+        auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile, layout);
+
+        vsg::ref_ptr<vsg::Data> vsg_data;
 
         switch (targetFormat)
         {
@@ -211,7 +219,6 @@ namespace
         const auto dim = ddsFile.GetTextureDimension();
         const auto numArrays = ddsFile.GetArraySize();
 
-        // const auto valueCount = vsg::Data::computeValueCountIncludingMipmaps(width, height, depth, numMipMaps) * numArrays;
         // const auto bpp = tinyddsloader::DDSFile::GetBitsPerPixel(format);
         //std::cerr << "Fileinfo width: " << width << ", height: " << height << ", depth: " << depth << ", count: " << valueCount
         //          << ", format: " << (int)format << ", bpp: " << tinyddsloader::DDSFile::GetBitsPerPixel(format)
@@ -227,12 +234,12 @@ namespace
             }
             else
             {
-                auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile);
-
                 vsg::Data::Properties layout;
                 layout.format = it->second;
                 layout.maxNumMipmaps = numMipMaps;
                 layout.imageViewType = computeImageViewType(ddsFile);
+
+                auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile, layout);
 
                 switch (dim)
                 {

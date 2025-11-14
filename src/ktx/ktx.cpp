@@ -27,6 +27,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 // https://docs.vulkan.org/samples/latest/samples/performance/texture_compression_basisu/README.html
 // https://github.com/KhronosGroup/3D-Formats-Guidelines/blob/main/KTXDeveloperGuide.md
+// https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#resources-image-mip-level-sizing
 
 namespace vsgXchange
 {
@@ -78,6 +79,7 @@ namespace vsgXchange
 
         struct Mipmaps
         {
+            int maxMipMapLevel = 16;
             std::map<int, Faces> mipmaps;
         };
 
@@ -135,7 +137,12 @@ ktx::Implementation::Implementation() :
 
 KTX_error_code ktx::Implementation::imageIterator(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata)
 {
-    auto& mipmap = reinterpret_cast<Mipmaps*>(userdata)->mipmaps[miplevel];
+    auto mipmaps = reinterpret_cast<Mipmaps*>(userdata);
+
+    // ignore miplevels higher than the max
+    if (miplevel > mipmaps->maxMipMapLevel) return KTX_SUCCESS;
+
+    auto& mipmap = mipmaps->mipmaps[miplevel];
     mipmap.faces[face] = Face{width, height, depth, faceLodSize, pixels};
     return KTX_SUCCESS;
 }
@@ -290,7 +297,6 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
         for(auto& [face, faceData] : mipmap.faces)
         {
             std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
-
             offset += faceData.faceLodSize;
         }
     }
@@ -361,6 +367,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     if (ktxTexture2_NeedsTranscoding(texture))
     {
         ktx_transcode_fmt_e fmt = KTX_TTF_RGBA32; // TODO value?
+#if 1
         switch(numComponents)
         {
             case(1): fmt = KTX_TTF_BC4_R; break;
@@ -369,6 +376,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
             case(4):
             default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
         }
+#endif
 
         ktx_transcode_flags transcodeFlags = 0;
 
@@ -388,14 +396,19 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
         return {};
     }
 
-    const auto numMipMaps = texture->numLevels;
     const auto numLayers = texture->numLayers;
     VkFormat format = static_cast<VkFormat>(texture->vkFormat);
 
+    auto formatTraits = vsg::getFormatTraits(format);
+
+    width = (width+formatTraits.blockWidth-1)/formatTraits.blockWidth;
+    height = (height+formatTraits.blockHeight-1)/formatTraits.blockHeight;
+    depth = (depth+formatTraits.blockDepth-1)/formatTraits.blockDepth;
+
+    uint32_t numMipMaps = texture->numLevels;
+
     vsg::Data::Properties layout;
     layout.format = format;
-
-    auto formatTraits = vsg::getFormatTraits(format);
 
     layout.blockWidth = formatTraits.blockWidth;
     layout.blockHeight = formatTraits.blockHeight;
@@ -408,12 +421,10 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     uint32_t valueSize = formatTraits.size;
 
-    width = (width+layout.blockWidth-1)/layout.blockWidth;
-    height = (height+layout.blockHeight-1)/layout.blockHeight;
-    depth = (depth+layout.blockDepth-1)/layout.blockDepth;
 
     auto texture1 = ktxTexture(texture);
     Mipmaps mipmaps;
+    mipmaps.maxMipMapLevel = numMipMaps;
     ktxTexture_IterateLevelFaces(texture1, imageIterator, &mipmaps);
 
     // compute the textureSize.
@@ -439,8 +450,8 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
         mipmapData->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
         for(auto& [face, faceData] : mipmap.faces)
         {
-            std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
 
+            std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
             offset += faceData.faceLodSize;
         }
     }
@@ -481,6 +492,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
     if (data)
     {
+        //data->setValue("filename", std::string(filename));
         data->setObject("mipmapData", mipmapData);
     }
     return data;
