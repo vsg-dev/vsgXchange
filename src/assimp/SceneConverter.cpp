@@ -435,7 +435,7 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
         samplerImage.sampler->addressModeW = getWrapMode(wrapMode[2]);
         samplerImage.sampler->anisotropyEnable = VK_TRUE;
         samplerImage.sampler->maxAnisotropy = 16.0f;
-        samplerImage.sampler->maxLod = samplerImage.data->properties.maxNumMipmaps;
+        samplerImage.sampler->maxLod = static_cast<float>(samplerImage.data->properties.mipLevels);
 
         if (samplerImage.sampler->maxLod <= 1.0)
         {

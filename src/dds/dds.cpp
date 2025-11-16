@@ -67,7 +67,7 @@ namespace
 
     std::pair<uint8_t*, vsg::ref_ptr<vsg::Data>> allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile, const vsg::Data::Properties& layout)
     {
-        const auto numMipMaps = layout.maxNumMipmaps;
+        const auto numMipMaps = layout.mipLevels;
         const auto numArrays = ddsFile.GetArraySize();
 
         size_t totalSize = 0;
@@ -159,7 +159,7 @@ namespace
 
         vsg::Data::Properties layout;
         layout.format = targetFormat;
-        layout.maxNumMipmaps = numMipMaps;
+        layout.mipLevels = numMipMaps;
         layout.blockWidth = formatTraits.blockWidth;
         layout.blockHeight = formatTraits.blockHeight;
         layout.blockDepth = formatTraits.blockDepth;
@@ -236,7 +236,7 @@ namespace
             {
                 vsg::Data::Properties layout;
                 layout.format = it->second;
-                layout.maxNumMipmaps = numMipMaps;
+                layout.mipLevels = numMipMaps;
                 layout.imageViewType = computeImageViewType(ddsFile);
 
                 auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile, layout);

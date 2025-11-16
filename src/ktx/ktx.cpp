@@ -259,7 +259,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     layout.blockHeight = formatTraits.blockHeight;
     layout.blockDepth = formatTraits.blockDepth;
 
-    layout.maxNumMipmaps = numMipMaps;
+    layout.mipLevels = numMipMaps;
     layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
                                         ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
                                         ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
@@ -414,7 +414,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     layout.blockHeight = formatTraits.blockHeight;
     layout.blockDepth = formatTraits.blockDepth;
 
-    layout.maxNumMipmaps = numMipMaps;
+    layout.mipLevels = numMipMaps;
     layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
                                         ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
                                         ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
