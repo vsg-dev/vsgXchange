@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsg/core/Array.h>
+#include <vsg/core/MipmapDetails.h>
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/stream.h>
 #include <vsg/utils/CommandLine.h>
@@ -65,7 +66,7 @@ namespace
         {tinyddsloader::DDSFile::DXGIFormat::R16G16B16A16_Float, VK_FORMAT_R16G16B16A16_SFLOAT},
         {tinyddsloader::DDSFile::DXGIFormat::R32G32B32A32_Float, VK_FORMAT_R32G32B32A32_SFLOAT}};
 
-    std::pair<uint8_t*, vsg::ref_ptr<vsg::Data>> allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile, const vsg::Data::Properties& layout)
+    std::pair<uint8_t*, vsg::ref_ptr<vsg::MipmapDetails>> allocateAndCopyToContiguousBlock(tinyddsloader::DDSFile& ddsFile, const vsg::Data::Properties& layout)
     {
         const auto numMipMaps = layout.mipLevels;
         const auto numArrays = ddsFile.GetArraySize();
@@ -84,8 +85,8 @@ namespace
 
         auto raw = new uint8_t[totalSize];
 
-        auto mipmapData = vsg::uivec4Array::create(numMipMaps);
-        auto mipmapItr = mipmapData->begin();
+        auto mipmapDetails = vsg::MipmapDetails::create(numMipMaps);
+        auto mipmapItr = mipmapDetails->begin();
 
         uint32_t offset = 0;
         uint8_t* image_ptr = raw;
@@ -107,7 +108,7 @@ namespace
             }
         }
 
-        return {raw, mipmapData};
+        return {raw, mipmapDetails};
     }
 
     int computeImageViewType(tinyddsloader::DDSFile& ddsFile)
@@ -165,7 +166,7 @@ namespace
         layout.blockDepth = formatTraits.blockDepth;
         layout.imageViewType = computeImageViewType(ddsFile);
 
-        auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile, layout);
+        auto [raw, mipmapDetails] = allocateAndCopyToContiguousBlock(ddsFile, layout);
 
         vsg::ref_ptr<vsg::Data> vsg_data;
 
@@ -176,9 +177,9 @@ namespace
         case VK_FORMAT_BC4_SNORM_BLOCK:
         case VK_FORMAT_BC4_UNORM_BLOCK:
             if (numArrays > 1)
-                vsg_data = vsg::block64Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block64*>(raw), layout, mipmapDetails);
             else
-                vsg_data = vsg::block64Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block64*>(raw), layout);
+                vsg_data = vsg::block64Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block64*>(raw), layout, mipmapDetails);
             break;
         case VK_FORMAT_BC2_UNORM_BLOCK:
         case VK_FORMAT_BC2_SRGB_BLOCK:
@@ -191,19 +192,20 @@ namespace
         case VK_FORMAT_BC7_UNORM_BLOCK:
         case VK_FORMAT_BC7_SRGB_BLOCK:
             if (numArrays > 1)
-                vsg_data = vsg::block128Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array3D::create(widthInBlocks, heightInBlocks, numArrays, reinterpret_cast<vsg::block128*>(raw), layout, mipmapDetails);
             else
-                vsg_data = vsg::block128Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block128*>(raw), layout);
+                vsg_data = vsg::block128Array2D::create(widthInBlocks, heightInBlocks, reinterpret_cast<vsg::block128*>(raw), layout, mipmapDetails);
             break;
         default:
             std::cerr << "dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
             break;
         }
-
-        if (vsg_data && mipmapData)
+#if 0
+        if (vsg_data && mipmapDetails)
         {
-            vsg_data->setObject("mipmapData", mipmapData);
+            vsg_data->setObject("mipmapDetails", mipmapDetails);
         }
+#endif
 
         return vsg_data;
     }
@@ -239,7 +241,7 @@ namespace
                 layout.mipLevels = numMipMaps;
                 layout.imageViewType = computeImageViewType(ddsFile);
 
-                auto [raw, mipmapData] = allocateAndCopyToContiguousBlock(ddsFile, layout);
+                auto [raw, mipmapDetails] = allocateAndCopyToContiguousBlock(ddsFile, layout);
 
                 switch (dim)
                 {
@@ -247,13 +249,13 @@ namespace
                     switch (layout.format)
                     {
                     case VK_FORMAT_R32G32B32A32_SFLOAT:
-                        vsg_data = vsg::vec4Array::create(width, reinterpret_cast<vsg::vec4*>(raw), layout);
+                        vsg_data = vsg::vec4Array::create(width, reinterpret_cast<vsg::vec4*>(raw), layout, mipmapDetails);
                         break;
                     case VK_FORMAT_R16G16B16A16_SFLOAT:
-                        vsg_data = vsg::usvec4Array::create(width, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                        vsg_data = vsg::usvec4Array::create(width, reinterpret_cast<vsg::usvec4*>(raw), layout, mipmapDetails);
                         break;
                     default:
-                        vsg_data = vsg::ubvec4Array::create(width, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                        vsg_data = vsg::ubvec4Array::create(width, reinterpret_cast<vsg::ubvec4*>(raw), layout, mipmapDetails);
                         break;
                     }
                     break;
@@ -263,13 +265,13 @@ namespace
                         switch (layout.format)
                         {
                         case VK_FORMAT_R32G32B32A32_SFLOAT:
-                            vsg_data = vsg::vec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::vec4*>(raw), layout);
+                            vsg_data = vsg::vec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::vec4*>(raw), layout, mipmapDetails);
                             break;
                         case VK_FORMAT_R16G16B16A16_SFLOAT:
-                            vsg_data = vsg::usvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                            vsg_data = vsg::usvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::usvec4*>(raw), layout, mipmapDetails);
                             break;
                         default:
-                            vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                            vsg_data = vsg::ubvec4Array3D::create(width, height, numArrays, reinterpret_cast<vsg::ubvec4*>(raw), layout, mipmapDetails);
                             break;
                         }
                     }
@@ -278,13 +280,13 @@ namespace
                         switch (layout.format)
                         {
                         case VK_FORMAT_R32G32B32A32_SFLOAT:
-                            vsg_data = vsg::vec4Array2D::create(width, height, reinterpret_cast<vsg::vec4*>(raw), layout);
+                            vsg_data = vsg::vec4Array2D::create(width, height, reinterpret_cast<vsg::vec4*>(raw), layout, mipmapDetails);
                             break;
                         case VK_FORMAT_R16G16B16A16_SFLOAT:
-                            vsg_data = vsg::usvec4Array2D::create(width, height, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                            vsg_data = vsg::usvec4Array2D::create(width, height, reinterpret_cast<vsg::usvec4*>(raw), layout, mipmapDetails);
                             break;
                         default:
-                            vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                            vsg_data = vsg::ubvec4Array2D::create(width, height, reinterpret_cast<vsg::ubvec4*>(raw), layout, mipmapDetails);
                             break;
                         }
                     }
@@ -293,13 +295,13 @@ namespace
                     switch (layout.format)
                     {
                     case VK_FORMAT_R32G32B32A32_SFLOAT:
-                        vsg_data = vsg::vec4Array3D::create(width, height, depth, reinterpret_cast<vsg::vec4*>(raw), layout);
+                        vsg_data = vsg::vec4Array3D::create(width, height, depth, reinterpret_cast<vsg::vec4*>(raw), layout, mipmapDetails);
                         break;
                     case VK_FORMAT_R16G16B16A16_SFLOAT:
-                        vsg_data = vsg::usvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::usvec4*>(raw), layout);
+                        vsg_data = vsg::usvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::usvec4*>(raw), layout, mipmapDetails);
                         break;
                     default:
-                        vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout);
+                        vsg_data = vsg::ubvec4Array3D::create(width, height, depth, reinterpret_cast<vsg::ubvec4*>(raw), layout, mipmapDetails);
                         break;
                     }
                     break;
@@ -307,11 +309,12 @@ namespace
                     std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  not supported." << std::endl;
                     break;
                 }
-
-                if (vsg_data && mipmapData)
+#if 0
+                if (vsg_data && mipmapDetails)
                 {
-                    vsg_data->setObject("mipmapData", mipmapData);
+                    vsg_data->setObject("mipmapDetails", mipmapDetails);
                 }
+#endif
             }
 
             if (options && vsg_data) process_image_format(options, vsg_data->properties.format);

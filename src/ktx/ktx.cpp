@@ -13,6 +13,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/images.h>
 
 #include <vsg/core/Exception.h>
+#include <vsg/core/MipmapDetails.h>
 #include <vsg/io/stream.h>
 #include <vsg/state/DescriptorImage.h>
 
@@ -47,18 +48,18 @@ namespace vsgXchange
 
 
         template<typename T>
-        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties) const
+        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, vsg::ref_ptr<vsg::MipmapDetails> mipmapDetails = {}) const
         {
             switch (arrayDimensions)
             {
-            case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), properties);
-            case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), properties);
-            case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), properties);
+            case 1: return vsg::Array<T>::create(width, reinterpret_cast<T*>(data), properties, mipmapDetails);
+            case 2: return vsg::Array2D<T>::create(width, height, reinterpret_cast<T*>(data), properties, mipmapDetails);
+            case 3: return vsg::Array3D<T>::create(width, height, depth, reinterpret_cast<T*>(data), properties, mipmapDetails);
             default: return {};
             }
         }
 
-        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, int valueSize) const;
+        vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, int valueSize, vsg::ref_ptr<vsg::MipmapDetails> mipmapDetails = {}) const;
         vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename) const;
         vsg::ref_ptr<vsg::Data> readKtx2(ktxTexture2* texture, const vsg::Path& filename) const;
 
@@ -147,15 +148,15 @@ KTX_error_code ktx::Implementation::imageIterator(int miplevel, int face, int wi
     return KTX_SUCCESS;
 }
 
-vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties layout, int valueSize) const
+vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties layout, int valueSize, vsg::ref_ptr<vsg::MipmapDetails> mipmapDetails) const
 {
    // create the VSG compressed image objects
     if (layout.blockWidth != 1 || layout.blockHeight != 1 || layout.blockDepth != 1)
     {
         switch (valueSize)
         {
-        case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, data, layout);
-        case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, data, layout);
+        case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+        case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
         default:
         {
             vsg::warn("vsgXchange::ktx : Unsupported compressed format, valueSize = ", valueSize);
@@ -168,26 +169,26 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimension
     switch (layout.format)
     {
     case VK_FORMAT_R8_SRGB:
-    case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8_UNORM: return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R8_SNORM: return createImage<int8_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case VK_FORMAT_R8G8_SRGB:
-    case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8_UNORM: return createImage<vsg::ubvec2>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R8G8_SNORM: return createImage<vsg::bvec2>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case VK_FORMAT_R8G8B8_SRGB:
-    case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8_UNORM: return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R8G8B8_SNORM: return createImage<vsg::bvec3>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case VK_FORMAT_R8G8B8A8_SRGB:
-    case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R8G8B8A8_UNORM: return createImage<vsg::ubvec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R8G8B8A8_SNORM: return createImage<vsg::bvec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
 
-    case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout);
-    case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, data, layout);
+    case VK_FORMAT_R16_UNORM: return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16_SNORM: return createImage<int16_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16_UNORM: return createImage<vsg::usvec2>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16_SNORM: return createImage<vsg::svec2>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16B16_UNORM: return createImage<vsg::usvec3>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16B16_SNORM: return createImage<vsg::svec3>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16B16A16_UNORM: return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
+    case VK_FORMAT_R16G16B16A16_SNORM: return createImage<vsg::svec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     default: break;
     }
 
@@ -196,22 +197,22 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimension
     {
     case 1:
         // int8_t or uint8_t
-        return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<uint8_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case 2:
         // short, ushort, ubvec2, bvec2
-        return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<uint16_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case 3:
         // ubvec3 or bvec3
-        return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<vsg::ubvec3>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case 4:
         // float, int, uint, usvec2, svec2, ubvec4, bvec4
-        return createImage<uint32_t>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<uint32_t>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case 8:
         // double, vec2, ivec4, uivec4, svec4, uvec4
-        return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<vsg::usvec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     case 16:
         // dvec2, vec4, ivec4, uivec4
-        return createImage<vsg::vec4>(arrayDimensions, width, height, depth, data, layout);
+        return createImage<vsg::vec4>(arrayDimensions, width, height, depth, data, layout, mipmapDetails);
     default: break;
     }
 
@@ -288,12 +289,12 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
 
     size_t offset = 0;
 
-    auto mipmapData = vsg::uivec4Array::create(mipmaps.mipmaps.size());
+    auto mipmapDetails = vsg::MipmapDetails::create(mipmaps.mipmaps.size());
 
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
-        mipmapData->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        mipmapDetails->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
         for(auto& [face, faceData] : mipmap.faces)
         {
             std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
@@ -337,7 +338,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
     if (data)
     {
-        data->setObject("mipmapData", mipmapData);
+        // data->setObject("mipmapDetails", mipmapDetails);
     }
     return data;
 }
@@ -442,12 +443,12 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     size_t offset = 0;
 
-    auto mipmapData = vsg::uivec4Array::create(mipmaps.mipmaps.size());
+    auto mipmapDetails = vsg::uivec4Array::create(mipmaps.mipmaps.size());
 
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
-        mipmapData->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        mipmapDetails->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
         for(auto& [face, faceData] : mipmap.faces)
         {
 
@@ -493,7 +494,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     if (data)
     {
         //data->setValue("filename", std::string(filename));
-        data->setObject("mipmapData", mipmapData);
+        //data->setObject("mipmapDetails", mipmapDetails);
     }
     return data;
 }
