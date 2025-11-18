@@ -335,7 +335,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
         throw vsg::Exception{"Invalid number of dimensions."};
     }
 
-    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize, mipmapLayout);
     if (data)
     {
         // data->setObject("mipmapLayout", mipmapLayout);
@@ -443,7 +443,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     size_t offset = 0;
 
-    auto mipmapLayout = vsg::uivec4Array::create(mipmaps.mipmaps.size());
+    auto mipmapLayout = vsg::MipmapLayout::create(mipmaps.mipmaps.size());
 
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
@@ -490,7 +490,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
         throw vsg::Exception{"Invalid number of dimensions."};
     }
 
-    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize);
+    auto data = createImage(arrayDimensions, width, height, depth, copiedData, layout, valueSize, mipmapLayout);
     if (data)
     {
         //data->setValue("filename", std::string(filename));
