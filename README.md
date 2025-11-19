@@ -33,7 +33,7 @@ cmake automatically finds which dependencies are available and builds the approp
 
 * [libcurl](https://curl.se/libcurl/)
 * [Freetype](https://www.freetype.org/)
-* [ktx](https://github.com/KhronosGroup/KTX-Software) : vckpg install ktx[vulkan]
+* [ktx](https://github.com/KhronosGroup/KTX-Software) : vcpkg install ktx[vulkan]
 * [draco](https://google.github.io/draco/) - used by the vsgXchange::gltf loader to support draco compressed mesh data.
 * [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
 * [OpenEXP](https://www.openexr.com/)
