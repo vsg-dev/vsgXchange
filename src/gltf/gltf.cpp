@@ -1499,7 +1499,8 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                 }
                 else
                 {
-                    operations.push_back(ReadFileOperation::create(gltf::decodeURI(image->uri), options, image->data));
+                    image->filename = vsg::findFile(gltf::decodeURI(image->uri), options);
+                    operations.push_back(ReadFileOperation::create(image->filename, options, image->data));
                 }
             }
             else if (image->bufferView)
@@ -1576,6 +1577,50 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         }
         vsg::debug("Completed secondary single-threaded read/decode");
     }
+
+    externalTextures = vsg::value<bool>(externalTextures, gltf::external_textures, options);
+    externalTextureFormat = vsg::value<TextureFormat>(externalTextureFormat, gltf::external_texture_format, options);
+    if (externalTextures && !externalObjects) externalObjects = vsg::External::create();
+
+    if (externalTextures && externalObjects)
+    {
+        for (auto& image : images.values)
+        {
+            if (image->data && image->filename)
+            {
+                // calculate the texture filename
+                switch (externalTextureFormat)
+                {
+                case TextureFormat::native:
+                    break; // nothing to do
+                case TextureFormat::vsgt:
+                    image->filename = vsg::removeExtension(image->filename).concat(".vsgt");
+                    break;
+                case TextureFormat::vsgb:
+                    image->filename = vsg::removeExtension(image->filename).concat(".vsgb");
+                    break;
+                }
+
+                // actually write out the texture.. this need only be done once per texture!
+                if (externalObjects->entries.count(image->filename) == 0)
+                {
+                    switch (externalTextureFormat)
+                    {
+                    case TextureFormat::native:
+                        break; // nothing to do
+                    case TextureFormat::vsgt:
+                        vsg::write(image->data, image->filename, options);
+                        break;
+                    case TextureFormat::vsgb:
+                        vsg::write(image->data, image->filename, options);
+                        break;
+                    }
+
+                    externalObjects->add(image->filename, image->data);
+                }
+            }
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1648,6 +1693,12 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
         }
 
         result = builder->createSceneGraph(root, options);
+
+        if (result)
+        {
+            if (root->externalObjects && !root->externalObjects->entries.empty())
+                result->setObject("external", root->externalObjects);
+        }
     }
     else
     {
@@ -1784,7 +1835,11 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
 
         result = builder->createSceneGraph(root, options);
 
-        if (result && filename) result->setValue("gltf", filename);
+        if (result)
+        {
+            if (root->externalObjects && !root->externalObjects->entries.empty())
+                result->setObject("external", root->externalObjects);
+        }
     }
     else
     {
@@ -1849,6 +1904,8 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
     result = arguments.readAndAssign<bool>(gltf::disable_gltf, &options) || result;
     result = arguments.readAndAssign<bool>(gltf::clone_accessors, &options) || result;
     result = arguments.readAndAssign<float>(gltf::maxAnisotropy, &options) || result;
+    result = arguments.readAndAssign<bool>(gltf::external_textures, &options) || result;
+    result = arguments.readAndAssign<TextureFormat>(gltf::external_texture_format, &options) || result;
     return result;
 }
 
@@ -1863,6 +1920,8 @@ bool gltf::getFeatures(Features& features) const
     features.optionNameTypeMap[gltf::disable_gltf] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::clone_accessors] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::maxAnisotropy] = vsg::type_name<float>();
+    features.optionNameTypeMap[gltf::external_textures] = vsg::type_name<float>();
+    features.optionNameTypeMap[gltf::external_texture_format] = vsg::type_name<TextureFormat>();
 
     return true;
 }
