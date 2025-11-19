@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/animation/AnimationGroup.h>
 #include <vsg/animation/JointSampler.h>
 #include <vsg/app/Camera.h>
+#include <vsg/core/External.h>
 #include <vsg/io/JSONParser.h>
 #include <vsg/io/ReaderWriter.h>
 #include <vsg/lighting/Light.h>
@@ -34,6 +35,30 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
+    enum class TextureFormat
+    {
+        native,
+        vsgt,
+        vsgb
+    };
+
+    // this needs to be defined before 'vsg/commandline.h' has been included
+    inline std::istream& operator>>(std::istream& is, TextureFormat& textureFormat)
+    {
+        std::string value;
+        is >> value;
+
+        if (value == "native")
+            textureFormat = TextureFormat::native;
+        else if (value == "vsgb")
+            textureFormat = TextureFormat::vsgb;
+        else if ((value == "vsgt") || (value == "vsga"))
+            textureFormat = TextureFormat::vsgt;
+        else
+            textureFormat = TextureFormat::native;
+
+        return is;
+    }
 
     /// gltf ReaderWriter
     class VSGXCHANGE_DECLSPEC gltf : public vsg::Inherit<vsg::ReaderWriter, gltf>
@@ -59,6 +84,8 @@ namespace vsgXchange
         static constexpr const char* disable_gltf = "disable_gltf";       /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
         static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
         static constexpr const char* maxAnisotropy = "maxAnisotropy";     /// float, default setting of vsg::Sampler::maxAnisotropy to use.
+        static constexpr const char* external_textures = "external_textures";             /// bool
+        static constexpr const char* external_texture_format = "external_texture_format"; /// TextureFormat enum
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -232,6 +259,8 @@ namespace vsgXchange
 
             // loaded from uri
             vsg::ref_ptr<vsg::Data> data;
+
+            vsg::Path filename;
 
             void report(vsg::LogOutput& output);
             void read_string(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -625,6 +654,10 @@ namespace vsgXchange
             vsg::ObjectsSchema<Animation> animations;
             vsg::ObjectsSchema<Camera> cameras;
             vsg::ObjectsSchema<Skins> skins;
+
+            bool externalTextures = false;
+            TextureFormat externalTextureFormat = TextureFormat::native;
+            vsg::ref_ptr<vsg::External> externalObjects;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
