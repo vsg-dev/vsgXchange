@@ -275,7 +275,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     ktxTexture_IterateLevelFaces(texture, imageIterator, &mipmaps);
 
     // compute the textureSize.
-    size_t textureSize = 0;
+    ktx_uint64_t textureSize = 0;
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         for(auto& [face, faceData] : mipmap.faces)
@@ -287,14 +287,14 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     // copy the data and repack into ordering assumed by VSG
     uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
 
-    size_t offset = 0;
+    ktx_uint64_t offset = 0;
 
     auto mipmapLayout = vsg::MipmapLayout::create(mipmaps.mipmaps.size());
 
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
-        mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, static_cast<uint32_t>(offset)));
         for(auto& [face, faceData] : mipmap.faces)
         {
             std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
@@ -429,7 +429,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     ktxTexture_IterateLevelFaces(texture1, imageIterator, &mipmaps);
 
     // compute the textureSize.
-    size_t textureSize = 0;
+    ktx_uint64_t textureSize = 0;
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         for(auto& [face, faceData] : mipmap.faces)
@@ -441,14 +441,14 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     // copy the data and repack into ordering assumed by VSG
     uint8_t* copiedData = static_cast<uint8_t*>(vsg::allocate(textureSize, vsg::ALLOCATOR_AFFINITY_DATA));
 
-    size_t offset = 0;
+    ktx_uint64_t offset = 0;
 
     auto mipmapLayout = vsg::MipmapLayout::create(mipmaps.mipmaps.size());
 
     for(auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
-        mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, offset));
+        mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, static_cast<uint32_t>(offset)));
         for(auto& [face, faceData] : mipmap.faces)
         {
 
