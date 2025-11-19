@@ -503,6 +503,18 @@ namespace tinyddsloader
                 {
                     return DXGIFormat::B4G4R4A4_UNorm;
                 }
+                if (pf.m_RBitMask == 0x00ff && pf.m_GBitMask == 0xff00 &&
+                    pf.m_BBitMask == 0x0000 && pf.m_ABitMask == 0x0000)
+                {
+                    return DXGIFormat::R8G8_UNorm;
+                }
+                break;
+            case 8:
+                if (pf.m_RBitMask == 0x00ff && pf.m_GBitMask == 0x0000 &&
+                    pf.m_BBitMask == 0x0000 && pf.m_ABitMask == 0x0000)
+                {
+                    return DXGIFormat::R8_UNorm;
+                }
                 break;
             default:
                 break;

@@ -39,7 +39,7 @@ include(freetype/build_vars.cmake)
 # add assimp if available
 include(assimp/build_vars.cmake)
 
-# add ktx
+# add optional ktx
 include(ktx/build_vars.cmake)
 
 # add optional GDAL component

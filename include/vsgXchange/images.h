@@ -97,7 +97,10 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     private:
-        std::set<vsg::Path> _supportedExtensions;
+        ~ktx();
+
+        class Implementation;
+        Implementation* _implementation;
     };
 
     /// optional .exr support using OpenEXR library

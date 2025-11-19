@@ -87,7 +87,10 @@ all::all()
 
     add(stbi::create());
     add(dds::create());
+
+#ifdef vsgXchange_ktx
     add(ktx::create());
+#endif
 
 #ifdef vsgXchange_openexr
     add(openexr::create());

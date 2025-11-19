@@ -31,12 +31,13 @@ cmake automatically finds which dependencies are available and builds the approp
 
 ## Optional dependencies:
 
-* [Freetype](https://www.freetype.org/)
-* [GDAL](https://gdal.org/)
-* [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
 * [libcurl](https://curl.se/libcurl/)
-* [OpenEXP](https://www.openexr.com/)
+* [Freetype](https://www.freetype.org/)
+* [ktx](https://github.com/KhronosGroup/KTX-Software) : vcpkg install ktx[vulkan]
 * [draco](https://google.github.io/draco/) - used by the vsgXchange::gltf loader to support draco compressed mesh data.
+* [Assimp](https://www.assimp.org/), [Assimp on github](https://github.com/assimp/assimp)
+* [OpenEXP](https://www.openexr.com/)
+* [GDAL](https://gdal.org/)
 * [osg2vsg](https://github.com/vsg-dev/osg2vsg)
 
 ## Building vsgXchange:
