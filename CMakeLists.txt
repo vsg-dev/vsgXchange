@@ -20,7 +20,7 @@ if (VULKAN_SDK)
     set(ENV{VULKAN_SDK} ${VULKAN_SDK})
 endif()
 
-set(VSG_MIN_VERSION 1.1.11)
+set(VSG_MIN_VERSION 1.1.12)
 find_package(vsg ${VSG_MIN_VERSION})
 
 vsg_setup_dir_vars()
