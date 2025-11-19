@@ -21,7 +21,10 @@ using namespace vsgXchange;
 ktx::ktx() :
     _implementation(nullptr)
 {
-    vsg::info("ktx::ktx() FALLBACK");
+}
+
+ktx::~ktx()
+{
 }
 
 vsg::ref_ptr<vsg::Object> ktx::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
