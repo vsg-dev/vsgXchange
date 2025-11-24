@@ -18,29 +18,29 @@ using namespace vsgXchange;
 //
 // GDAL ReaderWriter fallback
 //
-class GDAL::Implementation
+class gdal::Implementation
 {
 };
-GDAL::GDAL() :
+gdal::gdal() :
     _implementation(nullptr)
 {
 }
-GDAL::~GDAL()
+gdal::~gdal()
 {
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
-{
-    return {};
-}
-vsg::ref_ptr<vsg::Object> GDAL::read(std::istream&, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> gdal::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> gdal::read(std::istream&, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
-bool GDAL::getFeatures(Features&) const
+vsg::ref_ptr<vsg::Object> gdal::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
+{
+    return {};
+}
+bool gdal::getFeatures(Features&) const
 {
     return false;
 }

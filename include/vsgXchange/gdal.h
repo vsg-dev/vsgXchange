@@ -33,10 +33,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace vsgXchange
 {
     /// optional GDAL ReaderWriter
-    class VSGXCHANGE_DECLSPEC GDAL : public vsg::Inherit<vsg::ReaderWriter, GDAL>
+    class VSGXCHANGE_DECLSPEC gdal : public vsg::Inherit<vsg::ReaderWriter, gdal>
     {
     public:
-        GDAL();
+        gdal();
         vsg::ref_ptr<vsg::Object> read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const override;
         vsg::ref_ptr<vsg::Object> read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options = {}) const override;
         vsg::ref_ptr<vsg::Object> read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options = {}) const override;
@@ -44,7 +44,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        ~GDAL();
+        ~gdal();
 
         class Implementation;
         Implementation* _implementation;
@@ -52,7 +52,7 @@ namespace vsgXchange
 
 } // namespace vsgXchange
 
-EVSG_type_name(vsgXchange::GDAL);
+EVSG_type_name(vsgXchange::gdal);
 
 #ifdef vsgXchange_GDAL
 

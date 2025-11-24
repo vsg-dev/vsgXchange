@@ -58,7 +58,7 @@ void vsgXchange::init()
     vsg::ObjectFactory::instance()->add<vsgXchange::openexr>();
     vsg::ObjectFactory::instance()->add<vsgXchange::freetype>();
     vsg::ObjectFactory::instance()->add<vsgXchange::assimp>();
-    vsg::ObjectFactory::instance()->add<vsgXchange::GDAL>();
+    vsg::ObjectFactory::instance()->add<vsgXchange::gdal>();
     //    vsg::ObjectFactory::instance()->add<vsgXchange::OSG>();
 }
 
@@ -105,7 +105,7 @@ all::all()
 #endif
 
 #ifdef vsgXchange_GDAL
-    add(GDAL::create());
+    add(gdal::create());
 #endif
 
 #ifdef vsgXchange_OSG

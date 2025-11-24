@@ -21,7 +21,7 @@ using namespace vsgXchange;
 namespace vsgXchange
 {
 
-    class GDAL::Implementation
+    class gdal::Implementation
     {
     public:
         Implementation();
@@ -37,33 +37,33 @@ namespace vsgXchange
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// GDAL ReaderWriter facade
+// gdal ReaderWriter facade
 //
-GDAL::GDAL() :
-    _implementation(new GDAL::Implementation())
+gdal::gdal() :
+    _implementation(new gdal::Implementation())
 {
 }
 
-GDAL::~GDAL()
+gdal::~gdal()
 {
     delete _implementation;
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(filename, options);
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(fin, options);
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(ptr, size, options);
 }
 
-bool GDAL::getFeatures(Features& features) const
+bool gdal::getFeatures(Features& features) const
 {
     vsgXchange::initGDAL();
 
@@ -114,13 +114,13 @@ bool GDAL::getFeatures(Features& features) const
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// GDAL ReaderWriter implementation
+// gdal ReaderWriter implementation
 //
-GDAL::Implementation::Implementation()
+gdal::Implementation::Implementation()
 {
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     // GDAL tries to load all datatypes so up front catch VSG and OSG native formats.
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
@@ -220,7 +220,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     return image;
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     // if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
@@ -244,7 +244,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref
     return read(reinterpret_cast<const uint8_t*>(input.data()), input.size(), options);
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> gdal::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     std::string temp_filename("/vsimem/temp");
     temp_filename.append(options->extensionHint.string());
@@ -252,7 +252,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t 
     // create a GDAL Virtual File for memory block.
     VSILFILE* vsFile = VSIFileFromMemBuffer(temp_filename.c_str(), static_cast<GByte*>(const_cast<uint8_t*>(ptr)), static_cast<vsi_l_offset>(size), 0);
 
-    auto result = GDAL::Implementation::read(temp_filename, options);
+    auto result = gdal::Implementation::read(temp_filename, options);
 
     VSIFCloseL(vsFile);
 

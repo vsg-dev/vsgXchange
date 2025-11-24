@@ -7,9 +7,9 @@ endif()
 
 if(${vsgXchange_GDAL})
     set(SOURCES ${SOURCES}
+        gdal/gdal.cpp
         gdal/gdal_utils.cpp
         gdal/meta_utils.cpp
-        gdal/GDAL.cpp
     )
 
     if(TARGET GDAL::GDAL)
