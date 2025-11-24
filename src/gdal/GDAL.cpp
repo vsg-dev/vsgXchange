@@ -139,7 +139,7 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path
     auto types = vsgXchange::dataTypes(*dataset);
     if (types.size() > 1)
     {
-        vsg::info("vsgXchange::GDAL::read(", filename, ") multiple input data types not supported.");
+        vsg::info("GDAL::read(", filename, ") multiple input data types not supported.");
         for (auto& type : types)
         {
             vsg::info("   GDALDataType ", GDALGetDataTypeName(type));
@@ -148,7 +148,7 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path
     }
     if (types.empty())
     {
-        vsg::info("vsgXchange::GDAL::read(", filename, ") types set empty.");
+        vsg::info("GDAL::read(", filename, ") types set empty.");
 
         return {};
     }
@@ -167,14 +167,14 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path
         }
         else
         {
-            vsg::info("vsgXchange::GDAL::read(", filename, ") Undefined classification on raster band ", i);
+            vsg::info("GDAL::read(", filename, ") Undefined classification on raster band ", i);
         }
     }
 
     int numComponents = static_cast<int>(rasterBands.size());
     if (numComponents == 0)
     {
-        vsg::info("vsgXchange::GDAL::read(", filename, ") failed numComponents = ", numComponents);
+        vsg::info("GDAL::read(", filename, ") failed numComponents = ", numComponents);
         return {};
     }
 
@@ -187,7 +187,7 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path
 
     if (numComponents > 4)
     {
-        vsg::info("vsgXchange::GDAL::read(", filename, ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported.");
+        vsg::info("GDAL::read(", filename, ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported.");
         return {};
     }
 
