@@ -16,6 +16,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <cstring>
 #include <sstream>
 
+using namespace vsgXchange;
+
 namespace vsgXchange
 {
 
@@ -37,31 +39,31 @@ namespace vsgXchange
 //
 // GDAL ReaderWriter facade
 //
-vsgXchange::GDAL::GDAL() :
+GDAL::GDAL() :
     _implementation(new GDAL::Implementation())
 {
 }
 
-vsgXchange::GDAL::~GDAL()
+GDAL::~GDAL()
 {
     delete _implementation;
 }
 
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(filename, options);
 }
 
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(fin, options);
 }
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(ptr, size, options);
 }
 
-bool vsgXchange::GDAL::getFeatures(Features& features) const
+bool GDAL::getFeatures(Features& features) const
 {
     vsgXchange::initGDAL();
 
@@ -114,11 +116,11 @@ bool vsgXchange::GDAL::getFeatures(Features& features) const
 //
 // GDAL ReaderWriter implementation
 //
-vsgXchange::GDAL::Implementation::Implementation()
+GDAL::Implementation::Implementation()
 {
 }
 
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     // GDAL tries to load all datatypes so up front catch VSG and OSG native formats.
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
@@ -218,7 +220,7 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path
     return image;
 }
 
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     // if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
@@ -242,7 +244,7 @@ vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(std::istream& f
     return read(reinterpret_cast<const uint8_t*>(input.data()), input.size(), options);
 }
 
-vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     std::string temp_filename("/vsimem/temp");
     temp_filename.append(options->extensionHint.string());
