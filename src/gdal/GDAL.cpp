@@ -16,12 +16,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <cstring>
 #include <sstream>
 
-using namespace vsgXchange;
-
 namespace vsgXchange
 {
 
-    class GDAL::Implementation
+    class vsgXchange::GDAL::Implementation
     {
     public:
         Implementation();
@@ -39,31 +37,31 @@ namespace vsgXchange
 //
 // GDAL ReaderWriter facade
 //
-GDAL::GDAL() :
-    _implementation(new GDAL::Implementation())
+vsgXchange::GDAL::GDAL() :
+    _implementation(new vsgXchange::GDAL::Implementation())
 {
 }
 
-GDAL::~GDAL()
+vsgXchange::GDAL::~GDAL()
 {
     delete _implementation;
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(filename, options);
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(fin, options);
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(ptr, size, options);
 }
 
-bool GDAL::getFeatures(Features& features) const
+bool vsgXchange::GDAL::getFeatures(Features& features) const
 {
     vsgXchange::initGDAL();
 
@@ -116,11 +114,11 @@ bool GDAL::getFeatures(Features& features) const
 //
 // GDAL ReaderWriter implementation
 //
-GDAL::Implementation::Implementation()
+vsgXchange::GDAL::Implementation::Implementation()
 {
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     // GDAL tries to load all datatypes so up front catch VSG and OSG native formats.
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
@@ -141,7 +139,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     auto types = vsgXchange::dataTypes(*dataset);
     if (types.size() > 1)
     {
-        vsg::info("GDAL::read(", filename, ") multiple input data types not supported.");
+        vsg::info("vsgXchange::GDAL::read(", filename, ") multiple input data types not supported.");
         for (auto& type : types)
         {
             vsg::info("   GDALDataType ", GDALGetDataTypeName(type));
@@ -150,7 +148,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     }
     if (types.empty())
     {
-        vsg::info("GDAL::read(", filename, ") types set empty.");
+        vsg::info("vsgXchange::GDAL::read(", filename, ") types set empty.");
 
         return {};
     }
@@ -169,14 +167,14 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
         }
         else
         {
-            vsg::info("GDAL::read(", filename, ") Undefined classification on raster band ", i);
+            vsg::info("vsgXchange::GDAL::read(", filename, ") Undefined classification on raster band ", i);
         }
     }
 
     int numComponents = static_cast<int>(rasterBands.size());
     if (numComponents == 0)
     {
-        vsg::info("GDAL::read(", filename, ") failed numComponents = ", numComponents);
+        vsg::info("vsgXchange::GDAL::read(", filename, ") failed numComponents = ", numComponents);
         return {};
     }
 
@@ -189,7 +187,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
 
     if (numComponents > 4)
     {
-        vsg::info("GDAL::read(", filename, ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported.");
+        vsg::info("vsgXchange::GDAL::read(", filename, ") Too many raster bands to merge into a single output, maximum of 4 raster bands supported.");
         return {};
     }
 
@@ -220,7 +218,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, 
     return image;
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(std::istream& fin, vsg::ref_ptr<const vsg::Options> options) const
 {
     // if (!vsg::compatibleExtension(options, _supportedExtensions)) return {};
 
@@ -244,7 +242,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(std::istream& fin, vsg::ref
     return read(reinterpret_cast<const uint8_t*>(input.data()), input.size(), options);
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const uint8_t* ptr, size_t size, vsg::ref_ptr<const vsg::Options> options) const
 {
     std::string temp_filename("/vsimem/temp");
     temp_filename.append(options->extensionHint.string());
@@ -252,7 +250,7 @@ vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const uint8_t* ptr, size_t 
     // create a GDAL Virtual File for memory block.
     VSILFILE* vsFile = VSIFileFromMemBuffer(temp_filename.c_str(), static_cast<GByte*>(const_cast<uint8_t*>(ptr)), static_cast<vsi_l_offset>(size), 0);
 
-    auto result = GDAL::Implementation::read(temp_filename, options);
+    auto result = vsgXchange::GDAL::Implementation::read(temp_filename, options);
 
     VSIFCloseL(vsFile);
 
