@@ -12,35 +12,33 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/gdal.h>
 
-using namespace vsgXchange;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // GDAL ReaderWriter fallback
 //
-class GDAL::Implementation
+class vsgXchange::GDAL::Implementation
 {
 };
-GDAL::GDAL() :
+vsgXchange::GDAL::GDAL() :
     _implementation(nullptr)
 {
 }
-GDAL::~GDAL()
+vsgXchange::GDAL::~GDAL()
 {
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
-{
-    return {};
-}
-vsg::ref_ptr<vsg::Object> GDAL::read(std::istream&, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(std::istream&, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
-bool GDAL::getFeatures(Features&) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
+{
+    return {};
+}
+bool vsgXchange::GDAL::getFeatures(Features&) const
 {
     return false;
 }
