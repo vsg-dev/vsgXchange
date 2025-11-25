@@ -15,12 +15,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <cstring>
 
-using namespace vsgXchange;
-
 namespace vsgXchange
 {
 
-    class GDAL::Implementation
+    class vsgXchange::GDAL::Implementation
     {
     public:
         Implementation();
@@ -36,21 +34,21 @@ namespace vsgXchange
 //
 // GDAL ReaderWriter fascade
 //
-GDAL::GDAL() :
-    _implementation(new GDAL::Implementation())
+vsgXchange::GDAL::GDAL() :
+    _implementation(new vsgXchange::GDAL::Implementation())
 {
 }
 
-GDAL::~GDAL()
+vsgXchange::GDAL::~GDAL()
 {
     delete _implementation;
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     return _implementation->read(filename, options);
 }
 
-bool GDAL::getFeatures(Features& features) const
+bool vsgXchange::GDAL::getFeatures(Features& features) const
 {
     vsgXchange::initGDAL();
 
@@ -103,11 +101,11 @@ bool GDAL::getFeatures(Features& features) const
 //
 // GDAL ReaderWriter implementation
 //
-GDAL::Implementation::Implementation()
+vsgXchange::GDAL::Implementation::Implementation()
 {
 }
 
-vsg::ref_ptr<vsg::Object> GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::Implementation::read(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> options) const
 {
     // GDAL tries to load all datatypes so up front catch VSG and OSG native formats.
     vsg::Path ext = vsg::lowerCaseFileExtension(filename);
