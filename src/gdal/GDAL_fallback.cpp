@@ -12,8 +12,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsgXchange/gdal.h>
 
-using namespace vsgXchange;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // GDAL ReaderWriter fallback
@@ -28,11 +26,11 @@ GDAL::GDAL() :
 GDAL::~GDAL()
 {
 }
-vsg::ref_ptr<vsg::Object> GDAL::read(const vsg::Path&, vsg::ref_ptr<const vsg::Options>) const
+vsg::ref_ptr<vsg::Object> vsgXchange::GDAL::read(const uint8_t*, size_t, vsg::ref_ptr<const vsg::Options>) const
 {
     return {};
 }
-bool GDAL::getFeatures(Features&) const
+bool vsgXchange::GDAL::getFeatures(Features&) const
 {
     return false;
 }
