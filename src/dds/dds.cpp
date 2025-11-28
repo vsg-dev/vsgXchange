@@ -16,9 +16,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/core/MipmapLayout.h>
 #include <vsg/io/FileSystem.h>
 #include <vsg/io/stream.h>
+#include <vsg/state/ImageInfo.h>
 #include <vsg/utils/CommandLine.h>
 #include <vsg/utils/CoordinateSpace.h>
-#include <vsg/state/ImageInfo.h>
 
 #include <cstring>
 
@@ -96,7 +96,7 @@ namespace
             {
                 const auto data = ddsFile.GetImageData(i, j);
 
-                if (j==0)
+                if (j == 0)
                 {
                     (*mipmapItr++).set(data->m_width, data->m_height, data->m_depth, offset);
                 }

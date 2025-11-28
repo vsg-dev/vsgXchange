@@ -46,7 +46,6 @@ namespace vsgXchange
 
         std::set<vsg::Path> _supportedExtensions;
 
-
         template<typename T>
         vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, vsg::ref_ptr<vsg::MipmapLayout> mipmapLayout = {}) const
         {
@@ -62,7 +61,6 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Data> createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties properties, int valueSize, vsg::ref_ptr<vsg::MipmapLayout> mipmapLayout = {}) const;
         vsg::ref_ptr<vsg::Data> readKtx(ktxTexture* texture, const vsg::Path& filename) const;
         vsg::ref_ptr<vsg::Data> readKtx2(ktxTexture2* texture, const vsg::Path& filename) const;
-
 
         struct Face
         {
@@ -85,14 +83,11 @@ namespace vsgXchange
         };
 
         static KTX_error_code imageIterator(int miplevel, int face, int width, int height, int depth, ktx_uint64_t faceLodSize, void* pixels, void* userdata);
-
     };
 
 } // namespace vsgXchange
 
-
 using namespace vsgXchange;
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -150,15 +145,14 @@ KTX_error_code ktx::Implementation::imageIterator(int miplevel, int face, int wi
 
 vsg::ref_ptr<vsg::Data> ktx::Implementation::createImage(uint32_t arrayDimensions, uint32_t width, uint32_t height, uint32_t depth, uint8_t* data, vsg::Data::Properties layout, int valueSize, vsg::ref_ptr<vsg::MipmapLayout> mipmapLayout) const
 {
-   // create the VSG compressed image objects
+    // create the VSG compressed image objects
     if (layout.blockWidth != 1 || layout.blockHeight != 1 || layout.blockDepth != 1)
     {
         switch (valueSize)
         {
         case 8: return createImage<vsg::block64>(arrayDimensions, width, height, depth, data, layout, mipmapLayout);
         case 16: return createImage<vsg::block128>(arrayDimensions, width, height, depth, data, layout, mipmapLayout);
-        default:
-        {
+        default: {
             vsg::warn("vsgXchange::ktx : Unsupported compressed format, valueSize = ", valueSize);
             return {};
         }
@@ -230,7 +224,7 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     uint32_t depth = texture->baseDepth;
     const auto format = ktxTexture_GetVkFormat(texture);
 
-    if (format==VK_FORMAT_UNDEFINED)
+    if (format == VK_FORMAT_UNDEFINED)
     {
         vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
         return {};
@@ -247,7 +241,6 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
     vsg::info("   format = ", format);
 #endif
 
-
     const auto numMipMaps = texture->numLevels;
     const auto numLayers = texture->numLayers;
 
@@ -262,23 +255,23 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
 
     layout.mipLevels = numMipMaps;
     layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
-                                        ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
-                                        ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
+                                         ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
+                                         ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
 
     uint32_t valueSize = formatTraits.size;
 
-    width = (width+layout.blockWidth-1)/layout.blockWidth;
-    height = (height+layout.blockHeight-1)/layout.blockHeight;
-    depth = (depth+layout.blockDepth-1)/layout.blockDepth;
+    width = (width + layout.blockWidth - 1) / layout.blockWidth;
+    height = (height + layout.blockHeight - 1) / layout.blockHeight;
+    depth = (depth + layout.blockDepth - 1) / layout.blockDepth;
 
     Mipmaps mipmaps;
     ktxTexture_IterateLevelFaces(texture, imageIterator, &mipmaps);
 
     // compute the textureSize.
     ktx_uint64_t textureSize = 0;
-    for(auto& [level, mipmap] : mipmaps.mipmaps)
+    for (auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        for(auto& [face, faceData] : mipmap.faces)
+        for (auto& [face, faceData] : mipmap.faces)
         {
             textureSize += faceData.faceLodSize;
         }
@@ -291,11 +284,11 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx(ktxTexture* texture, const 
 
     auto mipmapLayout = vsg::MipmapLayout::create(mipmaps.mipmaps.size());
 
-    for(auto& [level, mipmap] : mipmaps.mipmaps)
+    for (auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
         mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, static_cast<uint32_t>(offset)));
-        for(auto& [face, faceData] : mipmap.faces)
+        for (auto& [face, faceData] : mipmap.faces)
         {
             std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
             offset += faceData.faceLodSize;
@@ -369,13 +362,13 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
     {
         ktx_transcode_fmt_e fmt = KTX_TTF_RGBA32; // TODO value?
 #if 1
-        switch(numComponents)
+        switch (numComponents)
         {
-            case(1): fmt = KTX_TTF_BC4_R; break;
-            case(2): fmt = KTX_TTF_BC5_RG; break;
-            case(3): fmt = KTX_TTF_BC1_RGB; break; // KTX_TTF_ETC1_RGB?
-            case(4):
-            default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
+        case (1): fmt = KTX_TTF_BC4_R; break;
+        case (2): fmt = KTX_TTF_BC5_RG; break;
+        case (3): fmt = KTX_TTF_BC1_RGB; break; // KTX_TTF_ETC1_RGB?
+        case (4):
+        default: fmt = KTX_TTF_BC7_RGBA; break; // KTX_TTF_ETC2_RGBA?
         }
 #endif
 
@@ -386,12 +379,11 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
             vsg::warn("vsgXchange::ktx : unabled to transcode ", filename, ", error_code = ", ktxErrorString(error_code));
             return {};
         }
-
     }
 
     // see ~/3rdParty/cesium-native/CesiumGltfReader/src/ImageDecoder.cpp
 
-    if (texture->vkFormat==VK_FORMAT_UNDEFINED)
+    if (texture->vkFormat == VK_FORMAT_UNDEFINED)
     {
         vsg::warn("vsgXchange::ktx : unabled to use ", filename, " due to incompatible vkFormat.");
         return {};
@@ -402,9 +394,9 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     auto formatTraits = vsg::getFormatTraits(format);
 
-    width = (width+formatTraits.blockWidth-1)/formatTraits.blockWidth;
-    height = (height+formatTraits.blockHeight-1)/formatTraits.blockHeight;
-    depth = (depth+formatTraits.blockDepth-1)/formatTraits.blockDepth;
+    width = (width + formatTraits.blockWidth - 1) / formatTraits.blockWidth;
+    height = (height + formatTraits.blockHeight - 1) / formatTraits.blockHeight;
+    depth = (depth + formatTraits.blockDepth - 1) / formatTraits.blockDepth;
 
     uint32_t numMipMaps = texture->numLevels;
 
@@ -417,11 +409,10 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     layout.mipLevels = numMipMaps;
     layout.origin = static_cast<uint8_t>(((texture->orientation.x == KTX_ORIENT_X_RIGHT) ? 0 : 1) |
-                                        ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
-                                        ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
+                                         ((texture->orientation.y == KTX_ORIENT_Y_DOWN) ? 0 : 2) |
+                                         ((texture->orientation.z == KTX_ORIENT_Z_OUT) ? 0 : 4));
 
     uint32_t valueSize = formatTraits.size;
-
 
     auto texture1 = ktxTexture(texture);
     Mipmaps mipmaps;
@@ -430,9 +421,9 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     // compute the textureSize.
     ktx_uint64_t textureSize = 0;
-    for(auto& [level, mipmap] : mipmaps.mipmaps)
+    for (auto& [level, mipmap] : mipmaps.mipmaps)
     {
-        for(auto& [face, faceData] : mipmap.faces)
+        for (auto& [face, faceData] : mipmap.faces)
         {
             textureSize += faceData.faceLodSize;
         }
@@ -445,11 +436,11 @@ vsg::ref_ptr<vsg::Data> ktx::Implementation::readKtx2(ktxTexture2* texture, cons
 
     auto mipmapLayout = vsg::MipmapLayout::create(mipmaps.mipmaps.size());
 
-    for(auto& [level, mipmap] : mipmaps.mipmaps)
+    for (auto& [level, mipmap] : mipmaps.mipmaps)
     {
         const auto& firstFace = mipmap.faces.begin()->second;
         mipmapLayout->set(level, vsg::uivec4(firstFace.width, firstFace.height, firstFace.depth, static_cast<uint32_t>(offset)));
-        for(auto& [face, faceData] : mipmap.faces)
+        for (auto& [face, faceData] : mipmap.faces)
         {
 
             std::memcpy(copiedData + offset, faceData.pixels, faceData.faceLodSize);
@@ -509,12 +500,11 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(const vsg::Path& filename, v
     auto file = vsg::fopen(filenameToUse, "rb");
     if (!file) return {};
 
-
     KTX_error_code result = KTX_SUCCESS;
     vsg::ref_ptr<vsg::Data> data;
     try
     {
-        if (vsg::fileExtension(filename)==".ktx")
+        if (vsg::fileExtension(filename) == ".ktx")
         {
             ktxTexture* texture = nullptr;
             result = ktxTexture_CreateFromStdioStream(file, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture);
