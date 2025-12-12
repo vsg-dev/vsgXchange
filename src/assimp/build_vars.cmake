@@ -1,7 +1,7 @@
 # add assimp if available
-find_package(assimp 5.1 QUIET)
+find_package(assimp QUIET)
 
-if(assimp_FOUND)
+if(assimp_FOUND AND ${assimp_VERSION} VERSION_GREATER_EQUAL "5.1")
     OPTION(vsgXchange_assimp "Optional Assimp support provided" ON)
 endif()
 
