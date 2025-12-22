@@ -295,6 +295,8 @@ namespace vsgXchange
             double pixelErrorToScreenHeightRatio = 0.016; // 0.016 looks to replicate vsgCs worldviewer transition distances
             uint32_t preLoadLevel = 1;
 
+            virtual void assignResourceHints(vsg::ref_ptr<vsg::Node> node);
+
             virtual vsg::dmat4 createMatrix(const std::vector<double>& values);
             virtual vsg::dsphere createBound(vsg::ref_ptr<BoundingVolume> boundingVolume);
             virtual vsg::ref_ptr<vsg::Node> readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine);

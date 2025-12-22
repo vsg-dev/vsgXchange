@@ -37,6 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/VertexIndexDraw.h>
 #include <vsg/state/ViewDependentState.h>
 #include <vsg/state/material.h>
+#include <vsg/vk/ResourceRequirements.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/utils/ComputeBounds.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
@@ -183,10 +184,13 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         }
     }
 
-    if (group->children.size() == 1)
-        return group->children[0];
-    else
-        return group;
+    vsg::ref_ptr<vsg::Node> root;
+    if (group->children.size() == 1) root = group->children[0];
+    else root = group;
+
+    assignResourceHints(root);
+
+    return root;
 }
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
@@ -356,5 +360,16 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     vsg_tileset->setObject("EllipsoidModel", vsg::EllipsoidModel::create());
 
+    assignResourceHints(vsg_tileset);
+
     return vsg_tileset;
+}
+
+void Tiles3D::SceneGraphBuilder::assignResourceHints(vsg::ref_ptr<vsg::Node> node)
+{
+    vsg::CollectResourceRequirements collectRequirements;
+    node->accept(collectRequirements);
+
+    auto resourceHints = collectRequirements.createResourceHints();
+    node->setObject("ResourceHints", resourceHints);
 }
