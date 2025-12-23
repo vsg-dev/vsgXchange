@@ -676,18 +676,6 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
         // https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/figures/gltfOverview-2.0.0d.png
         convertedMaterial.assignDescriptor("jointMatrices", jointSampler->jointMatrices);
     }
-
-    if (sharedObjects)
-    {
-        for (auto& ds : convertedMaterial.descriptorSets)
-        {
-            if (ds)
-            {
-                sharedObjects->share(ds->descriptors);
-                sharedObjects->share(ds);
-            }
-        }
-    }
 }
 
 vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices)
