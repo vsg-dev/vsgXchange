@@ -206,6 +206,13 @@ vsg::ref_ptr<vsg::Object> curl::Implementation::read(const vsg::Path& filename, 
     curl_easy_setopt(_curl, CURLOPT_URL, filename.string().c_str());
     curl_easy_setopt(_curl, CURLOPT_WRITEDATA, (void*)&sstr);
 
+#if CURL_AT_LEAST_VERSION(7, 21, 6)
+    // "" means any encoding curl supports
+    curl_easy_setopt(_curl, CURLOPT_ACCEPT_ENCODING, "");
+#else
+    curl_easy_setopt(_curl, CURLOPT_ENCODING, "");
+#endif
+
     uint32_t sslOptions = 0;
 #if defined(_WIN32) && defined(CURLSSLOPT_NATIVE_CA)
     sslOptions |= CURLSSLOPT_NATIVE_CA;
