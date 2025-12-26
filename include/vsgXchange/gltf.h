@@ -59,6 +59,7 @@ namespace vsgXchange
         static constexpr const char* disable_gltf = "disable_gltf";       /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
         static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
         static constexpr const char* maxAnisotropy = "maxAnisotropy";     /// float, default setting of vsg::Sampler::maxAnisotropy to use.
+        static constexpr const char* skip_nodes = "skip_nodes";           /// bool, skip nodes which have no transform and only one child, defaults to true
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
