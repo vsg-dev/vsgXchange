@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #include <vsg/all.h>
 #include <vsgXchange/models.h>
+#include <vsgXchange/gltf.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -42,31 +43,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace vsgXchange
 {
-    enum class TextureFormat
-    {
-        native,
-        vsgt,
-        vsgb
-    };
-
-    // this needs to be defined before 'vsg/commandline.h' has been included
-    inline std::istream& operator>>(std::istream& is, TextureFormat& textureFormat)
-    {
-        std::string value;
-        is >> value;
-
-        if (value == "native")
-            textureFormat = TextureFormat::native;
-        else if (value == "vsgb")
-            textureFormat = TextureFormat::vsgb;
-        else if ((value == "vsgt") || (value == "vsga"))
-            textureFormat = TextureFormat::vsgt;
-        else
-            textureFormat = TextureFormat::native;
-
-        return is;
-    }
-
     struct SamplerData
     {
         vsg::ref_ptr<vsg::Sampler> sampler;
