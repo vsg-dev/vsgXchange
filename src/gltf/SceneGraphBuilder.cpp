@@ -1559,11 +1559,11 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     else
     {
         if (gltf_node->camera)
-            vsg_node = vsg_cameras[gltf_node->camera.value];
+            return vsg_cameras[gltf_node->camera.value];
         else if (vsg_mesh)
-            vsg_node = vsg_mesh;
+            return vsg_mesh;
         else if (vsg_light)
-            vsg_node = vsg_light;
+            return vsg_light;
         else
             vsg_node = vsg::Group::create(); // TODO: single child so should this just point to the child?
     }
