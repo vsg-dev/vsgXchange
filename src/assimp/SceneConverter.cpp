@@ -452,35 +452,30 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
 
         if (externalTextures && externalObjects)
         {
-            // calculate the texture filename
-            switch (externalTextureFormat)
+            if (samplerImage.data && externalTextureFilename)
             {
-            case TextureFormat::native:
-                break; // nothing to do
-            case TextureFormat::vsgt:
-                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgt");
-                break;
-            case TextureFormat::vsgb:
-                externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(".vsgb");
-                break;
-            }
-
-            // actually write out the texture.. this need only be done once per texture!
-            if (externalObjects->entries.count(externalTextureFilename) == 0)
-            {
-                switch (externalTextureFormat)
+                bool writeImage = false;
+                if (!externalTextureFormat.empty() && externalTextureFormat != "native")
                 {
-                case TextureFormat::native:
-                    break; // nothing to do
-                case TextureFormat::vsgt:
-                    vsg::write(samplerImage.data, externalTextureFilename, options);
-                    break;
-                case TextureFormat::vsgb:
-                    vsg::write(samplerImage.data, externalTextureFilename, options);
-                    break;
+                    if (externalTextureFormat[0] == '.')
+                    {
+                        externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat(externalTextureFormat);
+                        writeImage = true;
+                    }
+                    else
+                    {
+                        externalTextureFilename = vsg::removeExtension(externalTextureFilename).concat("."+externalTextureFormat);
+                        writeImage = true;
+                    }
                 }
 
-                externalObjects->add(externalTextureFilename, samplerImage.data);
+                // actually write out the texture.. this need only be done once per texture!
+                if (externalObjects->entries.count(externalTextureFilename) == 0)
+                {
+                    if (writeImage) vsg::write(samplerImage.data, externalTextureFilename, options);
+
+                    externalObjects->add(externalTextureFilename, samplerImage.data);
+                }
             }
         }
 
@@ -1011,8 +1006,8 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
     options = in_options;
     discardEmptyNodes = vsg::value<bool>(true, assimp::discard_empty_nodes, options);
     printAssimp = vsg::value<int>(0, assimp::print_assimp, options);
-    externalTextures = vsg::value<bool>(false, assimp::external_textures, options);
-    externalTextureFormat = vsg::value<TextureFormat>(TextureFormat::native, assimp::external_texture_format, options);
+    externalTextures = vsg::value(false, assimp::external_textures, options);
+    externalTextureFormat = vsg::value(externalTextureFormat, assimp::external_texture_format, options);
     culling = vsg::value<bool>(true, assimp::culling, options);
     topEmptyTransform = {};
 

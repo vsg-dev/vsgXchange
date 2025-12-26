@@ -1578,8 +1578,8 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         vsg::debug("Completed secondary single-threaded read/decode");
     }
 
-    externalTextures = vsg::value<bool>(externalTextures, gltf::external_textures, options);
-    externalTextureFormat = vsg::value<TextureFormat>(externalTextureFormat, gltf::external_texture_format, options);
+    externalTextures = vsg::value(externalTextures, gltf::external_textures, options);
+    externalTextureFormat = vsg::value(externalTextureFormat, gltf::external_texture_format, options);
     if (externalTextures && !externalObjects) externalObjects = vsg::External::create();
 
     if (externalTextures && externalObjects)
@@ -1588,33 +1588,25 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
         {
             if (image->data && image->filename)
             {
-                // calculate the texture filename
-                switch (externalTextureFormat)
+                bool writeImage = false;
+                if (!externalTextureFormat.empty() && externalTextureFormat != "native")
                 {
-                case TextureFormat::native:
-                    break; // nothing to do
-                case TextureFormat::vsgt:
-                    image->filename = vsg::removeExtension(image->filename).concat(".vsgt");
-                    break;
-                case TextureFormat::vsgb:
-                    image->filename = vsg::removeExtension(image->filename).concat(".vsgb");
-                    break;
+                    if (externalTextureFormat[0] == '.')
+                    {
+                        image->filename = vsg::removeExtension(image->filename).concat(externalTextureFormat);
+                        writeImage = true;
+                    }
+                    else
+                    {
+                        image->filename = vsg::removeExtension(image->filename).concat("."+externalTextureFormat);
+                        writeImage = true;
+                    }
                 }
 
                 // actually write out the texture.. this need only be done once per texture!
                 if (externalObjects->entries.count(image->filename) == 0)
                 {
-                    switch (externalTextureFormat)
-                    {
-                    case TextureFormat::native:
-                        break; // nothing to do
-                    case TextureFormat::vsgt:
-                        vsg::write(image->data, image->filename, options);
-                        break;
-                    case TextureFormat::vsgb:
-                        vsg::write(image->data, image->filename, options);
-                        break;
-                    }
+                    if (writeImage) vsg::write(image->data, image->filename, options);
 
                     externalObjects->add(image->filename, image->data);
                 }
@@ -1905,7 +1897,7 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
     result = arguments.readAndAssign<bool>(gltf::clone_accessors, &options) || result;
     result = arguments.readAndAssign<float>(gltf::maxAnisotropy, &options) || result;
     result = arguments.readAndAssign<bool>(gltf::external_textures, &options) || result;
-    result = arguments.readAndAssign<TextureFormat>(gltf::external_texture_format, &options) || result;
+    result = arguments.readAndAssign<std::string>(gltf::external_texture_format, &options) || result;
     return result;
 }
 
@@ -1921,7 +1913,7 @@ bool gltf::getFeatures(Features& features) const
     features.optionNameTypeMap[gltf::clone_accessors] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::maxAnisotropy] = vsg::type_name<float>();
     features.optionNameTypeMap[gltf::external_textures] = vsg::type_name<float>();
-    features.optionNameTypeMap[gltf::external_texture_format] = vsg::type_name<TextureFormat>();
+    features.optionNameTypeMap[gltf::external_texture_format] = vsg::type_name<std::string>();
 
     return true;
 }

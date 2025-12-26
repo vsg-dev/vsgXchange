@@ -56,7 +56,7 @@ namespace vsgXchange
         static constexpr const char* discard_empty_nodes = "discard_empty_nodes";         /// bool
         static constexpr const char* print_assimp = "print_assimp";                       /// int
         static constexpr const char* external_textures = "external_textures";             /// bool
-        static constexpr const char* external_texture_format = "external_texture_format"; /// TextureFormat enum
+        static constexpr const char* external_texture_format = "external_texture_format"; /// string file extension such as .png, .dds, .vsgb, .vsgt or blank to use original file extension
         static constexpr const char* culling = "culling";                                 /// bool, insert cull nodes, defaults to true
         static constexpr const char* vertex_color_space = "vertex_color_space";           /// CoordinateSpace {sRGB or LINEAR} to assume when reading vertex colors
         static constexpr const char* material_color_space = "material_color_space";       /// CoordinateSpace {sRGB or LINEAR} to assume when reading materials colors

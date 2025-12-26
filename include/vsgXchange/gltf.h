@@ -35,31 +35,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace vsgXchange
 {
-    enum class TextureFormat
-    {
-        native,
-        vsgt,
-        vsgb
-    };
-
-    // this needs to be defined before 'vsg/commandline.h' has been included
-    inline std::istream& operator>>(std::istream& is, TextureFormat& textureFormat)
-    {
-        std::string value;
-        is >> value;
-
-        if (value == "native")
-            textureFormat = TextureFormat::native;
-        else if (value == "vsgb")
-            textureFormat = TextureFormat::vsgb;
-        else if ((value == "vsgt") || (value == "vsga"))
-            textureFormat = TextureFormat::vsgt;
-        else
-            textureFormat = TextureFormat::native;
-
-        return is;
-    }
-
     /// gltf ReaderWriter
     class VSGXCHANGE_DECLSPEC gltf : public vsg::Inherit<vsg::ReaderWriter, gltf>
     {
@@ -85,7 +60,7 @@ namespace vsgXchange
         static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
         static constexpr const char* maxAnisotropy = "maxAnisotropy";     /// float, default setting of vsg::Sampler::maxAnisotropy to use.
         static constexpr const char* external_textures = "external_textures";             /// bool
-        static constexpr const char* external_texture_format = "external_texture_format"; /// TextureFormat enum
+        static constexpr const char* external_texture_format = "external_texture_format"; /// string file extension such as .png, .dds, .vsgb, .vsgt or blank to use original file extension
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -656,7 +631,7 @@ namespace vsgXchange
             vsg::ObjectsSchema<Skins> skins;
 
             bool externalTextures = false;
-            TextureFormat externalTextureFormat = TextureFormat::native;
+            std::string externalTextureFormat = "native";
             vsg::ref_ptr<vsg::External> externalObjects;
 
             void read_array(vsg::JSONParser& parser, const std::string_view& property) override;

@@ -84,7 +84,7 @@ bool assimp::getFeatures(Features& features) const
     features.optionNameTypeMap[assimp::discard_empty_nodes] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::print_assimp] = vsg::type_name<int>();
     features.optionNameTypeMap[assimp::external_textures] = vsg::type_name<bool>();
-    features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<TextureFormat>();
+    features.optionNameTypeMap[assimp::external_texture_format] = vsg::type_name<std::string>();
     features.optionNameTypeMap[assimp::culling] = vsg::type_name<bool>();
     features.optionNameTypeMap[assimp::vertex_color_space] = vsg::type_name<vsg::CoordinateSpace>();
     features.optionNameTypeMap[assimp::material_color_space] = vsg::type_name<vsg::CoordinateSpace>();
@@ -101,7 +101,7 @@ bool assimp::readOptions(vsg::Options& options, vsg::CommandLine& arguments) con
     result = arguments.readAndAssign<bool>(assimp::discard_empty_nodes, &options) || result;
     result = arguments.readAndAssign<int>(assimp::print_assimp, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::external_textures, &options) || result;
-    result = arguments.readAndAssign<TextureFormat>(assimp::external_texture_format, &options) || result;
+    result = arguments.readAndAssign<std::string>(assimp::external_texture_format, &options) || result;
     result = arguments.readAndAssign<bool>(assimp::culling, &options) || result;
     result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::vertex_color_space, &options) || result;
     result = arguments.readAndAssign<vsg::CoordinateSpace>(assimp::material_color_space, &options) || result;

@@ -113,7 +113,7 @@ namespace vsgXchange
         bool discardEmptyNodes = false;
         int printAssimp = 0;
         bool externalTextures = false;
-        TextureFormat externalTextureFormat = TextureFormat::native;
+        std::string externalTextureFormat = "native";
         bool culling = true;
 
         // set for the file format being read.
@@ -232,5 +232,3 @@ namespace vsgXchange
         vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
     };
 } // namespace vsgXchange
-
-EVSG_type_name(vsgXchange::TextureFormat)
