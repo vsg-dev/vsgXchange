@@ -1546,7 +1546,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
 
         vsg_node = transform;
     }
-    else if ((numChildren > 1) || (vsg_mesh && vsg_mesh->getObject("name") && (!gltf_node->name.empty())))
+    else if (numChildren > 1)
     {
         auto group = vsg::Group::create();
 
