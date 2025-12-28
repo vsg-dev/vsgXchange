@@ -90,6 +90,8 @@ namespace vsgXchange
             vsg::ref_ptr<Extensions> extensions;
             vsg::ref_ptr<Extras> extras;
 
+            virtual bool requireMetaData() const { return extras.valid(); }
+
             void report(vsg::LogOutput& output);
 
             void read_object(vsg::JSONParser& parser, const std::string_view& property) override;
@@ -110,6 +112,8 @@ namespace vsgXchange
         struct VSGXCHANGE_DECLSPEC NameExtensionsExtras : public vsg::Inherit<ExtensionsExtras, NameExtensionsExtras>
         {
             std::string name;
+
+            bool requireMetaData() const override { return !name.empty() || extras.valid(); }
 
             void report(vsg::LogOutput& output);
 
