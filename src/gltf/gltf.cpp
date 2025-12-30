@@ -1435,7 +1435,7 @@ void gltf::glTF::resolveURIs(vsg::ref_ptr<const vsg::Options> options)
                         data = vsg::read_cast<vsg::Data>(reinterpret_cast<const uint8_t*>(decodedData->dataPointer()), decodedData->dataSize(), local_options);
                         if (data)
                         {
-                            vsg::info("read decoded data [", decodedData->dataSize(), ", ", extensionHint, "] dimensions = {", data->width(), ", ", data->height(), "}");
+                            vsg::debug("read decoded data [", decodedData->dataSize(), ", ", extensionHint, "] dimensions = {", data->width(), ", ", data->height(), "}");
                         }
                         else
                         {
