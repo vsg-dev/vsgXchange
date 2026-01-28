@@ -200,12 +200,6 @@ namespace
             std::cerr << "dds::readCompressed() Format is not supported yet: " << (uint32_t)targetFormat << std::endl;
             break;
         }
-#if 0
-        if (vsg_data && mipmapLayout)
-        {
-            vsg_data->setObject("mipmapLayout", mipmapLayout);
-        }
-#endif
 
         return vsg_data;
     }
@@ -309,12 +303,6 @@ namespace
                     std::cerr << "dds::readDds() Num of dimension (" << (uint32_t)dim << ")  not supported." << std::endl;
                     break;
                 }
-#if 0
-                if (vsg_data && mipmapLayout)
-                {
-                    vsg_data->setObject("mipmapLayout", mipmapLayout);
-                }
-#endif
             }
 
             if (options && vsg_data) process_image_format(options, vsg_data->properties.format);
