@@ -806,6 +806,31 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
         std::memcpy(normals->dataPointer(), mesh->mNormals, mesh->mNumVertices * 12);
         config->assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_VERTEX, normals);
     }
+    else if (mesh->mNumFaces > 0)
+    {
+        auto normals = vsg::vec3Array::create(mesh->mNumVertices);
+        for (unsigned int i=0; i < mesh->mNumFaces; i++)
+        {
+            for (unsigned int j=2; j < mesh->mFaces[j].mNumIndices; j++)
+            {
+                int faceId0 = mesh->mFaces[i].mIndices[j-2];
+                int faceId1 = mesh->mFaces[i].mIndices[j-1];
+                int faceId2 = mesh->mFaces[i].mIndices[j];
+
+                vsg::vec3 edge1 = vertices->at(faceId1) - vertices->at(faceId0);
+                vsg::vec3 edge2 = vertices->at(faceId2) - vertices->at(faceId0);
+                vsg::vec3 faceNormal = vsg::cross(edge1, edge2);
+
+                normals->set(faceId0, normals->at(faceId0) + faceNormal);
+                normals->set(faceId1, normals->at(faceId1) + faceNormal);
+                normals->set(faceId2, normals->at(faceId2) + faceNormal);
+            }
+        }
+        for (unsigned int i=0; i < mesh->mNumVertices; i++)
+            normals->set(i, vsg::normalize(normals->at(i)));
+
+        config->assignArray(vertexArrays, "vsg_Normal", VK_VERTEX_INPUT_RATE_VERTEX, normals);
+    }
     else
     {
         auto normal = vsg::vec3Value::create(vsg::vec3(0.0f, 0.0f, 1.0f));
