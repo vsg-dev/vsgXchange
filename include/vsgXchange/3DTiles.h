@@ -292,10 +292,12 @@ namespace vsgXchange
 
             vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel = vsg::EllipsoidModel::create();
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
-            double pixelErrorToScreenHeightRatio = 0.016; // 0.016 looks to replicate vsgCs worldviewer transition distances
+            double pixelErrorToScreenHeightRatio = 16.0/1024.0; // 16 pixel error on a 1024 height viewport.
             uint32_t preLoadLevel = 1;
 
             virtual void assignResourceHints(vsg::ref_ptr<vsg::Node> node);
+
+            virtual double computeScreenHeightRatio(const vsg::dsphere& bound, double geometricError) const;
 
             virtual vsg::dmat4 createMatrix(const std::vector<double>& values);
             virtual vsg::dsphere createBound(vsg::ref_ptr<BoundingVolume> boundingVolume);

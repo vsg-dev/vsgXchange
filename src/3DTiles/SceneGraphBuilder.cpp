@@ -195,18 +195,20 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     return root;
 }
 
+double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& bound, double geometricError) const
+{
+    if (geometricError <= 0.0) return 0.001;
+    if (geometricError >= std::numeric_limits<double>::max()) return 0.001;
+
+#if 1
+    return (geometricError / bound.radius) * (512.0*pixelErrorToScreenHeightRatio);
+#else
+    return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
+#endif
+}
+
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
-#if 0
-    vsg::info("Tiles3D::createTile() {");
-    vsg::info("    boundingVolume = ", tile->boundingVolume);
-    vsg::info("    viewerRequestVolume = ", tile->viewerRequestVolume);
-    vsg::info("    tile->content = ", tile->geometricError);
-    vsg::info("    refine = ", tile->refine);
-    vsg::info("    transform = ", tile->transform.values);
-    vsg::info("    content = ", tile->content);
-#endif
-
     vsg::dsphere bound = createBound(tile->boundingVolume);
 
     vsg::ref_ptr<vsg::Node> local_subgraph;
@@ -224,6 +226,19 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     {
         vsg_transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
     }
+
+#if 0
+    vsg::info("Tiles3D::createTile() {");
+    vsg::info("    boundingVolume = ", tile->boundingVolume);
+    vsg::info("    viewerRequestVolume = ", tile->viewerRequestVolume);
+    vsg::info("    tile->content = ", tile->geometricError);
+    vsg::info("    refine = ", tile->refine);
+    vsg::info("    transform = ", tile->transform.values);
+    vsg::info("    content = ", tile->content);
+    vsg::info("    bound = ", bound);
+    vsg::info("    local_subgraph = ", local_subgraph);
+#endif
+
 
     bool usePagedLOD = level > preLoadLevel;
 
@@ -253,15 +268,9 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     }
     else if (usePagedLOD)
     {
-        double minimumScreenHeightRatio = 0.5;
-        if (tile->geometricError > 0.0)
-        {
-            minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
-        }
-
         auto plod = vsg::PagedLOD::create();
         plod->bound = bound;
-        plod->children[0] = vsg::PagedLOD::Child{minimumScreenHeightRatio, {}};
+        plod->children[0] = vsg::PagedLOD::Child{computeScreenHeightRatio(bound, tile->geometricError), {}};
         plod->children[1] = vsg::PagedLOD::Child{0.0, local_subgraph};
 
         plod->filename = "children.tiles";
@@ -279,15 +288,9 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     {
         auto highres_subgraph = readTileChildren(tile, level, refine);
 
-        double minimumScreenHeightRatio = 0.5;
-        if (tile->geometricError > 0.0)
-        {
-            minimumScreenHeightRatio = (bound.radius / tile->geometricError) * pixelErrorToScreenHeightRatio;
-        }
-
         auto lod = vsg::LOD::create();
         lod->bound = bound;
-        lod->addChild(vsg::LOD::Child{minimumScreenHeightRatio, highres_subgraph});
+        lod->addChild(vsg::LOD::Child{computeScreenHeightRatio(bound, tile->geometricError), highres_subgraph});
         if (local_subgraph) lod->addChild(vsg::LOD::Child{0.0, local_subgraph});
 
         if (vsg_transform)
