@@ -202,11 +202,7 @@ double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& 
     if (geometricError <= 0.0) return 0.001;
     if (geometricError >= std::numeric_limits<double>::max()) return 0.001;
 
-#if 0
-    return (geometricError / bound.radius) * (512.0*pixelErrorToScreenHeightRatio);
-#else
     return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
-#endif
 }
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine, double inherited_geometricError)
