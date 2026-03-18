@@ -130,19 +130,21 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
             vsg::ref_ptr<vsg::Node>& subgraph;
             uint32_t level;
             std::string rto_inherited_refine;
+            double rto_inherited_geometricError;
             vsg::ref_ptr<vsg::Latch> latch;
 
-            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, vsg::ref_ptr<vsg::Latch> in_latch) :
+            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, double in_inherited_geometricError, vsg::ref_ptr<vsg::Latch> in_latch) :
                 builder(in_builder),
                 tileToCreate(in_tile),
                 subgraph(in_subgraph),
                 level(in_level),
                 rto_inherited_refine(in_inherited_refine),
+                rto_inherited_geometricError(in_inherited_geometricError),
                 latch(in_latch) {}
 
             void run() override
             {
-                subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine);
+                subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine, rto_inherited_geometricError);
                 // vsg::info("Tiles3D::SceneGraphBuilder::readTileChildren() createTile() ", subgraph);
                 if (latch) latch->count_down();
             }
@@ -154,7 +156,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         auto itr = children.begin();
         for (auto child : tile->children.values)
         {
-            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level + 1, refine, latch), vsg::INSERT_FRONT);
+            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level + 1, refine, tile->geometricError, latch), vsg::INSERT_FRONT);
         }
 
         // use this thread to read the files as well
@@ -177,7 +179,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     {
         for (auto child : tile->children.values)
         {
-            if (auto vsg_child = createTile(child, level + 1, refine))
+            if (auto vsg_child = createTile(child, level + 1, refine, tile->geometricError))
             {
                 group->addChild(vsg_child);
             }
@@ -200,14 +202,14 @@ double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& 
     if (geometricError <= 0.0) return 0.001;
     if (geometricError >= std::numeric_limits<double>::max()) return 0.001;
 
-#if 1
+#if 0
     return (geometricError / bound.radius) * (512.0*pixelErrorToScreenHeightRatio);
 #else
     return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
 #endif
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine, double inherited_geometricError)
 {
     vsg::dsphere bound = createBound(tile->boundingVolume);
 
@@ -231,18 +233,20 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     vsg::info("Tiles3D::createTile() {");
     vsg::info("    boundingVolume = ", tile->boundingVolume);
     vsg::info("    viewerRequestVolume = ", tile->viewerRequestVolume);
-    vsg::info("    tile->content = ", tile->geometricError);
+    vsg::info("    geometricError = ", tile->geometricError);
     vsg::info("    refine = ", tile->refine);
     vsg::info("    transform = ", tile->transform.values);
-    vsg::info("    content = ", tile->content);
     vsg::info("    bound = ", bound);
     vsg::info("    local_subgraph = ", local_subgraph);
+    if (tile->content) vsg::info("    tile->content->uri = ", tile->content->uri, ", ", tile->content->boundingVolume);
+    else vsg::info("    content = ", tile->content);
 #endif
 
 
     bool usePagedLOD = level > preLoadLevel;
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
+    double geometricError = inherited_geometricError;// tile->geometricError
 
     if (refine == "ADD" && local_subgraph)
     {
@@ -270,7 +274,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     {
         auto plod = vsg::PagedLOD::create();
         plod->bound = bound;
-        plod->children[0] = vsg::PagedLOD::Child{computeScreenHeightRatio(bound, tile->geometricError), {}};
+        plod->children[0] = vsg::PagedLOD::Child{computeScreenHeightRatio(bound, geometricError), {}};
         plod->children[1] = vsg::PagedLOD::Child{0.0, local_subgraph};
 
         plod->filename = "children.tiles";
@@ -290,7 +294,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
         auto lod = vsg::LOD::create();
         lod->bound = bound;
-        lod->addChild(vsg::LOD::Child{computeScreenHeightRatio(bound, tile->geometricError), highres_subgraph});
+        lod->addChild(vsg::LOD::Child{computeScreenHeightRatio(bound, geometricError), highres_subgraph});
         if (local_subgraph) lod->addChild(vsg::LOD::Child{0.0, local_subgraph});
 
         if (vsg_transform)
@@ -357,7 +361,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     if (tileset->root)
     {
-        if (auto vsg_root = createTile(tileset->root, 0, tileset->root->refine))
+        if (auto vsg_root = createTile(tileset->root, 0, tileset->root->refine, tileset->geometricError))
         {
             vsg_tileset->addChild(vsg_root);
         }
@@ -365,7 +369,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     vsg_tileset->setObject("EllipsoidModel", vsg::EllipsoidModel::create());
 
-    assignResourceHints(vsg_tileset);
+    // assignResourceHints(vsg_tileset);
 
     return vsg_tileset;
 }
