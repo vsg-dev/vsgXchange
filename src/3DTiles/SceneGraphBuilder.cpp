@@ -192,7 +192,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     else
         root = group;
 
-    assignResourceHints(root);
+    // assignResourceHints(root);
 
     return root;
 }
@@ -444,7 +444,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     vsg_tileset->setObject("EllipsoidModel", vsg::EllipsoidModel::create());
 
-    // assignResourceHints(vsg_tileset);
+    assignResourceHints(vsg_tileset);
 
     return vsg_tileset;
 }
