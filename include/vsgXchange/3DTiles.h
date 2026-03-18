@@ -301,7 +301,12 @@ namespace vsgXchange
 
             virtual vsg::dmat4 createMatrix(const std::vector<double>& values);
             virtual vsg::dsphere createBound(vsg::ref_ptr<BoundingVolume> boundingVolume);
+
             virtual vsg::ref_ptr<vsg::Node> readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine);
+
+            virtual bool isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const;
+            virtual vsg::ref_ptr<vsg::Node> createTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level);
+
             virtual vsg::ref_ptr<vsg::Node> createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine, double inherited_geometricError);
             virtual vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options);
         };

@@ -205,8 +205,87 @@ double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& 
     return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
 }
 
+bool Tiles3D::SceneGraphBuilder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const
+{
+    if (tile->children.values.size()==1)
+    {
+        auto& child = tile->children.values[0];
+        if (child->children.values.size()==1)
+        {
+            auto& child_child = child->children.values[0];
+            return child_child->children.values.empty();
+        }
+    }
+    return false;
+}
+
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
+{
+    vsg::ref_ptr<vsg::MatrixTransform> vsg_transform;
+    if (!tile->transform.values.empty())
+    {
+        vsg_transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
+    }
+
+    auto& child = tile->children.values[0];
+    auto& child_child = child->children.values[0];
+
+    vsg::dsphere bound = createBound(tile->boundingVolume);
+    bool usePagedLOD = level > preLoadLevel;
+    if (usePagedLOD)
+    {
+        auto low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
+
+        auto plod = vsg::PagedLOD::create();
+        plod->bound = bound;
+        plod->children[0] = vsg::PagedLOD::Child{computeScreenHeightRatio(bound, child->geometricError), {}};
+        plod->children[1] = vsg::PagedLOD::Child{computeScreenHeightRatio(bound, tile->geometricError), low_res_subgraph};
+        plod->filename = child_child->content->uri;
+        plod->options = options;
+
+        // vsg::info("Triple match: PagedLOD low res = ", child->content->uri, ", high rest = ", child_child->content->uri);
+
+        if (vsg_transform)
+        {
+            vsg_transform->addChild(plod);
+            return vsg_transform;
+        }
+        else
+        {
+            return plod;
+        }
+    }
+    else
+    {
+        auto low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
+        auto high_res_subgraph = vsg::read_cast<vsg::Node>(child_child->content->uri, options);
+
+        auto lod = vsg::LOD::create();
+        lod->bound = bound;
+        lod->addChild(vsg::LOD::Child{computeScreenHeightRatio(bound, child->geometricError), high_res_subgraph});
+        lod->addChild(vsg::LOD::Child{computeScreenHeightRatio(bound, tile->geometricError), low_res_subgraph});
+
+        // vsg::info("Triple match: LOD low res = ", child->content->uri, ", high rest = ", child_child->content->uri);
+
+        if (vsg_transform)
+        {
+            vsg_transform->addChild(lod);
+            return vsg_transform;
+        }
+        else
+        {
+            return lod;
+        }
+    }
+}
+
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine, double inherited_geometricError)
 {
+    if (isTripleNestedTile(tile))
+    {
+        return createTripleNestedTile(tile, level);
+    }
+
     vsg::dsphere bound = createBound(tile->boundingVolume);
 
     vsg::ref_ptr<vsg::Node> local_subgraph;
