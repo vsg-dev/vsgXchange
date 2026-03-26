@@ -282,10 +282,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     vsg::ref_ptr<vsg::Node> local_subgraph;
     if (tile->content && !tile->content->uri.empty())
     {
-        if (auto model = vsg::read_cast<vsg::Node>(tile->content->uri, options))
-        {
-            local_subgraph = model;
-        }
+        local_subgraph = vsg::read_cast<vsg::Node>(tile->content->uri, options);
     }
 
     double tile_screenRatio = 0.001;
