@@ -112,15 +112,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     auto group = vsg::Group::create();
 
     const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
-
-    if (refine == "ADD")
-    {
-        if (auto local_subgraph = tile->getRefObject<vsg::Node>("local_subgraph"))
-        {
-            group->addChild(local_subgraph);
-        }
-    }
-
     if (operationThreads && tile->children.values.size() > 1)
     {
         struct ReadTileOperation : public vsg::Inherit<vsg::Operation, ReadTileOperation>
@@ -320,12 +311,12 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             child_screenRatio = computeScreenHeightRatio(*tile);
 
             auto plod = vsg::PagedLOD::create();
+            plod->filename = "children.tiles";
             plod->bound = createBound(tile->boundingVolume);
             plod->children[0] = vsg::PagedLOD::Child{child_screenRatio, {}};
             plod->children[1] = vsg::PagedLOD::Child{tile_screenRatio, local_subgraph};
             plod->options = load_options;
 
-            plod->filename = "children.tiles";
             node = plod;
         }
     }
