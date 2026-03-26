@@ -256,7 +256,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
 
     if (!node) return {};
 
-    vsg::ref_ptr<vsg::MatrixTransform> vsg_transform;
     if (!tile->transform.values.empty())
     {
         auto transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
