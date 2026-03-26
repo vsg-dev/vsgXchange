@@ -332,7 +332,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             node = plod;
         }
     }
-    else // use LOD to directly manage
+    else // use LOD to directly reference children
     {
         if (addRefinement)
         {
