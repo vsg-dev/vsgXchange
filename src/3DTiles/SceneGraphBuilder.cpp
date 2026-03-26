@@ -123,8 +123,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         }
     }
 
-    double inherited_screenRatio = computeScreenHeightRatio(*tile);
-
     if (operationThreads && tile->children.values.size() > 1)
     {
         struct ReadTileOperation : public vsg::Inherit<vsg::Operation, ReadTileOperation>
@@ -134,21 +132,19 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
             vsg::ref_ptr<vsg::Node>& subgraph;
             uint32_t level;
             std::string rto_inherited_refine;
-            double rto_inherited_screenRatio;
             vsg::ref_ptr<vsg::Latch> latch;
 
-            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, double in_inherited_screenRatio, vsg::ref_ptr<vsg::Latch> in_latch) :
+            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, vsg::ref_ptr<vsg::Latch> in_latch) :
                 builder(in_builder),
                 tileToCreate(in_tile),
                 subgraph(in_subgraph),
                 level(in_level),
                 rto_inherited_refine(in_inherited_refine),
-                rto_inherited_screenRatio(in_inherited_screenRatio),
                 latch(in_latch) {}
 
             void run() override
             {
-                subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine, rto_inherited_screenRatio);
+                subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine);
                 // vsg::info("Tiles3D::SceneGraphBuilder::readTileChildren() createTile() ", subgraph);
                 if (latch) latch->count_down();
             }
@@ -160,7 +156,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
         auto itr = children.begin();
         for (auto child : tile->children.values)
         {
-            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level + 1, refine, inherited_screenRatio, latch), vsg::INSERT_FRONT);
+            operationThreads->add(ReadTileOperation::create(this, child, *itr++, level + 1, refine, latch), vsg::INSERT_FRONT);
         }
 
         // use this thread to read the files as well
@@ -183,7 +179,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     {
         for (auto child : tile->children.values)
         {
-            if (auto vsg_child = createTile(child, level + 1, refine, inherited_screenRatio))
+            if (auto vsg_child = createTile(child, level + 1, refine))
             {
                 group->addChild(vsg_child);
             }
@@ -200,51 +196,12 @@ double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& 
     if (geometricError == 0.0) return 0.0;
     if (geometricError >= std::numeric_limits<double>::max()) return 0.001;
 
-    double h = 1024.0;
-    double theta = vsg::radians(90.0);
-    double s = 2.0 * tan(theta * 0.5) * 3.0;
-
-#if 1
-    return (bound.radius * s) / (geometricError * h);
-#else
-    return (geometricError * h) / bound.radius);
-#endif
+    return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
 }
 
 double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const Tiles3D::Tile& tile) const
 {
     return computeScreenHeightRatio(createBound(tile.boundingVolume), tile.geometricError);
-}
-
-double Tiles3D::SceneGraphBuilder::computeChildScreenHeightRatio(const Tiles3D::Tile& tile) const
-{
-    auto bound = createBound(tile.boundingVolume);
-    double maximum_geometricError = 0.0;
-    double average_screenRatio = 0.0;
-    double maximum_screenRatio = 0.0;
-    double minimum_screenRatio = std::numeric_limits<double>::max();
-    //vsg::info("computeChildScreenHeightRatio(tile)");
-    vsg::ref_ptr<Tiles3D::Tile> min_child;
-    vsg::ref_ptr<Tiles3D::Tile> max_child;
-    for(auto& child : tile.children.values)
-    {
-        double sr = computeScreenHeightRatio(*child);
-        // vsg::info("    child->geometricError = ", child->geometricError, ", screenRatio = ", sr);
-        if (child->geometricError > maximum_geometricError) maximum_geometricError = child->geometricError;
-        if (sr > maximum_screenRatio) { maximum_screenRatio = sr; max_child = child; }
-        if (sr < minimum_screenRatio) { minimum_screenRatio = sr; min_child = child; }
-        average_screenRatio += sr;
-    }
-
-    if (!tile.children.values.empty()) average_screenRatio /= static_cast<double>(tile.children.values.size());
-    double shr = computeScreenHeightRatio(bound, maximum_geometricError);
-
-    vsg::info("computeChildScreenHeightRatio(tile) = ", shr, ", tile.children.values.size() = ", tile.children.values.size(), ", maximum_geometricError = ", maximum_geometricError, ", bound.radius = ", bound.radius, ", minimum_screenRatio = ", minimum_screenRatio, ", maximum_screenRatio = ", maximum_screenRatio, ", average_screenRatio = ", average_screenRatio);
-
-    if (min_child) vsg::info("   min_child in parents scope, screenRatio = ", computeScreenHeightRatio(bound, min_child->geometricError));
-    if (max_child) vsg::info("   max_child in parents scope, screenRatio = ", computeScreenHeightRatio(bound, max_child->geometricError));
-
-    return shr;
 }
 
 bool Tiles3D::SceneGraphBuilder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const
@@ -275,16 +232,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
     double tile_screenRatio = computeScreenHeightRatio(*tile);
     double child_screenRatio = computeScreenHeightRatio(*child);
     vsg::dsphere bound = createBound(tile->boundingVolume);
-
-#if 0
-    vsg::info("createTripleNestedTile() tile = ", tile, ", tile->geometricError = ", tile->geometricError, ", bound.radius = ",bound.radius);
-    vsg::info("    tile->geometricError / bound.radius = ", tile->geometricError / bound.radius);
-    vsg::info("    computeScreenHeightRatio(*tile) = ", computeScreenHeightRatio(*tile));
-    vsg::info("    computeScreenHeightRatio(*child) = ", computeScreenHeightRatio(*child));
-    vsg::info("    computeScreenHeightRatio(*child_child) = ", computeScreenHeightRatio(*child));
-    vsg::info("    tile_screenRatio = ", tile_screenRatio);
-    vsg::info("    child_screenRatio = ", child_screenRatio);
-#endif
 
     bool usePagedLOD = level > preLoadLevel;
     if (usePagedLOD)
@@ -334,17 +281,16 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
     }
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine, double inherited_screenRatio)
+vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
-    const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
-    bool usePagedLOD = level > preLoadLevel;
-    bool addRefinement = refine == "ADD";
-    bool tripleNested = isTripleNestedTile(tile);
-
-    if (tripleNested)
+    if (isTripleNestedTile(tile))
     {
         return createTripleNestedTile(tile, level);
     }
+
+    const std::string refine = tile->refine.empty() ? inherited_refine : tile->refine;
+    bool usePagedLOD = level > preLoadLevel;
+    bool addRefinement = refine == "ADD";
 
     vsg::ref_ptr<vsg::Node> local_subgraph;
     if (tile->content && !tile->content->uri.empty())
@@ -357,6 +303,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
     double tile_screenRatio = 0.001;
     double child_screenRatio = 0.125;
+    double add_screenRatio = 0.001;
 
     vsg::ref_ptr<vsg::Node> node;
     if (tile->children.values.empty()) // leaf Tile
@@ -376,7 +323,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
             auto plod = vsg::PagedLOD::create();
             plod->filename = "children.tiles";
             plod->bound = createBound(tile->boundingVolume);
-            plod->children[0] = vsg::PagedLOD::Child{child_screenRatio, {}};
+            plod->children[0] = vsg::PagedLOD::Child{add_screenRatio, {}};
             plod->options = load_options;
 
             auto group = vsg::Group::create();
@@ -386,6 +333,8 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         }
         else
         {
+            child_screenRatio = computeScreenHeightRatio(*tile);
+
             auto plod = vsg::PagedLOD::create();
             plod->bound = createBound(tile->boundingVolume);
             plod->children[0] = vsg::PagedLOD::Child{child_screenRatio, {}};
@@ -409,11 +358,11 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
 
                 for(auto& child : tile->children.values)
                 {
-                    if (auto child_node = createTile(child, level+1, refine, tile->geometricError))
+                    if (auto child_node = createTile(child, level+1, refine))
                     {
                         auto lod = vsg::LOD::create();
                         lod->bound = createBound(child->boundingVolume);
-                        lod->addChild(vsg::LOD::Child{child_screenRatio, child_node});
+                        lod->addChild(vsg::LOD::Child{add_screenRatio, child_node});
 
                         group->addChild(lod);
                     }
@@ -442,6 +391,8 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
         }
         else
         {
+            child_screenRatio = computeScreenHeightRatio(*tile);
+
             auto highres_subgraph = readTileChildren(tile, level, refine);
 
             auto lod = vsg::LOD::create();
@@ -522,7 +473,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
 
     if (tileset->root)
     {
-        if (auto vsg_root = createTile(tileset->root, 0, tileset->root->refine, 0.001))
+        if (auto vsg_root = createTile(tileset->root, 0, tileset->root->refine))
         {
             vsg_tileset->addChild(vsg_root);
         }
