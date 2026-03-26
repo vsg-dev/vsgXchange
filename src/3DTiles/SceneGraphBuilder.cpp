@@ -218,20 +218,16 @@ bool Tiles3D::SceneGraphBuilder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> 
 
 vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
 {
-    vsg::ref_ptr<vsg::MatrixTransform> vsg_transform;
-    if (!tile->transform.values.empty())
-    {
-        vsg_transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
-    }
-
     auto& child = tile->children.values[0];
     auto& child_child = child->children.values[0];
 
     double tile_screenRatio = computeScreenHeightRatio(*tile);
     double child_screenRatio = computeScreenHeightRatio(*child);
     vsg::dsphere bound = createBound(tile->boundingVolume);
-
     bool usePagedLOD = level > preLoadLevel;
+
+    vsg::ref_ptr<vsg::Node> node;
+
     if (usePagedLOD)
     {
         auto low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
@@ -243,17 +239,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
         plod->filename = child_child->content->uri;
         plod->options = options;
 
-        // vsg::info("Triple match: PagedLOD low res = ", child->content->uri, ", high rest = ", child_child->content->uri);
-
-        if (vsg_transform)
-        {
-            vsg_transform->addChild(plod);
-            return vsg_transform;
-        }
-        else
-        {
-            return plod;
-        }
+        node = plod;
     }
     else
     {
@@ -265,17 +251,21 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
         lod->addChild(vsg::LOD::Child{child_screenRatio, high_res_subgraph});
         lod->addChild(vsg::LOD::Child{tile_screenRatio, low_res_subgraph});
 
-        // vsg::info("Triple match: LOD low res = ", child->content->uri, ", high rest = ", child_child->content->uri);
+        node = lod;
+    }
 
-        if (vsg_transform)
-        {
-            vsg_transform->addChild(lod);
-            return vsg_transform;
-        }
-        else
-        {
-            return lod;
-        }
+    if (!node) return {};
+
+    vsg::ref_ptr<vsg::MatrixTransform> vsg_transform;
+    if (!tile->transform.values.empty())
+    {
+        auto transform = vsg::MatrixTransform::create(createMatrix(tile->transform.values));
+        transform->addChild(node);
+        return transform;
+    }
+    else
+    {
+        return node;
     }
 }
 
