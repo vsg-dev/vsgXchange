@@ -292,7 +292,7 @@ namespace vsgXchange
 
             vsg::ref_ptr<vsg::EllipsoidModel> ellipsoidModel = vsg::EllipsoidModel::create();
             vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
-            double pixelErrorToScreenHeightRatio = 12.0/1024.0; // 12 pixel error on a 1024 height viewport.
+            double pixelErrorToScreenHeightRatio = 0.016;
             uint32_t preLoadLevel = 1;
 
             virtual void assignResourceHints(vsg::ref_ptr<vsg::Node> node);
