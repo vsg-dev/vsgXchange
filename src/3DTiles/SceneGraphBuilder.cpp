@@ -44,8 +44,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace vsgXchange;
 
-#define SCREEN_RATIO_MODE 2
-
 Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
 {
 }
