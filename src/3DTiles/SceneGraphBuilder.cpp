@@ -221,26 +221,35 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
 
     if (usePagedLOD)
     {
-        auto low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
+        vsg::ref_ptr<vsg::Node> low_res_subgraph;
+
+        if (child->content) low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
 
         auto plod = vsg::PagedLOD::create();
-        plod->bound = bound;
-        plod->children[0] = vsg::PagedLOD::Child{child_screenRatio, {}};
-        plod->children[1] = vsg::PagedLOD::Child{tile_screenRatio, low_res_subgraph};
-        plod->filename = child_child->content->uri;
         plod->options = options;
+        plod->bound = bound;
+
+        plod->children[0] = vsg::PagedLOD::Child{child_screenRatio, {}};
+        if (low_res_subgraph) plod->children[1] = vsg::PagedLOD::Child{tile_screenRatio, low_res_subgraph};
+
+        if (child_child->content) plod->filename = child_child->content->uri;
+
 
         node = plod;
     }
     else
     {
-        auto low_res_subgraph = vsg::read_cast<vsg::Node>(child->content->uri, options);
-        auto high_res_subgraph = vsg::read_cast<vsg::Node>(child_child->content->uri, options);
+
+        vsg::ref_ptr<vsg::Node> low_res_subgraph;
+        vsg::ref_ptr<vsg::Node> high_res_subgraph;
+
+        if (child->content) vsg::read_cast<vsg::Node>(child->content->uri, options);
+        if (child_child->content) high_res_subgraph = vsg::read_cast<vsg::Node>(child_child->content->uri, options);
 
         auto lod = vsg::LOD::create();
         lod->bound = bound;
-        lod->addChild(vsg::LOD::Child{child_screenRatio, high_res_subgraph});
-        lod->addChild(vsg::LOD::Child{tile_screenRatio, low_res_subgraph});
+        if (high_res_subgraph) lod->addChild(vsg::LOD::Child{child_screenRatio, high_res_subgraph});
+        if (low_res_subgraph) lod->addChild(vsg::LOD::Child{tile_screenRatio, low_res_subgraph});
 
         node = lod;
     }
