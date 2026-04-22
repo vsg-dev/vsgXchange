@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(vsgXchange
-    VERSION 1.1.11
+    VERSION 1.1.12
     DESCRIPTION "VulkanSceneGraph 3rd party data integration library"
     LANGUAGES CXX C
 )
-set(VSGXCHANGE_SOVERSION 2)
+set(VSGXCHANGE_SOVERSION 3)
 SET(VSGXCHANGE_RELEASE_CANDIDATE 0)
 
 set(VSGXCHANGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "Root source directory of vsgXchange.")
