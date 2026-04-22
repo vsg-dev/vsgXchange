@@ -56,7 +56,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace vsgXchange;
 
-gltf::SceneGraphBuilder::SceneGraphBuilder()
+gltf::Builder::Builder()
 {
     attributeLookup = {
         {"POSITION", "vsg_Vertex"},
@@ -74,7 +74,7 @@ gltf::SceneGraphBuilder::SceneGraphBuilder()
         {"SCALE", "vsg_Scale"}};
 }
 
-void gltf::SceneGraphBuilder::assign_extras(ExtensionsExtras& src, vsg::Object& dest)
+void gltf::Builder::assign_extras(ExtensionsExtras& src, vsg::Object& dest)
 {
     if (src.extras)
     {
@@ -89,7 +89,7 @@ void gltf::SceneGraphBuilder::assign_extras(ExtensionsExtras& src, vsg::Object& 
     }
 };
 
-void gltf::SceneGraphBuilder::assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest)
+void gltf::Builder::assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest)
 {
     if (!src.name.empty())
     {
@@ -118,12 +118,12 @@ void gltf::SceneGraphBuilder::assign_name_extras(NameExtensionsExtras& src, vsg:
     }
 };
 
-vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer)
+vsg::ref_ptr<vsg::Data> gltf::Builder::createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer)
 {
     return gltf_buffer->data;
 }
 
-vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView)
+vsg::ref_ptr<vsg::Data> gltf::Builder::createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView)
 {
     if (!gltf_bufferView->buffer)
     {
@@ -145,7 +145,7 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createBufferView(vsg::ref_ptr<g
     return vsg_buffer;
 }
 
-vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createArray(const std::string& type, uint32_t componentType, glTFid bufferView, uint32_t offset, uint32_t count)
+vsg::ref_ptr<vsg::Data> gltf::Builder::createArray(const std::string& type, uint32_t componentType, glTFid bufferView, uint32_t offset, uint32_t count)
 {
     vsg::ref_ptr<vsg::Data> vsg_data;
 
@@ -273,7 +273,7 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createArray(const std::string& 
     return vsg_data;
 }
 
-vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor)
+vsg::ref_ptr<vsg::Data> gltf::Builder::createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor)
 {
     if (!gltf_accessor->bufferView)
     {
@@ -311,14 +311,14 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createAccessor(vsg::ref_ptr<glt
         }
         else
         {
-            vsg::warn("gltf::SceneGraphBuilder::createAccessor(...) sparse indices type (", sparse->indices->componentType, " not supported. ");
+            vsg::warn("gltf::Builder::createAccessor(...) sparse indices type (", sparse->indices->componentType, " not supported. ");
         }
     }
 
     return vsg_data;
 }
 
-vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera)
+vsg::ref_ptr<vsg::Camera> gltf::Builder::createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera)
 {
     auto vsg_camera = vsg::Camera::create();
 
@@ -343,7 +343,7 @@ vsg::ref_ptr<vsg::Camera> gltf::SceneGraphBuilder::createCamera(vsg::ref_ptr<glt
     return vsg_camera;
 }
 
-vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createImage(vsg::ref_ptr<gltf::Image> gltf_image)
+vsg::ref_ptr<vsg::Data> gltf::Builder::createImage(vsg::ref_ptr<gltf::Image> gltf_image)
 {
     if (gltf_image->data)
     {
@@ -363,7 +363,7 @@ vsg::ref_ptr<vsg::Data> gltf::SceneGraphBuilder::createImage(vsg::ref_ptr<gltf::
     }
 }
 
-vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler)
+vsg::ref_ptr<vsg::Sampler> gltf::Builder::createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler)
 {
     auto vsg_sampler = vsg::Sampler::create();
 
@@ -455,7 +455,7 @@ vsg::ref_ptr<vsg::Sampler> gltf::SceneGraphBuilder::createSampler(vsg::ref_ptr<g
     return vsg_sampler;
 }
 
-gltf::SceneGraphBuilder::SamplerImage gltf::SceneGraphBuilder::createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture)
+gltf::Builder::SamplerImage gltf::Builder::createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture)
 {
     SamplerImage samplerImage;
 
@@ -472,7 +472,7 @@ gltf::SceneGraphBuilder::SamplerImage gltf::SceneGraphBuilder::createTexture(vsg
     return samplerImage;
 }
 
-vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::Builder::createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
 {
     auto vsg_material = vsg::DescriptorConfigurator::create();
 
@@ -712,7 +712,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createPbrMate
     return vsg_material;
 }
 
-vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::Builder::createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
 {
     auto vsg_material = vsg::DescriptorConfigurator::create();
 
@@ -768,7 +768,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createUnlitMa
     return vsg_material;
 }
 
-vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
+vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::Builder::createMaterial(vsg::ref_ptr<gltf::Material> gltf_material)
 {
     auto vsg_material = vsg::DescriptorConfigurator::create();
     if (auto materials_unlit = gltf_material->extension<KHR_materials_unlit>("KHR_materials_unlit"))
@@ -777,7 +777,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::SceneGraphBuilder::createMateria
         return createPbrMaterial(gltf_material);
 }
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& meshExtras)
+vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& meshExtras)
 {
     /*
     struct Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
@@ -870,14 +870,14 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
             if (array_itr->second.value >= vsg_accessors.size())
             {
-                vsg::warn("gltf::SceneGraphBuilder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), array index out of range.");
+                vsg::warn("gltf::Builder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), array index out of range.");
                 return false;
             }
 
             vsg::ref_ptr<vsg::Data> array = vsg_accessors[array_itr->second.value];
             if (!array)
             {
-                vsg::warn("gltf::SceneGraphBuilder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), required array null.");
+                vsg::warn("gltf::Builder::createMesh() error in assignArray( attrib, vertexIndexRate", attribute_name, "), required array null.");
                 return false;
             }
 
@@ -947,7 +947,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
 
         if (!assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION"))
         {
-            vsg::warn("gltf::SceneGraphBuilder::createMesh() error no vertex array assigned.");
+            vsg::warn("gltf::Builder::createMesh() error no vertex array assigned.");
             return {};
         }
 
@@ -1022,7 +1022,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
                 auto indices = vsg_accessors[primitive->indices.value];
                 if (!indices)
                 {
-                    vsg::warn("gltf::SceneGraphBuilder::createMesh() error required indices array null.");
+                    vsg::warn("gltf::Builder::createMesh() error required indices array null.");
                     return {};
                 }
 
@@ -1067,7 +1067,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
             auto indices = vsg_accessors[primitive->indices.value];
             if (!indices)
             {
-                vsg::warn("gltf::SceneGraphBuilder::createMesh() error required indices array null.");
+                vsg::warn("gltf::Builder::createMesh() error required indices array null.");
                 return {};
             }
 
@@ -1200,7 +1200,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createMesh(vsg::ref_ptr<gltf::M
     return vsg_mesh;
 }
 
-bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
+bool gltf::Builder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
 {
     if (node.matrix.values.size() == 16)
     {
@@ -1236,7 +1236,7 @@ bool gltf::SceneGraphBuilder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
     }
 }
 
-vsg::ref_ptr<vsg::Light> gltf::SceneGraphBuilder::createLight(vsg::ref_ptr<gltf::Light> gltf_light)
+vsg::ref_ptr<vsg::Light> gltf::Builder::createLight(vsg::ref_ptr<gltf::Light> gltf_light)
 {
     bool range_set = gltf_light->range != std::numeric_limits<float>::max();
 
@@ -1275,7 +1275,7 @@ vsg::ref_ptr<vsg::Light> gltf::SceneGraphBuilder::createLight(vsg::ref_ptr<gltf:
     return vsg_light;
 }
 
-vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation)
+vsg::ref_ptr<vsg::Animation> gltf::Builder::createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation)
 {
     vsg::LogOutput log;
 
@@ -1307,7 +1307,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
         else if (channel->target.path == "weights")
             nodeChannels[node_id].weights = channel;
         else
-            vsg::warn("gltf::SceneGraphBuilder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+            vsg::warn("gltf::Builder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
     }
 
     for (auto& [node_id, channels] : nodeChannels)
@@ -1342,7 +1342,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                 }
                 else
                 {
-                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported translation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                    vsg::warn("gltf::Builder::createAnimation(..) unsupported translation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
                 }
             }
 
@@ -1372,7 +1372,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                 }
                 else
                 {
-                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported rotation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                    vsg::warn("gltf::Builder::createAnimation(..) unsupported rotation types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
                 }
             }
 
@@ -1402,7 +1402,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
                 }
                 else
                 {
-                    vsg::warn("gltf::SceneGraphBuilder::createAnimation(..) unsupported scale types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
+                    vsg::warn("gltf::Builder::createAnimation(..) unsupported scale types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
                 }
             }
 
@@ -1428,7 +1428,7 @@ vsg::ref_ptr<vsg::Animation> gltf::SceneGraphBuilder::createAnimation(vsg::ref_p
     return vsg_animation;
 }
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode)
+vsg::ref_ptr<vsg::Node> gltf::Builder::createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode)
 {
     vsg::ref_ptr<vsg::Node> vsg_node;
 
@@ -1573,7 +1573,7 @@ vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createNode(vsg::ref_ptr<gltf::N
     return vsg_node;
 }
 
-void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dmat4& inheritedTransform)
+void gltf::Builder::flattenTransforms(gltf::Node& node, const vsg::dmat4& inheritedTransform)
 {
     vsg::dmat4 accumulatedTransform = inheritedTransform;
 
@@ -1636,7 +1636,7 @@ void gltf::SceneGraphBuilder::flattenTransforms(gltf::Node& node, const vsg::dma
     }
 }
 
-vsg::ref_ptr<vsg::Node> gltf::SceneGraphBuilder::createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& rootTransform)
+vsg::ref_ptr<vsg::Node> gltf::Builder::createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& rootTransform)
 {
     if (gltf_scene->nodes.values.empty())
     {
@@ -1734,7 +1734,7 @@ static bool CopyDracoAttributes(const draco::PointAttribute* draco_attribute, vo
 }
 #endif
 
-bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> primitive)
+bool gltf::Builder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> primitive)
 {
     if (auto draco_mesh_compression = primitive->extension<KHR_draco_mesh_compression>("KHR_draco_mesh_compression"))
     {
@@ -1881,7 +1881,7 @@ bool gltf::SceneGraphBuilder::decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primi
     return true;
 }
 
-vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreatePbrShaderSet()
+vsg::ref_ptr<vsg::ShaderSet> gltf::Builder::getOrCreatePbrShaderSet()
 {
     if (pbrShaderSet) return pbrShaderSet;
 
@@ -1891,7 +1891,7 @@ vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreatePbrShaderSet()
     return pbrShaderSet;
 }
 
-vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreateFlatShaderSet()
+vsg::ref_ptr<vsg::ShaderSet> gltf::Builder::getOrCreateFlatShaderSet()
 {
     if (flatShaderSet) return flatShaderSet;
 
@@ -1901,7 +1901,7 @@ vsg::ref_ptr<vsg::ShaderSet> gltf::SceneGraphBuilder::getOrCreateFlatShaderSet()
     return flatShaderSet;
 }
 
-vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options)
+vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options)
 {
     model = in_model;
     if (!model) return {};
@@ -1917,7 +1917,7 @@ vsg::ref_ptr<vsg::Object> gltf::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr
 
     // TODO: need to check that the glTF model is suitable for use of InstanceNode/InstanceDraw
 
-    // vsg::info("gltf::SceneGraphBuilder::createSceneGraph() instanceNodeHint = ", instanceNodeHint);
+    // vsg::info("gltf::Builder::createSceneGraph() instanceNodeHint = ", instanceNodeHint);
 
     vsg::CoordinateConvention destination_coordinateConvention = vsg::CoordinateConvention::Z_UP;
     if (options) destination_coordinateConvention = options->sceneCoordinateConvention;

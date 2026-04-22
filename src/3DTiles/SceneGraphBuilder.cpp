@@ -44,11 +44,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace vsgXchange;
 
-Tiles3D::SceneGraphBuilder::SceneGraphBuilder()
+Tiles3D::Builder::Builder()
 {
 }
 
-vsg::dmat4 Tiles3D::SceneGraphBuilder::createMatrix(const std::vector<double>& m) const
+vsg::dmat4 Tiles3D::Builder::createMatrix(const std::vector<double>& m) const
 {
     if (m.size() == 16)
     {
@@ -63,7 +63,7 @@ vsg::dmat4 Tiles3D::SceneGraphBuilder::createMatrix(const std::vector<double>& m
     }
 }
 
-vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume> boundingVolume) const
+vsg::dsphere Tiles3D::Builder::createBound(vsg::ref_ptr<BoundingVolume> boundingVolume) const
 {
     if (boundingVolume)
     {
@@ -105,7 +105,7 @@ vsg::dsphere Tiles3D::SceneGraphBuilder::createBound(vsg::ref_ptr<BoundingVolume
     }
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
     // vsg::info("readTileChildren(", tile, ", ", level, ") ", tile->children.values.size(), ", ", operationThreads);
 
@@ -116,14 +116,14 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     {
         struct ReadTileOperation : public vsg::Inherit<vsg::Operation, ReadTileOperation>
         {
-            SceneGraphBuilder* builder;
+            Builder* builder;
             vsg::ref_ptr<Tiles3D::Tile> tileToCreate;
             vsg::ref_ptr<vsg::Node>& subgraph;
             uint32_t level;
             std::string rto_inherited_refine;
             vsg::ref_ptr<vsg::Latch> latch;
 
-            ReadTileOperation(SceneGraphBuilder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, vsg::ref_ptr<vsg::Latch> in_latch) :
+            ReadTileOperation(Builder* in_builder, vsg::ref_ptr<Tiles3D::Tile> in_tile, vsg::ref_ptr<vsg::Node>& in_subgraph, uint32_t in_level, const std::string& in_inherited_refine, vsg::ref_ptr<vsg::Latch> in_latch) :
                 builder(in_builder),
                 tileToCreate(in_tile),
                 subgraph(in_subgraph),
@@ -134,7 +134,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
             void run() override
             {
                 subgraph = builder->createTile(tileToCreate, level, rto_inherited_refine);
-                // vsg::info("Tiles3D::SceneGraphBuilder::readTileChildren() createTile() ", subgraph);
+                // vsg::info("Tiles3D::Builder::readTileChildren() createTile() ", subgraph);
                 if (latch) latch->count_down();
             }
         };
@@ -180,7 +180,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::readTileChildren(vsg::ref_pt
     else return group;
 }
 
-double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& bound, double geometricError) const
+double Tiles3D::Builder::computeScreenHeightRatio(const vsg::dsphere& bound, double geometricError) const
 {
     if (geometricError == 0.0) return 0.0;
     if (geometricError >= std::numeric_limits<double>::max()) return 0.001;
@@ -188,12 +188,12 @@ double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const vsg::dsphere& 
     return (bound.radius / geometricError) * pixelErrorToScreenHeightRatio;
 }
 
-double Tiles3D::SceneGraphBuilder::computeScreenHeightRatio(const Tiles3D::Tile& tile) const
+double Tiles3D::Builder::computeScreenHeightRatio(const Tiles3D::Tile& tile) const
 {
     return computeScreenHeightRatio(createBound(tile.boundingVolume), tile.geometricError);
 }
 
-bool Tiles3D::SceneGraphBuilder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const
+bool Tiles3D::Builder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const
 {
     if (tile->children.values.size()==1)
     {
@@ -207,7 +207,7 @@ bool Tiles3D::SceneGraphBuilder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> 
     return false;
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level)
 {
     auto& child = tile->children.values[0];
     auto& child_child = child->children.values[0];
@@ -268,7 +268,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTripleNestedTile(vsg::
     }
 }
 
-vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTile(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)
 {
     if (isTripleNestedTile(tile))
     {
@@ -298,7 +298,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     {
         auto load_options = vsg::clone(options);
         load_options->setObject("tile", tile);
-        load_options->setObject("builder", vsg::ref_ptr<SceneGraphBuilder>(this));
+        load_options->setObject("builder", vsg::ref_ptr<Builder>(this));
         load_options->setValue("level", level);
         load_options->setValue("refine", refine);
 
@@ -406,7 +406,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::SceneGraphBuilder::createTile(vsg::ref_ptr<Tile
     }
 }
 
-vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options)
+vsg::ref_ptr<vsg::Object> Tiles3D::Builder::createSceneGraph(vsg::ref_ptr<Tiles3D::Tileset> tileset, vsg::ref_ptr<const vsg::Options> in_options)
 {
     if (!tileset) return {};
 
@@ -470,7 +470,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::SceneGraphBuilder::createSceneGraph(vsg::ref_
     return vsg_tileset;
 }
 
-void Tiles3D::SceneGraphBuilder::assignResourceHints(vsg::ref_ptr<vsg::Node> node)
+void Tiles3D::Builder::assignResourceHints(vsg::ref_ptr<vsg::Node> node)
 {
     vsg::CollectResourceRequirements collectRequirements;
     node->accept(collectRequirements);

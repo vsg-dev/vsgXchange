@@ -1637,7 +1637,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
             root->report(output);
         }
 
-        auto builder = gltf::SceneGraphBuilder::create();
+        auto builder = gltf::Builder::create();
         if (options)
         {
             vsg::Path ext = (options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
@@ -1772,7 +1772,27 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
             root->report(output);
         }
 
-        auto builder = gltf::SceneGraphBuilder::create();
+#if 0
+        auto builder = gltf::Builder::create();
+#else
+        vsg::ref_ptr<gltf::Builder> builder;
+        if (options)
+        {
+            if (auto prototype = options->getRefObject<gltf::Builder>("gltf::Builder"))
+            {
+                vsg::info("Using prototype ", prototype);
+                builder = vsg::clone(prototype);
+            }
+            else
+            {
+                vsg::info("No prototype");
+            }
+        }
+        if (!builder) builder = gltf::Builder::create();
+#endif
+
+        vsg::info("builder = ", builder);
+
         if (options)
         {
             vsg::Path ext = (options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);

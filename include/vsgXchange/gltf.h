@@ -639,10 +639,10 @@ namespace vsgXchange
             virtual void resolveURIs(vsg::ref_ptr<const vsg::Options> options);
         };
 
-        class VSGXCHANGE_DECLSPEC SceneGraphBuilder : public vsg::Inherit<vsg::Object, SceneGraphBuilder>
+        class VSGXCHANGE_DECLSPEC Builder : public vsg::Inherit<vsg::Object, Builder>
         {
         public:
-            SceneGraphBuilder();
+            Builder();
 
             struct SamplerImage
             {
@@ -752,3 +752,4 @@ namespace vsgXchange
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::gltf)
+EVSG_type_name(vsgXchange::gltf::Builder)
