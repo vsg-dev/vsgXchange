@@ -16,6 +16,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/mem_stream.h>
 #include <vsg/io/read.h>
 #include <vsg/io/write.h>
+#include <vsg/io/Options.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/utils/CommandLine.h>
 
@@ -1637,7 +1638,8 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
             root->report(output);
         }
 
-        auto builder = gltf::Builder::create();
+        auto builder = vsg::clone<gltf::Builder>("gltf::Builder", options);
+
         if (options)
         {
             vsg::Path ext = (options->extensionHint) ? options->extensionHint : vsg::lowerCaseFileExtension(filename);
@@ -1772,26 +1774,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
             root->report(output);
         }
 
-#if 0
-        auto builder = gltf::Builder::create();
-#else
-        vsg::ref_ptr<gltf::Builder> builder;
-        if (options)
-        {
-            if (auto prototype = options->getRefObject<gltf::Builder>("gltf::Builder"))
-            {
-                vsg::info("Using prototype ", prototype);
-                builder = vsg::clone(prototype);
-            }
-            else
-            {
-                vsg::info("No prototype");
-            }
-        }
-        if (!builder) builder = gltf::Builder::create();
-#endif
-
-        vsg::info("builder = ", builder);
+        auto builder = vsg::clone<gltf::Builder>("gltf::Builder", options);
 
         if (options)
         {
