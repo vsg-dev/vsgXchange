@@ -1638,7 +1638,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_gltf(std::istream& fin, vsg::ref_ptr<const 
             root->report(output);
         }
 
-        auto builder = vsg::clone<gltf::Builder>("gltf::Builder", options);
+        auto builder = vsg::clone<gltf::Builder>(gltf::prototype_builder, options);
 
         if (options)
         {
@@ -1774,7 +1774,7 @@ vsg::ref_ptr<vsg::Object> gltf::read_glb(std::istream& fin, vsg::ref_ptr<const v
             root->report(output);
         }
 
-        auto builder = vsg::clone<gltf::Builder>("gltf::Builder", options);
+        auto builder = vsg::clone<gltf::Builder>(gltf::prototype_builder, options);
 
         if (options)
         {

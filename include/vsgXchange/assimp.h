@@ -2,7 +2,7 @@
 
 /* <editor-fold desc="MIT License">
 
-Copyright(c) 2021 Robert Osfield
+Copyright(c) 2026 Robert Osfield
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -90,6 +90,7 @@ namespace vsgXchange
         static constexpr const char* culling = "culling";                                 /// bool, insert cull nodes, defaults to true
         static constexpr const char* vertex_color_space = "vertex_color_space";           /// CoordinateSpace {sRGB or LINEAR} to assume when reading vertex colors
         static constexpr const char* material_color_space = "material_color_space";       /// CoordinateSpace {sRGB or LINEAR} to assume when reading materials colors
+        static constexpr const char* prototype_builder = "assimp::Builder";               /// assimp::Builder prototype used for converted aiScene into VSG scene graph
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 

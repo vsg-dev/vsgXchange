@@ -85,7 +85,6 @@ namespace vsgXchange
 
 assimp::Builder::Builder()
 {
-    vsg::info("assimp::Builder::Builder()");
 }
 
 assimp::SubgraphStats assimp::Builder::collectSubgraphStats(const aiNode* in_node, unsigned int depth)

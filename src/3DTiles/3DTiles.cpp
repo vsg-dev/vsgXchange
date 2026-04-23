@@ -753,7 +753,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             return {};
         }
 
-        auto builder = vsg::clone<Tiles3D::Builder>("Tiles3D::Builder", options);
+        auto builder = vsg::clone<Tiles3D::Builder>(prototype_builder, options);
 
         auto opt = vsg::clone(options);
 

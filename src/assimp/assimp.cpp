@@ -148,7 +148,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             auto opt = vsg::clone(options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
-            auto builder = vsg::clone<assimp::Builder>("assimp::Builder", options);
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
             builder->filename = filename;
 
             return builder->visit(scene, opt, ext);
@@ -184,7 +184,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
 
         if (auto scene = importer.ReadFileFromMemory(input.data(), input.size(), _importFlags); scene)
         {
-            auto builder = vsg::clone<assimp::Builder>("assimp::Builder", options);
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
             return builder->visit(scene, options, options->extensionHint);
         }
         else
@@ -205,7 +205,7 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
     {
         if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
         {
-            auto builder = vsg::clone<assimp::Builder>("assimp::Builder", options);
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
             return builder->visit(scene, options, options->extensionHint);
         }
         else
