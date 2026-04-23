@@ -20,6 +20,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsgXchange/gltf.h>
 #include <vsgXchange/images.h>
 #include <vsgXchange/models.h>
+#include <vsgXchange/assimp.h>
 
 #include <vsg/io/Logger.h>
 #include <vsg/io/VSG.h>

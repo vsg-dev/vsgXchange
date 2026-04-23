@@ -238,4 +238,6 @@ namespace vsgXchange
 
 } // namespace vsgXchange
 
+EVSG_type_name(vsgXchange::TextureFormat)
 EVSG_type_name(vsgXchange::assimp);
+EVSG_type_name(vsgXchange::assimp::Builder);
