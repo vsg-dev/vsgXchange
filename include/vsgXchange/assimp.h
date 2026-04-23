@@ -186,16 +186,16 @@ namespace vsgXchange
             SubgraphStats print(std::ostream& out, const aiNode* in_node, vsg::indentation indent);
             SubgraphStats print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent);
 
-            bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value);
-            bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value);
+            virtual bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value);
+            virtual bool getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value);
 
-            SamplerData convertTexture(const aiMaterial& material, int type) const;
+            virtual SamplerData convertTexture(const aiMaterial& material, int type) const;
 
-            void processAnimations();
-            void processCameras();
-            void processLights();
+            virtual void processAnimations();
+            virtual void processCameras();
+            virtual void processLights();
 
-            vsg::ref_ptr<vsg::MatrixTransform> processCoordinateFrame(const vsg::Path& ext);
+            virtual vsg::ref_ptr<vsg::MatrixTransform> processCoordinateFrame(const vsg::Path& ext);
 
 
             vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet()
@@ -219,14 +219,14 @@ namespace vsgXchange
             }
 
 
-            void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
+            virtual void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
-            vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices);
-            void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
+            virtual vsg::ref_ptr<vsg::Data> createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices);
+            virtual void convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node);
 
-            vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
+            virtual vsg::ref_ptr<vsg::Node> visit(const aiNode* node, int depth);
 
-            virtual vsg::ref_ptr<vsg::Node> visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
+            virtual vsg::ref_ptr<vsg::Node> createSceneGraph(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
         };
 
 

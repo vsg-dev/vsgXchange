@@ -690,36 +690,36 @@ namespace vsgXchange
             // map used to map gltf attribute names to ShaderSet vertex attribute names
             std::map<std::string, std::string> attributeLookup;
 
-            void assign_extras(ExtensionsExtras& src, vsg::Object& dest);
-            void assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest);
+            virtual void assign_extras(ExtensionsExtras& src, vsg::Object& dest);
+            virtual void assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest);
 
-            bool decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> gltf_primitive);
+            virtual bool decodePrimitiveIfRequired(vsg::ref_ptr<gltf::Primitive> gltf_primitive);
 
-            void flattenTransforms(gltf::Node& node, const vsg::dmat4& transform);
+            virtual void flattenTransforms(gltf::Node& node, const vsg::dmat4& transform);
 
-            bool getTransform(gltf::Node& node, vsg::dmat4& transform);
+            virtual bool getTransform(gltf::Node& node, vsg::dmat4& transform);
 
-            vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
-            vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
-            vsg::ref_ptr<vsg::Data> createArray(const std::string& type, uint32_t componentType, glTFid bufferView, uint32_t offset, uint32_t count);
-            vsg::ref_ptr<vsg::Data> createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor);
-            vsg::ref_ptr<vsg::Camera> createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera);
-            vsg::ref_ptr<vsg::Sampler> createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler);
-            vsg::ref_ptr<vsg::Data> createImage(vsg::ref_ptr<gltf::Image> gltf_image);
-            SamplerImage createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture);
-            vsg::ref_ptr<vsg::DescriptorConfigurator> createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& extras = {});
-            vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
-            vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode);
-            vsg::ref_ptr<vsg::Animation> createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation);
-            vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
+            virtual vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
+            virtual vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
+            virtual vsg::ref_ptr<vsg::Data> createArray(const std::string& type, uint32_t componentType, glTFid bufferView, uint32_t offset, uint32_t count);
+            virtual vsg::ref_ptr<vsg::Data> createAccessor(vsg::ref_ptr<gltf::Accessor> gltf_accessor);
+            virtual vsg::ref_ptr<vsg::Camera> createCamera(vsg::ref_ptr<gltf::Camera> gltf_camera);
+            virtual vsg::ref_ptr<vsg::Sampler> createSampler(vsg::ref_ptr<gltf::Sampler> gltf_sampler);
+            virtual vsg::ref_ptr<vsg::Data> createImage(vsg::ref_ptr<gltf::Image> gltf_image);
+            virtual SamplerImage createTexture(vsg::ref_ptr<gltf::Texture> gltf_texture);
+            virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
+            virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
+            virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
+            virtual vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& extras = {});
+            virtual vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
+            virtual vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode);
+            virtual vsg::ref_ptr<vsg::Animation> createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation);
+            virtual vsg::ref_ptr<vsg::Node> createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& matrix);
 
-            vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet();
-            vsg::ref_ptr<vsg::ShaderSet> getOrCreateFlatShaderSet();
+            virtual vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet();
+            virtual vsg::ref_ptr<vsg::ShaderSet> getOrCreateFlatShaderSet();
 
-            vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
+            virtual vsg::ref_ptr<vsg::Object> createSceneGraph(vsg::ref_ptr<gltf::glTF> in_model, vsg::ref_ptr<const vsg::Options> in_options);
         };
 
         static vsg::Path decodeURI(const std::string_view& uri);

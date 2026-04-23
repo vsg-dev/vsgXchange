@@ -1103,7 +1103,7 @@ void assimp::Builder::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 }
 
-vsg::ref_ptr<vsg::Node> assimp::Builder::visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
+vsg::ref_ptr<vsg::Node> assimp::Builder::createSceneGraph(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
 {
     scene = in_scene;
     options = in_options;
