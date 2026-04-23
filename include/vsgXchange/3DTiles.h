@@ -318,4 +318,5 @@ namespace vsgXchange
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::Tiles3D)
+EVSG_type_name(vsgXchange::Tiles3D::Tileset)
 EVSG_type_name(vsgXchange::Tiles3D::Builder)

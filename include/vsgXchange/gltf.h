@@ -753,4 +753,5 @@ namespace vsgXchange
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::gltf)
+EVSG_type_name(vsgXchange::gltf::glTF)
 EVSG_type_name(vsgXchange::gltf::Builder)
