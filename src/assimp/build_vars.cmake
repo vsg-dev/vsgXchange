@@ -18,7 +18,7 @@ if (${vsgXchange_assimp})
 
     set(SOURCES ${SOURCES}
         assimp/assimp.cpp
-        assimp/SceneConverter.cpp
+        assimp/Builder.cpp
     )
     set(EXTRA_INCLUDES ${EXTRA_INCLUDES} ${assimp_INCLUDE_DIRS})
     set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} assimp::assimp)

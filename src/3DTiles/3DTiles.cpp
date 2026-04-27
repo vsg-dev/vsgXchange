@@ -701,7 +701,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_tiles(const vsg::Path&, vsg::ref_ptr<con
     auto non_const_options = const_cast<vsg::Options*>(options.get());
 
     auto tile = non_const_options->getRefObject<vsgXchange::Tiles3D::Tile>("tile");
-    auto builder = non_const_options->getRefObject<vsgXchange::Tiles3D::SceneGraphBuilder>("builder");
+    auto builder = non_const_options->getRefObject<vsgXchange::Tiles3D::Builder>("builder");
 
     uint32_t lod_level = 0;
     non_const_options->getValue("level", lod_level);
@@ -753,7 +753,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             return {};
         }
 
-        auto builder = Tiles3D::SceneGraphBuilder::create();
+        auto builder = vsg::clone<Tiles3D::Builder>(prototype_builder, options);
 
         auto opt = vsg::clone(options);
 

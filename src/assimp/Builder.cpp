@@ -10,11 +10,84 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include "SceneConverter.h"
+#include <vsg/all.h>
+#include <vsgXchange/assimp.h>
 
 using namespace vsgXchange;
 
-SubgraphStats SceneConverter::collectSubgraphStats(const aiNode* in_node, unsigned int depth)
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#if (ASSIMP_VERSION_MAJOR == 5 && ASSIMP_VERSION_MINOR == 0)
+#    include <assimp/pbrmaterial.h>
+#    define AI_MATKEY_BASE_COLOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR
+#    define AI_MATKEY_GLOSSINESS_FACTOR AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR
+#    define AI_MATKEY_METALLIC_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR
+#    define AI_MATKEY_ROUGHNESS_FACTOR AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR
+#else
+#    include <assimp/material.h>
+
+#    if (ASSIMP_VERSION_MAJOR == 5 && ASSIMP_VERSION_MINOR == 1 && ASSIMP_VERSION_PATCH == 0)
+#        define AI_MATKEY_GLTF_ALPHACUTOFF "$mat.gltf.alphaCutoff", 0, 0
+#        define AI_MATKEY_GLTF_ALPHAMODE "$mat.gltf.alphaMode", 0, 0
+#    else
+#        include <assimp/GltfMaterial.h>
+#    endif
+#endif
+
+#include <iostream>
+
+namespace vsgXchange
+{
+    inline std::ostream& operator<<(std::ostream& output, const assimp::SubgraphStats& stats)
+    {
+        return output << "SubgraphStats{ numMesh = " << stats.numMesh << ", numNodes = " << stats.numNodes << ", numBones = " << stats.numBones << " }";
+    }
+
+    inline std::ostream& operator<<(std::ostream& output, const aiMatrix4x4& m)
+    {
+        if (m.IsIdentity())
+            return output << "aiMatrix4x4{ Identity }";
+        else
+            return output << "aiMatrix4x4{ {" << m.a1 << ", " << m.a2 << ", " << m.a3 << ", " << m.a4 << "} {" << m.b1 << ", " << m.b2 << ", " << m.b3 << ", " << m.b4 << "} {" << m.c1 << ", " << m.c2 << ", " << m.c3 << ", " << m.c4 << "} {" << m.d1 << ", " << m.d2 << ", " << m.d3 << ", " << m.d4 << "} }";
+    }
+
+    inline vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
+    inline vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
+    inline vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
+    inline vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
+
+    inline VkSamplerAddressMode getWrapMode(aiTextureMapMode mode)
+    {
+        switch (mode)
+        {
+        case aiTextureMapMode_Wrap: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case aiTextureMapMode_Clamp: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case aiTextureMapMode_Decal: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        case aiTextureMapMode_Mirror: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        default: break;
+        }
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+
+    inline bool hasAlphaBlend(const aiMaterial* material)
+    {
+        aiString alphaMode;
+        float opacity = 1.0;
+        if ((material->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS && alphaMode == aiString("BLEND")) || (material->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS && opacity < 1.0))
+            return true;
+        return false;
+    }
+
+
+} // namespace vsgXchange
+
+assimp::Builder::Builder()
+{
+}
+
+assimp::SubgraphStats assimp::Builder::collectSubgraphStats(const aiNode* in_node, unsigned int depth)
 {
     SubgraphStats stats;
 
@@ -33,7 +106,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiNode* in_node, unsign
     return stats;
 }
 
-SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
+assimp::SubgraphStats assimp::Builder::collectSubgraphStats(const aiScene* in_scene)
 {
     SubgraphStats stats;
 
@@ -81,7 +154,7 @@ SubgraphStats SceneConverter::collectSubgraphStats(const aiScene* in_scene)
     return stats;
 }
 
-SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animation, vsg::indentation indent)
+assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiAnimation* animation, vsg::indentation indent)
 {
     out << indent << "aiAnimation " << animation << " name = " << animation->mName.C_Str() << std::endl;
     out << indent << "{" << std::endl;
@@ -221,13 +294,13 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiAnimation* animat
     return {};
 }
 
-SubgraphStats SceneConverter::print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent)
+assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiMaterial* in_material, vsg::indentation indent)
 {
     out << indent << "aiMaterial " << in_material << std::endl;
     return {};
 }
 
-SubgraphStats SceneConverter::print(std::ostream& out, const aiMesh* in_mesh, vsg::indentation indent)
+assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiMesh* in_mesh, vsg::indentation indent)
 {
     out << indent << "aiMesh " << in_mesh << std::endl;
     out << indent << "{" << std::endl;
@@ -281,7 +354,7 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiMesh* in_mesh, vs
     return {};
 }
 
-SubgraphStats SceneConverter::print(std::ostream& out, const aiNode* in_node, vsg::indentation indent)
+assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiNode* in_node, vsg::indentation indent)
 {
     SubgraphStats stats;
     ++stats.numNodes;
@@ -324,7 +397,7 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiNode* in_node, vs
     return stats;
 }
 
-SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent)
+assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiScene* in_scene, vsg::indentation indent)
 {
     SubgraphStats stats;
 
@@ -374,14 +447,15 @@ SubgraphStats SceneConverter::print(std::ostream& out, const aiScene* in_scene, 
     return stats;
 }
 
-SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTextureType type) const
+
+assimp::SamplerData assimp::Builder::convertTexture(const aiMaterial& material, int type) const
 {
     aiString texPath;
     aiTextureMapMode wrapMode[]{aiTextureMapMode_Wrap, aiTextureMapMode_Wrap, aiTextureMapMode_Wrap};
 
-    if (material.GetTexture(type, 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode) == AI_SUCCESS)
+    if (material.GetTexture(static_cast<aiTextureType>(type), 0, &texPath, nullptr, nullptr, nullptr, nullptr, wrapMode) == AI_SUCCESS)
     {
-        SamplerData samplerImage;
+        assimp::SamplerData samplerImage;
         vsg::Path externalTextureFilename;
 
         if (auto texture = scene->GetEmbeddedTexture(texPath.C_Str()))
@@ -492,7 +566,31 @@ SamplerData SceneConverter::convertTexture(const aiMaterial& material, aiTexture
     }
 }
 
-void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial)
+bool assimp::Builder::getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec3& value)
+{
+    aiColor3D color;
+    if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
+    {
+        value = vsgXchange::convert(color);
+        vsg::convert(value, sourceMaterialColorSpace, targetMaterialCoordinateSpace);
+        return true;
+    }
+    return false;
+}
+
+bool assimp::Builder::getColor(const aiMaterial* material, const char* pKey, unsigned int type, unsigned int idx, vsg::vec4& value)
+{
+    aiColor4D color;
+    if (material->Get(pKey, type, idx, color) == AI_SUCCESS)
+    {
+        value = vsgXchange::convert(color);
+        vsg::convert(value, sourceMaterialColorSpace, targetMaterialCoordinateSpace);
+        return true;
+    }
+    return false;
+}
+
+void assimp::Builder::convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial)
 {
     auto& defines = convertedMaterial.defines;
 
@@ -678,7 +776,7 @@ void SceneConverter::convert(const aiMaterial* material, vsg::DescriptorConfigur
     }
 }
 
-vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices)
+vsg::ref_ptr<vsg::Data> assimp::Builder::createIndices(const aiMesh* mesh, unsigned int numIndicesPerFace, uint32_t numIndices)
 {
     if (mesh->mNumVertices > 16384)
     {
@@ -710,7 +808,7 @@ vsg::ref_ptr<vsg::Data> SceneConverter::createIndices(const aiMesh* mesh, unsign
     }
 }
 
-void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
+void assimp::Builder::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
 {
     if (convertedMaterials.size() <= mesh->mMaterialIndex)
     {
@@ -1005,7 +1103,7 @@ void SceneConverter::convert(const aiMesh* mesh, vsg::ref_ptr<vsg::Node>& node)
     }
 }
 
-vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
+vsg::ref_ptr<vsg::Node> assimp::Builder::createSceneGraph(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext)
 {
     scene = in_scene;
     options = in_options;
@@ -1158,10 +1256,16 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiScene* in_scene, vsg::ref_
         vsg_scene = cullNode;
     }
 
+
+    if (externalTextures && externalObjects && !externalObjects->entries.empty())
+    {
+        vsg_scene->setObject("external", externalObjects);
+    }
+
     return vsg_scene;
 }
 
-vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
+vsg::ref_ptr<vsg::Node> assimp::Builder::visit(const aiNode* node, int depth)
 {
     vsg::Group::Children children;
 
@@ -1299,7 +1403,7 @@ vsg::ref_ptr<vsg::Node> SceneConverter::visit(const aiNode* node, int depth)
     }
 }
 
-void SceneConverter::processAnimations()
+void assimp::Builder::processAnimations()
 {
 
     for (unsigned int ai = 0; ai < scene->mNumAnimations; ++ai)
@@ -1472,7 +1576,7 @@ void SceneConverter::processAnimations()
     }
 }
 
-void SceneConverter::processCameras()
+void assimp::Builder::processCameras()
 {
     if (scene->mNumCameras > 0)
     {
@@ -1497,12 +1601,12 @@ void SceneConverter::processCameras()
     }
 }
 
-void SceneConverter::processLights()
+void assimp::Builder::processLights()
 {
     if (scene->mNumLights > 0)
     {
         auto setColorAndIntensity = [&](const aiLight& light, vsg::Light& vsg_light) -> void {
-            vsg_light.color = convert(light.mColorDiffuse);
+            vsg_light.color = vsgXchange::convert(light.mColorDiffuse);
             float maxValue = std::max(std::max(vsg_light.color.r, vsg_light.color.g), vsg_light.color.b);
             if (maxValue > 0.0)
             {
@@ -1577,7 +1681,7 @@ void SceneConverter::processLights()
     }
 }
 
-vsg::ref_ptr<vsg::MatrixTransform> SceneConverter::processCoordinateFrame(const vsg::Path& ext)
+vsg::ref_ptr<vsg::MatrixTransform> assimp::Builder::processCoordinateFrame(const vsg::Path& ext)
 {
     vsg::CoordinateConvention source_coordinateConvention = vsg::CoordinateConvention::Y_UP;
 

@@ -7,7 +7,7 @@ endif()
 
 set(SOURCES ${SOURCES}
     gltf/gltf.cpp
-    gltf/SceneGraphBuilder.cpp
+    gltf/Builder.cpp
 )
 
 if (draco_FOUND AND vsgXchange_draco)

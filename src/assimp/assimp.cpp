@@ -10,9 +10,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 </editor-fold> */
 
-#include <vsgXchange/models.h>
 
-#include "SceneConverter.h"
+#include <vsg/utils/CommandLine.h>
+#include <vsgXchange/assimp.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 using namespace vsgXchange;
 
@@ -144,17 +148,10 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const vsg::Path& filename
             auto opt = vsg::clone(options);
             opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));
 
-            SceneConverter converter;
-            converter.filename = filename;
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
+            builder->filename = filename;
 
-            auto root = converter.visit(scene, opt, ext);
-            if (root)
-            {
-                if (converter.externalTextures && converter.externalObjects && !converter.externalObjects->entries.empty())
-                    root->setObject("external", converter.externalObjects);
-            }
-
-            return root;
+            return builder->createSceneGraph(scene, opt, ext);
         }
         else
         {
@@ -187,8 +184,8 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(std::istream& fin, vsg::r
 
         if (auto scene = importer.ReadFileFromMemory(input.data(), input.size(), _importFlags); scene)
         {
-            SceneConverter converter;
-            return converter.visit(scene, options, options->extensionHint);
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
+            return builder->createSceneGraph(scene, options, options->extensionHint);
         }
         else
         {
@@ -208,8 +205,8 @@ vsg::ref_ptr<vsg::Object> assimp::Implementation::read(const uint8_t* ptr, size_
     {
         if (auto scene = importer.ReadFileFromMemory(ptr, size, _importFlags); scene)
         {
-            SceneConverter converter;
-            return converter.visit(scene, options, options->extensionHint);
+            auto builder = vsg::clone<assimp::Builder>(prototype_builder, options);
+            return builder->createSceneGraph(scene, options, options->extensionHint);
         }
         else
         {
