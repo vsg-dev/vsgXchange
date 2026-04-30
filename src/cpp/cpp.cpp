@@ -70,7 +70,7 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
     else
     {
         fout << "static const char str[] = \n";
-        write(fout, str.str());
+        _write(fout, str.str());
         fout << ";\n";
         fout << "vsg::VSG io;\n";
         fout << "return io.read_cast<" << object->className() << ">(reinterpret_cast<const uint8_t*>(str), sizeof(str));\n";
@@ -82,7 +82,7 @@ bool cpp::write(const vsg::Object* object, const vsg::Path& filename, vsg::ref_p
     return true;
 }
 
-void cpp::write(std::ostream& out, const std::string& str) const
+void cpp::_write(std::ostream& out, const std::string& str) const
 {
     std::size_t max_string_literal_length = 16360;
     if (str.size() > max_string_literal_length)

@@ -41,7 +41,7 @@ namespace vsgXchange
         bool getFeatures(Features& features) const override;
 
     protected:
-        void write(std::ostream& out, const std::string& str) const;
+        void _write(std::ostream& out, const std::string& str) const;
     };
 
 } // namespace vsgXchange
