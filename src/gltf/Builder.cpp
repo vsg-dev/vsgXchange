@@ -1307,7 +1307,7 @@ vsg::ref_ptr<vsg::Animation> gltf::Builder::createAnimation(vsg::ref_ptr<gltf::A
         else if (channel->target.path == "weights")
             nodeChannels[node_id].weights = channel;
         else
-            vsg::warn("gltf::Builder::createSceneGraph() unsupported AnimationChannel.target.path of ", channel->target.path);
+            vsg::warn("gltf::Builder::createAnimation() unsupported AnimationChannel.target.path of ", channel->target.path);
     }
 
     for (auto& [node_id, channels] : nodeChannels)
