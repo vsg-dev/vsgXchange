@@ -23,9 +23,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
+#include <vsg/core/External.h>
 #include <vsg/io/ReaderWriter.h>
+#include <vsg/app/Camera.h>
+#include <vsg/lighting/Light.h>
 #include <vsg/state/Sampler.h>
 #include <vsg/animation/Animation.h>
+#include <vsg/animation/JointSampler.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 
 #include <vsgXchange/Version.h>
