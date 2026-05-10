@@ -37,12 +37,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <memory>
 
 // forward declare
-class aiScene;
-class aiNode;
-class aiBone;
-class aiMesh;
-class aiAnimation;
-class aiMaterial;
+struct aiScene;
+struct aiNode;
+struct aiBone;
+struct aiMesh;
+struct aiAnimation;
+struct aiMaterial;
 
 namespace vsgXchange
 {
