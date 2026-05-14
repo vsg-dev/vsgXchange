@@ -967,13 +967,13 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
         assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_2");
         assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_3");
 
-        uint32_t vertexCount = vertexArrays.front()->valueCount();
+        uint32_t vertexCount = static_cast<uint32_t>(vertexArrays.front()->valueCount());
         uint32_t instanceCount = 1;
         if (meshExtras.instancedAttributes)
         {
             for (auto& [name, id] : meshExtras.instancedAttributes->values)
             {
-                instanceCount = vsg_accessors[id.value]->valueCount();
+                instanceCount = static_cast<uint32_t>(vsg_accessors[id.value]->valueCount());
             }
         }
 
@@ -2145,7 +2145,7 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
         {
             if (auto joint = vsg_nodes[gltf_skin->joints.values[i].value].cast<vsg::Joint>())
             {
-                joint->index = i;
+                joint->index = static_cast<uint32_t>(i);
             }
         }
 
