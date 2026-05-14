@@ -247,4 +247,7 @@ namespace vsgXchange
 
 EVSG_type_name(vsgXchange::TextureFormat)
 EVSG_type_name(vsgXchange::assimp);
+
+#ifdef vsgXchange_assimp
 EVSG_type_name(vsgXchange::assimp::Builder);
+#endif
