@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <memory>
 
+#ifdef vsgXchange_assimp
 // forward declare
 struct aiScene;
 struct aiNode;
@@ -43,6 +44,7 @@ struct aiBone;
 struct aiMesh;
 struct aiAnimation;
 struct aiMaterial;
+#endif
 
 namespace vsgXchange
 {
@@ -98,7 +100,7 @@ namespace vsgXchange
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
-
+#ifdef vsgXchange_assimp
     public:
 
         struct SamplerData
@@ -232,7 +234,7 @@ namespace vsgXchange
 
             virtual vsg::ref_ptr<vsg::Node> createSceneGraph(const aiScene* in_scene, vsg::ref_ptr<const vsg::Options> in_options, const vsg::Path& ext);
         };
-
+#endif
 
     protected:
         ~assimp();
