@@ -144,6 +144,7 @@ namespace vsgXchange
         /// https://github.com/CesiumGS/3d-tiles/blob/main/specification/schema/tileset.schema.json
         struct VSGXCHANGE_DECLSPEC Tileset : public vsg::Inherit<gltf::ExtensionsExtras, Tileset>
         {
+            vsg::Path filename;
             vsg::ref_ptr<Asset> asset;
             vsg::ref_ptr<Properties> properties;
             vsg::ref_ptr<Tile> root;

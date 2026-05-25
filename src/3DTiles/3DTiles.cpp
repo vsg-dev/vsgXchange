@@ -740,6 +740,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
     if (parser.buffer[parser.pos] == '{')
     {
         auto tileset = Tiles3D::Tileset::create();
+        tileset->filename = filename;
 
         parser.read_object(*tileset);
 
