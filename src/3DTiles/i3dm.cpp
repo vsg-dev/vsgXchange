@@ -16,7 +16,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 #include <vsg/io/mem_stream.h>
 #include <vsg/io/read.h>
 #include <vsg/io/write.h>
-#include <vsg/nodes/InstanceNode.h>
 #include <vsg/nodes/MatrixTransform.h>
 #include <vsg/threading/OperationThreads.h>
 #include <vsg/ui/UIEvent.h>
@@ -364,6 +363,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
     uint32_t size_of_feature_and_batch_tables = header.featureTableJSONByteLength + header.featureTableBinaryByteLength + header.batchTableJSONByteLength + header.batchTableBinaryLength;
     uint32_t size_of_gltfField = header.byteLength - sizeof(Header) - size_of_feature_and_batch_tables;
 
+    auto builder = vsg::clone<Tiles3D::Builder>(prototype_builder, options);
 
     bool gpuInstancing = vsg::value<bool>(true, Tiles3D::instancing, options);
 
@@ -375,7 +375,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         opt->instanceNodeHint = vsg::Options::INSTANCE_TRANSLATIONS | vsg::Options::INSTANCE_ROTATIONS | vsg::Options::INSTANCE_SCALES;
     }
 
-    vsg::ref_ptr<vsg::Node> model;
+    vsg::ref_ptr<vsg::Node> child;
     if (header.gltfFormat == 0)
     {
         std::string uri;
@@ -387,7 +387,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         while (uri.back() <= 32) uri.pop_back();
 
         // load model
-        model = vsg::read_cast<vsg::Node>(uri, opt);
+        child = builder->readInstanceChild(uri, opt);
     }
     else
     {
@@ -396,99 +396,12 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         fin.read(binary.data(), size_of_gltfField);
 
         vsg::mem_stream binary_fin(reinterpret_cast<uint8_t*>(binary.data()), binary.size());
-
-        model = vsg::read_cast<vsg::Node>(binary_fin, opt);
+        child = builder->readInstanceChild(binary_fin, opt);
     }
 
-    if (!model) return {};
+    if (!child) return {};
 
-    // if required decorate the model to provide multiple instances, or provide the global translation.
-    if (gpuInstancing)
-    {
-        // compute the centre of all positions
-        vsg::dvec3 instance_center;
-
-        if (featureTable->POSITION)
-        {
-            for (size_t i = 0; i * 3 < featureTable->POSITION.values.size(); ++i)
-            {
-                const auto& values = featureTable->POSITION.values;
-                instance_center += vsg::dvec3(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
-            }
-            instance_center /= static_cast<double>(featureTable->POSITION.values.size() / 3);
-
-            featureTable->rtc_center += instance_center;
-        }
-        else if (featureTable->POSITION_QUANTIZED)
-        {
-            for (size_t i = 0; i * 3 < featureTable->POSITION_QUANTIZED.values.size(); ++i)
-            {
-                const auto& values = featureTable->POSITION_QUANTIZED.values;
-                vsg::dvec3 quantizedPosition(static_cast<double>(values[i * 3 + 0]), static_cast<double>(values[i * 3 + 1]), static_cast<double>(values[i * 3 + 2]));
-                instance_center += featureTable->quantizeOffset + quantizedPosition * featureTable->quantizeScale;
-            }
-
-            instance_center /= static_cast<double>(featureTable->POSITION_QUANTIZED.values.size() / 3);
-
-            featureTable->rtc_center += instance_center;
-        }
-
-        auto translations = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
-        auto rotations = vsg::quatArray::create(featureTable->INSTANCES_LENGTH);
-        auto scales = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
-
-        auto instanceNode = vsg::InstanceNode::create();
-        instanceNode->firstInstance = 0;
-        instanceNode->instanceCount = featureTable->INSTANCES_LENGTH;
-        instanceNode->setTranslations(translations);
-        instanceNode->setRotations(rotations);
-        instanceNode->setScales(scales);
-        instanceNode->child = model;
-
-        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
-        {
-            vsg::dvec3 translation, scale;
-            vsg::dquat rotation;
-            featureTable->getTransformComponents(i, translation, rotation, scale);
-
-            translations->set(i, vsg::vec3(translation - instance_center));
-            rotations->set(i, vsg::quat(rotation));
-            scales->set(i, vsg::vec3(scale));
-        }
-
-        if (featureTable->rtc_center != vsg::dvec3())
-        {
-            auto transform = vsg::MatrixTransform::create();
-            transform->addChild(instanceNode);
-            transform->matrix = vsg::translate(featureTable->rtc_center);
-            model = transform;
-        }
-        else
-        {
-            model = instanceNode;
-        }
-    }
-    else
-    {
-        auto group = vsg::Group::create();
-        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
-        {
-            vsg::dvec3 translation, scale;
-            vsg::dquat rotation;
-            featureTable->getTransformComponents(i, translation, rotation, scale);
-
-            auto transform = vsg::MatrixTransform::create();
-            transform->matrix = vsg::translate(featureTable->rtc_center + translation) * vsg::rotate(rotation) * vsg::scale(scale);
-            transform->addChild(model);
-
-            group->addChild(transform);
-        }
-
-        if (group->children.size() == 1)
-            model = group->children[0];
-        else if (!group->children.empty())
-            model = group;
-    }
+    auto model = builder->decorateInstanceChild(featureTable, child);
 
     if (filename) model->setValue("i3dm", filename);
 
