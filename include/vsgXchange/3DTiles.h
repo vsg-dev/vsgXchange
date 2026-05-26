@@ -278,6 +278,13 @@ namespace vsgXchange
 
             void convert();
 
+            // cache of VSG values computed from FeatureTable values
+            vsg::dvec3 quantizeOffset = {0.0, 0, 0.0};
+            vsg::dvec3 quantizeScale = {1.0, 1.0, 1.0};
+            vsg::dvec3 rtc_center = {0.0, 0.0, 0.0};
+
+            void getTransformComponents(uint32_t i, vsg::dvec3& translation, vsg::dquat& rotation, vsg::dvec3& scale) const;
+
             void report(vsg::LogOutput& output);
         };
 
@@ -304,6 +311,20 @@ namespace vsgXchange
 
             virtual vsg::dmat4 createMatrix(const std::vector<double>& values) const;
             virtual vsg::dsphere createBound(vsg::ref_ptr<BoundingVolume> boundingVolume) const;
+
+            vsg::dvec3 convert_oct32(uint16_t x, uint16_t y) const {
+                const double oct32_multiplier = (2.0 / 65535.0);
+                vsg::dvec2 e(static_cast<double>(x) * oct32_multiplier - 1.0, static_cast<double>(y) * oct32_multiplier - 1.0);
+                vsg::dvec3 v(e.x, e.y, 1.0 - std::abs(e.x) - std::abs(e.y));
+                if (v.z < 0.0)
+                {
+                    v.x = (1.0 - std::abs(e.y)) * std::copysignl(1.0, e.x);
+                    v.y = (1.0 - std::abs(e.x)) * std::copysignl(1.0, e.y);
+                }
+                return vsg::normalize(v);
+            };
+
+
 
             virtual vsg::ref_ptr<vsg::Node> readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine);
 
