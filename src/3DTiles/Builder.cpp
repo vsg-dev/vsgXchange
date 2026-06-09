@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/DepthSorted.h>
 #include <vsg/nodes/Group.h>
+#include <vsg/nodes/InstanceNode.h>
 #include <vsg/nodes/LOD.h>
 #include <vsg/nodes/MatrixTransform.h>
 #include <vsg/nodes/PagedLOD.h>
@@ -103,6 +104,111 @@ vsg::dsphere Tiles3D::Builder::createBound(vsg::ref_ptr<BoundingVolume> bounding
     {
         return {};
     }
+}
+
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::readInstanceChild(const vsg::Path& filename, vsg::ref_ptr<const vsg::Options> in_options)
+{
+    return vsg::read_cast<vsg::Node>(filename, in_options);
+}
+
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::readInstanceChild(std::istream& fin, vsg::ref_ptr<const vsg::Options> in_options)
+{
+    return vsg::read_cast<vsg::Node>(fin, in_options);
+}
+
+vsg::ref_ptr<vsg::Node> Tiles3D::Builder::decorateInstanceChild(vsg::ref_ptr<i3dm_FeatureTable> featureTable, vsg::ref_ptr<vsg::Node> child)
+{
+    bool gpuInstancing = vsg::value<bool>(true, Tiles3D::instancing, options);
+
+    // if required decorate the model to provide multiple instances, or provide the global translation.
+    if (gpuInstancing)
+    {
+        // compute the centre of all positions
+        vsg::dvec3 instance_center;
+
+        if (featureTable->POSITION)
+        {
+            for (size_t i = 0; i * 3 < featureTable->POSITION.values.size(); ++i)
+            {
+                const auto& values = featureTable->POSITION.values;
+                instance_center += vsg::dvec3(values[i * 3 + 0], values[i * 3 + 1], values[i * 3 + 2]);
+            }
+            instance_center /= static_cast<double>(featureTable->POSITION.values.size() / 3);
+
+            featureTable->rtc_center += instance_center;
+        }
+        else if (featureTable->POSITION_QUANTIZED)
+        {
+            for (size_t i = 0; i * 3 < featureTable->POSITION_QUANTIZED.values.size(); ++i)
+            {
+                const auto& values = featureTable->POSITION_QUANTIZED.values;
+                vsg::dvec3 quantizedPosition(static_cast<double>(values[i * 3 + 0]), static_cast<double>(values[i * 3 + 1]), static_cast<double>(values[i * 3 + 2]));
+                instance_center += featureTable->quantizeOffset + quantizedPosition * featureTable->quantizeScale;
+            }
+
+            instance_center /= static_cast<double>(featureTable->POSITION_QUANTIZED.values.size() / 3);
+
+            featureTable->rtc_center += instance_center;
+        }
+
+        auto translations = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
+        auto rotations = vsg::quatArray::create(featureTable->INSTANCES_LENGTH);
+        auto scales = vsg::vec3Array::create(featureTable->INSTANCES_LENGTH);
+
+        auto instanceNode = vsg::InstanceNode::create();
+        instanceNode->firstInstance = 0;
+        instanceNode->instanceCount = featureTable->INSTANCES_LENGTH;
+        instanceNode->setTranslations(translations);
+        instanceNode->setRotations(rotations);
+        instanceNode->setScales(scales);
+        instanceNode->child = child;
+
+        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
+        {
+            vsg::dvec3 translation, scale;
+            vsg::dquat rotation;
+            featureTable->getTransformComponents(i, translation, rotation, scale);
+
+            translations->set(i, vsg::vec3(translation - instance_center));
+            rotations->set(i, vsg::quat(rotation));
+            scales->set(i, vsg::vec3(scale));
+        }
+
+        if (featureTable->rtc_center != vsg::dvec3())
+        {
+            auto transform = vsg::MatrixTransform::create();
+            transform->addChild(instanceNode);
+            transform->matrix = vsg::translate(featureTable->rtc_center);
+            return transform;
+        }
+        else
+        {
+            return instanceNode;
+        }
+    }
+    else
+    {
+        auto group = vsg::Group::create();
+        for (uint32_t i = 0; i < featureTable->INSTANCES_LENGTH; ++i)
+        {
+            vsg::dvec3 translation, scale;
+            vsg::dquat rotation;
+            featureTable->getTransformComponents(i, translation, rotation, scale);
+
+            auto transform = vsg::MatrixTransform::create();
+            transform->matrix = vsg::translate(featureTable->rtc_center + translation) * vsg::rotate(rotation) * vsg::scale(scale);
+            transform->addChild(child);
+
+            group->addChild(transform);
+        }
+
+        if (group->children.size() == 1)
+            return group->children[0];
+        else if (!group->children.empty())
+            return group;
+    }
+
+    return {};
 }
 
 vsg::ref_ptr<vsg::Node> Tiles3D::Builder::readTileChildren(vsg::ref_ptr<Tiles3D::Tile> tile, uint32_t level, const std::string& inherited_refine)

@@ -1051,8 +1051,6 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
                 auto instanceDraw = vsg::InstanceDraw::create();
                 assign_extras(*primitive, *instanceDraw);
                 instanceDraw->assignArrays(vertexArrays);
-
-                assign_extras(*primitive, *instanceDraw);
                 instanceDraw->vertexCount = vertexCount;
                 draw = instanceDraw;
             }
