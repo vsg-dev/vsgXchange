@@ -50,8 +50,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/io/write.h>
 
 #ifdef vsgXchange_draco
-#    include "draco/compression/decode.h"
-#    include "draco/core/decoder_buffer.h"
+#    include <draco/compression/decode.h>
+#    include <draco/core/decoder_buffer.h>
+#endif
+
+#ifdef vsgXchange_meshoptimizer
+#   include <meshoptimizer.h>
 #endif
 
 using namespace vsgXchange;

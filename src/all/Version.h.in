@@ -51,6 +51,7 @@ extern "C"
     /// optional Features
     #cmakedefine vsgXchange_curl
     #cmakedefine vsgXchange_draco
+    #cmakedefine vsgXchange_meshoptimizer
     #cmakedefine vsgXchange_openexr
     #cmakedefine vsgXchange_freetype
     #cmakedefine vsgXchange_assimp

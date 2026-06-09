@@ -22,6 +22,20 @@ find_package(vsg ${VSG_MIN_VERSION})
 vsg_setup_dir_vars()
 vsg_setup_build_vars()
 
+
+#fine optional meshoptimer dependency
+find_package(meshoptimizer QUIET)
+if (meshoptimizer_FOUND)
+    OPTION(vsgXchange_meshoptimizer "Optional meshoptimizer support provided" ON)
+endif()
+
+if (vsgXchange_meshoptimizer)
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} meshoptimizer::meshoptimizer)
+    if(NOT BUILD_SHARED_LIBS)
+        set(FIND_DEPENDENCY ${FIND_DEPENDENCY} "find_dependency(meshoptimizer)")
+    endif()
+endif()
+
 # find optional osg2vsg package for loading image/nodes using OpenSceneGraph
 find_package(osg2vsg QUIET)
 if(osg2vsg_FOUND)
