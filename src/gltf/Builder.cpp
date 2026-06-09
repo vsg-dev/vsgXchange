@@ -1238,6 +1238,16 @@ bool gltf::Builder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
     }
 }
 
+void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive)
+{
+#ifdef vsgXchange_meshoptimizer
+    vsg::info("optimizePrimtive(", &primitive, ") optimize_mesh= ", optimize_mesh, ", build_meshlets = ", build_meshlets, " supported.");
+#else
+    vsg::warn("optimizePrimtive(", &primitive, ") optimize_mesh= ", optimize_mesh, ", build_meshlets = ", build_meshlets, " NOT SUPPORTED.");
+#endif
+}
+
+
 vsg::ref_ptr<vsg::Light> gltf::Builder::createLight(vsg::ref_ptr<gltf::Light> gltf_light)
 {
     bool range_set = gltf_light->range != std::numeric_limits<float>::max();
@@ -1917,6 +1927,10 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
     cloneAccessors = vsg::value<bool>(cloneAccessors, gltf::clone_accessors, options);
     maxAnisotropy = vsg::value<float>(maxAnisotropy, gltf::maxAnisotropy, options);
 
+    optimize_mesh = vsg::value<bool>(optimize_mesh, gltf::optimize_mesh, options);
+    build_meshlets = vsg::value<bool>(build_meshlets, gltf::build_meshlets, options);
+
+
     // TODO: need to check that the glTF model is suitable for use of InstanceNode/InstanceDraw
 
     // vsg::info("gltf::Builder::createSceneGraph() instanceNodeHint = ", instanceNodeHint);
@@ -2053,6 +2067,24 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
     {
         vsg_materials[mi] = createMaterial(model->materials.values[mi]);
     }
+
+
+    if (optimize_mesh || build_meshlets)
+    {
+        std::set<gltf::Primitive*> optimizedPrimitives;
+        for(auto& mesh : model->meshes.values)
+        {
+            for(auto& primitive : mesh->primitives.values)
+            {
+                if (optimizedPrimitives.count(primitive)==0)
+                {
+                    optimizedPrimitives.insert(primitive.get());
+                    optimizePrimtive(*primitive);
+                }
+            }
+        }
+    }
+
 
     // vsg::info("create meshes = ", model->meshes.values.size());
     // populate vsg_meshes in the createNode method.

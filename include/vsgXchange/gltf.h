@@ -664,6 +664,8 @@ namespace vsgXchange
             int instanceNodeHint = vsg::Options::INSTANCE_NONE;
             bool cloneAccessors = false;
             float maxAnisotropy = 16.0f;
+            bool optimize_mesh = false;
+            bool build_meshlets = false;
 
             vsg::ref_ptr<glTF> model;
 
@@ -702,6 +704,8 @@ namespace vsgXchange
             virtual void flattenTransforms(gltf::Node& node, const vsg::dmat4& transform);
 
             virtual bool getTransform(gltf::Node& node, vsg::dmat4& transform);
+
+            virtual void optimizePrimtive(gltf::Primitive& primitive);
 
             virtual vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             virtual vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
