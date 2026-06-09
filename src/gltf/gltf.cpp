@@ -1852,6 +1852,10 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
     result = arguments.readAndAssign<bool>(gltf::disable_gltf, &options) || result;
     result = arguments.readAndAssign<bool>(gltf::clone_accessors, &options) || result;
     result = arguments.readAndAssign<float>(gltf::maxAnisotropy, &options) || result;
+
+    result = arguments.readAndAssign<bool>(gltf::optimize_mesh, &options) || result;
+    result = arguments.readAndAssign<bool>(gltf::build_meshlets, &options) || result;
+
     return result;
 }
 
@@ -1866,6 +1870,11 @@ bool gltf::getFeatures(Features& features) const
     features.optionNameTypeMap[gltf::disable_gltf] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::clone_accessors] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::maxAnisotropy] = vsg::type_name<float>();
+
+#ifdef vsgXchange_meshoptimizer
+    features.optionNameTypeMap[gltf::optimize_mesh] = vsg::type_name<bool>();
+    features.optionNameTypeMap[gltf::build_meshlets] = vsg::type_name<bool>();
+#endif
 
     return true;
 }

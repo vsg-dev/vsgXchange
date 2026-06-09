@@ -59,6 +59,10 @@ namespace vsgXchange
         static constexpr const char* disable_gltf = "disable_gltf";         /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
         static constexpr const char* clone_accessors = "clone_accessors";   /// bool, hint to clone the data associated with accessors, defaults to false
         static constexpr const char* maxAnisotropy = "maxAnisotropy";       /// float, default setting of vsg::Sampler::maxAnisotropy to use.
+
+        static constexpr const char* optimize_mesh = "optimize_mesh";       /// when supported use meshoptimizer to remove duplicate mesh vertices, degenerate and duplicate triangles and optimize GPU cache usage
+        static constexpr const char* build_meshlets = "build_meshlets";     /// when supported use meshoptimizer to build meshlets from vertex and triangle data
+
         static constexpr const char* prototype_builder = "gltf::Builder";   /// gltf::Builder prototype cloned for converting gltf::glTF hierachy into VSG scene graph
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
