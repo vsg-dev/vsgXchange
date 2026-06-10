@@ -696,6 +696,16 @@ namespace vsgXchange
             // map used to map gltf attribute names to ShaderSet vertex attribute names
             std::map<std::string, std::string> attributeLookup;
 
+            const VkPrimitiveTopology topologyLookup[7] = {
+                VK_PRIMITIVE_TOPOLOGY_POINT_LIST,     // 0, POINTS
+                VK_PRIMITIVE_TOPOLOGY_LINE_LIST,      // 1, LINES
+                VK_PRIMITIVE_TOPOLOGY_LINE_LIST,      // 2, LINE_LOOP, need special handling
+                VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,     // 3, LINE_STRIP
+                VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,  // 4, TRIANGLES
+                VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // 5, TRIANGLE_STRIP
+                VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN    // 6, TRIANGLE_FAN
+            };
+
             virtual void assign_extras(ExtensionsExtras& src, vsg::Object& dest);
             virtual void assign_name_extras(NameExtensionsExtras& src, vsg::Object& dest);
 
@@ -705,7 +715,7 @@ namespace vsgXchange
 
             virtual bool getTransform(gltf::Node& node, vsg::dmat4& transform);
 
-            virtual void optimizePrimtive(gltf::Primitive& primitive);
+            virtual void optimizePrimtive(gltf::Primitive& primitive, const MeshExtras& extras = {});
 
             virtual vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             virtual vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
