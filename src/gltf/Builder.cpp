@@ -1235,9 +1235,9 @@ bool gltf::Builder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
 #ifdef vsgXchange_meshoptimizer
 void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtras& meshExtras)
 {
-    vsg::debug("optimizePrimtive(", &primitive, ") optimize_mesh= ", optimize_mesh, ", build_meshlets = ", build_meshlets, " supported.");
+    if (!optimize_mesh && !build_meshlets && !build_spatial_meshlets) return;
 
-    if (!optimize_mesh && !build_meshlets) return;
+    vsg::debug("optimizePrimtive(", &primitive, ") optimize_mesh= ", optimize_mesh, ", build_meshlets = ", build_meshlets, " supported.");
 
     VkPrimitiveTopology topology = topologyLookup[primitive.mode];
     if (topology < VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST || VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN > VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN)
@@ -1441,9 +1441,8 @@ void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtra
     {
         primitive.indices.value = vsg_accessors.size();
         vsg_accessors.push_back(indices);
-        vsg::info("adding indices ", indices);
+        vsg::debug("adding indices ", indices);
     }
-
 
     struct CloneArray : public vsg::ConstVisitor
     {
@@ -1490,13 +1489,96 @@ void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtra
         }
 
         base += array->valueSize();
-
     }
 
+
+    if (build_meshlets || build_spatial_meshlets)
+    {
+        size_t max_meshlets = 0;
+        size_t meshlet_count = 0;
+
+        std::vector<meshopt_Meshlet> meshlets;
+        std::vector<unsigned int> meshlet_vertices(remapped_indices.size());
+        std::vector<unsigned char> meshlet_triangles(remapped_indices.size());
+
+        if (build_spatial_meshlets)
+        {
+            const size_t max_vertices = 256;
+            const size_t min_triangles = 16;
+            const size_t max_triangles = 256; // note: in v0.25 or prior, max_triangles needs to be divisible by 4
+            const float fill_weight = 0.0f;
+
+            max_meshlets = meshopt_buildMeshletsBound(remapped_indices.size(), max_vertices, min_triangles);
+            meshlets.resize(max_meshlets);
+
+            meshlet_count = meshopt_buildMeshletsSpatial(meshlets.data(), meshlet_vertices.data(), meshlet_triangles.data(), remapped_indices.data(),
+                                                         remapped_indices.size(), reinterpret_cast<float*>(&final_vertexData[xPos]), final_vertexData.size(), vertexSize, max_vertices, min_triangles, max_triangles, fill_weight);
+        }
+        else
+        {
+            const size_t max_vertices = 256;
+            const size_t max_triangles = 256; // note: in v0.25 or prior, max_triangles needs to be divisible by 4
+            const float cone_weight = 0.0f;
+
+            max_meshlets = meshopt_buildMeshletsBound(remapped_indices.size(), max_vertices, max_triangles);
+            meshlets.resize(max_meshlets);
+
+            meshlet_count = meshopt_buildMeshlets(meshlets.data(), meshlet_vertices.data(), meshlet_triangles.data(), remapped_indices.data(),
+                                                  remapped_indices.size(), reinterpret_cast<float*>(&final_vertexData[xPos]), final_vertexData.size(), vertexSize, max_vertices, max_triangles, cone_weight);
+        }
+
+        if (meshlet_count > 0)
+        {
+            const meshopt_Meshlet& last = meshlets[meshlet_count - 1];
+
+            meshlet_vertices.resize(last.vertex_offset + last.vertex_count);
+            meshlet_triangles.resize(last.triangle_offset + last.triangle_count * 3);
+            meshlets.resize(meshlet_count);
+
+            vsg::info("meshlet_count = ", meshlet_count);
+            vsg::info("meshlet_vertices = ", meshlet_vertices.size());
+            vsg::info("meshlet_triangles = ", meshlet_triangles.size());
+
+
+            for(auto& meshlet : meshlets)
+            {
+                meshopt_optimizeMeshlet(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
+
+                vsg::info("   meshlet { vertex_offset = ", meshlet.vertex_offset,", triangle_offset = ", meshlet.triangle_offset, ", vertex_count = ", meshlet.vertex_count,", triangle_count = ",meshlet.triangle_count, "}");
+
+                meshopt_Bounds bounds = meshopt_computeMeshletBounds(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, reinterpret_cast<float*>(&final_vertexData[xPos]), final_vertexData.size(), vertexSize);
+
+                vsg::info("    meshopt_Bounds { center = { ", bounds.center[0], ", ",  bounds.center[1], ", ",  bounds.center[2], " }, radius = ", bounds.radius, " },",
+                          " conex_apex = { ", bounds.cone_apex[0], ", ", bounds.cone_apex[1], ", ", bounds.cone_apex[2], "}, cone_axis = {", bounds.cone_axis[0], ", ", bounds.cone_axis[1], ", ", bounds.cone_axis[2], "}, cone_cutoff = ", bounds.cone_cutoff);
+
+
+                #if 0
+                vsg::info("    SetMeshOutputsEXT( ",meshlet.vertex_count,", ", meshlet.triangle_count, " )");
+
+
+                for (uint32_t i = 0; i < meshlet.vertex_count; i += 1)
+                {
+                    uint32_t index = meshlet_vertices[meshlet.vertex_offset + i];
+                    vsg::info("    gl_MeshVerticesEXT[", int(i), "].gl_Position = world_view_projection * vec4( vertex_positions[", int(index), "], , 1)");
+                }
+
+                for (uint32_t i = 0; i < meshlet.triangle_count; i += 1)
+                {
+                uint32_t offset = meshlet.triangle_offset + i * 3;
+                vsg::info("    gl_PrimitiveTriangleIndicesEXT[", i, "] = uvec3( ",
+                int(meshlet_triangles[offset]), ", ", int(meshlet_triangles[offset + 1]), ", ", int(meshlet_triangles[offset + 2]), " )");
+                }
+
+                #endif
+            }
+        }
+    }
 }
 #else
 void gltf::Builder::optimizePrimtive(gltf::Primitive&, const MeshExtras&)
 {
+    if (!optimize_mesh && !build_meshlets && !build_spatial_meshlets) return;
+
     vsg::warn("optimizePrimtive("..") NOT SUPPORTED.");
 }
 #endif
@@ -2183,6 +2265,7 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
 
     optimize_mesh = vsg::value<bool>(optimize_mesh, gltf::optimize_mesh, options);
     build_meshlets = vsg::value<bool>(build_meshlets, gltf::build_meshlets, options);
+    build_spatial_meshlets = vsg::value<bool>(build_spatial_meshlets, gltf::build_spatial_meshlets, options);
 
 
     // TODO: need to check that the glTF model is suitable for use of InstanceNode/InstanceDraw
