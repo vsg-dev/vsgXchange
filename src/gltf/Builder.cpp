@@ -1291,10 +1291,10 @@ void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtra
 
     struct QuantizeArray : public vsg::Visitor
     {
-        float epsilon;
-        QuantizeArray(float e = 1e-5f) : epsilon(e) {}
+        float q;
+        QuantizeArray(float in_q = 1e-5f) : q(in_q) {}
 
-        inline void _quantize(float& v) { v = std::round(v/epsilon)*epsilon; if (v==-0.0f) v = 0.0f; }
+        inline void _quantize(float& v) { v = std::round(v/q)*q; if (v==-0.0f) v = 0.0f; }
 
         inline void quantize(float& v) { _quantize(v); }
         inline void quantize(vsg::vec2& v) { _quantize(v.x); _quantize(v.y); }
@@ -1305,10 +1305,10 @@ void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtra
         void apply(vsg::vec2Array& array) override { for(auto& v : array) quantize(v); }
         void apply(vsg::vec3Array& array) override { for(auto& v : array) quantize(v); }
         void apply(vsg::vec4Array& array) override { for(auto& v : array) quantize(v); }
-    } quantizeArray;
+    } quantizeArray(quantization);
 
 
-    bool quantizeArrays = true;
+    bool quantizeArrays = quantization != 0.0f;
     uint32_t vertexSize = 0;
     uint32_t vertexCount = 0;
     for(auto& [name, array] : perVertexArrays)
@@ -2264,6 +2264,8 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
     maxAnisotropy = vsg::value<float>(maxAnisotropy, gltf::maxAnisotropy, options);
 
     optimize_mesh = vsg::value<bool>(optimize_mesh, gltf::optimize_mesh, options);
+    quantization = vsg::value<float>(quantization, gltf::quantization, options);
+
     build_meshlets = vsg::value<bool>(build_meshlets, gltf::build_meshlets, options);
     build_spatial_meshlets = vsg::value<bool>(build_spatial_meshlets, gltf::build_spatial_meshlets, options);
 

@@ -1854,6 +1854,8 @@ bool gltf::readOptions(vsg::Options& options, vsg::CommandLine& arguments) const
     result = arguments.readAndAssign<float>(gltf::maxAnisotropy, &options) || result;
 
     result = arguments.readAndAssign<bool>(gltf::optimize_mesh, &options) || result;
+    result = arguments.readAndAssign<float>(gltf::quantization, &options) || result;
+
     result = arguments.readAndAssign<bool>(gltf::build_meshlets, &options) || result;
     result = arguments.readAndAssign<bool>(gltf::build_spatial_meshlets, &options) || result;
 
@@ -1874,6 +1876,8 @@ bool gltf::getFeatures(Features& features) const
 
 #ifdef vsgXchange_meshoptimizer
     features.optionNameTypeMap[gltf::optimize_mesh] = vsg::type_name<bool>();
+    features.optionNameTypeMap[gltf::quantization] = vsg::type_name<float>();
+
     features.optionNameTypeMap[gltf::build_meshlets] = vsg::type_name<bool>();
     features.optionNameTypeMap[gltf::build_spatial_meshlets] = vsg::type_name<bool>();
     #endif

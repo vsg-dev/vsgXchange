@@ -61,6 +61,8 @@ namespace vsgXchange
         static constexpr const char* maxAnisotropy = "maxAnisotropy";                   /// float, default setting of vsg::Sampler::maxAnisotropy to use
 
         static constexpr const char* optimize_mesh = "optimize_mesh";                   /// when available use meshoptimizer to remove duplicate mesh vertices, degenerate and duplicate triangles and optimize GPU cache usage
+        static constexpr const char* quantization = "quantization";                     /// when optmizing mesh quantize the vertex, normal and tecoord data to specified value
+
         static constexpr const char* build_meshlets = "build_meshlets";                 /// when available use meshoptimizer to build meshlets from vertex and triangle data
         static constexpr const char* build_spatial_meshlets = "build_spatial_meshlets"; /// when available use meshoptimizer to build meshlets using spatial metrics
 
@@ -665,7 +667,10 @@ namespace vsgXchange
             int instanceNodeHint = vsg::Options::INSTANCE_NONE;
             bool cloneAccessors = false;
             float maxAnisotropy = 16.0f;
+
             bool optimize_mesh = false;
+            float quantization = 1.0e-5f;
+
             bool build_meshlets = false;
             bool build_spatial_meshlets = false;
 
