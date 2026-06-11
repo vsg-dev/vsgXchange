@@ -781,7 +781,7 @@ vsg::ref_ptr<vsg::DescriptorConfigurator> gltf::Builder::createMaterial(vsg::ref
         return createPbrMaterial(gltf_material);
 }
 
-vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& meshExtras)
+vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, MeshExtras& meshExtras)
 {
     /*
     struct Attributes : public vsg::Inherit<vsg::JSONParser::Schema, Attributes>
@@ -1002,6 +1002,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
             assignArray(*meshExtras.instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "SCALE");
         }
 
+
         vsg::ref_ptr<vsg::Node> draw;
 
         if (!meshExtras.instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
@@ -1191,6 +1192,16 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
         vsg_mesh = group;
     }
 
+
+    if (meshExtras.meshlets)
+    {
+        // TODO: Need to map meshlets to GraphicsPipelineConfigurator
+        vsg_mesh->setObject("meshlets", meshExtras.meshlets);
+        vsg_mesh->setObject("meshletBounds", meshExtras.meshletBounds);
+        vsg_mesh->setObject("meshletVertices", meshExtras.meshletVertices);
+        vsg_mesh->setObject("meshletTriangles", meshExtras.meshletTriangles);
+    }
+
     assign_name_extras(*gltf_mesh, *vsg_mesh);
 
     return vsg_mesh;
@@ -1233,7 +1244,7 @@ bool gltf::Builder::getTransform(gltf::Node& node, vsg::dmat4& matrix)
 }
 
 #ifdef vsgXchange_meshoptimizer
-void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtras& meshExtras)
+void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, MeshExtras& meshExtras)
 {
     if (!optimize_mesh && !build_meshlets && !build_spatial_meshlets) return;
 
@@ -1535,42 +1546,25 @@ void gltf::Builder::optimizePrimtive(gltf::Primitive& primitive, const MeshExtra
             meshlet_triangles.resize(last.triangle_offset + last.triangle_count * 3);
             meshlets.resize(meshlet_count);
 
-            vsg::info("meshlet_count = ", meshlet_count);
-            vsg::info("meshlet_vertices = ", meshlet_vertices.size());
-            vsg::info("meshlet_triangles = ", meshlet_triangles.size());
-
+            meshExtras.meshletBounds = vsg::vec4Array::create(meshlet_count);
+            size_t i = 0;
 
             for(auto& meshlet : meshlets)
             {
                 meshopt_optimizeMeshlet(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
 
-                vsg::info("   meshlet { vertex_offset = ", meshlet.vertex_offset,", triangle_offset = ", meshlet.triangle_offset, ", vertex_count = ", meshlet.vertex_count,", triangle_count = ",meshlet.triangle_count, "}");
-
                 meshopt_Bounds bounds = meshopt_computeMeshletBounds(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, reinterpret_cast<float*>(&final_vertexData[xPos]), final_vertexData.size(), vertexSize);
-
-                vsg::info("    meshopt_Bounds { center = { ", bounds.center[0], ", ",  bounds.center[1], ", ",  bounds.center[2], " }, radius = ", bounds.radius, " },",
-                          " conex_apex = { ", bounds.cone_apex[0], ", ", bounds.cone_apex[1], ", ", bounds.cone_apex[2], "}, cone_axis = {", bounds.cone_axis[0], ", ", bounds.cone_axis[1], ", ", bounds.cone_axis[2], "}, cone_cutoff = ", bounds.cone_cutoff);
-
-
-                #if 0
-                vsg::info("    SetMeshOutputsEXT( ",meshlet.vertex_count,", ", meshlet.triangle_count, " )");
-
-
-                for (uint32_t i = 0; i < meshlet.vertex_count; i += 1)
-                {
-                    uint32_t index = meshlet_vertices[meshlet.vertex_offset + i];
-                    vsg::info("    gl_MeshVerticesEXT[", int(i), "].gl_Position = world_view_projection * vec4( vertex_positions[", int(index), "], , 1)");
-                }
-
-                for (uint32_t i = 0; i < meshlet.triangle_count; i += 1)
-                {
-                uint32_t offset = meshlet.triangle_offset + i * 3;
-                vsg::info("    gl_PrimitiveTriangleIndicesEXT[", i, "] = uvec3( ",
-                int(meshlet_triangles[offset]), ", ", int(meshlet_triangles[offset + 1]), ", ", int(meshlet_triangles[offset + 2]), " )");
-                }
-
-                #endif
+                meshExtras.meshletBounds->set(i++, vsg::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));;
             }
+
+            meshExtras.meshlets = vsg::uivec4Array::create(meshlets.size());
+            std::memcpy(meshExtras.meshlets->dataPointer(), meshlets.data(), meshExtras.meshlets->dataSize());
+
+            meshExtras.meshletVertices = vsg::uintArray::create(meshlet_vertices.size());
+            std::memcpy(meshExtras.meshletVertices->dataPointer(), meshlet_vertices.data(), meshExtras.meshletVertices->dataSize());
+
+            meshExtras.meshletTriangles = vsg::ubyteArray::create(meshlet_triangles.size());
+            std::memcpy(meshExtras.meshletTriangles->dataPointer(), meshlet_triangles.data(), meshExtras.meshletTriangles->dataSize());
         }
     }
 }

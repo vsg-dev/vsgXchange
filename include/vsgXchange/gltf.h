@@ -696,6 +696,11 @@ namespace vsgXchange
             {
                 vsg::ref_ptr<gltf::Attributes> instancedAttributes;
                 vsg::ref_ptr<vsg::JointSampler> jointSampler;
+
+                vsg::ref_ptr<vsg::uivec4Array> meshlets;
+                vsg::ref_ptr<vsg::uintArray> meshletVertices;
+                vsg::ref_ptr<vsg::ubyteArray> meshletTriangles;
+                vsg::ref_ptr<vsg::vec4Array> meshletBounds;
             };
 
             vsg::ref_ptr<vsg::DescriptorConfigurator> default_material;
@@ -722,7 +727,7 @@ namespace vsgXchange
 
             virtual bool getTransform(gltf::Node& node, vsg::dmat4& transform);
 
-            virtual void optimizePrimtive(gltf::Primitive& primitive, const MeshExtras& extras = {});
+            virtual void optimizePrimtive(gltf::Primitive& primitive, MeshExtras& extras);
 
             virtual vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             virtual vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);
@@ -735,7 +740,7 @@ namespace vsgXchange
             virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createPbrMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createUnlitMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
             virtual vsg::ref_ptr<vsg::DescriptorConfigurator> createMaterial(vsg::ref_ptr<gltf::Material> gltf_material);
-            virtual vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, const MeshExtras& extras = {});
+            virtual vsg::ref_ptr<vsg::Node> createMesh(vsg::ref_ptr<gltf::Mesh> gltf_mesh, MeshExtras& extras);
             virtual vsg::ref_ptr<vsg::Light> createLight(vsg::ref_ptr<gltf::Light> gltf_light);
             virtual vsg::ref_ptr<vsg::Node> createNode(vsg::ref_ptr<gltf::Node> gltf_node, bool jointNode);
             virtual vsg::ref_ptr<vsg::Animation> createAnimation(vsg::ref_ptr<gltf::Animation> gltf_animation);
