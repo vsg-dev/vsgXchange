@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vsg/lighting/PointLight.h>
 #include <vsg/lighting/SpotLight.h>
 #include <vsg/maths/transform.h>
+#include <vsg/meshshaders/DrawMeshTasks.h>
 #include <vsg/nodes/CullGroup.h>
 #include <vsg/nodes/CullNode.h>
 #include <vsg/nodes/DepthSorted.h>
@@ -965,7 +966,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
         assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_2");
         assignArray(primitive->attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_3");
 
-        uint32_t vertexCount = static_cast<uint32_t>(vertexArrays.front()->valueCount());
+        uint32_t vertexCount = vertexArrays.empty() ? 0 : static_cast<uint32_t>(vertexArrays.front()->valueCount());
         uint32_t instanceCount = 1;
         if (meshExtras.instancedAttributes)
         {
@@ -1002,21 +1003,66 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
             assignArray(*meshExtras.instancedAttributes, VK_VERTEX_INPUT_RATE_INSTANCE, "SCALE");
         }
 
-
         vsg::ref_ptr<vsg::Node> draw;
 
-        if (!meshExtras.instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
+        if (!vertexArrays.empty())
         {
-            if ((instanceNodeHint & vsg::Options::INSTANCE_COLORS) != 0) config->enableArray("vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
-            if ((instanceNodeHint & vsg::Options::INSTANCE_TRANSLATIONS) != 0) config->enableArray("vsg_Translation", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
-            if ((instanceNodeHint & vsg::Options::INSTANCE_ROTATIONS) != 0) config->enableArray("vsg_Rotation", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
-            if ((instanceNodeHint & vsg::Options::INSTANCE_SCALES) != 0) config->enableArray("vsg_Scale", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
 
-            if (primitive->indices)
+            if (!meshExtras.instancedAttributes && instanceNodeHint != vsg::Options::INSTANCE_NONE)
             {
-                auto instanceDrawIndexed = vsg::InstanceDrawIndexed::create();
-                assign_extras(*primitive, *instanceDrawIndexed);
-                instanceDrawIndexed->assignArrays(vertexArrays);
+                if ((instanceNodeHint & vsg::Options::INSTANCE_COLORS) != 0) config->enableArray("vsg_Color", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
+                if ((instanceNodeHint & vsg::Options::INSTANCE_TRANSLATIONS) != 0) config->enableArray("vsg_Translation", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
+                if ((instanceNodeHint & vsg::Options::INSTANCE_ROTATIONS) != 0) config->enableArray("vsg_Rotation", VK_VERTEX_INPUT_RATE_INSTANCE, 16, VK_FORMAT_R32G32B32A32_SFLOAT);
+                if ((instanceNodeHint & vsg::Options::INSTANCE_SCALES) != 0) config->enableArray("vsg_Scale", VK_VERTEX_INPUT_RATE_INSTANCE, 12, VK_FORMAT_R32G32B32_SFLOAT);
+
+                if (primitive->indices)
+                {
+                    auto instanceDrawIndexed = vsg::InstanceDrawIndexed::create();
+                    assign_extras(*primitive, *instanceDrawIndexed);
+                    instanceDrawIndexed->assignArrays(vertexArrays);
+
+                    auto indices = vsg_accessors[primitive->indices.value];
+                    if (!indices)
+                    {
+                        vsg::warn("gltf::Builder::createMesh() error required indices array null.");
+                        return {};
+                    }
+
+                    if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
+                    {
+                        // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
+                        auto ushort_indices = vsg::ushortArray::create(ubyte_indices->size());
+                        auto itr = ushort_indices->begin();
+                        for (auto value : *ubyte_indices)
+                        {
+                            *(itr++) = static_cast<uint16_t>(value);
+                        }
+
+                        instanceDrawIndexed->assignIndices(ushort_indices);
+                        instanceDrawIndexed->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
+                    }
+                    else
+                    {
+                        instanceDrawIndexed->assignIndices(indices);
+                        instanceDrawIndexed->indexCount = static_cast<uint32_t>(indices->valueCount());
+                    }
+                    draw = instanceDrawIndexed;
+                }
+                else
+                {
+                    auto instanceDraw = vsg::InstanceDraw::create();
+                    assign_extras(*primitive, *instanceDraw);
+                    instanceDraw->assignArrays(vertexArrays);
+                    instanceDraw->vertexCount = vertexCount;
+                    draw = instanceDraw;
+                }
+            }
+            else if (primitive->indices)
+            {
+                auto vid = vsg::VertexIndexDraw::create();
+                assign_extras(*primitive, *vid);
+                vid->assignArrays(vertexArrays);
+                vid->instanceCount = instanceCount;
 
                 auto indices = vsg_accessors[primitive->indices.value];
                 if (!indices)
@@ -1035,68 +1081,42 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
                         *(itr++) = static_cast<uint16_t>(value);
                     }
 
-                    instanceDrawIndexed->assignIndices(ushort_indices);
-                    instanceDrawIndexed->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
+                    vid->assignIndices(ushort_indices);
+                    vid->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
                 }
                 else
                 {
-                    instanceDrawIndexed->assignIndices(indices);
-                    instanceDrawIndexed->indexCount = static_cast<uint32_t>(indices->valueCount());
+                    vid->assignIndices(indices);
+                    vid->indexCount = static_cast<uint32_t>(indices->valueCount());
                 }
-                draw = instanceDrawIndexed;
+
+                draw = vid;
             }
             else
             {
-                auto instanceDraw = vsg::InstanceDraw::create();
-                assign_extras(*primitive, *instanceDraw);
-                instanceDraw->assignArrays(vertexArrays);
-                instanceDraw->vertexCount = vertexCount;
-                draw = instanceDraw;
+                auto vd = vsg::VertexDraw::create();
+                assign_extras(*primitive, *vd);
+                vd->assignArrays(vertexArrays);
+                vd->instanceCount = instanceCount;
+                vd->vertexCount = vertexCount;
+                draw = vd;
             }
-        }
-        else if (primitive->indices)
-        {
-            auto vid = vsg::VertexIndexDraw::create();
-            assign_extras(*primitive, *vid);
-            vid->assignArrays(vertexArrays);
-            vid->instanceCount = instanceCount;
-
-            auto indices = vsg_accessors[primitive->indices.value];
-            if (!indices)
-            {
-                vsg::warn("gltf::Builder::createMesh() error required indices array null.");
-                return {};
-            }
-
-            if (auto ubyte_indices = indices.cast<vsg::ubyteArray>())
-            {
-                // need to promote ubyte indices to ushort as Vulkan requires an extension to be enabled for ubyte indices.
-                auto ushort_indices = vsg::ushortArray::create(ubyte_indices->size());
-                auto itr = ushort_indices->begin();
-                for (auto value : *ubyte_indices)
-                {
-                    *(itr++) = static_cast<uint16_t>(value);
-                }
-
-                vid->assignIndices(ushort_indices);
-                vid->indexCount = static_cast<uint32_t>(ushort_indices->valueCount());
-            }
-            else
-            {
-                vid->assignIndices(indices);
-                vid->indexCount = static_cast<uint32_t>(indices->valueCount());
-            }
-
-            draw = vid;
         }
         else
         {
-            auto vd = vsg::VertexDraw::create();
-            assign_extras(*primitive, *vd);
-            vd->assignArrays(vertexArrays);
-            vd->instanceCount = instanceCount;
-            vd->vertexCount = vertexCount;
-            draw = vd;
+            if (meshExtras.meshlets)
+            {
+                vsg::info("Need to handle no vertex assignment - assume mesh shader pipeline, but we do at least have meshlets built. meshExtras.meshlets = ", meshExtras.meshlets, ", count = ", meshExtras.meshlets->valueCount());
+                auto drawMeshTask = vsg::DrawMeshTasks::create(meshExtras.meshlets->valueCount(), instanceCount, 1);
+                draw = drawMeshTask;
+            }
+            else
+            {
+                vsg::info("Need to handle no vertex assignment - assume mesh shader pipeline, BUT worse we have no meshlets to work from.");
+                auto drawMeshTask = vsg::DrawMeshTasks::create(0, 0, 0);
+                draw = drawMeshTask;
+            }
+
         }
 
         // set the GraphicsPipelineStates to the required values.

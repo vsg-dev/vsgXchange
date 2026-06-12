@@ -287,6 +287,18 @@ int main(int argc, char** argv)
     // set up defaults and read command line arguments to override them
     vsg::CommandLine arguments(&argc, argv);
 
+    std::string name;
+    vsg::Path shaderSetFilename;
+    while(arguments.read("--ss", name, shaderSetFilename))
+    {
+        auto shaderSet = vsg::read_cast<vsg::ShaderSet>(shaderSetFilename, options);
+        if (shaderSet)
+        {
+            options->shaderSets[name] = shaderSet;
+            vsg::info("assigned shaderSets[", name, "] = ", shaderSet);
+        }
+    }
+
     if (arguments.read({"-h", "--help"}))
     {
         printHelp(std::cout);
