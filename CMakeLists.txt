@@ -24,7 +24,7 @@ vsg_setup_build_vars()
 
 
 #fine optional meshoptimer dependency
-find_package(meshoptimizer QUIET)
+find_package(meshoptimizer 1.2 QUIET)
 if (meshoptimizer_FOUND)
     OPTION(vsgXchange_meshoptimizer "Optional meshoptimizer support provided" ON)
 endif()

@@ -1,5 +1,5 @@
 # add draco support if available
-find_package(draco)
+find_package(draco QUIET)
 
 if(draco_FOUND)
     OPTION(vsgXchange_draco "Optional glTF draco support provided" ON)

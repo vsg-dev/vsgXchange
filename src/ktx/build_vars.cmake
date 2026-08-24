@@ -1,7 +1,7 @@
 # add CURL if available
 # find_package(ktx)
 
-find_package(Ktx)
+find_package(Ktx QUIET)
 
 if(Ktx_FOUND)
     OPTION(vsgXchange_ktx "Optional KTX support provided" ON)
