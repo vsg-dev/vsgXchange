@@ -754,9 +754,8 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_json(std::istream& fin, vsg::ref_ptr<con
             return {};
         }
 
-        auto builder = vsg::clone<Tiles3D::Builder>(prototype_builder, options);
-
         auto opt = vsg::clone(options);
+        auto builder = vsg::clone<Tiles3D::Builder>(prototype_builder, opt);
 
         if (tileset->asset)
         {
@@ -810,7 +809,11 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
     if (ext == ".tiles") return read_tiles(filename, options);
 
     vsg::Path filenameToUse = vsg::findFile(filename, options);
-    if (!filenameToUse) return {};
+    if (!filenameToUse)
+    {
+        vsg::warn("Tiles3D::read( ",filename, ", ", options, ") paths = ", options->paths);
+        return {};
+    }
 
     auto opt = vsg::clone(options);
     opt->paths.insert(opt->paths.begin(), vsg::filePath(filenameToUse));

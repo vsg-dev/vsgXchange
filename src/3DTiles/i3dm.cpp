@@ -399,7 +399,12 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read_i3dm(std::istream& fin, vsg::ref_ptr<con
         child = builder->readInstanceChild(binary_fin, opt);
     }
 
-    if (!child) return {};
+    if (!child)
+    {
+
+        vsg::warn("read_i3dm(.., .., ", filename, ") unable to read child.");
+        return {};
+    }
 
     auto model = builder->decorateInstanceChild(featureTable, child);
 
