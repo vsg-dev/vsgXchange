@@ -23,13 +23,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </editor-fold> */
 
-#include <vsg/core/External.h>
-#include <vsg/io/ReaderWriter.h>
-#include <vsg/app/Camera.h>
-#include <vsg/lighting/Light.h>
-#include <vsg/state/Sampler.h>
 #include <vsg/animation/Animation.h>
 #include <vsg/animation/JointSampler.h>
+#include <vsg/app/Camera.h>
+#include <vsg/core/External.h>
+#include <vsg/io/ReaderWriter.h>
+#include <vsg/lighting/Light.h>
+#include <vsg/state/Sampler.h>
 #include <vsg/utils/GraphicsPipelineConfigurator.h>
 
 #include <vsgXchange/Version.h>
@@ -102,7 +102,6 @@ namespace vsgXchange
 
 #ifdef vsgXchange_assimp
     public:
-
         struct SamplerData
         {
             vsg::ref_ptr<vsg::Sampler> sampler;
@@ -203,7 +202,6 @@ namespace vsgXchange
 
             virtual vsg::ref_ptr<vsg::MatrixTransform> processCoordinateFrame(const vsg::Path& ext);
 
-
             vsg::ref_ptr<vsg::ShaderSet> getOrCreatePbrShaderSet()
             {
                 if (!pbrShaderSet)
@@ -223,7 +221,6 @@ namespace vsgXchange
                 }
                 return phongShaderSet;
             }
-
 
             virtual void convert(const aiMaterial* material, vsg::DescriptorConfigurator& convertedMaterial);
 
@@ -246,7 +243,7 @@ namespace vsgXchange
 } // namespace vsgXchange
 
 EVSG_type_name(vsgXchange::TextureFormat)
-EVSG_type_name(vsgXchange::assimp);
+    EVSG_type_name(vsgXchange::assimp);
 
 #ifdef vsgXchange_assimp
 EVSG_type_name(vsgXchange::assimp::Builder);

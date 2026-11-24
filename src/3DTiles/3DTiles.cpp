@@ -811,7 +811,7 @@ vsg::ref_ptr<vsg::Object> Tiles3D::read(const vsg::Path& filename, vsg::ref_ptr<
     vsg::Path filenameToUse = vsg::findFile(filename, options);
     if (!filenameToUse)
     {
-        vsg::warn("Tiles3D::read( ",filename, ", ", options, ") paths = ", options->paths);
+        vsg::warn("Tiles3D::read( ", filename, ", ", options, ") paths = ", options->paths);
         return {};
     }
 

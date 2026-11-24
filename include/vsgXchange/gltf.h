@@ -56,14 +56,14 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";                                 /// bool, report parsed glTF to console, defaults to false
-        static constexpr const char* culling = "culling";                               /// bool, insert cull nodes, defaults to true
-        static constexpr const char* disable_gltf = "disable_gltf";                     /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
-        static constexpr const char* clone_accessors = "clone_accessors";               /// bool, hint to clone the data associated with accessors, defaults to false
-        static constexpr const char* maxAnisotropy = "maxAnisotropy";                   /// float, default setting of vsg::Sampler::maxAnisotropy to use
+        static constexpr const char* report = "report";                   /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* culling = "culling";                 /// bool, insert cull nodes, defaults to true
+        static constexpr const char* disable_gltf = "disable_gltf";       /// bool, disable vsgXchange::gltf so vsgXchange::assimp will be used instead, defaults to false
+        static constexpr const char* clone_accessors = "clone_accessors"; /// bool, hint to clone the data associated with accessors, defaults to false
+        static constexpr const char* maxAnisotropy = "maxAnisotropy";     /// float, default setting of vsg::Sampler::maxAnisotropy to use
 
-        static constexpr const char* optimize_mesh = "optimize_mesh";                   /// when available use meshoptimizer to remove duplicate mesh vertices, degenerate and duplicate triangles and optimize GPU cache usage
-        static constexpr const char* quantization = "quantization";                     /// when optmizing mesh quantize the vertex, normal and tecoord data to specified value
+        static constexpr const char* optimize_mesh = "optimize_mesh"; /// when available use meshoptimizer to remove duplicate mesh vertices, degenerate and duplicate triangles and optimize GPU cache usage
+        static constexpr const char* quantization = "quantization";   /// when optmizing mesh quantize the vertex, normal and tecoord data to specified value
 
         static constexpr const char* build_meshlets = "build_meshlets";                 /// when available use meshoptimizer to build meshlets from vertex and triangle data
         static constexpr const char* build_spatial_meshlets = "build_spatial_meshlets"; /// when available use meshoptimizer to build meshlets using spatial metrics
@@ -74,10 +74,10 @@ namespace vsgXchange
         static constexpr const char* meshlet_cone_weight = "meshlet_cone_weight";       /// float cone_weight target when building meshlets
         static constexpr const char* packed_vertices = "packed_vertices";               /// pack vertex, normal and texcoord data into interleaved arrays.
 
-        static constexpr const char* shared_objects = "gltf::shared_objects";           /// string, hint whether the scene graph building should use "none", "local" creates a local vsg::SharedObjects for just this load, "inherit" the SharedObjects from vsg::Options.
-                                                                                        /// The default "" inherit's SharedObject if available, otherwise creates a local one.
+        static constexpr const char* shared_objects = "gltf::shared_objects"; /// string, hint whether the scene graph building should use "none", "local" creates a local vsg::SharedObjects for just this load, "inherit" the SharedObjects from vsg::Options.
+                                                                              /// The default "" inherit's SharedObject if available, otherwise creates a local one.
 
-        static constexpr const char* prototype_builder = "gltf::Builder";   /// gltf::Builder prototype cloned for converting gltf::glTF hierachy into VSG scene graph
+        static constexpr const char* prototype_builder = "gltf::Builder"; /// gltf::Builder prototype cloned for converting gltf::glTF hierachy into VSG scene graph
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 
@@ -688,7 +688,7 @@ namespace vsgXchange
             bool build_spatial_meshlets = false;
             uint32_t meshlet_min_triangles = 16;
             uint32_t meshlet_max_triangles = 126; // recommendation for NVidia
-            uint32_t meshlet_max_vertices = 64; // recommendation for NVidia
+            uint32_t meshlet_max_vertices = 64;   // recommendation for NVidia
             float meshlet_cone_weight = 0.0f;
             float meshlet_fill_weight = 0.0f;
             bool packed_vertices = false;
@@ -748,7 +748,8 @@ namespace vsgXchange
                 {
                     return vsg_accessors[itr->second.value].cast<T>();
                 }
-                else return {};
+                else
+                    return {};
             }
 
             virtual void assign_extras(ExtensionsExtras& src, vsg::Object& dest);
@@ -761,7 +762,6 @@ namespace vsgXchange
             virtual bool getTransform(gltf::Node& node, vsg::dmat4& transform);
 
             virtual void optimizePrimitive(gltf::Primitive& primitive, MeshExtras& extras);
-
 
             virtual vsg::ref_ptr<vsg::Data> createBuffer(vsg::ref_ptr<gltf::Buffer> gltf_buffer);
             virtual vsg::ref_ptr<vsg::Data> createBufferView(vsg::ref_ptr<gltf::BufferView> gltf_bufferView);

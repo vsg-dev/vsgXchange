@@ -56,7 +56,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 #ifdef vsgXchange_meshoptimizer
-#   include <meshoptimizer.h>
+#    include <meshoptimizer.h>
 #endif
 
 using namespace vsgXchange;
@@ -806,7 +806,6 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
     };
 */
 
-
 #if 0
     vsg::info("mesh = {");
     vsg::info("    primitives = ", gltf_mesh->primitives.values.size());
@@ -1052,7 +1051,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
                 }
 
                 vsg::vec3 origin = meshExtras.meshBounds.min;
-                vsg::vec3 extents = meshExtras.meshBounds.max-meshExtras.meshBounds.min;
+                vsg::vec3 extents = meshExtras.meshBounds.max - meshExtras.meshBounds.min;
                 mesh.bounds = vsg::vec4(origin.x, origin.y, origin.z, std::max({extents.x, extents.y, extents.z}));
                 mesh.texcoordExtents = meshExtras.texcoordExtents;
 
@@ -1062,7 +1061,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
 
                 // implement temporary fix for task shaders being able to process multiple meshlets at one time
                 // will need to come up with a mechanism for setting this meshletsPerTask value, potentially at runtime.
-                for(auto& shaderStage : config->shaderSet->stages)
+                for (auto& shaderStage : config->shaderSet->stages)
                 {
                     if ((shaderStage->stage & VK_SHADER_STAGE_TASK_BIT_EXT) != 0)
                     {
@@ -1072,7 +1071,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
                     }
                 }
 
-                uint32_t meshletTaskCount = (mesh.count[0]+meshletsPerTask-1)/meshletsPerTask;
+                uint32_t meshletTaskCount = (mesh.count[0] + meshletsPerTask - 1) / meshletsPerTask;
 
                 auto drawMeshTask = vsg::DrawMeshTasks::create(meshletTaskCount, instanceCount, 1);
 
@@ -1083,7 +1082,6 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createMesh(vsg::ref_ptr<gltf::Mesh> gltf_
                 auto drawMeshTask = vsg::DrawMeshTasks::create(1, 1, 1);
                 draw = drawMeshTask;
             }
-
         }
         else
         {
@@ -1348,10 +1346,8 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         return;
     }
 
-
     std::map<std::string, vsg::ref_ptr<vsg::Data>> perVertexArrays;
     auto registerPerVertexArray = [&](vsgXchange::gltf::Attributes& attrib, VkVertexInputRate vertexInputRate, const std::string& attribute_name) -> vsg::ref_ptr<vsg::Data> {
-
         if (vertexInputRate != VK_VERTEX_INPUT_RATE_VERTEX) return {};
 
         auto array_itr = attrib.values.find(attribute_name);
@@ -1368,7 +1364,7 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
 
     if (auto data = registerPerVertexArray(primitive.attributes, VK_VERTEX_INPUT_RATE_VERTEX, "POSITION"))
     {
-        if (data->valueSize()<12)
+        if (data->valueSize() < 12)
         {
             vsg::info("POSITION array incompatible with mesh_optimizer usage. data = ", data);
             return;
@@ -1379,7 +1375,6 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         vsg::info("gltf::Builder::optimizePrimitive() : No POSITION array available, incompatible with mesh_optimizer usage.");
         return;
     }
-
 
     registerPerVertexArray(primitive.attributes, VK_VERTEX_INPUT_RATE_VERTEX, "NORMAL");
     registerPerVertexArray(primitive.attributes, VK_VERTEX_INPUT_RATE_VERTEX, "TEXCOORD_0");
@@ -1399,7 +1394,7 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
     {
         if (auto vertices = itr->second.cast<vsg::vec3Array>())
         {
-            for(auto& v : *vertices)
+            for (auto& v : *vertices)
             {
                 mesh_bounds.add(v);
             }
@@ -1412,24 +1407,54 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         float q;
         QuantizeArray(float in_q = 1e-5f) : q(in_q) {}
 
-        inline void _quantize(float& v) { v = std::round(v/q)*q; if (v==-0.0f) v = 0.0f; }
+        inline void _quantize(float& v)
+        {
+            v = std::round(v / q) * q;
+            if (v == -0.0f) v = 0.0f;
+        }
 
         inline void quantize(float& v) { _quantize(v); }
-        inline void quantize(vsg::vec2& v) { _quantize(v.x); _quantize(v.y); }
-        inline void quantize(vsg::vec3& v) { _quantize(v.x); _quantize(v.y); _quantize(v.z); }
-        inline void quantize(vsg::vec4& v) { _quantize(v.x); _quantize(v.y); _quantize(v.z); _quantize(v.w);}
+        inline void quantize(vsg::vec2& v)
+        {
+            _quantize(v.x);
+            _quantize(v.y);
+        }
+        inline void quantize(vsg::vec3& v)
+        {
+            _quantize(v.x);
+            _quantize(v.y);
+            _quantize(v.z);
+        }
+        inline void quantize(vsg::vec4& v)
+        {
+            _quantize(v.x);
+            _quantize(v.y);
+            _quantize(v.z);
+            _quantize(v.w);
+        }
 
-        void apply(vsg::floatArray& array) override { for(auto& v : array) quantize(v); }
-        void apply(vsg::vec2Array& array) override { for(auto& v : array) quantize(v); }
-        void apply(vsg::vec3Array& array) override { for(auto& v : array) quantize(v); }
-        void apply(vsg::vec4Array& array) override { for(auto& v : array) quantize(v); }
+        void apply(vsg::floatArray& array) override
+        {
+            for (auto& v : array) quantize(v);
+        }
+        void apply(vsg::vec2Array& array) override
+        {
+            for (auto& v : array) quantize(v);
+        }
+        void apply(vsg::vec3Array& array) override
+        {
+            for (auto& v : array) quantize(v);
+        }
+        void apply(vsg::vec4Array& array) override
+        {
+            for (auto& v : array) quantize(v);
+        }
     } quantizeArray(quantization);
-
 
     bool quantizeArrays = quantization != 0.0f;
     uint32_t vertexSize = 0;
     uint32_t vertexCount = 0;
-    for(auto& [name, array] : perVertexArrays)
+    for (auto& [name, array] : perVertexArrays)
     {
         if (quantizeArrays) array->accept(quantizeArray);
         vertexSize += array->valueSize();
@@ -1439,16 +1464,15 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
     std::vector<uint8_t> vertexData(vertexSize * vertexCount, 127);
     uint32_t base = 0;
     unsigned int xPos = 0;
-    for(auto& [name, array] : perVertexArrays)
+    for (auto& [name, array] : perVertexArrays)
     {
-        if (name=="POSITION") xPos = base;
-        for(uint32_t i=0; i<array->valueCount(); ++i)
+        if (name == "POSITION") xPos = base;
+        for (uint32_t i = 0; i < array->valueCount(); ++i)
         {
-            std::memcpy(&vertexData[base + i*vertexSize], array->dataPointer(i), array->valueSize());
+            std::memcpy(&vertexData[base + i * vertexSize], array->dataPointer(i), array->valueSize());
         }
         base += array->valueSize();
     }
-
 
     vsg::ref_ptr<vsg::Data> indices;
     if (primitive.indices)
@@ -1464,9 +1488,21 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         {
             std::vector<unsigned int>& target;
             CopyIndices(std::vector<unsigned int>& in_indices) : target(in_indices) {}
-            void apply(const vsg::ubyteArray& src) override { target.resize(src.valueCount()); for(unsigned int i=0; i<target.size(); ++i) target[i] = src[i]; }
-            void apply(const vsg::ushortArray& src) override { target.resize(src.valueCount()); for(unsigned int i=0; i<target.size(); ++i) target[i] = src[i]; }
-            void apply(const vsg::uintArray& src) override { target.resize(src.valueCount()); for(unsigned int i=0; i<target.size(); ++i) target[i] = src[i]; }
+            void apply(const vsg::ubyteArray& src) override
+            {
+                target.resize(src.valueCount());
+                for (unsigned int i = 0; i < target.size(); ++i) target[i] = src[i];
+            }
+            void apply(const vsg::ushortArray& src) override
+            {
+                target.resize(src.valueCount());
+                for (unsigned int i = 0; i < target.size(); ++i) target[i] = src[i];
+            }
+            void apply(const vsg::uintArray& src) override
+            {
+                target.resize(src.valueCount());
+                for (unsigned int i = 0; i < target.size(); ++i) target[i] = src[i];
+            }
         } copyIndices(original_indices);
 
         indices->accept(copyIndices);
@@ -1475,7 +1511,7 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
     {
         vsg::debug("creating indices");
         original_indices.resize(vertexCount);
-        for(uint32_t i=0; i<vertexCount; ++i)
+        for (uint32_t i = 0; i < vertexCount; ++i)
         {
             original_indices[i] = i;
         }
@@ -1485,7 +1521,7 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
 
     size_t totalRemappedVertices = meshopt_generateVertexRemap(&remap[0], &original_indices.front(), original_indices.size(), &vertexData.front(), vertexCount, vertexSize);
 
-    vsg::debug("    after meshopt_generateVertexRemap(...) vertexCount = ",vertexCount, ", totalRemappedVertices = ", totalRemappedVertices);
+    vsg::debug("    after meshopt_generateVertexRemap(...) vertexCount = ", vertexCount, ", totalRemappedVertices = ", totalRemappedVertices);
 
     std::vector<unsigned int> remapped_indices(original_indices.size());
     meshopt_remapIndexBuffer(&remapped_indices[0], &original_indices.front(), original_indices.size(), &remap[0]);
@@ -1495,12 +1531,11 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
 
     meshopt_optimizeVertexCache(&remapped_indices.front(), &remapped_indices.front(), remapped_indices.size(), totalRemappedVertices);
 
-
-    #if 0
+#    if 0
     float threshold = 1.05;
     meshopt_optimizeOverdraw(&remapped_indices.front(), &remapped_indices.front(), remapped_indices.size(), reinterpret_cast<float*>(&remapped_vertexData[xPos]), totalRemappedVertices, vertexSize, threshold);
     vsg::info("after overdraw optimization, remapped_indices = ", remapped_indices);
-    #endif
+#    endif
 
     std::vector<uint8_t> final_vertexData(vertexSize * totalRemappedVertices, 0);
     uint32_t optimized_vertexCount = meshopt_optimizeVertexFetch(&final_vertexData.front(), &remapped_indices.front(), remapped_indices.size(), &remapped_vertexData.front(), vertexCount, vertexSize);
@@ -1517,10 +1552,10 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         }
     }
 
-    if (optimized_vertexCount!=vertexCount || original_indices.size()!=remapped_indices.size())
+    if (optimized_vertexCount != vertexCount || original_indices.size() != remapped_indices.size())
     {
-        vsg::debug("mesh reduction ratio = ", float(optimized_vertexCount)/float(vertexCount));
-        vsg::debug("index ratio = ", float(remapped_indices.size())/float(original_indices.size()), ", indices changed = ", vsg::compare_value_container(original_indices, remapped_indices));
+        vsg::debug("mesh reduction ratio = ", float(optimized_vertexCount) / float(vertexCount));
+        vsg::debug("index ratio = ", float(remapped_indices.size()) / float(original_indices.size()), ", indices changed = ", vsg::compare_value_container(original_indices, remapped_indices));
     }
     else
     {
@@ -1531,12 +1566,12 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
     if (remapped_indices.size() > 65536)
     {
         indices = vsg::uintArray::create(remapped_indices.size());
-        std::memcpy(indices->dataPointer(), remapped_indices.data(), remapped_indices.size()*4);
+        std::memcpy(indices->dataPointer(), remapped_indices.data(), remapped_indices.size() * 4);
     }
     else
     {
         auto ushort_indices = vsg::ushortArray::create(remapped_indices.size());
-        for(size_t i=0; i<remapped_indices.size(); ++i)
+        for (size_t i = 0; i < remapped_indices.size(); ++i)
         {
             ushort_indices->set(i, remapped_indices[i]);
         }
@@ -1562,8 +1597,10 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         void apply(const vsg::vec2Array& array) override { data = vsg::vec2Array::create(count, vsg::Data::Properties{array.properties.format}); }
         void apply(const vsg::vec3Array& array) override
         {
-            if (mapVec3ArrayToVec4Array) data = vsg::vec4Array::create(count, initializer, vsg::Data::Properties{VK_FORMAT_R32G32B32A32_SFLOAT});
-            else data = vsg::vec3Array::create(count, vsg::Data::Properties{array.properties.format});
+            if (mapVec3ArrayToVec4Array)
+                data = vsg::vec4Array::create(count, initializer, vsg::Data::Properties{VK_FORMAT_R32G32B32A32_SFLOAT});
+            else
+                data = vsg::vec3Array::create(count, vsg::Data::Properties{array.properties.format});
         }
         void apply(const vsg::bvec3Array& array) override { data = vsg::bvec3Array::create(count, vsg::Data::Properties{array.properties.format}); }
         void apply(const vsg::ubvec3Array& array) override { data = vsg::ubvec3Array::create(count, vsg::Data::Properties{array.properties.format}); }
@@ -1590,7 +1627,7 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
             texcoordExtents.set(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
             if (auto texcoords = itr->second.cast<vsg::vec2Array>())
             {
-                for(auto& tc : *texcoords)
+                for (auto& tc : *texcoords)
                 {
                     if (tc.x < texcoordExtents[0]) texcoordExtents[0] = tc.x;
                     if (tc.y < texcoordExtents[1]) texcoordExtents[1] = tc.y;
@@ -1612,39 +1649,42 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
         int texcoord_offset = -1;
 
         base = 0;
-        for(auto& [name, array] : perVertexArrays)
+        for (auto& [name, array] : perVertexArrays)
         {
-            if (name=="POSITION") vertex_offset = base;
-            else if (name=="NORMAL") normal_offset = base;
-            else if (name=="TEXCOORD_0") texcoord_offset = base;
+            if (name == "POSITION")
+                vertex_offset = base;
+            else if (name == "NORMAL")
+                normal_offset = base;
+            else if (name == "TEXCOORD_0")
+                texcoord_offset = base;
 
             base += array->valueSize();
         }
 
         vsg::vec3 origin = mesh_bounds.min;
         vsg::vec3 extents = mesh_bounds.max - mesh_bounds.min;
-        float scale = 1.0f/std::max({extents.x, extents.y, extents.z});
+        float scale = 1.0f / std::max({extents.x, extents.y, extents.z});
 
         vsg::vec2 texcoordOrigin(texcoordExtents[0], texcoordExtents[1]);
-        vsg::vec2 texcoordScale(texcoordExtents[2]-texcoordExtents[0], texcoordExtents[3]-texcoordExtents[1]);
-        if (texcoordScale.x!=0.0f) texcoordScale.x = 1.0f/texcoordScale.x;
-        if (texcoordScale.y!=0.0f) texcoordScale.y = 1.0f/texcoordScale.y;
+        vsg::vec2 texcoordScale(texcoordExtents[2] - texcoordExtents[0], texcoordExtents[3] - texcoordExtents[1]);
+        if (texcoordScale.x != 0.0f) texcoordScale.x = 1.0f / texcoordScale.x;
+        if (texcoordScale.y != 0.0f) texcoordScale.y = 1.0f / texcoordScale.y;
 
-        for(uint32_t i=0; i<totalRemappedVertices; ++i)
+        for (uint32_t i = 0; i < totalRemappedVertices; ++i)
         {
             vsg::vec3 v(0.0f, 0.0f, 0.0f);
             vsg::vec3 n(0.0f, 0.0f, 1.0f);
             vsg::vec2 tc(0.0f, 0.0f);
-            if (vertex_offset >= 0) v = (*reinterpret_cast<vsg::vec3*>(&final_vertexData[vertex_offset + i*vertexSize]) - origin) * scale;
-            if (normal_offset >= 0) n = *reinterpret_cast<vsg::vec3*>(&final_vertexData[normal_offset + i*vertexSize]);
-            if (texcoord_offset >= 0) tc = (*reinterpret_cast<vsg::vec2*>(&final_vertexData[texcoord_offset + i*vertexSize])-texcoordOrigin) * texcoordScale;
+            if (vertex_offset >= 0) v = (*reinterpret_cast<vsg::vec3*>(&final_vertexData[vertex_offset + i * vertexSize]) - origin) * scale;
+            if (normal_offset >= 0) n = *reinterpret_cast<vsg::vec3*>(&final_vertexData[normal_offset + i * vertexSize]);
+            if (texcoord_offset >= 0) tc = (*reinterpret_cast<vsg::vec2*>(&final_vertexData[texcoord_offset + i * vertexSize]) - texcoordOrigin) * texcoordScale;
 
             float azim = std::atan2(n.y, n.x);
             float elev = std::acos(n.z);
 
             if (azim < 0.0f) azim += (2.0f * vsg::PIf);
 
-            azim /= (2.0f*vsg::PIf);
+            azim /= (2.0f * vsg::PIf);
             elev /= vsg::PIf;
 
             if (v.x < 0.0f) v.x = 0.0f;
@@ -1655,12 +1695,12 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
             if (v.z > 1.0f) v.z = 1.0f;
 
             uint64_t packed = static_cast<uint64_t>(v.x * 2047.0f) |
-                              static_cast<uint64_t>(v.y * 2047.0f)<<11 |
-                              static_cast<uint64_t>(v.z * 2047.0f)<<22 |
-                              (static_cast<uint64_t>(azim*255.0) & 0xFF)<<33 |
-                              (static_cast<uint64_t>(elev*127.0) & 0x7F)<<41 |
-                              static_cast<uint64_t>(std::min(tc.x * 255.0f, 255.0f))<<48 |
-                              static_cast<uint64_t>(std::min(tc.y * 255.0f, 255.0f))<<56;
+                              static_cast<uint64_t>(v.y * 2047.0f) << 11 |
+                              static_cast<uint64_t>(v.z * 2047.0f) << 22 |
+                              (static_cast<uint64_t>(azim * 255.0) & 0xFF) << 33 |
+                              (static_cast<uint64_t>(elev * 127.0) & 0x7F) << 41 |
+                              static_cast<uint64_t>(std::min(tc.x * 255.0f, 255.0f)) << 48 |
+                              static_cast<uint64_t>(std::min(tc.y * 255.0f, 255.0f)) << 56;
 
             packedData->set(i, packed);
         }
@@ -1672,11 +1712,10 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
 
     // replace vertices
     base = 0;
-    for(auto& [name, array] : perVertexArrays)
+    for (auto& [name, array] : perVertexArrays)
     {
-        auto copyData = [&totalRemappedVertices](const uint8_t* src, size_t src_stride, uint8_t* dest, size_t dest_stride, size_t dest_copy) -> void
-        {
-            for(uint32_t i=0; i<totalRemappedVertices; ++i)
+        auto copyData = [&totalRemappedVertices](const uint8_t* src, size_t src_stride, uint8_t* dest, size_t dest_stride, size_t dest_copy) -> void {
+            for (uint32_t i = 0; i < totalRemappedVertices; ++i)
             {
                 std::memcpy(dest, src, dest_copy);
                 dest += dest_stride;
@@ -1709,7 +1748,6 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
     {
         vsg::write(meshExtras.packedData, "packedData.vsgt");
     }
-
 
     if (build_meshlets || build_spatial_meshlets)
     {
@@ -1748,12 +1786,13 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive& primitive, MeshExtras& me
             meshExtras.meshletBounds = vsg::vec4Array::create(meshlet_count);
             size_t i = 0;
 
-            for(auto& meshlet : meshlets)
+            for (auto& meshlet : meshlets)
             {
                 meshopt_optimizeMeshlet(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, meshlet.vertex_count);
 
                 meshopt_Bounds bounds = meshopt_computeMeshletBounds(&meshlet_vertices[meshlet.vertex_offset], &meshlet_triangles[meshlet.triangle_offset], meshlet.triangle_count, reinterpret_cast<float*>(&final_vertexData[xPos]), final_vertexData.size(), vertexSize);
-                meshExtras.meshletBounds->set(i++, vsg::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));;
+                meshExtras.meshletBounds->set(i++, vsg::vec4(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
+                ;
             }
 
             meshExtras.meshlets = vsg::uivec4Array::create(meshlets.size());
@@ -1775,7 +1814,6 @@ void gltf::Builder::optimizePrimitive(gltf::Primitive&, MeshExtras&)
     vsg::warn("gltf::Builder::optimizePrimitive(..) not supported, requires meshoptimizer dependency.");
 }
 #endif
-
 
 vsg::ref_ptr<vsg::Light> gltf::Builder::createLight(vsg::ref_ptr<gltf::Light> gltf_light)
 {
@@ -1949,7 +1987,6 @@ vsg::ref_ptr<vsg::Animation> gltf::Builder::createAnimation(vsg::ref_ptr<gltf::A
                     vsg::warn("gltf::Builder::createAnimation(..) unsupported scale types. vsg_input = ", vsg_input, ", vsg_output = ", vsg_output);
                 }
             }
-
 
             auto vsg_node = vsg_nodes[node_id];
 
@@ -2182,13 +2219,12 @@ void gltf::Builder::flattenTransforms(gltf::Node& node, const vsg::dmat4& inheri
     }
 }
 
-
 vsg::dbox gltf::Builder::computeBound(gltf::Mesh& mesh, MeshExtras& meshExtras, std::stack<vsg::dmat4>& matrices)
 {
     vsg::dbox bounds;
     std::vector<vsg::dmat4> instanceMatrices;
 
-    for(auto& prim : mesh.primitives.values)
+    for (auto& prim : mesh.primitives.values)
     {
         vsg::ref_ptr<vsg::Data> vertices = getAttribute<vsg::Data>(prim->attributes, "POSITION");
 
@@ -2211,23 +2247,27 @@ vsg::dbox gltf::Builder::computeBound(gltf::Mesh& mesh, MeshExtras& meshExtras, 
             vsg::dmat4 parent;
             if (!matrices.empty()) parent = matrices.top();
 
-            for(size_t i=0; i<instanceCount; ++i)
+            for (size_t i = 0; i < instanceCount; ++i)
             {
                 vsg::dmat4 m = parent;
                 if (translations && i < translations->size()) m = m * vsg::translate(vsg::dvec3(translations->at(i)));
-                if (rotations && i < rotations->size()) { vsg::dvec4 v(rotations->at(i)); m = m * vsg::rotate(vsg::dquat(v.x, v.y, v.z, v.w)); }
+                if (rotations && i < rotations->size())
+                {
+                    vsg::dvec4 v(rotations->at(i));
+                    m = m * vsg::rotate(vsg::dquat(v.x, v.y, v.z, v.w));
+                }
                 if (scales && i < scales->size()) m = m * vsg::scale(vsg::dvec3(scales->at(i)));
 
                 if (vec3_vertices)
                 {
-                    for(auto& v : *vec3_vertices)
+                    for (auto& v : *vec3_vertices)
                     {
                         bounds.add(m * vsg::dvec3(v));
                     }
                 }
                 else if (vec4_vertices)
                 {
-                    for(auto& v : *vec4_vertices)
+                    for (auto& v : *vec4_vertices)
                     {
                         bounds.add(m * vsg::dvec3(v.xyz));
                     }
@@ -2240,18 +2280,16 @@ vsg::dbox gltf::Builder::computeBound(gltf::Mesh& mesh, MeshExtras& meshExtras, 
             {
                 if (vec3_vertices)
                 {
-                    for(auto& v : *vec3_vertices)
+                    for (auto& v : *vec3_vertices)
                     {
                         bounds.add(v);
-
                     }
                 }
                 else if (vec4_vertices)
                 {
-                    for(auto& v : *vec4_vertices)
+                    for (auto& v : *vec4_vertices)
                     {
                         bounds.add(v.xyz);
-
                     }
                 }
             }
@@ -2260,14 +2298,14 @@ vsg::dbox gltf::Builder::computeBound(gltf::Mesh& mesh, MeshExtras& meshExtras, 
                 const auto& m = matrices.top();
                 if (vec3_vertices)
                 {
-                    for(auto& v : *vec3_vertices)
+                    for (auto& v : *vec3_vertices)
                     {
                         bounds.add(m * vsg::dvec3(v));
                     }
                 }
                 else if (vec4_vertices)
                 {
-                    for(auto& v : *vec4_vertices)
+                    for (auto& v : *vec4_vertices)
                     {
                         bounds.add(m * vsg::dvec3(v.xyz));
                     }
@@ -2286,8 +2324,10 @@ vsg::dbox gltf::Builder::computeBound(gltf::Node& gltf_node, std::stack<vsg::dma
 
     if (has_transform)
     {
-        if (matrices.empty()) matrices.push(transform);
-        else matrices.push(matrices.top() * transform);
+        if (matrices.empty())
+            matrices.push(transform);
+        else
+            matrices.push(matrices.top() * transform);
     }
 
     vsg::dbox bounds;
@@ -2326,7 +2366,7 @@ vsg::dbox gltf::Builder::computeBound(gltf::Node& gltf_node, std::stack<vsg::dma
 vsg::dbox gltf::Builder::computeBound(gltf::Scene& scene, std::stack<vsg::dmat4>& matrices)
 {
     vsg::dbox bounds;
-    for(auto& id : scene.nodes.values)
+    for (auto& id : scene.nodes.values)
     {
         if (id)
         {
@@ -2335,7 +2375,6 @@ vsg::dbox gltf::Builder::computeBound(gltf::Scene& scene, std::stack<vsg::dmat4>
     }
     return bounds;
 }
-
 
 vsg::ref_ptr<vsg::Node> gltf::Builder::createScene(vsg::ref_ptr<gltf::Scene> gltf_scene, bool requiresRootTransformNode, const vsg::dmat4& rootTransform)
 {
@@ -2379,7 +2418,7 @@ vsg::ref_ptr<vsg::Node> gltf::Builder::createScene(vsg::ref_ptr<gltf::Scene> glt
     {
         // compute bounds from gltf data structures
         std::stack<vsg::dmat4> matrices;
-        if (requiresRootTransformNode) matrices. push(rootTransform);
+        if (requiresRootTransformNode) matrices.push(rootTransform);
         auto bounds = computeBound(*gltf_scene, matrices);
 
         // fallback to using vsg::ComputeBounds visitor
@@ -2621,15 +2660,15 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
     if (in_options) options = in_options;
 
     std::string shared_objects = vsg::value<std::string>("", gltf::shared_objects, options);
-    if (shared_objects=="inherit")
+    if (shared_objects == "inherit")
     {
         if (options) sharedObjects = options->sharedObjects;
     }
-    else if (shared_objects=="local")
+    else if (shared_objects == "local")
     {
         sharedObjects = vsg::SharedObjects::create();
     }
-    else if (shared_objects!="none")
+    else if (shared_objects != "none")
     {
         if (options) sharedObjects = options->sharedObjects;
         if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
@@ -2798,7 +2837,6 @@ vsg::ref_ptr<vsg::Object> gltf::Builder::createSceneGraph(vsg::ref_ptr<gltf::glT
     {
         vsg_materials[mi] = createMaterial(model->materials.values[mi]);
     }
-
 
     // vsg::info("create meshes = ", model->meshes.values.size());
     // populate vsg_meshes in the createNode method.

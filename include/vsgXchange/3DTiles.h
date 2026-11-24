@@ -54,15 +54,15 @@ namespace vsgXchange
 
         bool getFeatures(Features& features) const override;
 
-        static constexpr const char* report = "report";                             /// bool, report parsed glTF to console, defaults to false
-        static constexpr const char* instancing = "instancing";                     /// bool, hint for using vsg::InstanceNode/InstanceDraw for instancing where possible.
-        static constexpr const char* pixel_ratio = "pixel_ratio";                   /// double, sets the Builder::pixelErrorToScreenHeightRatio value used for setting LOD ranges.
-        static constexpr const char* pre_load_level = "pre_load_level";             /// uint, sets the Builder::preLoadLevel values to control what LOD level are pre loaded when reading a tileset.
+        static constexpr const char* report = "report";                 /// bool, report parsed glTF to console, defaults to false
+        static constexpr const char* instancing = "instancing";         /// bool, hint for using vsg::InstanceNode/InstanceDraw for instancing where possible.
+        static constexpr const char* pixel_ratio = "pixel_ratio";       /// double, sets the Builder::pixelErrorToScreenHeightRatio value used for setting LOD ranges.
+        static constexpr const char* pre_load_level = "pre_load_level"; /// uint, sets the Builder::preLoadLevel values to control what LOD level are pre loaded when reading a tileset.
 
-        static constexpr const char* shared_objects = "Tiles3D::shared_objects";    /// string, hint whether the scene graph building should use "none", "local" creates a local vsg::SharedObjects for just this load, "inherit" the SharedObjects from vsg::Options.
-                                                                                    /// The default "" inherit's SharedObject if available, otherwise creates a local one
+        static constexpr const char* shared_objects = "Tiles3D::shared_objects"; /// string, hint whether the scene graph building should use "none", "local" creates a local vsg::SharedObjects for just this load, "inherit" the SharedObjects from vsg::Options.
+                                                                                 /// The default "" inherit's SharedObject if available, otherwise creates a local one
 
-        static constexpr const char* prototype_builder = "Tiles3D::Builder";        /// Tiles3D::Builder prototype cloned for converting Tiles3D::Tileset hierachy into VSG scene graph
+        static constexpr const char* prototype_builder = "Tiles3D::Builder"; /// Tiles3D::Builder prototype cloned for converting Tiles3D::Tileset hierachy into VSG scene graph
 
         bool readOptions(vsg::Options& options, vsg::CommandLine& arguments) const override;
 

@@ -290,7 +290,7 @@ int main(int argc, char** argv)
 
     std::string name;
     vsg::Path shaderSetFilename;
-    while(arguments.read("--ss", name, shaderSetFilename))
+    while (arguments.read("--ss", name, shaderSetFilename))
     {
         if (auto shaderSet = vsg::read_cast<vsg::ShaderSet>(shaderSetFilename, options))
         {

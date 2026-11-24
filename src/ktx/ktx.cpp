@@ -552,7 +552,7 @@ vsg::ref_ptr<vsg::Object> ktx::Implementation::read(std::istream& fin, vsg::ref_
         input.append(&buffer[0], bytes_readed);
     }
 
-    if (ktxTexture2 * texture{nullptr}; ktxTexture2_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
+    if (ktxTexture2* texture{nullptr}; ktxTexture2_CreateFromMemory((const ktx_uint8_t*)input.data(), input.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &texture) == KTX_SUCCESS)
     {
         vsg::ref_ptr<vsg::Data> data;
         try

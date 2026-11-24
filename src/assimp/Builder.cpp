@@ -53,10 +53,22 @@ namespace vsgXchange
             return output << "aiMatrix4x4{ {" << m.a1 << ", " << m.a2 << ", " << m.a3 << ", " << m.a4 << "} {" << m.b1 << ", " << m.b2 << ", " << m.b3 << ", " << m.b4 << "} {" << m.c1 << ", " << m.c2 << ", " << m.c3 << ", " << m.c4 << "} {" << m.d1 << ", " << m.d2 << ", " << m.d3 << ", " << m.d4 << "} }";
     }
 
-    inline vsg::vec3 convert(const aiVector3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
-    inline vsg::dvec3 dconvert(const aiVector3D& v) { return vsg::dvec3(v[0], v[1], v[2]); }
-    inline vsg::vec3 convert(const aiColor3D& v) { return vsg::vec3(v[0], v[1], v[2]); }
-    inline vsg::vec4 convert(const aiColor4D& v) { return vsg::vec4(v[0], v[1], v[2], v[3]); }
+    inline vsg::vec3 convert(const aiVector3D& v)
+    {
+        return vsg::vec3(v[0], v[1], v[2]);
+    }
+    inline vsg::dvec3 dconvert(const aiVector3D& v)
+    {
+        return vsg::dvec3(v[0], v[1], v[2]);
+    }
+    inline vsg::vec3 convert(const aiColor3D& v)
+    {
+        return vsg::vec3(v[0], v[1], v[2]);
+    }
+    inline vsg::vec4 convert(const aiColor4D& v)
+    {
+        return vsg::vec4(v[0], v[1], v[2], v[3]);
+    }
 
     // aiMatrix4x4 elements are ai_real, which is double when Assimp is built with ASSIMP_DOUBLE_PRECISION.
     // The caller passes an already-transposed matrix whose storage order matches vsg's column-major layout,
@@ -104,7 +116,6 @@ namespace vsgXchange
             return true;
         return false;
     }
-
 
 } // namespace vsgXchange
 
@@ -471,7 +482,6 @@ assimp::SubgraphStats assimp::Builder::print(std::ostream& out, const aiScene* i
 
     return stats;
 }
-
 
 assimp::SamplerData assimp::Builder::convertTexture(const aiMaterial& material, int type) const
 {
@@ -1323,7 +1333,6 @@ vsg::ref_ptr<vsg::Node> assimp::Builder::createSceneGraph(const aiScene* in_scen
         auto cullNode = vsg::CullNode::create(bs, vsg_scene);
         vsg_scene = cullNode;
     }
-
 
     if (externalTextures && externalObjects && !externalObjects->entries.empty())
     {

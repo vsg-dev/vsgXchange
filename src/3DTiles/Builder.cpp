@@ -281,9 +281,12 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::readTileChildren(vsg::ref_ptr<Tiles3D:
         }
     }
 
-    if (group->children.empty()) return {};
-    else if (group->children.size() == 1) return group->children[0];
-    else return group;
+    if (group->children.empty())
+        return {};
+    else if (group->children.size() == 1)
+        return group->children[0];
+    else
+        return group;
 }
 
 double Tiles3D::Builder::computeScreenHeightRatio(const vsg::dsphere& bound, double geometricError) const
@@ -301,10 +304,10 @@ double Tiles3D::Builder::computeScreenHeightRatio(const Tiles3D::Tile& tile) con
 
 bool Tiles3D::Builder::isTripleNestedTile(vsg::ref_ptr<Tiles3D::Tile> tile) const
 {
-    if (tile->children.values.size()==1)
+    if (tile->children.values.size() == 1)
     {
         auto& child = tile->children.values[0];
-        if (child->children.values.size()==1)
+        if (child->children.values.size() == 1)
         {
             auto& child_child = child->children.values[0];
             return child_child->children.values.empty();
@@ -339,7 +342,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTripleNestedTile(vsg::ref_ptr<Ti
         if (low_res_subgraph) plod->children[1] = vsg::PagedLOD::Child{tile_screenRatio, low_res_subgraph};
 
         if (child_child->content) plod->filename = child_child->content->uri;
-
 
         node = plod;
     }
@@ -400,7 +402,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTile(vsg::ref_ptr<Tiles3D::Tile>
     {
         node = local_subgraph;
     }
-    else if (usePagedLOD)  // Use PageLOD to load Tile children
+    else if (usePagedLOD) // Use PageLOD to load Tile children
     {
         auto load_options = vsg::clone(options);
         load_options->setObject("tile", tile);
@@ -446,9 +448,9 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTile(vsg::ref_ptr<Tiles3D::Tile>
                 auto group = vsg::Group::create();
                 if (local_subgraph) group->addChild(local_subgraph);
 
-                for(auto& child : tile->children.values)
+                for (auto& child : tile->children.values)
                 {
-                    if (auto child_node = createTile(child, level+1, refine))
+                    if (auto child_node = createTile(child, level + 1, refine))
                     {
                         auto lod = vsg::LOD::create();
                         lod->bound = createBound(child->boundingVolume);
@@ -460,7 +462,7 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTile(vsg::ref_ptr<Tiles3D::Tile>
 
                 node = group;
             }
-            else if (!tile->children.values.empty())  // local_subgraph must be null
+            else if (!tile->children.values.empty()) // local_subgraph must be null
             {
                 if (auto highres_subgraph = readTileChildren(tile, level, refine))
                 {
@@ -495,7 +497,6 @@ vsg::ref_ptr<vsg::Node> Tiles3D::Builder::createTile(vsg::ref_ptr<Tiles3D::Tile>
 
             node = lod;
         }
-
     }
 
     if (!node) return {};
@@ -528,15 +529,15 @@ vsg::ref_ptr<vsg::Object> Tiles3D::Builder::createSceneGraph(vsg::ref_ptr<Tiles3
     }
 
     std::string shared_objects = vsg::value<std::string>("", Tiles3D::shared_objects, options);
-    if (shared_objects=="inherit")
+    if (shared_objects == "inherit")
     {
         if (options) sharedObjects = options->sharedObjects;
     }
-    else if (shared_objects=="local")
+    else if (shared_objects == "local")
     {
         sharedObjects = vsg::SharedObjects::create();
     }
-    else if (shared_objects!="none")
+    else if (shared_objects != "none")
     {
         if (options) sharedObjects = options->sharedObjects;
         if (!sharedObjects) sharedObjects = vsg::SharedObjects::create();
